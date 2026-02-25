@@ -89,7 +89,7 @@ Gap Report: [Availability & Scheduling](/gap-report/availability-scheduling)
 Cal.com's availability engine is implemented across `packages/features/schedules/` (`ScheduleService`, `ScheduleRepository`), `packages/features/availability/` (slot generation, DST normalization via `date-ranges.ts`), and `packages/features/busyTimes/` (busy time aggregation). The engine supports multiple named schedules, per-schedule timezones, travel timezone overrides, country-based holiday blocking, and a sophisticated slot generation pipeline.
 
 `Source: packages/features/schedules/services/ScheduleService.ts`
-`Source: packages/features/availability/lib/date-ranges.ts`
+`Source: packages/features/schedules/lib/date-ranges.ts`
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package |
 |---------|-------|----------|------------|-------------|----------------|
@@ -98,7 +98,7 @@ Cal.com's availability engine is implemented across `packages/features/schedules
 | **AV-003** | Buffer time (before/after) configuration parity | Medium | S | AV-001 | `packages/features/availability/` |
 | **AV-004** | Minimum scheduling notice parity | Medium | S | AV-001 | `packages/features/availability/` |
 | **AV-005** | Maximum advance booking window parity | Medium | S | AV-001 | `packages/features/availability/` |
-| **AV-006** | DST normalization verification for Calendly-equivalent behavior | High | M | AV-001 | `packages/features/availability/lib/date-ranges.ts` |
+| **AV-006** | DST normalization verification for Calendly-equivalent behavior | High | M | AV-001 | `packages/features/schedules/lib/date-ranges.ts` |
 | **AV-007** | Holiday blocking behavior parity | Low | S | AV-001 | `packages/features/holidays/` |
 
 <Info>
@@ -116,7 +116,7 @@ Gap Report: [Event Types](/gap-report/event-types)
 Cal.com implements six scheduling paradigms through the `SchedulingType` Prisma enum (`ROUND_ROBIN`, `COLLECTIVE`, `MANAGED`) plus implicit one-on-one (default when no type is set), group (via `seatsPerTimeSlot`), and dynamic (ad-hoc meeting links). The `IEventTypesRepository` interface and `PrismaEventTypeRepository` provide the persistence layer for event type CRUD operations.
 
 `Source: packages/features/eventtypes/eventtypes.repository.interface.ts`
-`Source: packages/features/eventtypes/repositories/eventtypes.repository.ts`
+`Source: packages/features/eventtypes/repositories/eventTypeRepository.ts`
 `Source: packages/prisma/schema.prisma (enum SchedulingType)`
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package |
@@ -198,15 +198,15 @@ Cal.com's webhook system defines **20 distinct `WebhookTriggerEvents`** in the P
 
 Gap Report: [Routing Forms](/gap-report/routing-forms)
 
-Cal.com's routing forms use a React Awesome Query Builder (RAQB) rule engine with `jsonLogic`-based conditional evaluation in `findMatchingRoute.ts`. The system supports attribute-based team member matching, CRM contact owner lookups (Salesforce, HubSpot), multiple route action types (`eventTypeRedirectUrl`, `customPageMessage`, `externalRedirectUrl`), and an API v2 controller for programmatic slot calculation.
+Cal.com's routing forms use a React Awesome Query Builder (RAQB) rule engine with `jsonLogic`-based conditional evaluation in `processRoute.tsx` (which exports the `findMatchingRoute` function). The system supports attribute-based team member matching, CRM contact owner lookups (Salesforce, HubSpot), multiple route action types (`eventTypeRedirectUrl`, `customPageMessage`, `externalRedirectUrl`), and an API v2 controller for programmatic slot calculation.
 
-`Source: packages/features/routing-forms/lib/findMatchingRoute.ts`
+`Source: packages/app-store/routing-forms/lib/processRoute.tsx`
 `Source: packages/app-store/routing-forms/README.md`
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package |
 |---------|-------|----------|------------|-------------|----------------|
 | **RF-001** | Routing form builder behavioral parity | Medium | M | ET-001 | `packages/features/routing-forms/` |
-| **RF-002** | Conditional routing logic alignment | Medium | L | RF-001 | `packages/features/routing-forms/lib/findMatchingRoute.ts` |
+| **RF-002** | Conditional routing logic alignment | Medium | L | RF-001 | `packages/app-store/routing-forms/lib/processRoute.tsx` |
 | **RF-003** | Form field type parity | Low | S | RF-001 | `packages/features/routing-forms/` |
 | **RF-004** | Routing form API v2 endpoint parity | Medium | M | RF-001 | `apps/api/v2/src/modules/routing-forms/` |
 

@@ -2312,6 +2312,7 @@
       "get": {
         "operationId": "OrganizationsRoutingFormsController_getOrganizationRoutingForms",
         "summary": "Get organization routing forms",
+        "description": "Retrieves all routing forms for the specified organization. Routing forms enable conditional routing of booking requests to different event types based on form field responses. Cal.com's routing forms support JSON Logic and react-awesome-query-builder (RAQB) rule engines for complex conditional routing, attribute-based team member matching, and CRM field lookups. This is comparable to Calendly's routing forms feature which routes submissions to appropriate event types. Source: packages/features/routing-forms/, packages/app-store/routing-forms/",
         "parameters": [
           {
             "name": "Authorization",
@@ -5896,6 +5897,7 @@
       "get": {
         "operationId": "OrganizationsTeamsRoutingFormsController_getTeamRoutingForms",
         "summary": "Get team routing forms",
+        "description": "Retrieves all routing forms for the specified team within an organization. Routing forms enable conditional routing of booking requests to different event types based on form field responses. Cal.com's routing forms support JSON Logic and react-awesome-query-builder (RAQB) rule engines for complex conditional routing, attribute-based team member matching, and CRM field lookups. This is comparable to Calendly's routing forms feature which routes submissions to appropriate event types. Source: packages/features/routing-forms/, packages/app-store/routing-forms/",
         "parameters": [
           {
             "name": "Authorization",
@@ -13583,7 +13585,7 @@
       "post": {
         "operationId": "RoutingFormsController_calculateSlotsBasedOnRoutingFormResponse",
         "summary": "Calculate slots based on routing form response",
-        "description": "It will not actually save the response just return the routed event type and slots when it can be booked.",
+        "description": "Calculates available booking slots based on a routing form response without persisting the submission. The endpoint evaluates the routing form's conditional routing rules (powered by react-awesome-query-builder logic) to determine the matched event type, then returns that event type's available slots for the specified date range. This enables preview functionality where users can see available times before committing their routing form response. The response includes the routed eventTypeId and corresponding slot availability in either time-point or range format. Note: This endpoint supports Cal.com's attribute-based routing which maps to Calendly's routing form submission workflow (routing_form_submission.created webhook event). Source: apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts",
         "parameters": [
           {
             "name": "Authorization",
@@ -13683,7 +13685,7 @@
       "post": {
         "operationId": "SchedulesController_2024_06_11_createSchedule",
         "summary": "Create a schedule",
-        "description": "\n      Create a schedule for the authenticated user.\n\n      The point of creating schedules is for event types to be available at specific times.\n\n      The first goal of schedules is to have a default schedule. If you are platform customer and created managed users, then it is important to note that each managed user should have a default schedule.\n      1. If you passed `timeZone` when creating managed user, then the default schedule from Monday to Friday from 9AM to 5PM will be created with that timezone. The managed user can then change the default schedule via the `AvailabilitySettings` atom.\n      2. If you did not, then we assume you want the user to have this specific schedule right away. You should create a default schedule by specifying\n      `\"isDefault\": true` in the request body. Until the user has a default schedule the user can't be booked nor manage their schedule via the AvailabilitySettings atom.\n\n      The second goal of schedules is to create another schedule that event types can point to. This is useful for when an event is booked because availability is not checked against the default schedule but instead against that specific schedule.\n      After creating a non-default schedule, you can update an event type to point to that schedule via the PATCH `event-types/{eventTypeId}` endpoint.\n\n      When specifying start time and end time for each day use the 24 hour format e.g. 08:00, 15:00 etc.\n\n      <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>\n      ",
+        "description": "\n      Create a schedule for the authenticated user.\n\n      The point of creating schedules is for event types to be available at specific times.\n\n      The first goal of schedules is to have a default schedule. If you are platform customer and created managed users, then it is important to note that each managed user should have a default schedule.\n      1. If you passed `timeZone` when creating managed user, then the default schedule from Monday to Friday from 9AM to 5PM will be created with that timezone. The managed user can then change the default schedule via the `AvailabilitySettings` atom.\n      2. If you did not, then we assume you want the user to have this specific schedule right away. You should create a default schedule by specifying\n      `\"isDefault\": true` in the request body. Until the user has a default schedule the user can't be booked nor manage their schedule via the AvailabilitySettings atom.\n\n      The second goal of schedules is to create another schedule that event types can point to. This is useful for when an event is booked because availability is not checked against the default schedule but instead against that specific schedule.\n      After creating a non-default schedule, you can update an event type to point to that schedule via the PATCH `event-types/{eventTypeId}` endpoint.\n\n      When specifying start time and end time for each day use the 24 hour format e.g. 08:00, 15:00 etc.\n\n      <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note> Cal.com's schedule system is significantly more capable than Calendly's availability management, supporting multiple named schedules per user, managed schedules for organizations, and fine-grained date override controls including holiday blocking, timezone configuration, and DST-aware time normalization. Unlike Calendly, Cal.com exposes full programmatic API access for schedule creation and management. Source: packages/features/schedules/, packages/features/availability/\n      ",
         "parameters": [
           {
             "name": "Authorization",
@@ -14067,7 +14069,7 @@
       "get": {
         "operationId": "SlotsController_2024_09_04_getAvailableSlots",
         "summary": "Get available time slots for an event type",
-        "description": "\n      There are 4 ways to get available slots for event type of an individual user:\n\n      1. By event type id. Example '/v2/slots?eventTypeId=10&start=2050-09-05&end=2050-09-06&timeZone=Europe/Rome'\n\n      2. By event type slug + username. Example '/v2/slots?eventTypeSlug=intro&username=bob&start=2050-09-05&end=2050-09-06'\n\n      3. By event type slug + username + organization slug when searching within an organization. Example '/v2/slots?organizationSlug=org-slug&eventTypeSlug=intro&username=bob&start=2050-09-05&end=2050-09-06'\n\n      4. By usernames only (used for dynamic event type - there is no specific event but you want to know when 2 or more people are available). Example '/v2/slots?usernames=alice,bob&username=bob&organizationSlug=org-slug&start=2050-09-05&end=2050-09-06'. As you see you also need to provide the slug of the organization to which each user in the 'usernames' array belongs.\n\n      And 3 ways to get available slots for team event type:\n\n      1. By team event type id. Example '/v2/slots?eventTypeId=10&start=2050-09-05&end=2050-09-06&timeZone=Europe/Rome'.\n         **Note for managed event types**: Managed event types are templates that create individual child event types for each team member. You cannot fetch slots for the parent managed event type directly. Instead, you must:\n         - Find the child event type IDs (the ones assigned to specific users)\n         - Use those child event type IDs to fetch slots as individual user event types using as described in the individual user section above.\n\n      2. By team event type slug + team slug. Example '/v2/slots?eventTypeSlug=intro&teamSlug=team-slug&start=2050-09-05&end=2050-09-06'\n\n      3. By team event type slug + team slug + organization slug when searching within an organization. Example '/v2/slots?organizationSlug=org-slug&eventTypeSlug=intro&teamSlug=team-slug&start=2050-09-05&end=2050-09-06'\n\n      All of them require \"start\" and \"end\" query parameters which define the time range for which available slots should be checked.\n      Optional parameters are:\n      - timeZone: Time zone in which the available slots should be returned. Defaults to UTC.\n      - duration: Only use for event types that allow multiple durations or for dynamic event types. If not passed for multiple duration event types defaults to default duration. For dynamic event types defaults to 30 aka each returned slot is 30 minutes long. So duration=60 means that returned slots will be each 60 minutes long.\n      - format: Format of the slots. By default return is an object where each key is date and value is array of slots as string. If you want to get start and end of each slot use \"range\" as value.\n      - bookingUidToReschedule: When rescheduling an existing booking, provide the booking's unique identifier to exclude its time slot from busy time calculations. This ensures the original booking time appears as available for rescheduling.\n\n       <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>\n      ",
+        "description": "\n      There are 4 ways to get available slots for event type of an individual user:\n\n      1. By event type id. Example '/v2/slots?eventTypeId=10&start=2050-09-05&end=2050-09-06&timeZone=Europe/Rome'\n\n      2. By event type slug + username. Example '/v2/slots?eventTypeSlug=intro&username=bob&start=2050-09-05&end=2050-09-06'\n\n      3. By event type slug + username + organization slug when searching within an organization. Example '/v2/slots?organizationSlug=org-slug&eventTypeSlug=intro&username=bob&start=2050-09-05&end=2050-09-06'\n\n      4. By usernames only (used for dynamic event type - there is no specific event but you want to know when 2 or more people are available). Example '/v2/slots?usernames=alice,bob&username=bob&organizationSlug=org-slug&start=2050-09-05&end=2050-09-06'. As you see you also need to provide the slug of the organization to which each user in the 'usernames' array belongs.\n\n      And 3 ways to get available slots for team event type:\n\n      1. By team event type id. Example '/v2/slots?eventTypeId=10&start=2050-09-05&end=2050-09-06&timeZone=Europe/Rome'.\n         **Note for managed event types**: Managed event types are templates that create individual child event types for each team member. You cannot fetch slots for the parent managed event type directly. Instead, you must:\n         - Find the child event type IDs (the ones assigned to specific users)\n         - Use those child event type IDs to fetch slots as individual user event types using as described in the individual user section above.\n\n      2. By team event type slug + team slug. Example '/v2/slots?eventTypeSlug=intro&teamSlug=team-slug&start=2050-09-05&end=2050-09-06'\n\n      3. By team event type slug + team slug + organization slug when searching within an organization. Example '/v2/slots?organizationSlug=org-slug&eventTypeSlug=intro&teamSlug=team-slug&start=2050-09-05&end=2050-09-06'\n\n      All of them require \"start\" and \"end\" query parameters which define the time range for which available slots should be checked.\n      Optional parameters are:\n      - timeZone: Time zone in which the available slots should be returned. Defaults to UTC.\n      - duration: Only use for event types that allow multiple durations or for dynamic event types. If not passed for multiple duration event types defaults to default duration. For dynamic event types defaults to 30 aka each returned slot is 30 minutes long. So duration=60 means that returned slots will be each 60 minutes long.\n      - format: Format of the slots. By default return is an object where each key is date and value is array of slots as string. If you want to get start and end of each slot use \"range\" as value.\n      - bookingUidToReschedule: When rescheduling an existing booking, provide the booking's unique identifier to exclude its time slot from busy time calculations. This ensures the original booking time appears as available for rescheduling.\n\n       <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note> The slot generation engine aggregates host availability, applies buffer times, enforces minimum notice periods, respects date overrides and holiday blocks, handles DST transitions, and performs busy-time conflict detection across all connected calendars. This provides equivalent functionality to Calendly's availability checking but with more granular control through programmatic API access. Source: packages/features/availability/, packages/features/busyTimes/\n      ",
         "parameters": [
           {
             "name": "cal-api-version",
@@ -16631,6 +16633,7 @@
       "post": {
         "operationId": "WebhooksController_createWebhook",
         "summary": "Create a webhook",
+        "description": "Creates a new webhook subscription for the authenticated user. Webhooks deliver real-time HTTP POST notifications to your subscriberUrl when specified trigger events occur. Cal.com supports 20 webhook trigger events covering the full booking lifecycle, payment processing, meeting events, recordings, form submissions, and operational alerts. This is significantly more granular than Calendly's webhook API which supports only 3 events (invitee.created, invitee.canceled, routing_form_submission.created). Webhook payloads are generated by the versioned PayloadBuilderFactory and include X-Cal-Signature-256 HMAC signature verification (unlike Calendly which does not provide native webhook signing). Webhooks support Handlebars-based payload templates for custom payload formatting. Source: packages/features/webhooks/lib/service/, packages/features/webhooks/lib/sendPayload.ts",
         "parameters": [
           {
             "name": "Authorization",
@@ -16669,7 +16672,7 @@
       "get": {
         "operationId": "WebhooksController_getWebhooks",
         "summary": "Get all webhooks",
-        "description": "Gets a paginated list of webhooks for the authenticated user.",
+        "description": "Gets a paginated list of webhooks for the authenticated user. Returns webhook configurations including subscriber URL, active trigger events, payload template, secret for signature verification, and webhook version. Cal.com supports user-scoped, event-type-scoped, team-scoped, organization-scoped, and OAuth-client-scoped webhook subscriptions, providing more granular control than Calendly's organization-scoped or user-scoped webhook model. Source: packages/features/webhooks/lib/service/",
         "parameters": [
           {
             "name": "Authorization",
@@ -16844,7 +16847,7 @@
   },
   "info": {
     "title": "Cal.com API v2",
-    "description": "",
+    "description": "The Cal.com API v2 provides comprehensive programmatic access to scheduling, booking, webhook, calendar integration, routing form, and organizational management capabilities. This API specification documents the complete REST surface including endpoints for Calendly feature parity across availability management, event type configuration, routing forms, webhook subscriptions, embed flows, team administration, calendar integrations, and notification workflows.",
     "version": "1.0.0",
     "contact": {}
   },
@@ -24239,6 +24242,7 @@
             "type": "number"
           },
           "triggers": {
+            "description": "Array of active trigger events for this webhook. See CreateWebhookInputDto triggers enum for the full list of 20 supported trigger events.",
             "type": "array",
             "items": {
               "type": "object"
@@ -24288,6 +24292,7 @@
             "type": "string"
           },
           "triggers": {
+            "description": "The event trigger(s) for this webhook. Booking events: BOOKING_CREATED (fired when a new booking is confirmed), BOOKING_PAYMENT_INITIATED (fired when a payment is initiated for a booking), BOOKING_PAID (fired when a booking payment is completed), BOOKING_RESCHEDULED (fired when an existing booking is rescheduled to a new time), BOOKING_REQUESTED (fired when a booking request is submitted and pending approval), BOOKING_CANCELLED (fired when a booking is cancelled by the organizer or attendee), BOOKING_REJECTED (fired when a pending booking request is rejected), BOOKING_NO_SHOW_UPDATED (fired when a booking's no-show status is updated). Form events: FORM_SUBMITTED (fired when a routing form submission results in a matched event type), FORM_SUBMITTED_NO_EVENT (fired when a routing form submission does not match any event type). Meeting events: MEETING_STARTED (fired when a Cal Video meeting begins), MEETING_ENDED (fired when a Cal Video meeting ends), AFTER_HOSTS_CAL_VIDEO_NO_SHOW (fired when a host fails to join a Cal Video meeting within the configured threshold), AFTER_GUESTS_CAL_VIDEO_NO_SHOW (fired when guests fail to join a Cal Video meeting within the configured threshold). Recording events: RECORDING_READY (fired when a Cal Video meeting recording is available for download), RECORDING_TRANSCRIPTION_GENERATED (fired when a recording transcription is completed). Other events: INSTANT_MEETING (fired when an instant meeting is created), OOO_CREATED (fired when an out-of-office entry is created), DELEGATION_CREDENTIAL_ERROR (fired when a delegated credential encounters an error), WRONG_ASSIGNMENT_REPORT (fired when a booking assignment is reported as incorrect). Note: Calendly's webhook API supports only invitee.created, invitee.canceled, and routing_form_submission.created events. Cal.com provides significantly more granular webhook triggers covering the full booking lifecycle, payment processing, meeting events, recordings, and form submissions.",
             "type": "string",
             "example": [
               "BOOKING_CREATED",
@@ -24327,7 +24332,7 @@
           },
           "version": {
             "type": "string",
-            "description": "The version of the webhook",
+            "description": "The payload version for the webhook. Currently only '2021-10-20' (v1) is supported. The PayloadBuilderFactory uses this version to select the appropriate payload builder, ensuring backward compatibility with existing consumer integrations. Future versions will be additive \u2014 the v2021-10-20 format will continue to be supported.",
             "example": "2021-10-20",
             "enum": ["2021-10-20"]
           }
@@ -24363,6 +24368,7 @@
             "type": "string"
           },
           "triggers": {
+            "description": "The event trigger(s) for this webhook. Booking events: BOOKING_CREATED (fired when a new booking is confirmed), BOOKING_PAYMENT_INITIATED (fired when a payment is initiated for a booking), BOOKING_PAID (fired when a booking payment is completed), BOOKING_RESCHEDULED (fired when an existing booking is rescheduled to a new time), BOOKING_REQUESTED (fired when a booking request is submitted and pending approval), BOOKING_CANCELLED (fired when a booking is cancelled by the organizer or attendee), BOOKING_REJECTED (fired when a pending booking request is rejected), BOOKING_NO_SHOW_UPDATED (fired when a booking's no-show status is updated). Form events: FORM_SUBMITTED (fired when a routing form submission results in a matched event type), FORM_SUBMITTED_NO_EVENT (fired when a routing form submission does not match any event type). Meeting events: MEETING_STARTED (fired when a Cal Video meeting begins), MEETING_ENDED (fired when a Cal Video meeting ends), AFTER_HOSTS_CAL_VIDEO_NO_SHOW (fired when a host fails to join a Cal Video meeting within the configured threshold), AFTER_GUESTS_CAL_VIDEO_NO_SHOW (fired when guests fail to join a Cal Video meeting within the configured threshold). Recording events: RECORDING_READY (fired when a Cal Video meeting recording is available for download), RECORDING_TRANSCRIPTION_GENERATED (fired when a recording transcription is completed). Other events: INSTANT_MEETING (fired when an instant meeting is created), OOO_CREATED (fired when an out-of-office entry is created), DELEGATION_CREDENTIAL_ERROR (fired when a delegated credential encounters an error), WRONG_ASSIGNMENT_REPORT (fired when a booking assignment is reported as incorrect). Note: Calendly's webhook API supports only invitee.created, invitee.canceled, and routing_form_submission.created events. Cal.com provides significantly more granular webhook triggers covering the full booking lifecycle, payment processing, meeting events, recordings, and form submissions.",
             "type": "string",
             "example": [
               "BOOKING_CREATED",
@@ -24402,7 +24408,7 @@
           },
           "version": {
             "type": "string",
-            "description": "The version of the webhook",
+            "description": "The payload version for the webhook. Currently only '2021-10-20' (v1) is supported. The PayloadBuilderFactory uses this version to select the appropriate payload builder, ensuring backward compatibility with existing consumer integrations. Future versions will be additive \u2014 the v2021-10-20 format will continue to be supported.",
             "example": "2021-10-20",
             "enum": ["2021-10-20"]
           }
@@ -31912,6 +31918,7 @@
             "type": "number"
           },
           "triggers": {
+            "description": "Array of active trigger events for this webhook. See CreateWebhookInputDto triggers enum for the full list of 20 supported trigger events.",
             "type": "array",
             "items": {
               "type": "object"
@@ -31975,6 +31982,7 @@
             "type": "number"
           },
           "triggers": {
+            "description": "Array of active trigger events for this webhook. See CreateWebhookInputDto triggers enum for the full list of 20 supported trigger events.",
             "type": "array",
             "items": {
               "type": "object"
@@ -32052,6 +32060,7 @@
             "type": "number"
           },
           "triggers": {
+            "description": "Array of active trigger events for this webhook. See CreateWebhookInputDto triggers enum for the full list of 20 supported trigger events.",
             "type": "array",
             "items": {
               "type": "object"

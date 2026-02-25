@@ -115,6 +115,22 @@
                 ]
               }
             ]
+          },
+          {
+            "group": "Sprint Roadmap",
+            "pages": [
+              "sprint-roadmap/overview",
+              "sprint-roadmap/epic-catalog",
+              "sprint-roadmap/validation-criteria"
+            ]
+          },
+          {
+            "group": "Migration Guides",
+            "pages": [
+              "migration/zero-downtime-strategy",
+              "migration/data-preservation",
+              "migration/webhook-compatibility"
+            ]
           }
         ]
       },
@@ -201,6 +217,30 @@
                   "self-hosting/guides/organization/single-organization-setup"
                 ]
               }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Gap Report",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "gap-report/overview"
+            ]
+          },
+          {
+            "group": "Feature Domains",
+            "pages": [
+              "gap-report/availability-scheduling",
+              "gap-report/event-types",
+              "gap-report/routing-forms",
+              "gap-report/webhooks-events",
+              "gap-report/embed-share",
+              "gap-report/admin-teams",
+              "gap-report/calendar-integrations",
+              "gap-report/notifications"
             ]
           }
         ]

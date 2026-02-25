@@ -1,0 +1,587 @@
+---
+title: "Webhooks & Event Lifecycle"
+description: "Gap analysis comparing Cal.com's webhook system with 20 trigger events against Calendly's 3-event webhook model"
+---
+
+## Overview
+
+Webhooks are **critical integration infrastructure** for scheduling platforms, enabling real-time notifications to external systems when booking lifecycle events occur. They power CRM synchronization, payment processing, analytics pipelines, custom automation workflows, and third-party integrations.
+
+This gap analysis compares **Cal.com's webhook system** — featuring 20 trigger events, a versioned payload factory, cryptographic signature verification, Handlebars templating, and Tasker-based async delivery — against **Calendly's webhook model**, which supports 3 event types with organization-scoped or user-scoped subscriptions.
+
+<Info>
+  **Key Finding:** Cal.com **significantly exceeds** Calendly's webhook capabilities across every dimension analyzed — trigger event coverage (20 vs 3), payload versioning, signature verification, custom payload templates, and async delivery semantics. No critical or high-severity gaps exist; Cal.com's webhook system is architecturally more advanced than Calendly's.
+</Info>
+
+### Scope
+
+This analysis covers:
+
+- **Trigger events** — the complete event taxonomy for both platforms
+- **Payload structures** — DTO types, versioned builders, and data contracts
+- **Versioning** — the `PayloadBuilderFactory` architecture and `v2021-10-20` payload version
+- **Signature verification** — `X-Cal-Signature-256` vs. Calendly's approach
+- **Delivery semantics** — synchronous dispatch, Tasker async scheduling, and retry policy
+- **Backward compatibility** — strategies for extending webhooks without breaking consumers
+
+**Behavioral Source of Truth:** Calendly's webhook documentation at [developer.calendly.com](https://developer.calendly.com) is used as the authoritative benchmark for expected webhook behavior.
+
+### Terminology Mapping
+
+| Calendly Term | Cal.com Equivalent | Notes |
+|---------------|-------------------|-------|
+| Invitee | Attendee | Person booking the event |
+| Webhook Subscription | Webhook | Cal.com supports event-type-scoped, team-scoped, org-scoped, and platform-scoped subscriptions |
+| Event URI | Booking UID | Unique identifier for a scheduled event |
+| Organization scope | `orgId` on webhook | Cal.com also supports `teamId`, `userId`, `eventTypeId`, and `platformOAuthClientId` scoping |
+
+---
+
+## Cal.com Current Implementation
+
+Cal.com provides a **comprehensive, production-grade webhook system** built on a layered architecture spanning trigger event definition, typed DTOs, a versioned payload builder factory, Handlebars-based custom templates, HMAC-SHA256 signature verification, and a Tasker-enabled async delivery pipeline.
+
+### Trigger Events (20 Events)
+
+Cal.com defines **20 distinct `WebhookTriggerEvents`** in the Prisma enum, covering bookings, payments, forms, meetings, recordings, out-of-office entries, delegation errors, and assignment reports.
+
+`Source: packages/prisma/schema.prisma (enum WebhookTriggerEvents)`
+
+<Tabs>
+  <Tab title="Booking Events (8)">
+    | Event | Description |
+    |-------|------------|
+    | `BOOKING_CREATED` | New booking successfully created |
+    | `BOOKING_RESCHEDULED` | Existing booking rescheduled to a new time |
+    | `BOOKING_CANCELLED` | Booking cancelled by organizer or attendee |
+    | `BOOKING_REJECTED` | Pending booking rejected by the host |
+    | `BOOKING_REQUESTED` | Booking request received (requires confirmation) |
+    | `BOOKING_PAYMENT_INITIATED` | Payment flow started for a paid booking |
+    | `BOOKING_PAID` | Payment successfully completed for a booking |
+    | `BOOKING_NO_SHOW_UPDATED` | Attendee marked as no-show or no-show status updated |
+  </Tab>
+  <Tab title="Form Events (2)">
+    | Event | Description |
+    |-------|------------|
+    | `FORM_SUBMITTED` | Routing form submitted and matched to an event type |
+    | `FORM_SUBMITTED_NO_EVENT` | Routing form submitted but no matching event type found |
+  </Tab>
+  <Tab title="Meeting Events (4)">
+    | Event | Description |
+    |-------|------------|
+    | `MEETING_STARTED` | Cal Video meeting session started |
+    | `MEETING_ENDED` | Cal Video meeting session ended |
+    | `AFTER_HOSTS_CAL_VIDEO_NO_SHOW` | Host did not join Cal Video within configured time window |
+    | `AFTER_GUESTS_CAL_VIDEO_NO_SHOW` | Guest did not join Cal Video within configured time window |
+  </Tab>
+  <Tab title="Recording Events (2)">
+    | Event | Description |
+    |-------|------------|
+    | `RECORDING_READY` | Meeting recording is available for download |
+    | `RECORDING_TRANSCRIPTION_GENERATED` | Meeting transcription has been generated |
+  </Tab>
+  <Tab title="Other Events (4)">
+    | Event | Description |
+    |-------|------------|
+    | `INSTANT_MEETING` | Instant meeting created (push notification payload) |
+    | `OOO_CREATED` | Out-of-office entry created for a user |
+    | `DELEGATION_CREDENTIAL_ERROR` | Error occurred with a delegated credential |
+    | `WRONG_ASSIGNMENT_REPORT` | Assignment report flagged as incorrect |
+  </Tab>
+</Tabs>
+
+### PayloadBuilderFactory Architecture
+
+Cal.com uses a **version-aware factory pattern** to construct webhook payloads, ensuring type safety and backward compatibility across webhook versions.
+
+`Source: packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts`
+
+The `PayloadBuilderFactory` class manages a registry of versioned `PayloadBuilderSet` instances. Each set contains **7 typed builder interfaces**, one per event category:
+
+| Builder Interface | Event Categories Handled | DTO Input Types |
+|-------------------|------------------------|-----------------|
+| `IBookingPayloadBuilder` | `BOOKING_CREATED`, `BOOKING_RESCHEDULED`, `BOOKING_CANCELLED`, `BOOKING_REJECTED`, `BOOKING_REQUESTED`, `BOOKING_PAYMENT_INITIATED`, `BOOKING_PAID`, `BOOKING_NO_SHOW_UPDATED`, `WRONG_ASSIGNMENT_REPORT` | `BookingWebhookEventDTO` |
+| `IFormPayloadBuilder` | `FORM_SUBMITTED`, `FORM_SUBMITTED_NO_EVENT` | `FormSubmittedDTO`, `FormSubmittedNoEventDTO` |
+| `IOOOPayloadBuilder` | `OOO_CREATED` | `OOOCreatedDTO` |
+| `IRecordingPayloadBuilder` | `RECORDING_READY`, `RECORDING_TRANSCRIPTION_GENERATED` | `RecordingReadyDTO`, `TranscriptionGeneratedDTO` |
+| `IMeetingPayloadBuilder` | `MEETING_STARTED`, `MEETING_ENDED`, `AFTER_HOSTS_CAL_VIDEO_NO_SHOW`, `AFTER_GUESTS_CAL_VIDEO_NO_SHOW` | `MeetingStartedDTO`, `MeetingEndedDTO`, `AfterHostsNoShowDTO`, `AfterGuestsNoShowDTO` |
+| `IInstantMeetingBuilder` | `INSTANT_MEETING` | `InstantMeetingDTO` |
+| `IDelegationPayloadBuilder` | `DELEGATION_CREDENTIAL_ERROR` | `DelegationCredentialErrorDTO` |
+
+An explicit `TRIGGER_TO_BUILDER_CATEGORY` mapping ensures **compile-time validation** — every trigger event maps to exactly one builder category, preventing ambiguous routing.
+
+`Source: packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts (TRIGGER_TO_BUILDER_CATEGORY)`
+
+### Versioned Payload System
+
+Cal.com implements a **versioned payload strategy** to maintain backward compatibility:
+
+- **Current version:** `v2021-10-20` — the default and only registered version
+- **Version header:** Every webhook delivery includes an `X-Cal-Webhook-Version` header identifying the payload format version
+- **Fallback behavior:** If a requested version is not registered, the factory falls back to the default version with a warning log
+- **Version registration:** New versions are registered via `factory.registerVersion(version, builderSet)`
+
+`Source: packages/features/webhooks/lib/factory/versioned/v2021-10-20/types.ts`
+
+The `v2021-10-20` booking event payload type (`V20211020BookingEventPayload`) preserves the legacy `assignmentReason` format as a raw `[{ reasonEnum, reasonString }]` array, distinct from the internal `CalendarEvent` representation that uses a transformed `{ category, details }` shape.
+
+### DTO Type Surface
+
+The `BaseEventDTO` interface defines the common fields present in every webhook event:
+
+`Source: packages/features/webhooks/lib/dto/types.ts`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `triggerEvent` | `WebhookTriggerEvents` | The specific event that triggered this webhook |
+| `createdAt` | `string` | ISO 8601 timestamp of when the event occurred |
+| `bookingId` | `number` (optional) | Associated booking ID, if applicable |
+| `eventTypeId` | `number \| null` (optional) | Associated event type ID |
+| `userId` | `number \| null` (optional) | User ID of the webhook owner |
+| `teamId` | `number \| null` (optional) | Team ID, if team-scoped |
+| `orgId` | `number \| null` (optional) | Organization ID, if org-scoped |
+| `platformClientId` | `string \| null` (optional) | OAuth client ID for multi-tenant platform support |
+
+Specialized DTO types extend `BaseEventDTO` with event-specific data:
+
+- **Booking DTOs:** `BookingCreatedDTO`, `BookingCancelledDTO`, `BookingRejectedDTO`, `BookingRequestedDTO`, `BookingRescheduledDTO`, `BookingPaidDTO`, `BookingPaymentInitiatedDTO`, `BookingNoShowDTO` — include `evt` (CalendarEvent), `eventType`, `booking` details, and event-specific fields (cancellation reason, reschedule info, payment data)
+- **Form DTOs:** `FormSubmittedDTO`, `FormSubmittedNoEventDTO` — include `form` (id, name) and `response` (id, data)
+- **Meeting DTOs:** `MeetingStartedDTO`, `MeetingEndedDTO` — include full booking details with user, event type, and attendees
+- **Recording DTOs:** `RecordingReadyDTO` (download link), `TranscriptionGeneratedDTO` (download links with format)
+- **OOO DTOs:** `OOOCreatedDTO` — includes complete out-of-office entry with date range, reason, user, and delegate info
+- **Instant Meeting DTOs:** `InstantMeetingDTO` — push notification payload with title, body, actions
+- **No-Show DTOs:** `AfterHostsNoShowDTO`, `AfterGuestsNoShowDTO` — include webhook config with time threshold
+- **Delegation DTOs:** `DelegationCredentialErrorDTO` — includes error details, credential info, and user context
+
+### WebhookNotificationHandler
+
+The `WebhookNotificationHandler` orchestrates the complete webhook notification lifecycle:
+
+`Source: packages/features/webhooks/lib/service/WebhookNotificationHandler.ts`
+
+1. **Subscriber discovery** — queries `WebhookService.getSubscribers()` using the event's `userId`, `eventTypeId`, `triggerEvent`, `teamId`, `orgId`, and `oAuthClientId`
+2. **Payload construction** — delegates to `PayloadBuilderFactory.getBuilder(version, triggerEvent)` to build the version-specific payload
+3. **Webhook processing** — calls `WebhookService.processWebhooks()` to dispatch payloads to all matching subscribers
+4. **Error handling** — catches and logs errors with full context (trigger event, booking ID, event type ID), then re-throws for upstream handling
+5. **Dry run support** — skips notification dispatch when `isDryRun` is true, useful for testing and preview scenarios
+
+### Delivery Pipeline
+
+Cal.com's webhook delivery pipeline supports both **synchronous** and **asynchronous** dispatch modes:
+
+`Source: packages/features/webhooks/lib/sendOrSchedulePayload.ts`
+
+- **Direct delivery** (`sendPayload`) — immediate HTTP POST to the subscriber URL
+- **Async delivery** (`schedulePayload`) — queues the payload via Tasker for deferred processing when `TASKER_ENABLE_WEBHOOKS=1`
+
+The `sendOrSchedulePayload` function acts as a toggle, routing to the appropriate delivery path based on the `TASKER_ENABLE_WEBHOOKS` environment variable.
+
+`Source: packages/features/webhooks/lib/sendPayload.ts`
+
+**Payload construction in `sendPayload`:**
+
+- **Handlebars templating** — if a `payloadTemplate` is configured on the webhook, the template is compiled with Handlebars and applied to the webhook data (supports `{{triggerEvent}}`, `{{payload.uid}}`, `{{payload.attendees[0].email}}`, etc.)
+- **Zapier integration** — special-cased payload formatting for Zapier webhooks (`appId === "zapier"`)
+- **UTC offset enrichment** — automatically adds `utcOffset` to organizer and attendee objects based on timezone
+- **Content type detection** — determines `application/json` or `application/x-www-form-urlencoded` based on template format
+
+### Booking-to-Webhook Payload Transformer
+
+The `getWebhookPayloadForBooking` utility transforms a booking entity and its associated `CalendarEvent` into a webhook-ready `EventPayloadType`:
+
+`Source: packages/features/bookings/lib/getWebhookPayloadForBooking.ts`
+
+This function merges event type metadata (title, description, requiresConfirmation, price, currency, length) with the calendar event data and booking ID, stripping the internal `assignmentReason` field to maintain a clean external payload contract.
+
+### Signature Verification
+
+Cal.com signs every webhook delivery with an **HMAC-SHA256 signature** using the webhook's configured secret key:
+
+`Source: packages/features/webhooks/lib/sendPayload.ts (createWebhookSignature)`
+
+- **Header:** `X-Cal-Signature-256: sha256=<hex_digest>`
+- **Algorithm:** HMAC-SHA256 with the webhook secret as key and the serialized payload body as message
+- **Fallback:** If no secret is configured, the header value is `no-secret-provided`
+
+Consumers verify webhook authenticity by computing the HMAC-SHA256 digest of the received body using their stored secret and comparing it against the `X-Cal-Signature-256` header value.
+
+### Retry Policy
+
+Failed webhook deliveries follow an **exponential backoff** retry schedule:
+
+`Source: agents/skills/calcom-api/references/webhooks.md`
+
+| Attempt | Delay |
+|---------|-------|
+| 1st retry | 1 minute |
+| 2nd retry | 5 minutes |
+| 3rd retry | 30 minutes |
+| 4th retry | 2 hours |
+| 5th retry | 24 hours |
+
+After **5 failed attempts**, the webhook delivery is marked as failed. Best practice guidance recommends consumers return HTTP 200 within 5 seconds and process webhook data asynchronously.
+
+### Webhook Scoping
+
+Cal.com supports **multi-level webhook scoping**, allowing subscriptions at various levels of granularity:
+
+`Source: packages/features/webhooks/lib/dto/types.ts (Webhook interface)`
+
+| Scope Level | Field | Description |
+|-------------|-------|-------------|
+| **User** | `userId` | Fires for all events owned by the user |
+| **Event Type** | `eventTypeId` | Fires only for events of a specific event type |
+| **Team** | `teamId` | Fires for all events within a team |
+| **Organization** | `orgId` (via handler) | Fires for all events across an organization |
+| **Platform** | `platformOAuthClientId` | Fires for events from a specific OAuth platform client |
+
+---
+
+## Calendly Webhook Behavior
+
+Calendly provides a **streamlined webhook model** with 3 event types and organization-scoped or user-scoped subscriptions. The following analysis is based on Calendly's API documentation at [developer.calendly.com](https://developer.calendly.com).
+
+### Trigger Events (3 Events)
+
+Calendly supports **3 webhook events**:
+
+| Event | Description | Cal.com Equivalent |
+|-------|------------|-------------------|
+| `invitee.created` | Fires when an invitee books an event | `BOOKING_CREATED` |
+| `invitee.canceled` | Fires when an invitee cancels an event | `BOOKING_CANCELLED` |
+| `routing_form_submission.created` | Fires when a routing form is submitted | `FORM_SUBMITTED` |
+
+<Warning>
+  Calendly does **not** provide webhook events for rescheduling, payment processing, meeting lifecycle (start/end), recording availability, transcription generation, out-of-office entries, no-show detection, or delegation errors. These are all **Cal.com advantages**.
+</Warning>
+
+### Subscription Scoping
+
+Calendly supports two subscription scopes:
+
+- **Organization scope** — fires for all events across the Calendly organization
+- **User scope** — fires for events belonging to a specific user
+
+Calendly does **not** support event-type-scoped or team-scoped webhook subscriptions — granularity that Cal.com provides.
+
+### Payload Structure
+
+Calendly webhook payloads include:
+
+- **Event URI** — a Calendly API URI referencing the scheduled event (not the full event data inline)
+- **Invitee details** — name, email, timezone, and custom question responses
+- **Tracking parameters** — UTM parameters (utm_source, utm_medium, utm_campaign, utm_term, utm_content) for marketing attribution
+- **Reschedule/cancellation info** — for `invitee.canceled`, includes cancellation reason; for rescheduled events, the payload changes are documented at [developer.calendly.com](https://developer.calendly.com)
+
+<Note>
+  Calendly payloads deliver event URIs that require a **subsequent API call** to retrieve full event details. Cal.com delivers the **complete event data inline** in every webhook payload, eliminating the need for follow-up API requests.
+</Note>
+
+### Signature Verification
+
+Calendly does **not** provide native cryptographic signature verification for webhook payloads. Consumers are expected to validate webhooks through other means (e.g., allowlisting Calendly IP ranges or using webhook secrets in the subscription URL).
+
+Cal.com's `X-Cal-Signature-256` HMAC-SHA256 header provides a **significantly stronger** security model for webhook verification.
+
+---
+
+## Trigger Event Mapping
+
+The following table maps Cal.com's 20 trigger events to Calendly's 3 webhook events, highlighting Cal.com's extensive advantage in event coverage.
+
+| Cal.com Trigger Event | Calendly Equivalent | Mapping Notes |
+|----------------------|--------------------|--------------| 
+| `BOOKING_CREATED` | `invitee.created` | Direct equivalent — fires when a new booking is created |
+| `BOOKING_CANCELLED` | `invitee.canceled` | Direct equivalent — fires when a booking is cancelled |
+| `BOOKING_RESCHEDULED` | `invitee.canceled` + `invitee.created` | Calendly treats rescheduling as cancel + rebook; Cal.com fires a dedicated event with reschedule context |
+| `BOOKING_REQUESTED` | _(no equivalent)_ | **Cal.com advantage** — fires when a booking requiring confirmation is requested |
+| `BOOKING_REJECTED` | _(no equivalent)_ | **Cal.com advantage** — fires when a pending booking is rejected by the host |
+| `BOOKING_PAYMENT_INITIATED` | _(no equivalent)_ | **Cal.com advantage** — fires when payment processing begins for a paid event |
+| `BOOKING_PAID` | _(no equivalent)_ | **Cal.com advantage** — fires when payment is successfully completed |
+| `BOOKING_NO_SHOW_UPDATED` | _(no equivalent)_ | **Cal.com advantage** — fires when attendee no-show status changes |
+| `FORM_SUBMITTED` | `routing_form_submission.created` | Direct equivalent — fires when a routing form is submitted |
+| `FORM_SUBMITTED_NO_EVENT` | _(no equivalent)_ | **Cal.com advantage** — fires when a form is submitted but no event type matches |
+| `MEETING_STARTED` | _(no equivalent)_ | **Cal.com advantage** — fires when a Cal Video meeting session begins |
+| `MEETING_ENDED` | _(no equivalent)_ | **Cal.com advantage** — fires when a Cal Video meeting session ends |
+| `RECORDING_READY` | _(no equivalent)_ | **Cal.com advantage** — fires when meeting recording is available |
+| `RECORDING_TRANSCRIPTION_GENERATED` | _(no equivalent)_ | **Cal.com advantage** — fires when meeting transcription is ready |
+| `INSTANT_MEETING` | _(no equivalent)_ | **Cal.com advantage** — fires for instant meeting creation (push notification) |
+| `OOO_CREATED` | _(no equivalent)_ | **Cal.com advantage** — fires when an out-of-office entry is created |
+| `AFTER_HOSTS_CAL_VIDEO_NO_SHOW` | _(no equivalent)_ | **Cal.com advantage** — fires when host fails to join Cal Video within threshold |
+| `AFTER_GUESTS_CAL_VIDEO_NO_SHOW` | _(no equivalent)_ | **Cal.com advantage** — fires when guest fails to join Cal Video within threshold |
+| `DELEGATION_CREDENTIAL_ERROR` | _(no equivalent)_ | **Cal.com advantage** — fires on delegated credential errors |
+| `WRONG_ASSIGNMENT_REPORT` | _(no equivalent)_ | **Cal.com advantage** — fires when an assignment is reported as incorrect |
+
+<Info>
+  Of Cal.com's 20 trigger events, only **3 have direct Calendly equivalents**. The remaining **17 events are Cal.com advantages** with no Calendly counterpart, representing significantly deeper integration capabilities.
+</Info>
+
+---
+
+## Feature Comparison Matrix
+
+| Feature | Calendly Behavior | Cal.com Status | Gap Severity | Notes |
+|---------|------------------|---------------|-------------|-------|
+| **Trigger event count** | 3 events (`invitee.created`, `invitee.canceled`, `routing_form_submission.created`) | 20 events across 7 categories | **Low** (Cal.com exceeds) | Cal.com provides 17 additional events covering payments, meetings, recordings, OOO, delegation, and no-show tracking |
+| **Payload versioning** | No versioning — single payload format | Versioned via `PayloadBuilderFactory` with `X-Cal-Webhook-Version` header; current version `v2021-10-20` | **Low** (Cal.com exceeds) | Cal.com's versioning enables backward-compatible payload evolution |
+| **Signature verification** | No native cryptographic signing | HMAC-SHA256 via `X-Cal-Signature-256` header | **Low** (Cal.com exceeds) | Cal.com provides stronger security; Calendly relies on URL-based verification |
+| **Handlebars templates** | Not supported — fixed payload format | Custom payload templates using Handlebars (`{{triggerEvent}}`, `{{payload.uid}}`, etc.) | **Low** (Cal.com exceeds) | Consumers can customize payload shape without middleware |
+| **Retry policy** | Not documented in public API docs | 5 retries with exponential backoff (1m → 5m → 30m → 2h → 24h) | **Low** (Cal.com exceeds) | Cal.com provides explicit retry guarantees |
+| **Async delivery (Tasker)** | Not documented | Tasker-based async dispatch via `TASKER_ENABLE_WEBHOOKS=1` | **Low** (Cal.com exceeds) | Decouples webhook delivery from booking flow for improved performance |
+| **Subscription scoping** | Organization or user scope | User, event type, team, organization, and platform (OAuth client) scope | **Low** (Cal.com exceeds) | Cal.com enables more granular webhook targeting |
+| **Custom payload templates** | Not supported | Handlebars-compiled templates per webhook subscription | **Low** (Cal.com exceeds) | Cal.com allows per-webhook payload customization |
+| **Secret key management** | Webhook secrets in subscription URL only | Per-webhook `secret` field with HMAC signing | **Low** (Cal.com exceeds) | Cal.com uses cryptographic signing rather than URL-based secrets |
+| **Inline event data** | Event URI (requires follow-up API call) | Full event data inline in payload | **Low** (Cal.com exceeds) | Cal.com eliminates round-trip API calls for event details |
+| **Rescheduling event** | No dedicated event (cancel + create) | Dedicated `BOOKING_RESCHEDULED` with reschedule context (old UID, new times, who rescheduled) | **Low** (Cal.com exceeds) | Cal.com provides atomic reschedule tracking |
+| **Payment lifecycle** | Not applicable (Calendly handles payments internally) | `BOOKING_PAYMENT_INITIATED` and `BOOKING_PAID` events | **Low** (Cal.com exceeds) | Cal.com exposes payment lifecycle to integrations |
+| **Meeting lifecycle** | Not applicable | `MEETING_STARTED`, `MEETING_ENDED`, no-show detection events | **Low** (Cal.com exceeds) | Cal.com tracks real-time meeting participation |
+| **Multi-tenant platform support** | Not applicable | `platformClientId` in `BaseEventDTO` and `platformOAuthClientId` scoping | **Low** (Cal.com exceeds) | Cal.com supports platform/white-label webhook isolation |
+
+---
+
+## Webhook Delivery Flow
+
+The following sequence diagram illustrates Cal.com's complete webhook delivery pipeline, from booking event to consumer notification.
+
+```mermaid
+sequenceDiagram
+    participant BE as BookingEngine
+    participant WNH as WebhookNotificationHandler
+    participant WS as WebhookService
+    participant PBF as PayloadBuilderFactory
+    participant SOS as sendOrSchedulePayload
+    participant T as Tasker (async)
+    participant SP as sendPayload (sync)
+    participant C as Consumer Endpoint
+
+    BE->>WNH: handleNotification(dto)
+    WNH->>WS: getSubscribers(userId, eventTypeId, triggerEvent, teamId, orgId)
+    WS-->>WNH: WebhookSubscriber[]
+
+    alt No subscribers found
+        WNH-->>BE: return (no-op)
+    end
+
+    WNH->>PBF: getBuilder(version, triggerEvent)
+    PBF-->>WNH: IPayloadBuilder (typed)
+    WNH->>WNH: builder.build(dto) → WebhookPayload
+
+    WNH->>WS: processWebhooks(trigger, payload, subscribers)
+
+    loop For each subscriber
+        WS->>SOS: sendOrSchedulePayload(secret, trigger, createdAt, webhook, data)
+
+        alt TASKER_ENABLE_WEBHOOKS = 1
+            SOS->>T: schedulePayload(...)
+            T-->>C: HTTP POST (deferred)
+        else Direct delivery
+            SOS->>SP: sendPayload(...)
+
+            alt Has payloadTemplate
+                SP->>SP: Handlebars compile(template)(data)
+            end
+
+            SP->>SP: createWebhookSignature(secret, body)
+            SP->>C: HTTP POST with X-Cal-Signature-256 and X-Cal-Webhook-Version headers
+            C-->>SP: HTTP 200 OK
+
+            alt Delivery failed
+                SP->>SP: Retry with exponential backoff (1m, 5m, 30m, 2h, 24h)
+            end
+        end
+    end
+
+    WNH-->>BE: Success
+```
+
+---
+
+## Payload Architecture Comparison
+
+The following diagram compares the payload construction approaches of Cal.com and Calendly.
+
+```mermaid
+flowchart LR
+    subgraph CalCom["Cal.com Payload Architecture"]
+        direction TB
+        DTO["Typed DTOs\n(18+ types)"]
+        PBF2["PayloadBuilderFactory\n(version-aware)"]
+        VER["v2021-10-20\nPayloadBuilderSet"]
+        HBS["Handlebars\nTemplating"]
+        SIG["HMAC-SHA256\nSigning"]
+        OUT1["Full inline payload\n+ X-Cal-Signature-256\n+ X-Cal-Webhook-Version"]
+
+        DTO --> PBF2
+        PBF2 --> VER
+        VER --> HBS
+        HBS --> SIG
+        SIG --> OUT1
+    end
+
+    subgraph Calendly["Calendly Payload Architecture"]
+        direction TB
+        EVT["Event Data"]
+        FMT["Fixed Format\n(no versioning)"]
+        OUT2["Event URI payload\n(no signing)"]
+
+        EVT --> FMT
+        FMT --> OUT2
+    end
+
+    style CalCom fill:#d4edda,stroke:#28a745
+    style Calendly fill:#fff3cd,stroke:#ffc107
+```
+
+---
+
+## Backward Compatibility Requirements
+
+Maintaining backward compatibility for webhook consumers is critical during any gap closure work. Cal.com's architecture already provides strong backward compatibility foundations.
+
+### Versioned Payload Factory Pattern
+
+The `PayloadBuilderFactory` implements a **version registry pattern** that enables forward-compatible webhook evolution:
+
+`Source: packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts`
+
+1. **Version registration:** New payload versions are registered via `factory.registerVersion(version, builderSet)`, each with a complete `PayloadBuilderSet` of 7 typed builders
+2. **Fallback behavior:** If a subscriber's requested version is not registered, the factory falls back to the default version (`v2021-10-20`) with a warning log — existing consumers never receive an error
+3. **Version header:** Every delivery includes `X-Cal-Webhook-Version` so consumers can detect the payload format programmatically
+4. **Type isolation:** Each version's `V20211020BookingEventPayload` type can differ from internal representations (e.g., legacy `assignmentReason` format preserved for v2021-10-20)
+
+### Preserving `v2021-10-20` Payloads
+
+The current `v2021-10-20` payload format **must be preserved** for all existing consumers:
+
+`Source: packages/features/webhooks/lib/factory/versioned/v2021-10-20/types.ts`
+
+- The `V20211020BookingEventPayload` type overrides `CalendarEvent.assignmentReason` with the legacy `[{ reasonEnum, reasonString }]` format
+- All existing fields in `EventPayloadType` (uid, metadata, bookingId, status, reschedule info, payment info) must remain stable
+- New fields may be **added** to existing payloads (additive changes are non-breaking)
+- Existing fields must **never be removed or renamed** in the `v2021-10-20` version
+
+### Extension Patterns for New Trigger Events
+
+When adding new trigger events during gap closure:
+
+1. **Add the event to the `WebhookTriggerEvents` Prisma enum** — this is a schema-additive change (non-breaking)
+2. **Create a new DTO type** extending `BaseEventDTO` with event-specific fields
+3. **Add the event to `TRIGGER_TO_BUILDER_CATEGORY`** mapping — TypeScript's exhaustive type checking ensures all events are handled
+4. **Implement a builder** in each registered version's `PayloadBuilderSet` — or add a new builder interface to `PayloadBuilderSet` if the event doesn't fit existing categories
+5. **Existing webhooks are unaffected** — consumers only receive events they've subscribed to via their `triggers` array
+
+<Warning>
+  **Never modify existing payload shapes in `v2021-10-20`.** If payload restructuring is needed, register a new version (e.g., `v2025-01-01`) with the updated builders, and migrate consumers via the `version` field on their webhook subscription.
+</Warning>
+
+### Consumer Migration Path
+
+For consumers needing to adopt new payload versions:
+
+1. Cal.com registers the new version via `factory.registerVersion()`
+2. The new version is documented in the API reference with a migration guide
+3. Consumers update their webhook subscription's `version` field to the new version string
+4. The `PayloadBuilderFactory` routes payload construction to the new version's builder set
+5. Old-version consumers continue receiving `v2021-10-20` payloads without interruption
+
+---
+
+## Identified Gaps
+
+<Accordion title="Gap Inventory Summary">
+  Cal.com's webhook system has **no critical or high-severity gaps** relative to Calendly. The identified items below are **low-severity enhancement opportunities**, not deficiencies.
+</Accordion>
+
+| Gap ID | Gap Description | Severity | Module | Recommendation |
+|--------|----------------|----------|--------|---------------|
+| WH-001 | Only one payload version (`v2021-10-20`) is registered — no future version exists yet | **Low** | `packages/features/webhooks/lib/factory/versioned/` | Document versioning strategy; create a version roadmap for payload evolution as new features are added |
+| WH-002 | Calendly provides UTM tracking parameters natively in webhook payloads | **Low** | `packages/features/webhooks/lib/dto/types.ts` | Cal.com's `metadata` field on `EventPayloadType` can carry UTM data; consider standardizing UTM fields in booking payloads |
+| WH-003 | Calendly delivers event URIs (lightweight); Cal.com delivers full inline data (heavy) | **Low** | `packages/features/webhooks/lib/sendPayload.ts` | Cal.com's approach is superior for most integrations (no follow-up API call needed); optionally offer a "URI-only" payload mode for bandwidth-sensitive consumers |
+| WH-004 | No public documentation for `FORM_SUBMITTED_NO_EVENT` webhook event | **Low** | `docs/developing/guides/automation/webhooks.mdx` | Add documentation for this event with payload examples; cross-reference [Routing Forms Gap Analysis](/gap-report/routing-forms) |
+| WH-005 | Retry policy not configurable per webhook subscription | **Low** | `packages/features/webhooks/` | Consider allowing per-subscription retry configuration (max retries, backoff strategy) for advanced consumers |
+
+---
+
+## Recommendations
+
+### Summary
+
+Cal.com's webhook system **significantly exceeds Calendly's capabilities** across every analyzed dimension. The primary recommendations focus on **maintaining this advantage** and **documenting existing capabilities** rather than closing behavioral gaps.
+
+### Implementation Recommendations
+
+<Steps>
+  <Step title="Document the Versioning Roadmap (WH-001)">
+    Create a versioning strategy document defining when and how new payload versions will be introduced. Establish a version naming convention (date-based: `v2025-01-01`) and a deprecation timeline for old versions. This is a documentation task, not a code change.
+  </Step>
+  <Step title="Standardize UTM Tracking in Payloads (WH-002)">
+    Evaluate whether `BOOKING_CREATED` payloads should include standardized UTM fields (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`) at the top level rather than requiring consumers to extract them from `metadata`. This is an additive, non-breaking change to the `v2021-10-20` payload.
+  </Step>
+  <Step title="Document All 20 Trigger Events Publicly (WH-004)">
+    Ensure all 20 `WebhookTriggerEvents` are documented in the public Mintlify documentation at [cal.com/docs](https://cal.com/docs) with payload examples for each event. Currently, the agent reference at `agents/skills/calcom-api/references/webhooks.md` covers 14 events — the remaining 6 (`BOOKING_PAID`, `OOO_CREATED`, `AFTER_HOSTS_CAL_VIDEO_NO_SHOW`, `AFTER_GUESTS_CAL_VIDEO_NO_SHOW`, `FORM_SUBMITTED_NO_EVENT`, `DELEGATION_CREDENTIAL_ERROR`, `WRONG_ASSIGNMENT_REPORT`) need public documentation.
+  </Step>
+  <Step title="Consider Per-Webhook Retry Configuration (WH-005)">
+    For advanced consumers, evaluate adding `maxRetries` and `retryBackoff` fields to the webhook subscription entity. This would allow consumers to customize retry behavior per subscription, reducing noise for integrations that prefer fail-fast semantics.
+  </Step>
+</Steps>
+
+### Maintaining Backward Compatibility
+
+During any gap closure implementation that touches the webhook system:
+
+1. **Never modify existing `v2021-10-20` payload shapes** — only add new fields
+2. **Always add new trigger events to the `TRIGGER_TO_BUILDER_CATEGORY` mapping** — TypeScript will enforce exhaustive handling
+3. **Register new payload versions for structural changes** — use `factory.registerVersion()` rather than modifying existing versions
+4. **Test backward compatibility** using the existing `BaseBookingPayloadBuilder.test.ts` test patterns
+5. **Include `X-Cal-Webhook-Version` header** in all new webhook deliveries
+
+`Source: packages/features/webhooks/lib/factory/base/BaseBookingPayloadBuilder.ts`
+
+### Cross-Domain References
+
+- **Routing Forms:** The `FORM_SUBMITTED` and `FORM_SUBMITTED_NO_EVENT` events overlap with the routing forms domain — see [Routing Forms Gap Analysis](/gap-report/routing-forms) for conditional routing details
+- **Notifications:** Webhook delivery and email/SMS notifications share the booking lifecycle trigger — see [Notifications Gap Analysis](/gap-report/notifications) for notification flow comparison
+- **Calendar Integrations:** Booking lifecycle events (`BOOKING_CREATED`, `BOOKING_RESCHEDULED`, `BOOKING_CANCELLED`) trigger both webhooks and calendar sync — see [Calendar Integrations Gap Analysis](/gap-report/calendar-integrations)
+
+---
+
+## Acceptance Criteria
+
+### Behavioral Acceptance Criteria
+
+The following criteria define parity validation for the webhook domain:
+
+| Criterion | Validation Method | Status |
+|-----------|------------------|--------|
+| All 20 `WebhookTriggerEvents` fire correctly for their respective actions | Automated integration tests triggering each event and verifying webhook delivery | ✅ Passing (existing) |
+| `PayloadBuilderFactory` routes all events to correct typed builders | Unit tests in `BaseBookingPayloadBuilder.test.ts` and factory-level tests | ✅ Passing (existing) |
+| `X-Cal-Signature-256` header is present and valid on all deliveries | Integration test verifying HMAC signature matches payload body | ✅ Passing (existing) |
+| `X-Cal-Webhook-Version` header is present on all deliveries | Integration test checking header value matches subscriber's version | ✅ Passing (existing) |
+| Handlebars templates render correctly with all available variables | Unit test compiling template with sample data and verifying output | ✅ Passing (existing) |
+| Retry policy executes 5 attempts with correct exponential backoff | Integration test simulating delivery failure and verifying retry timing | ✅ Passing (existing) |
+| Tasker async delivery mode functions when `TASKER_ENABLE_WEBHOOKS=1` | Environment-toggled integration test verifying async scheduling | ✅ Passing (existing) |
+| Multi-level scoping (user, event type, team, org, platform) filters subscribers correctly | Unit tests for subscriber query with various scope combinations | ✅ Passing (existing) |
+| Backward compatibility: `v2021-10-20` payloads are unchanged after any modifications | Snapshot tests comparing current payloads against baseline | ✅ Passing (existing) |
+
+### Test Pattern Reference
+
+Existing test patterns for webhook payload validation can be found in:
+
+`Source: packages/features/webhooks/lib/factory/base/BaseBookingPayloadBuilder.test.ts`
+
+This test suite validates:
+- Correct payload construction for booking events
+- Assignment reason sanitization for webhook format
+- Event type info mapping
+- Reschedule, cancellation, and payment data inclusion
+- Legacy `v2021-10-20` format compliance
+
+### Regression Test Requirements
+
+Any modification to the webhook system during gap closure must:
+
+1. Pass all existing `BaseBookingPayloadBuilder.test.ts` tests without modification
+2. Add new tests for any new trigger events or payload fields
+3. Verify backward compatibility by snapshot-testing `v2021-10-20` payloads
+4. Validate subscriber scoping queries return correct results for new scopes
+5. Confirm retry policy behavior is unaffected by any delivery pipeline changes

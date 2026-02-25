@@ -291,7 +291,7 @@ The following environment variables configure database connectivity for Cal.com.
 
 ### Migration Infrastructure
 
-Cal.com's Prisma migration system is mature and battle-tested, with **585+ chronological migrations** in `packages/prisma/migrations/` spanning from `20210605225044_init` to `20260213000000_enable_onboarding_v3_globally`.
+Cal.com's Prisma migration system is mature and battle-tested, with **584+ chronological migrations** in `packages/prisma/migrations/` spanning from `20210605225044_init` to `20260213000000_enable_onboarding_v3_globally`.
 
 The auto-migration system in `packages/prisma/auto-migrations.ts` executes `yarn prisma migrate deploy` during deployment and application startup, with the following safety guards:
 

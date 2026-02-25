@@ -24,7 +24,7 @@ The Cal.com Prisma migration infrastructure lives in `packages/prisma/` and prov
 
 ## Current Migration Infrastructure
 
-Cal.com uses Prisma as its ORM layer with a mature, battle-tested migration system that has executed **585 chronological migrations** — from `20210605225044_init` through `20260213000000_enable_onboarding_v3_globally`. Understanding this infrastructure is essential before introducing any gap closure schema changes.
+Cal.com uses Prisma as its ORM layer with a mature, battle-tested migration system that has executed **584 chronological migrations** — from `20210605225044_init` through `20260213000000_enable_onboarding_v3_globally`. Understanding this infrastructure is essential before introducing any gap closure schema changes.
 
 ### Auto-Migration System
 
@@ -47,7 +47,7 @@ The `isPrismaAvailableCheck()` function in `packages/prisma/is-prisma-available-
 
 ### Migration History
 
-Each migration is a timestamped directory within `packages/prisma/migrations/` containing a `migration.sql` file with the raw SQL statements. The `migration_lock.toml` file anchors the migration system to the PostgreSQL provider. With 585 migrations spanning from June 2021 to February 2026, Cal.com has extensive precedent for safe, additive schema evolution.
+Each migration is a timestamped directory within `packages/prisma/migrations/` containing a `migration.sql` file with the raw SQL statements. The `migration_lock.toml` file anchors the migration system to the PostgreSQL provider. With 584 migrations spanning from June 2021 to February 2026, Cal.com has extensive precedent for safe, additive schema evolution.
 
 ### Prisma Client Configuration
 
@@ -91,7 +91,7 @@ The Docker Compose configuration in `packages/prisma/docker-compose.yml` provisi
 
 ## Backward-Compatible Schema Change Patterns
 
-The following patterns are **proven safe** across Cal.com's 585 existing migrations. Every gap closure migration must use one or more of these patterns. Each pattern includes a real SQL example from the codebase, an explanation of why it maintains zero-downtime safety, and a timing estimate.
+The following patterns are **proven safe** across Cal.com's 584 existing migrations. Every gap closure migration must use one or more of these patterns. Each pattern includes a real SQL example from the codebase, an explanation of why it maintains zero-downtime safety, and a timing estimate.
 
 ### Pattern 1: Additive Columns with Defaults
 

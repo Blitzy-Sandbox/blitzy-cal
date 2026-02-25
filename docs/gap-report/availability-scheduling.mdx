@@ -279,6 +279,10 @@ The following table provides a feature-by-feature comparison of availability and
 
 The following table catalogs all identified gaps and advantages in the availability domain.
 
+<Note>
+  Gap IDs in this document use the `AVL-GAP-*` and `AVL-ADV-*` prefixes for domain-specific tracking. These map to the **`AV-*`** epic prefix used in the [Sprint Roadmap — Epic Catalog](/sprint-roadmap/epic-catalog). For example, `AVL-GAP-001` corresponds to implementation work tracked under the `AV` domain epics. See the [Epic ID Convention](/sprint-roadmap/epic-catalog#epic-id-convention) for the full prefix mapping.
+</Note>
+
 | Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
 |---|---|---|---|---|---|
 | **AVL-ADV-001** | Cal.com provides **programmatic CRUD** for availability schedules; Calendly API is read-only (Cal.com advantage) | **Low** | `packages/features/schedules/` | [Calendly FAQ](https://developer.calendly.com/frequently-asked-questions) | Document as key differentiator; promote in API developer guides |
@@ -440,6 +444,16 @@ The following behavioral acceptance criteria define what **full parity** means f
 - [ ] **AC-AVL-023:** Buffer blocks can optionally be synced to connected calendars *(AVL-GAP-003)*
 
 ---
+
+---
+
+## Related Documentation
+
+- [Gap Report — Overview](/gap-report/overview) — Aggregate parity status across all domains
+- [Gap Report — Event Types](/gap-report/event-types) — Event type configuration gap analysis with booking window overlap
+- [Gap Report — Calendar Integrations](/gap-report/calendar-integrations) — Calendar integration gap analysis with busy time aggregation overlap
+- [Sprint Roadmap — Epic Catalog](/sprint-roadmap/epic-catalog) — All `AV-*` epics for availability domain gap closure with priority and dependencies
+- [Sprint Roadmap — Validation Criteria](/sprint-roadmap/validation-criteria) — Parity validation checklists for availability acceptance criteria
 
 <CardGroup cols={2}>
   <Card title="Overview" icon="chart-pie" href="/gap-report/overview">

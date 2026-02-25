@@ -316,6 +316,10 @@ The following matrix compares Cal.com and Calendly across all admin governance a
 
 The following inventory catalogs all identified gaps and advantages in the admin governance domain.
 
+<Note>
+  Gap IDs in this document use the `AT-*` and `AT-ADV-*` prefixes for domain-specific tracking. These map to the **`AG-*`** epic prefix used in the [Sprint Roadmap — Epic Catalog](/sprint-roadmap/epic-catalog). For example, `AT-001` corresponds to implementation work tracked under the `AG` domain epics. See the [Epic ID Convention](/sprint-roadmap/epic-catalog#epic-id-convention) for the full prefix mapping.
+</Note>
+
 | Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
 |--------|-------------|----------|----------------|-------------------|----------------|
 | **AT-001** | Cal.com lacks a named "Group Admin" role equivalent in the UI | **Low** | `packages/features/pbac/` | Calendly's 5-role model with Group Admin | PBAC already supports creating custom roles with group-level permissions. Consider adding a default "Group Admin" role template for easier adoption. |

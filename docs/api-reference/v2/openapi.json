@@ -16672,7 +16672,7 @@
       "get": {
         "operationId": "WebhooksController_getWebhooks",
         "summary": "Get all webhooks",
-        "description": "Gets a paginated list of webhooks for the authenticated user. Returns webhook configurations including subscriber URL, active trigger events, payload template, secret for signature verification, and webhook version. Cal.com supports user-scoped, event-type-scoped, team-scoped, organization-scoped, and OAuth-client-scoped webhook subscriptions, providing more granular control than Calendly's organization-scoped or user-scoped webhook model.",
+        "description": "Gets a paginated list of webhooks for the authenticated user. Returns webhook configurations including subscriber URL, active trigger events, payload template, secret for signature verification, and webhook version. Cal.com supports user-scoped, event-type-scoped, team-scoped, organization-scoped, and OAuth-client-scoped webhook subscriptions, providing more granular control than Calendly's organization-scoped or user-scoped webhook model. Source: packages/features/webhooks/lib/service/",
         "parameters": [
           {
             "name": "Authorization",

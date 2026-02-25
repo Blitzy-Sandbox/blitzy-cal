@@ -492,13 +492,13 @@ For consumers needing to adopt new payload versions:
   Cal.com's webhook system has **no critical or high-severity gaps** relative to Calendly. The identified items below are **low-severity enhancement opportunities**, not deficiencies.
 </Accordion>
 
-| Gap ID | Gap Description | Severity | Module | Recommendation |
-|--------|----------------|----------|--------|---------------|
-| WH-001 | Only one payload version (`v2021-10-20`) is registered — no future version exists yet | **Low** | `packages/features/webhooks/lib/factory/versioned/` | Document versioning strategy; create a version roadmap for payload evolution as new features are added |
-| WH-002 | Calendly provides UTM tracking parameters natively in webhook payloads | **Low** | `packages/features/webhooks/lib/dto/types.ts` | Cal.com's `metadata` field on `EventPayloadType` can carry UTM data; consider standardizing UTM fields in booking payloads |
-| WH-003 | Calendly delivers event URIs (lightweight); Cal.com delivers full inline data (heavy) | **Low** | `packages/features/webhooks/lib/sendPayload.ts` | Cal.com's approach is superior for most integrations (no follow-up API call needed); optionally offer a "URI-only" payload mode for bandwidth-sensitive consumers |
-| WH-004 | No public documentation for `FORM_SUBMITTED_NO_EVENT` webhook event | **Low** | `docs/developing/guides/automation/webhooks.mdx` | Add documentation for this event with payload examples; cross-reference [Routing Forms Gap Analysis](/gap-report/routing-forms) |
-| WH-005 | Retry policy not configurable per webhook subscription | **Low** | `packages/features/webhooks/` | Consider allowing per-subscription retry configuration (max retries, backoff strategy) for advanced consumers |
+| Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
+|--------|------------|----------|---------------|-------------------|----------------|
+| WH-001 | Only one payload version (`v2021-10-20`) is registered — no future version exists yet | **Low** | `packages/features/webhooks/lib/factory/versioned/` | N/A — Calendly has no payload versioning | Document versioning strategy; create a version roadmap for payload evolution as new features are added |
+| WH-002 | Calendly provides UTM tracking parameters natively in webhook payloads | **Low** | `packages/features/webhooks/lib/dto/types.ts` | [Calendly Webhook Payloads](https://developer.calendly.com/api-docs/d78e12bac5765-webhook-payload) | Cal.com's `metadata` field on `EventPayloadType` can carry UTM data; consider standardizing UTM fields in booking payloads |
+| WH-003 | Calendly delivers event URIs (lightweight); Cal.com delivers full inline data (heavy) | **Low** | `packages/features/webhooks/lib/sendPayload.ts` | [Calendly Webhook Subscriptions](https://developer.calendly.com/api-docs/acb0e2c5ce441-create-webhook-subscription) | Cal.com's approach is superior for most integrations (no follow-up API call needed); optionally offer a "URI-only" payload mode for bandwidth-sensitive consumers |
+| WH-004 | No public documentation for `FORM_SUBMITTED_NO_EVENT` webhook event | **Low** | `docs/developing/guides/automation/webhooks.mdx` | [Calendly Routing Forms](https://developer.calendly.com/api-docs/a0f21f5db593f-routing-form-submission) | Add documentation for this event with payload examples; cross-reference [Routing Forms Gap Analysis](/gap-report/routing-forms) |
+| WH-005 | Retry policy not configurable per webhook subscription | **Low** | `packages/features/webhooks/` | N/A — Calendly retry policy not publicly documented | Consider allowing per-subscription retry configuration (max retries, backoff strategy) for advanced consumers |
 
 ---
 

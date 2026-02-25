@@ -40,6 +40,15 @@ To create a new webhook subscription, visit `/settings/developer/webhooks` and p
     - `After Guests Didn't Join Cal Video`
     - `Wrong Assignment Report`
   </Step>
+    <Note>
+      In addition to the triggers listed above, the following trigger events are also available for programmatic webhook subscriptions via the API:
+      - `RECORDING_TRANSCRIPTION_GENERATED` — Fired when a meeting recording transcription is generated
+      - `OOO_CREATED` — Fired when an out-of-office entry is created
+      - `FORM_SUBMITTED_NO_EVENT` — Fired when a routing form is submitted but does not result in a booking
+      - `DELEGATION_CREDENTIAL_ERROR` — Fired when a delegated credential encounters an error
+
+      For a comprehensive comparison of Cal.com's 20+ webhook trigger events against Calendly's webhook model, see the [Calendly vs. Cal.com Webhook Comparison](/gap-report/webhooks-events).
+    </Note>
   <Step title="Secret">
     You can provide a secret key with this webhook to [verify it](/docs/core-features/webhooks#verifying-the-authenticity-of-the-received-payload) on the subscriber URL when receiving a payload. This helps confirm whether the payload is authentic or has been tampered with. You can leave it blank if you don't wish to secure the webhook with a secret key.
   </Step>
@@ -1510,6 +1519,32 @@ Select a version and trigger event to view the example payload:
   </Tab>
 </Tabs>
 
+### Webhook payload versioning strategy
+
+All webhook payloads in Cal.com are versioned using the `PayloadBuilderFactory` pattern. The current production version is `v2021-10-20`, which is sent via the `x-cal-webhook-version` HTTP header with every webhook delivery.
+
+<Note>
+  The `PayloadBuilderFactory` architecture supports registering multiple payload versions simultaneously. When a consumer requests a version that is not registered, the factory automatically falls back to the default version (`v2021-10-20`) to ensure backward compatibility.
+
+  Source: `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts`
+</Note>
+
+**How versioning works:**
+
+The factory uses a version-aware dispatch system with typed builder interfaces for each trigger event category:
+
+- **Booking events** (8 triggers): `BOOKING_CREATED`, `BOOKING_RESCHEDULED`, `BOOKING_CANCELLED`, `BOOKING_REJECTED`, `BOOKING_REQUESTED`, `BOOKING_PAYMENT_INITIATED`, `BOOKING_PAID`, `BOOKING_NO_SHOW_UPDATED`
+- **Form events** (2 triggers): `FORM_SUBMITTED`, `FORM_SUBMITTED_NO_EVENT`
+- **Meeting events** (4 triggers): `MEETING_STARTED`, `MEETING_ENDED`, `AFTER_HOSTS_CAL_VIDEO_NO_SHOW`, `AFTER_GUESTS_CAL_VIDEO_NO_SHOW`
+- **Recording events** (2 triggers): `RECORDING_READY`, `RECORDING_TRANSCRIPTION_GENERATED`
+- **OOO events** (1 trigger): `OOO_CREATED`
+- **Instant meeting events** (1 trigger): `INSTANT_MEETING`
+- **Delegation events** (1 trigger): `DELEGATION_CREDENTIAL_ERROR`
+
+New payload versions can be registered via `PayloadBuilderFactory.registerVersion()` without affecting existing versions. Each version provides a complete set of builders for all trigger event categories.
+
+For detailed backward compatibility guarantees and consumer migration guidance, see the [Webhook Backward Compatibility Guide](/migration/webhook-compatibility).
+
 ### Booking No-show Updated webhook payload
 
 This webhook is triggered when an attendee is manually marked or unmarked as no-show on the `/bookings/past` page.
@@ -1724,3 +1759,43 @@ where `{{type}}` represents the event type slug and `{{title}}` represents the t
 | email            | Email  | Email of the individual                                               |
 | timezone         | String | Timezone of the individual (e.g., "America/New_York", "Asia/Kolkata") |
 | language?.locale | String | Locale of the individual (e.g., "en", "fr")                           |
+
+### Consumer Migration Guidance
+
+Existing webhook consumers are protected during Cal.com's gap closure implementation through the versioned payload builder architecture. Here's what webhook consumers need to know:
+
+<Steps>
+  <Step title="Existing consumers are unaffected">
+    All webhook subscriptions using the current `v2021-10-20` payload version will continue to receive payloads in the exact same format. No action is required from existing consumers.
+  </Step>
+  <Step title="Version negotiation via HTTP header">
+    Every webhook delivery includes an `x-cal-webhook-version` HTTP header indicating the payload version (e.g., `x-cal-webhook-version: 2021-10-20`). Consumers can inspect this header to determine which payload format they are receiving.
+  </Step>
+  <Step title="Fallback behavior protects consumers">
+    If a consumer's webhook subscription requests a version that is not yet registered, the `PayloadBuilderFactory` automatically falls back to the default version (`v2021-10-20`) and delivers the established payload format. This ensures no consumer receives an unexpected payload structure.
+  </Step>
+  <Step title="Opting in to new payload versions">
+    When new payload versions become available, consumers can opt in by updating their webhook subscription's version field. The new version will include additional fields while preserving all existing fields — changes are always **additive only** (new fields are added, existing fields are never removed or renamed).
+  </Step>
+  <Step title="Signature verification remains consistent">
+    The `x-cal-signature-256` HMAC-SHA256 signature verification mechanism works identically across all payload versions. Consumers should always verify webhook authenticity using their configured secret key regardless of the payload version.
+  </Step>
+</Steps>
+
+<Note>
+  The versioned payload builder pattern is implemented in `PayloadBuilderFactory` which maintains a registry of version-specific builder sets. New versions are registered via `registerVersion()`, and the factory supports introspection via `getRegisteredVersions()` and `isVersionSupported()`.
+
+  Source: `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts`
+</Note>
+
+### Related Documentation
+
+For additional context on Cal.com's webhook system and its comparison with other scheduling platforms:
+
+- **[Calendly vs. Cal.com Webhook Comparison](/gap-report/webhooks-events)** — Comprehensive gap analysis comparing Cal.com's 20+ webhook trigger events against Calendly's 3-event webhook model, including payload structure comparisons, delivery semantics, and identified behavioral differences.
+
+- **[Webhook Backward Compatibility Guide](/migration/webhook-compatibility)** — Detailed guide on maintaining webhook payload backward compatibility during gap closure, covering the versioned payload strategy, `PayloadBuilderFactory` extension patterns, consumer migration paths, and rollback procedures.
+
+- **[Calendly API Documentation](https://developer.calendly.com)** — Calendly's developer portal serves as the behavioral source of truth for scheduling platform webhook capabilities. Cal.com's webhook system significantly exceeds Calendly's 3 events (`invitee.created`, `invitee.canceled`, `routing_form_submission.created`) with 20+ trigger events, versioned payloads, and native signature verification.
+
+- **[Cal.com API v2 Webhook Endpoints](/api-reference/v2)** — API reference for programmatic webhook management including CRUD operations for webhook subscriptions, event-type-scoped webhooks, and organization-scoped webhooks.

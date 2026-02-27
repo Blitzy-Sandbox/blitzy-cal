@@ -1,3 +1,74 @@
+/**
+ * @file E2E test suite for organization/team event-type slot availability via the
+ *   `VERSION_2024_09_04` Slots API. Validates that `GET /v2/slots` returns correct
+ *   bookable time slots for organization-scoped team event types across multiple
+ *   route resolution strategies and under various booking side-effect scenarios.
+ *
+ * @module SlotsModule_2024_09_04 E2E Tests — Organization Team Event Types
+ *
+ * ## Test Scope
+ * Validates `GET /v2/slots` for organization-scoped team event types with varied
+ * route patterns and booking side effects. All requests set the
+ * `CAL_API_VERSION_HEADER` to `VERSION_2024_09_04` and assert responses typed as
+ * `GetSlotsOutput_2024_09_04` with `SUCCESS_STATUS` validation.
+ *
+ * ## Coverage Areas
+ * - **Route variation by `eventTypeId`**: Direct numeric event-type ID lookup for
+ *   both collective and round-robin scheduling types.
+ * - **Route variation by `organizationSlug + username + eventTypeSlug`**: Slug-based
+ *   resolution that disambiguates org users from non-org users sharing the same
+ *   username and event-type slug.
+ * - **Route variation by `teamSlug + eventTypeSlug`**: Team slug-based resolution
+ *   requiring `organizationSlug` context.
+ * - **404 behavior**: Confirms that omitting `organizationSlug` for slug-based
+ *   queries returns a 404 status, preventing unscoped lookups.
+ * - **Booking side effects — collective**: When a booking is added against a
+ *   collective event type, the corresponding slot is removed from the availability
+ *   response (all hosts must be free for collective scheduling).
+ * - **Booking side effects — round-robin (partial)**: When only one host of a
+ *   round-robin event type is booked, slots remain available because other hosts
+ *   can still accept the booking.
+ * - **Booking side effects — round-robin (fully booked)**: When all hosts of a
+ *   round-robin event type are booked at the same time, the slot is removed.
+ * - **Booking deletion**: Deleting bookings restores original slot availability,
+ *   confirming that the availability engine correctly re-computes after mutations.
+ * - **Golden fixture assertions**: All slot assertions use `expectedSlotsUTC` for a
+ *   deterministic 5-day UTC slot map (07:00–14:00Z, 8 hourly slots × 5 days).
+ *
+ * ## Test Infrastructure
+ * - `Test.createTestingModule` with `AppModule`, `PrismaModule`, `UsersModule`,
+ *   `TokensModule`, `SchedulesModule_2024_06_11`, `SlotsModule_2024_09_04`
+ * - `PermissionsGuard` overridden to always allow access (`canActivate: () => true`)
+ * - `withApiAuth` wrapper authenticating as the first org user
+ *
+ * ## Fixture Setup (`beforeAll`)
+ * - **Organization**: Created with a random slug and `Europe/Rome` timezone
+ * - **Users**: 2 organization users with profiles + 1 non-org user sharing the same
+ *   username as org user one (to test slug disambiguation)
+ * - **Team**: Created under the organization with a random slug
+ * - **Memberships**: Org user one as MEMBER, org user two as MEMBER
+ * - **Event Types**: 2 team event types — collective (all members assigned) and
+ *   round-robin (all members assigned) — both using `sharedEventTypeSlug` for
+ *   slug-based route testing
+ * - **Schedules**: Mon–Fri 9 AM–5 PM `Europe/Rome` default schedules for all users
+ *   via `SchedulesService_2024_06_11.createUserSchedule`
+ * - **Bookings**: Created dynamically within individual test cases via
+ *   `BookingsRepositoryFixture`
+ *
+ * ## Cleanup (`afterAll`)
+ * - Deletes org users by email, team by ID, organization by ID
+ * - Deletes all booking records created during tests
+ * - Closes the NestJS application instance
+ *
+ * ## Golden Fixtures
+ * `expectedSlotsUTC` — 8 hourly UTC slots (07:00–14:00Z) across 5 weekdays
+ * (2050-09-05 through 2050-09-09), sourced from `./expected-slots`. These
+ * correspond to 9 AM–5 PM `Europe/Rome` working hours converted to UTC.
+ *
+ * @see {@link ./expected-slots.ts} — Golden test fixture definitions
+ * @see {@link packages/features/schedules/lib/slots.ts} — Slot generation algorithm
+ * @see {@link packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts} — Multi-host aggregation logic tested here
+ */
 import { CAL_API_VERSION_HEADER, SUCCESS_STATUS, VERSION_2024_09_04 } from "@calcom/platform-constants";
 import type { CreateScheduleInput_2024_06_11 } from "@calcom/platform-types";
 import type { Team, User } from "@calcom/prisma/client";

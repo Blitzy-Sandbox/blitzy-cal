@@ -27,14 +27,29 @@ import { CheckboxField } from "@calcom/ui/components/form";
 import { Switch } from "@calcom/ui/components/form";
 import { SkeletonText } from "@calcom/ui/components/skeleton";
 
+/**
+ * Canonical time range type representing a start/end pair for schedule availability windows.
+ * Re-exported from `@calcom/types/schedule` so that consumers of this component module
+ * (e.g. DateOverrideInputDialog, DateOverrideList) can import it from a single location.
+ */
 export type { TimeRange };
 
+/**
+ * Customizable label strings for the schedule day UI controls.
+ * Allows host applications (Atoms, Platform SDK) to override the default
+ * i18n-driven tooltip text on the add-time, copy-time, and delete-time buttons.
+ */
 export type ScheduleLabelsType = {
   addTime: string;
   copyTime: string;
   deleteTime: string;
 };
 
+/**
+ * CSS class name overrides for the inner elements of the `LazySelect` time picker.
+ * Enables host applications to restyle the react-select-based time picker
+ * without modifying internal component markup.
+ */
 export type SelectInnerClassNames = {
   control?: string;
   singleValue?: string;
@@ -43,10 +58,33 @@ export type SelectInnerClassNames = {
   menu?: string;
 };
 
+/**
+ * Generic utility type that extracts only those `FieldPath` keys from a form's
+ * field values whose resolved value type extends `TValue`. Used by `ScheduleComponent`
+ * to enforce that the `name` prop points to a `TimeRange[][]` field path, providing
+ * compile-time type safety for React Hook Form integration.
+ */
 export type FieldPathByValue<TFieldValues extends FieldValues, TValue> = {
   [Key in FieldPath<TFieldValues>]: FieldPathValue<TFieldValues, Key> extends TValue ? Key : never;
 }[FieldPath<TFieldValues>];
 
+/**
+ * Renders a single weekday row in the weekly availability grid.
+ *
+ * Each row contains a `Switch` toggle that enables/disables availability for
+ * that day, plus the `DayRanges` time slot editor and a `CopyButton` for
+ * duplicating the day's schedule to other weekdays.
+ *
+ * **Switch toggle restore logic:**
+ * - When toggled ON: restores the previously cached day range from
+ *   `lastNonEmptyDayRangeRef`, falling back to `DEFAULT_DAY_RANGE` (09:00–17:00)
+ *   from `@calcom/lib/availability` if no cached range exists.
+ * - When toggled OFF: caches the current non-empty range into
+ *   `lastNonEmptyDayRangeRef` before clearing the field to an empty array.
+ *
+ * **Skeleton state:** Renders `SkeletonText` when `watchDayRange` is falsy
+ * (form data not yet loaded).
+ */
 export const ScheduleDay = <TFieldValues extends FieldValues>({
   name,
   weekday,
@@ -180,6 +218,20 @@ const CopyButton = ({
   );
 };
 
+/**
+ * Weekly availability grid — the primary schedule editing component.
+ *
+ * Renders seven `ScheduleDay` rows (one per weekday), ordered according to
+ * the user's `weekStart` preference (0 = Sunday, 1 = Monday, etc.). Day names
+ * are localized via `weekdayNames(i18n.language, weekStart, "long")`.
+ *
+ * The `weekdayIndex` for each row is calculated as `(renderIndex + weekStart) % 7`,
+ * which maps the visual row position back to the canonical day-of-week index
+ * used by the form's `TimeRange[][]` field path (where index 0 = Sunday).
+ *
+ * Generic type parameters enforce that `name` points to a `TimeRange[][]`
+ * field within the parent form via `FieldPathByValue`.
+ */
 export const ScheduleComponent = <
   TFieldValues extends FieldValues,
   TPath extends FieldPathByValue<TFieldValues, TimeRange[][]>,
@@ -228,6 +280,25 @@ export const ScheduleComponent = <
   );
 };
 
+/**
+ * Editable list of time ranges for a single weekday.
+ *
+ * Integrates with React Hook Form via `useFieldArray` to provide CRUD
+ * operations on the `TimeRange[]` field at the given `name` path.
+ * Each range is rendered through a `Controller` wrapping a `TimeRangeField`
+ * (two `LazySelect` time pickers for start and end).
+ *
+ * **Add slot logic:** The first range row shows an "add time" button that
+ * calls `getDateSlotRange` to compute the next available slot — either
+ * appended after the last range's end or prepended before the first range's
+ * start when the end of day is reached.
+ *
+ * **Remove logic:** When more than one range exists, each row shows a
+ * delete button that removes the range at that index via `useFieldArray.remove`.
+ *
+ * Also consumed directly by `DateOverrideInputDialog` for date-specific
+ * override editing.
+ */
 export const DayRanges = <TFieldValues extends FieldValues>({
   name,
   disabled,
@@ -402,6 +473,26 @@ const TimeRangeField = ({
   );
 };
 
+/**
+ * Parses a user-typed time string into a UTC `Date` with seconds and milliseconds zeroed.
+ *
+ * **Dual-format parsing strategy:** The `timeFormat` parameter determines the
+ * primary parse format — `12` tries `h:mma` first, while `24` or `null` tries
+ * `HH:mm` first — but both formats are attempted as a cross-format fallback so
+ * that users can type either notation regardless of their preference.
+ *
+ * Uses `dayjs(input, formats, true)` in **strict mode** to reject ambiguous or
+ * partial inputs. After parsing, applies bounds validation (hours 0–23, minutes
+ * 0–59) as a safety net.
+ *
+ * **UTC output guarantee:** The returned `Date` always has its hours and minutes
+ * set via `setUTCHours`, ensuring the value is timezone-independent and suitable
+ * for storage in the form's `TimeRange` fields.
+ *
+ * @param input - The raw time string to parse (e.g. "16:05", "4:05pm").
+ * @param timeFormat - The user's preferred time format: `12` for 12-hour, `24` or `null` for 24-hour.
+ * @returns A `Date` with UTC hours/minutes set and seconds/milliseconds zeroed, or `null` if parsing fails.
+ */
 export function parseTimeString(input: string, timeFormat: number | null): Date | null {
   if (!input.trim()) return null;
 
@@ -420,6 +511,24 @@ export function parseTimeString(input: string, timeFormat: number | null): Date 
   return new Date(new Date().setUTCHours(hours, minutes, 0, 0));
 }
 
+/**
+ * Lazy-loaded time picker wrapping `@calcom/ui` `Select`.
+ *
+ * Options are generated lazily via `useOptions` to avoid a noticeable redraw
+ * delay when adding a new time range field. The component supports both
+ * predefined interval options and **manual time entry** — when the user types
+ * a valid time that falls within the `min`/`max` bounds but doesn't match a
+ * predefined option, a custom option is injected at the top of the dropdown.
+ *
+ * **Error validation:** Input is validated on every keystroke. If the typed value
+ * looks like a time but is invalid or violates `min`/`max` bounds, the control
+ * border switches to `!border-error` styling via `timeInputError` state.
+ *
+ * **Filter callback lifecycle:**
+ * - `onMenuOpen`: Filters options by `offset` (min) and `limit` (max) bounds.
+ * - `onMenuClose`: Resets to show only the current value via `filter({ current })`.
+ * - Initial render: Shows the currently selected value.
+ */
 const LazySelect = ({
   value,
   min,
@@ -561,12 +670,30 @@ interface IOption {
 }
 
 /**
- * Creates an array of times on a 15 minute interval from
- * 00:00:00 (Start of day) to
- * 23:45:00 (End of day with enough time for 15 min booking)
+ * Time slot increment in minutes, driven by the `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`
+ * environment variable. Defaults to 15 minutes when the variable is unset or invalid.
+ * This constant controls the granularity of the time picker dropdown options.
  */
-/** Begin Time Increments For Select */
 const INCREMENT = Number(process.env.NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL) || 15;
+
+/**
+ * Hook that generates and filters time picker options at `INCREMENT`-minute intervals.
+ *
+ * Options span from 00:00 (start of day) to 23:59 (end of day, always included as
+ * the final option regardless of increment alignment).
+ *
+ * **DST-safe iteration:** The loop guard `!t.add(INCREMENT).isSame(t, "day") ? -1 : 0`
+ * detects when the next increment would cross into the next day due to a DST transition
+ * and subtracts 1 minute to keep the iterator within the current day boundary.
+ *
+ * **Filter callback modes:**
+ * - `{ current }` — Returns only the single option matching the current value (used on menu close).
+ * - `{ offset, limit }` — Filters options to those after `offset` and before `limit` (used on menu open).
+ * - `{ offset: 0, limit: 0 }` — Shows all options (no min/max constraints).
+ *
+ * @param timeFormat - `12` for 12-hour labels (h:mma), `24` or `null` for 24-hour labels (HH:mm).
+ * @returns `{ options, filter }` — The filtered option array and a setter to change the filter criteria.
+ */
 const useOptions = (timeFormat: number | null) => {
   const [filteredOptions, setFilteredOptions] = useState<IOption[]>([]);
 
@@ -626,6 +753,25 @@ const useOptions = (timeFormat: number | null) => {
   return { options: filteredOptions, filter };
 };
 
+/**
+ * Computes the next available time slot range for the "add time" button in `DayRanges`.
+ *
+ * **Append/prepend decision logic:**
+ * - If the next slot (starting at the last range's end + 1 hour) does not hit end-of-day,
+ *   returns `{ append: { start, end } }` to add the new range after the existing ones.
+ * - If end-of-day is reached, falls back to prepending a range before the first existing
+ *   range (1 hour earlier), returning `{ prepend: { start, end } }`.
+ *
+ * **Hour 23 edge case:** When the computed next range starts at hour 23, the end is
+ * calculated as 23:59:59.999 (adding 59 minutes + 59 seconds + 999 milliseconds)
+ * rather than crossing into the next day with a naive +1 hour addition.
+ *
+ * All calculations use `@calcom/dayjs` UTC mode for timezone-independent arithmetic.
+ *
+ * @param endField - The last field in the day's range array (provides the end boundary).
+ * @param startField - The first field in the day's range array (provides the start boundary for prepend).
+ * @returns An object with either `append` or `prepend` containing the new `{ start, end }` range, or `undefined` if no slot can be added.
+ */
 const getDateSlotRange = (endField?: FieldArrayWithId, startField?: FieldArrayWithId) => {
   const timezoneStartRange = dayjs((startField as unknown as TimeRange).start).utc();
   const nextRangeStart = dayjs((endField as unknown as TimeRange).end).utc();
@@ -658,6 +804,28 @@ const getDateSlotRange = (endField?: FieldArrayWithId, startField?: FieldArrayWi
   }
 };
 
+/**
+ * Keyboard-navigable checkbox list for selecting target weekdays when copying
+ * a day's time ranges to other days.
+ *
+ * Rendered inside a `DropdownMenuContent` from the `CopyButton`. Includes a
+ * "Select All" checkbox, per-day checkboxes (with the source day disabled),
+ * and Apply/Cancel action buttons.
+ *
+ * **Keyboard navigation system:** Registers a global `keydown` listener that
+ * supports Tab, ArrowUp, ArrowDown (cyclic focus traversal), and Enter (click)
+ * via `itteratablesByKeyRef`, which accumulates refs to all focusable elements
+ * (checkboxes + buttons) in render order.
+ *
+ * Day names are localized via `weekdayNames(i18n.language, weekStart)` and the
+ * `weekdayIndex` mapping ensures correct canonical day indices regardless of
+ * the user's week-start preference.
+ *
+ * @param disabled - The weekday index of the source day (shown checked and disabled).
+ * @param onClick - Callback invoked with the array of selected weekday indices on Apply.
+ * @param onCancel - Callback invoked when the user cancels the copy operation.
+ * @param weekStart - The user's week-start preference (0 = Sunday, 1 = Monday, etc.).
+ */
 const CopyTimes = ({
   disabled,
   onClick,

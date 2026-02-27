@@ -74,7 +74,8 @@
     "./event-types/hooks/useHandleRouteChange": "./event-types/hooks/useHandleRouteChange.ts",
     "./event-types/hooks/useTabsNavigations": "./event-types/hooks/useTabsNavigations.tsx",
     "./event-types/hooks/useTeamMembersWithSegmentPlatform": "./event-types/hooks/useTeamMembersWithSegmentPlatform.tsx",
-    "./timezone": "./timezone/index.tsx"
+    "./timezone": "./timezone/index.tsx",
+    "./availability/types": "./availability/types.ts"
   },
   "types": "./dist/index.d.ts",
   "dependencies": {

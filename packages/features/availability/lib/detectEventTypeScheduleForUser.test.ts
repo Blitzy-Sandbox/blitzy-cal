@@ -186,4 +186,79 @@ describe("detectEventTypeScheduleForUser", () => {
     expect(result.schedule.timeZone).toBe("Africa/Cairo");
     expect(result.isTimezoneSet).toBe(false);
   });
+
+  // --- Edge case tests for null values and absent fields ---
+
+  it("should use first schedule when defaultScheduleId is null", () => {
+    const userWithNullDefault = {
+      ...mockUser,
+      defaultScheduleId: null,
+    };
+    const input = createInput({
+      user: userWithNullDefault,
+      eventType: {
+        hosts: [],
+        timeZone: null,
+        schedule: null,
+      },
+    });
+    const result = detectEventTypeScheduleForUser(input);
+    // With defaultScheduleId=null, the filter condition `!null` is true,
+    // so ALL schedules pass the filter and [0] (id=100) is selected.
+    expect(result.schedule).toEqual(expect.objectContaining({ id: 100 }));
+    // userSchedule (id=100) matches the selected schedule (id=100),
+    // so isDefaultSchedule is true even though defaultScheduleId is null.
+    expect(result.isDefaultSchedule).toBe(true);
+  });
+
+  it("should handle null eventType by falling back to user schedule", () => {
+    const input = createInput({
+      eventType: null,
+    });
+    const result = detectEventTypeScheduleForUser(input);
+    expect(result.schedule).toEqual(expect.objectContaining({ id: 100 }));
+    expect(result.isDefaultSchedule).toBe(true);
+  });
+
+  it("should apply fallback timezone when host schedule has null timezone", () => {
+    const input = createInput({
+      eventType: {
+        hosts: [
+          {
+            user: { id: 1 },
+            schedule: { id: 777, timeZone: null, availability: [] },
+          },
+        ],
+        timeZone: "Europe/Paris",
+        schedule: null,
+      },
+    });
+    const result = detectEventTypeScheduleForUser(input);
+    expect(result.schedule.id).toBe(777);
+    // timeZone should fall back to eventType.timeZone via fallbackTimezoneIfScheduleIsMissing
+    expect(result.schedule.timeZone).toBe("Europe/Paris");
+    expect(result.isTimezoneSet).toBe(false); // potentialSchedule.timeZone was null
+  });
+
+  it("should apply fallback timezone when user schedule has null timezone", () => {
+    const userWithNullTzSchedule = {
+      ...mockUser,
+      schedules: [
+        { id: 100, timeZone: null as unknown as string, availability: [] },
+      ],
+    };
+    const input = createInput({
+      user: userWithNullTzSchedule,
+      eventType: {
+        hosts: [],
+        timeZone: null,
+        schedule: null,
+      },
+    });
+    const result = detectEventTypeScheduleForUser(input);
+    expect(result.schedule.id).toBe(100);
+    // Fallback to user.timeZone since both schedule.timeZone and eventType.timeZone are null
+    expect(result.schedule.timeZone).toBe("America/New_York");
+    expect(result.isTimezoneSet).toBe(false);
+  });
 });

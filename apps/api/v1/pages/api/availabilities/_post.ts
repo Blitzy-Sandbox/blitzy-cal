@@ -71,6 +71,29 @@ import {
  *       401:
  *        description: Authorization information is missing or invalid.
  */
+/**
+ * Handles POST /availabilities — creates a new availability entry for a user's schedule.
+ *
+ * Pipeline: validation → authorization → creation → serialization
+ *  1. Validates the request body against `schemaAvailabilityCreateBodyParams` (Zod 3.25.76).
+ *     Throws a ZodError if any required field (scheduleId, startTime, endTime) is missing or invalid.
+ *  2. Calls `checkPermissions` to verify the requesting user owns the target schedule
+ *     (or is a system-wide admin).
+ *  3. Creates the `Availability` record in the database via Prisma, including the owning
+ *     `Schedule.userId` for response serialization.
+ *  4. Sets HTTP status 201 (Created) and returns the sanitized availability object
+ *     through `schemaAvailabilityReadPublic`, which strips internal-only fields.
+ *
+ * Response shape contract (must not change — consumed by API v1 clients):
+ *   `{ availability: AvailabilityReadPublic, message: string }`
+ *
+ * This handler is wrapped by `defaultResponder` (see default export) which provides
+ * consistent error handling, ensuring ZodErrors and HttpErrors are translated into
+ * appropriate HTTP responses.
+ *
+ * @param req - The Next.js API request, augmented with `userId` and `isSystemWideAdmin` by auth middleware.
+ * @returns The created availability record and a success message.
+ */
 async function postHandler(req: NextApiRequest) {
   const data = schemaAvailabilityCreateBodyParams.parse(req.body);
   await checkPermissions(req);
@@ -85,6 +108,25 @@ async function postHandler(req: NextApiRequest) {
   };
 }
 
+/**
+ * Verifies that the requesting user is authorized to add availability to the target schedule.
+ *
+ * Permission model:
+ *  1. **System-wide admin bypass**: If `req.isSystemWideAdmin` is true, the function
+ *     returns immediately — admins may create availability on any schedule.
+ *  2. **Schedule ownership verification**: For non-admin users, queries the database to
+ *     confirm a schedule exists with both the given `scheduleId` (from the request body)
+ *     and the authenticated `userId`. If no matching schedule is found, an `HttpError(401)`
+ *     is thrown with a descriptive message.
+ *
+ * Note: The `schemaAvailabilityCreateBodyParams.parse(req.body)` call within this function
+ * re-validates the request body, even though it was already validated in `postHandler`.
+ * This redundancy is intentional/historical and should NOT be removed — it ensures the
+ * permission check is self-contained and does not rely on external state.
+ *
+ * @param req - The Next.js API request, augmented with `userId` and `isSystemWideAdmin` by auth middleware.
+ * @throws {HttpError} 401 if the authenticated user does not own the target schedule.
+ */
 async function checkPermissions(req: NextApiRequest) {
   const { userId, isSystemWideAdmin } = req;
   if (isSystemWideAdmin) return;

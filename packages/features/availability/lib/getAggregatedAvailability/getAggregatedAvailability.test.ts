@@ -5,14 +5,41 @@ import dayjs from "@calcom/dayjs";
 
 import { getAggregatedAvailability } from "./getAggregatedAvailability";
 
-// Helper to check if a time range overlaps with availability
+/**
+ * Checks whether a given time range is fully contained within at least one
+ * availability window. Uses Dayjs comparison operators (`<=`, `>=`) to verify
+ * that some availability range starts at or before the query start AND ends
+ * at or after the query end — i.e., full containment, not partial overlap.
+ *
+ * @param availability - Array of available time windows with Dayjs start/end
+ * @param range - The candidate time range to check for containment
+ * @returns true if any availability window fully contains the given range
+ */
 const isAvailable = (availability: { start: Dayjs; end: Dayjs }[], range: { start: Dayjs; end: Dayjs }) => {
   return availability.some(({ start, end }) => {
     return start <= range.start && end >= range.end;
   });
 };
 
+/**
+ * Regression suite for `getAggregatedAvailability` — the deterministic multi-host
+ * availability aggregation routine used by collective and round-robin scheduling.
+ *
+ * Coverage Matrix (10 scenarios):
+ *  1. Overlapping exclusions between round-robin users
+ *  2. Reversed timestamps (end before start) — defensive edge case
+ *  3. Fixed-host merging with overlapping intervals
+ *  4. Mixed fixed/round-robin hosts with OOO exclusions
+ *  5. Identical round-robin availability deduplication
+ *  6. Grouped round-robin + fixed host intersection enforcement
+ *  7. Implicit single-group union behavior
+ *  8. Mixed explicit/default groups with fixed host
+ *  9. Empty-group regression (lone fixed host, no RR)
+ * 10. Group-contribution enforcement (missing group blocks availability)
+ */
 describe("getAggregatedAvailability", () => {
+  // --- Round-Robin Overlap Scenarios ---
+
   // rr-host availability used to combine into erroneous slots, this confirms it no longer happens
   it("should not merge RR availability resulting in an unavailable slot due to overlap", () => {
     const userAvailability = [
@@ -50,6 +77,8 @@ describe("getAggregatedAvailability", () => {
     expect(isAvailable(result, timeRangeToCheckAvailable)).toBe(true);
   });
 
+  // --- Edge Case: Reversed Timestamps ---
+
   it("it returns the right amount of date ranges even if the end time is before the start time", () => {
     const userAvailability = [
       {
@@ -81,6 +110,8 @@ describe("getAggregatedAvailability", () => {
       },
     ]);
   });
+
+  // --- Fixed-Host Behavior ---
 
   // validates fixed host behaviour, they all have to be available
   it("correctly joins fixed host availability resulting in one or more combined date ranges", () => {
@@ -114,6 +145,8 @@ describe("getAggregatedAvailability", () => {
     expect(result[0].start.format()).toEqual(dayjs("2025-01-23T11:15:00.000Z").format());
     expect(result[0].end.format()).toEqual(dayjs("2025-01-23T11:20:00.000Z").format());
   });
+
+  // --- Mixed Fixed/Round-Robin Scenarios ---
 
   // Combines rr hosts and fixed hosts, both fixed and one of the rr hosts has to be available for the whole period
   // All fixed user ranges are merged with each rr-host
@@ -172,6 +205,8 @@ describe("getAggregatedAvailability", () => {
     expect(result[1].end.format()).toEqual(dayjs("2025-01-23T13:00:00.000Z").format());
   });
 
+  // --- Deduplication ---
+
   it("does not duplicate slots when multiple rr-hosts offer the same availability", () => {
     const userAvailability = [
       {
@@ -209,6 +244,8 @@ describe("getAggregatedAvailability", () => {
     expect(isAvailable(result, timeRangeToCheckAvailable)).toBe(true);
     expect(result.length).toBe(1);
   });
+
+  // --- Grouped Round-Robin Scenarios ---
 
   it("requires at least one RR host from each group to be available", () => {
     // Test scenario with two groups:
@@ -409,6 +446,8 @@ describe("getAggregatedAvailability", () => {
     };
     expect(isAvailable(result, timeRangeNotAvailable3)).toBe(false);
   });
+
+  // --- Edge Cases: Empty and Missing Groups ---
 
   it("handles empty groups gracefully", () => {
     // Test scenario with empty groups

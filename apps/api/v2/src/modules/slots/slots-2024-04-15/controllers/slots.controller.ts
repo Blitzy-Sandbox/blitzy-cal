@@ -28,6 +28,47 @@ import type { RangeSlots, TimeSlots } from "@/modules/slots/slots-2024-04-15/ser
 import { SlotsOutputService_2024_04_15 } from "@/modules/slots/slots-2024-04-15/services/slots-output.service";
 import { SlotsWorkerService_2024_04_15 } from "@/modules/slots/slots-2024-04-15/services/slots-worker.service";
 
+/**
+ * Slots controller for the Cal.com Platform API v2.
+ *
+ * Handles slot reservation, deletion, and availability queries for the `/v2/slots` endpoint path.
+ *
+ * @remarks
+ * **Versioning Strategy:**
+ * Routes are served across 4 API versions: `VERSION_2024_04_15`, `VERSION_2024_06_11`,
+ * `VERSION_2024_06_14`, and `VERSION_2024_08_13`.
+ *
+ * **Injected Dependencies:**
+ * 1. {@link SlotsService_2024_04_15} — slot reservation persistence and team-event detection
+ * 2. {@link ConfigService} — feature flag access (`e2e`, `enableSlotsWorkers`)
+ * 3. {@link SlotsOutputService_2024_04_15} — response normalization (time vs range format)
+ * 4. {@link SlotsWorkerService_2024_04_15} — worker-based slot computation path
+ * 5. {@link AvailableSlotsService} — synchronous slot computation path (extends
+ *    `BaseAvailableSlotsService` from `@calcom/platform-libraries/slots`)
+ *
+ * **Endpoints:**
+ * - `POST /reserve` — Reserve a slot for booking
+ * - `DELETE /selected-slot` — Remove a previously reserved slot
+ * - `GET /available` — Retrieve available time slots for an event type
+ *
+ * **Cookie Management:**
+ * `reserveSlot` sets a `uid` cookie via `res.cookie("uid", uid)` using `@Res({ passthrough: true })`.
+ * `deleteSelectedSlot` reads the UID from `req.cookies?.uid`, falling back to `params.uid`.
+ *
+ * **Worker/Sync Toggle:**
+ * `getAvailableSlots` checks `config.get<boolean>("e2e")` and `config.get<boolean>("enableSlotsWorkers")`.
+ * When E2E mode is active or workers are disabled, the synchronous `availableSlotsService.getAvailableSlots`
+ * path is used; otherwise, computation delegates to `slotsWorkerService.getAvailableSlotsInWorker`.
+ *
+ * **Error Mapping:**
+ * The catch block in `getAvailableSlots` maps `"Invalid time range given"` to `BadRequestException`,
+ * and recognized TRPC error codes (via `TRPC_ERROR_MAP`) to `TRPCError`. All other errors are rethrown.
+ *
+ * **Documentation:** `@DocsExcludeController(true)` hides this controller from Swagger/OpenAPI docs.
+ *
+ * **Authorization:** No explicit guard decorators — relies on module-level guards for authentication
+ * and authorization enforcement.
+ */
 @Controller({
   path: "/v2/slots",
   version: [VERSION_2024_04_15, VERSION_2024_06_11, VERSION_2024_06_14, VERSION_2024_08_13],
@@ -59,6 +100,25 @@ export class SlotsController_2024_04_15 {
     },
   })
   @ApiOperation({ summary: "Reserve a slot" })
+  /**
+   * Reserves a time slot for a potential booking.
+   *
+   * @remarks
+   * **Endpoint:** `POST /v2/slots/reserve`
+   *
+   * Accepts a {@link ReserveSlotInput_2024_04_15} body containing `eventTypeId`,
+   * `slotUtcStartDate`, and `slotUtcEndDate`. Reads an existing `uid` from
+   * `req.cookies?.uid` for slot reuse (update scenario). On success, sets a
+   * `uid` cookie on the response for subsequent requests (e.g., confirming the booking
+   * or deleting the reserved slot).
+   *
+   * **Swagger:** Decorated with `@ApiCreatedResponse` showing `{ status, data: { uid } }`.
+   *
+   * @param body - The slot reservation payload with event type and UTC time boundaries
+   * @param res - Express response used to set the `uid` cookie (passthrough mode)
+   * @param req - Express request used to read existing `uid` cookie
+   * @returns An {@link ApiResponse} containing the reserved slot UID string
+   */
   async reserveSlot(
     @Body() body: ReserveSlotInput_2024_04_15,
     @Res({ passthrough: true }) res: ExpressResponse,
@@ -84,6 +144,22 @@ export class SlotsController_2024_04_15 {
     },
   })
   @ApiOperation({ summary: "Delete a selected slot" })
+  /**
+   * Deletes a previously reserved time slot.
+   *
+   * @remarks
+   * **Endpoint:** `DELETE /v2/slots/selected-slot`
+   *
+   * Reads the `uid` from cookies first (`req.cookies?.uid`), falling back to the
+   * query parameter (`params.uid`). Delegates to `slotsService.deleteSelectedslot(uid)`
+   * (note: lowercase 's' in `deleteSelectedslot` is intentional — existing API contract).
+   *
+   * **Swagger:** Decorated with `@ApiOkResponse` showing `{ status: SUCCESS_STATUS }`.
+   *
+   * @param params - Query parameters containing an optional `uid` fallback
+   * @param req - Express request used to read the `uid` cookie
+   * @returns An {@link ApiResponse} with status only (no data payload)
+   */
   async deleteSelectedSlot(
     @Query() params: RemoveSelectedSlotInput_2024_04_15,
     @Req() req: ExpressRequest
@@ -167,6 +243,41 @@ export class SlotsController_2024_04_15 {
     },
   })
   @ApiOperation({ summary: "Get available slots" })
+  /**
+   * Retrieves available time slots for a given event type within a date range.
+   *
+   * @remarks
+   * **Endpoint:** `GET /v2/slots/available`
+   *
+   * Accepts {@link GetAvailableSlotsInput_2024_04_15} query parameters including
+   * `eventTypeId`, `startTime`, `endTime`, `timeZone`, `slotFormat`, `eventTypeSlug`,
+   * `usernameList`, `routingFormResponseId`, and `_isDryRun`.
+   *
+   * **Team Event Resolution:** If `isTeamEvent` is not provided in the query, it is
+   * resolved via `slotsService.checkIfIsTeamEvent(query.eventTypeId)`.
+   *
+   * **Worker/Sync Toggle:** Uses `availableSlotsService.getAvailableSlots` (synchronous)
+   * when E2E mode is active (`config.get<boolean>("e2e")`) or workers are explicitly
+   * disabled (`!config.get<boolean>("enableSlotsWorkers")`). Otherwise, delegates to
+   * `slotsWorkerService.getAvailableSlotsInWorker` for worker-based computation.
+   *
+   * **Output Normalization:** Raw slot data is passed through
+   * `slotsOutputService.getOutputSlots` for time vs range format conversion based on
+   * the `slotFormat` query parameter.
+   *
+   * **Error Handling:** Catches `Error` instances and maps `"Invalid time range given"`
+   * to `BadRequestException`. Recognized TRPC error codes (via `TRPC_ERROR_MAP`) are
+   * mapped to `TRPCError`. All other errors are rethrown as-is.
+   *
+   * **Swagger:** Decorated with `@ApiOkResponse` using a `oneOf` schema for time-format
+   * and range-format slot representations.
+   *
+   * @param query - The availability query parameters (event type, date range, timezone, format)
+   * @param req - Express request forwarded to the slot computation context
+   * @returns An {@link ApiResponse} containing slots in either time or range format
+   * @throws {BadRequestException} When the provided time range is invalid
+   * @throws {TRPCError} When the underlying service raises a recognized TRPC error code
+   */
   async getAvailableSlots(
     @Query() query: GetAvailableSlotsInput_2024_04_15,
     @Req() req: ExpressRequest

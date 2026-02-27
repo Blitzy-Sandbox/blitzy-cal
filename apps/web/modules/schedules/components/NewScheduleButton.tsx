@@ -12,6 +12,41 @@ import { Form } from "@calcom/ui/components/form";
 import { InputField } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 
+/**
+ * FAB (Floating Action Button) and Dialog entry point for creating new availability schedules.
+ *
+ * Renders a `variant="fab"` button that opens a controlled `Dialog` containing a
+ * schedule-name input field. On submit the component fires the
+ * `trpc.viewer.availability.schedule.create` mutation and orchestrates the full
+ * post-creation lifecycle:
+ *
+ * **onSuccess**
+ * 1. Navigates to `/availability/{id}` (appends `?fromEventType=true` when the
+ *    caller originates from the event-type builder flow).
+ * 2. Displays a localized success toast (`schedule_created_successfully`).
+ * 3. Calls `revalidateAvailabilityList()` to refresh the server-side cache.
+ * 4. Optimistically updates the TRPC `viewer.availability.list` query cache by
+ *    appending the new schedule with `isDefault: false` and an empty availability array.
+ *
+ * **onError**
+ * - `HttpError` instances surface as `"{statusCode}: {message}"` error toasts.
+ * - `UNAUTHORIZED` TRPC error codes surface a dedicated
+ *   `error_schedule_unauthorized_create` localized message.
+ *
+ * @param props.name - Dialog identifier and `data-testid` attribute.
+ *   Defaults to `"new-schedule"`. The Dialog's `clearQueryParamsOnClose` strips
+ *   the `copy-schedule-id` query parameter on close.
+ * @param props.fromEventType - When truthy, appends `?fromEventType=true` to the
+ *   post-creation redirect URL so the schedule editor can render event-type-specific
+ *   contextual UI.
+ *
+ * **Input validation**
+ * - The schedule name field uses a Unicode-aware regex
+ *   (`^[\p{L}\p{M}\p{N}\s&\-_'\u2018\u2019@.:,/]+$` with the `"u"` flag) to
+ *   accept international characters while blocking control and special characters.
+ * - The `setValueAs` normalizer maps empty or whitespace-only input to `null`,
+ *   allowing server-side Zod validation to apply its own defaults.
+ */
 export function NewScheduleButton({
   name = "new-schedule",
   fromEventType,

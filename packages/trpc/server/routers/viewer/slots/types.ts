@@ -186,9 +186,11 @@ export interface ContextForGetSchedule extends Record<string, unknown> {
  * TypeScript type inferred from the raw {@link getScheduleSchemaObject} (pre-refinement).
  *
  * Used in handler function signatures and throughout the availability service pipeline
- * to type the validated input after Zod parsing. Note that this type reflects the
- * **object shape** before transforms — the `duration` field is `string | undefined`
- * at this level, not the post-transform `number | false`.
+ * to type the validated input after Zod parsing. Since `z.infer` extracts the
+ * **output** (post-transform) type, fields with `.transform()` reflect their
+ * transformed shapes — e.g. the `duration` field is `number | "" | undefined`
+ * (after the `.transform((val) => val && parseInt(val))` chain), not the raw
+ * input type `string | undefined`.
  */
 export type TGetScheduleInputSchema = z.infer<typeof getScheduleSchemaObject>;
 

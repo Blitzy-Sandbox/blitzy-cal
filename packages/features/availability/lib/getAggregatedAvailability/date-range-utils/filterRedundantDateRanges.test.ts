@@ -4,6 +4,22 @@ import dayjs from "@calcom/dayjs";
 
 import { filterRedundantDateRanges } from "./filterRedundantDateRanges";
 
+/**
+ * Test coverage matrix for filterRedundantDateRanges:
+ *
+ * - Containment elimination: inner ranges fully contained by outer ranges are removed
+ * - Overlapping retention: partially overlapping but non-contained ranges are preserved
+ * - Empty input: returns empty array
+ * - Single range: returns same array unchanged
+ * - Duplicate collapse: identical ranges collapse to one (lower-index kept)
+ * - Nested containment: deeply nested ranges (3 levels) collapse to outermost
+ * - Same start time: largest range (by end) kept when starts match
+ * - Same end time: largest range (by start) kept when ends match
+ * - Invalid ranges: ranges with end < start are preserved for downstream validation
+ * - Touching ranges: adjacent (non-overlapping) ranges are preserved
+ * - Partial overlaps: ranges that overlap but don't fully contain each other are preserved
+ * - Complex regression: prior cubic-dev-ai bug with tangled overlaps is regression-guarded
+ */
 describe("filterRedundantDateRanges", () => {
   it("should remove date ranges that are completely contained within others", () => {
     const dateRanges = [

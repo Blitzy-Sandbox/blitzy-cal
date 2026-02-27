@@ -20,6 +20,23 @@ import { ConfirmationDialogContent } from "@calcom/ui/components/dialog";
 import { showToast } from "@calcom/ui/components/toast";
 import { GlobeIcon } from "@coss/ui/icons";
 
+/**
+ * Local projection of the Prisma `Schedule` model with nested `Availability` records.
+ *
+ * Maps to `packages/prisma/schema.prisma` models:
+ * - `Schedule` — top-level fields (`id`, `name`, `timeZone`)
+ * - `Availability` — nested one-to-many relation providing weekly working-hour entries
+ *
+ * @property id          - Unique schedule identifier (Schedule.id)
+ * @property name        - User-defined schedule label (Schedule.name)
+ * @property isDefault   - Whether this is the user's default schedule
+ * @property timeZone    - Optional IANA timezone override stored on the schedule; when absent
+ *                         the component falls back to `displayOptions.timeZone`
+ * @property availability - Array of weekly working-hour entries (Availability model).
+ *                          Each entry specifies active `days` (0=Sun … 6=Sat), a
+ *                          `startTime`/`endTime` window, and an optional `date` for
+ *                          date-specific overrides.
+ */
 interface Schedule {
   id: number;
   name: string;
@@ -37,6 +54,34 @@ interface Schedule {
   }[];
 }
 
+/**
+ * Renders a single schedule row in the availability master list (`/availability`).
+ *
+ * **Rendering pipeline:**
+ * 1. Displays the schedule name as a navigable link (`redirectUrl`) with optional "default" badge.
+ * 2. Builds a localized availability summary by:
+ *    - Filtering entries to those with at least one active day
+ *    - Converting each entry via `availabilityAsString` (locale + 12/24-hour format)
+ *    - Sorting the resulting strings according to the user's configured week-start day
+ * 3. Conditionally renders a timezone badge (`GlobeIcon` + IANA zone) when the schedule or
+ *    display options specify a timezone.
+ * 4. Provides a dropdown overflow menu with three actions:
+ *    - **Set as default** — visible only for non-default schedules; calls `updateDefault`
+ *    - **Duplicate** — always visible; calls `duplicateFunction`
+ *    - **Delete** — guarded by `isDeletable`; when the last schedule would be removed a toast
+ *      warning is shown instead of opening the confirmation dialog
+ * 5. A `<Dialog>` + `<ConfirmationDialogContent variety="danger">` handles the destructive
+ *    delete confirmation with `e.preventDefault()` to avoid form submission side-effects.
+ *
+ * @param schedule          - The schedule data to render (local `Schedule` projection)
+ * @param deleteFunction    - Callback invoked after the user confirms deletion
+ * @param displayOptions    - Optional timezone, hour-format, and week-start display preferences
+ * @param updateDefault     - Callback to promote a schedule to the user's default
+ * @param isDeletable       - When `false`, the delete action shows a toast instead of opening
+ *                            the confirmation dialog (prevents deleting the last schedule)
+ * @param duplicateFunction - Callback to duplicate the schedule
+ * @param redirectUrl       - URL the schedule name links to (typically `/availability/[id]`)
+ */
 export function ScheduleListItem({
   schedule,
   deleteFunction,
@@ -61,6 +106,8 @@ export function ScheduleListItem({
   const { t, i18n } = useLocale();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  // Inferred element type from the Schedule interface's availability array.
+  // Used to strongly type the filter/map callbacks in the availability summary pipeline.
   type AvailabilityItem = (typeof schedule.availability)[number];
 
   return (

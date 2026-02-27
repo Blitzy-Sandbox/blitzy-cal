@@ -21,7 +21,17 @@ import { PrismaModule } from "@/modules/prisma/prisma.module";
 import { TokensModule } from "@/modules/tokens/tokens.module";
 import { UsersModule } from "@/modules/users/users.module";
 
+/**
+ * E2E test suite for the April 15, 2024 versioned enterprise schedule REST API (`/api/v2/schedules`).
+ *
+ * Exercises the full HTTP lifecycle through the NestJS application stack using Supertest.
+ * Validates CRUD operations, input validation, default availability assignment, and API version header enforcement.
+ * Uses `PermissionsGuard` override to isolate schedule behavior from permission enforcement.
+ */
 describe("Schedules Endpoints", () => {
+  /**
+   * Tests schedule endpoints with authenticated user context, covering creation, retrieval, update, and deletion flows.
+   */
   describe("User Authentication", () => {
     let app: INestApplication;
 
@@ -37,6 +47,11 @@ describe("Schedules Endpoints", () => {
     const defaultAvailabilityStartTime = "1970-01-01T09:00:00.000Z";
     const defaultAvailabilityEndTime = "1970-01-01T17:00:00.000Z";
 
+    /**
+     * Bootstraps the NestJS test application with AppModule, PrismaModule, UsersModule,
+     * TokensModule, and SchedulesModule_2024_04_15. Overrides PermissionsGuard.
+     * Creates test fixtures and seeds a user.
+     */
     beforeAll(async () => {
       const moduleRef = await withApiAuth(
         userEmail,
@@ -62,11 +77,16 @@ describe("Schedules Endpoints", () => {
       await app.init();
     });
 
+    /** Validates that test fixtures and the seeded user are properly defined after setup. */
     it("should be defined", () => {
       expect(userRepositoryFixture).toBeDefined();
       expect(user).toBeDefined();
     });
 
+    /**
+     * Validates that malformed availability time strings (non-ISO format) are rejected
+     * with HTTP 400 and an appropriate error message about ISO8061 format.
+     */
     it("should not create an invalid schedule", async () => {
       const scheduleTimeZone = "Europe/Rome";
       const isDefault = true;
@@ -97,6 +117,11 @@ describe("Schedules Endpoints", () => {
         });
     });
 
+    /**
+     * Validates default schedule creation — POST /api/v2/schedules with name, timezone (Europe/Rome),
+     * isDefault=true. Verifies SUCCESS_STATUS, default availability (Mon-Fri 09:00-17:00 UTC),
+     * and that the user's defaultScheduleId is synchronized.
+     */
     it("should create a default schedule", async () => {
       const isDefault = true;
 
@@ -134,6 +159,10 @@ describe("Schedules Endpoints", () => {
         });
     });
 
+    /**
+     * Validates GET /api/v2/schedules/default returns the previously created default schedule
+     * with matching ID, userId, and default availability.
+     */
     it("should get default schedule", async () => {
       return request(app.getHttpServer())
         .get("/api/v2/schedules/default")
@@ -154,6 +183,9 @@ describe("Schedules Endpoints", () => {
         });
     });
 
+    /**
+     * Validates GET /api/v2/schedules returns a list containing the created schedule with matching data.
+     */
     it("should get schedules", async () => {
       return request(app.getHttpServer())
         .get(`/api/v2/schedules`)
@@ -174,6 +206,10 @@ describe("Schedules Endpoints", () => {
         });
     });
 
+    /**
+     * Validates PATCH /api/v2/schedules/:id with a new name — verifies name is updated
+     * while schedule ID and availability remain unchanged.
+     */
     it("should update schedule name", async () => {
       const newScheduleName = `schedules-2024-04-15-schedule-${randomString()}`;
 
@@ -205,10 +241,15 @@ describe("Schedules Endpoints", () => {
         });
     });
 
+    /** Validates DELETE /api/v2/schedules/:id returns HTTP 200 for successful deletion. */
     it("should delete schedule", async () => {
       return request(app.getHttpServer()).delete(`/api/v2/schedules/${createdSchedule.id}`).expect(200);
     });
 
+    /**
+     * Cleanup — deletes the seeded user by email, attempts to delete the created schedule
+     * (may already be deleted by test 7), and closes the NestJS application.
+     */
     afterAll(async () => {
       await userRepositoryFixture.deleteByEmail(user.email);
       try {

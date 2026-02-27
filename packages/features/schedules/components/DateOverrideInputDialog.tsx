@@ -19,6 +19,35 @@ import DatePicker from "@calcom/features/calendars/components/DatePicker";
 import type { TimeRange } from "./ScheduleComponent";
 import { DayRanges } from "./ScheduleComponent";
 
+/**
+ * Internal form component for date-specific schedule override editing.
+ *
+ * Manages three pieces of local state:
+ * - `browsingDate` — calendar navigation position (controlled by onMonthChange)
+ * - `selectedDates` — currently selected dates (multi-select in create mode, single in edit mode)
+ * - `datesUnavailable` — whether selected dates should be marked as fully unavailable
+ *
+ * The form derives default time ranges from the user's working hours for the
+ * selected day-of-week, falling back to 9:00–17:00 (540–1020 minutes from
+ * midnight UTC) when no working hours match. Uses `react-hook-form` in controlled
+ * mode via the `values` option so the form re-syncs when the selected date or
+ * editing value changes.
+ *
+ * Submission follows three paths:
+ * 1. **isDryRun** — clears selection without emitting changes (used for testing)
+ * 2. **datesUnavailable** — emits zero-length ranges (`start === end` at midnight
+ *    UTC) that downstream consumers (`DateOverrideList`, `buildDateRanges`)
+ *    interpret as "fully unavailable"
+ * 3. **Available** — maps `selectedDates × form.range`, building UTC dates with
+ *    hour/minute values from the form inputs via `dayjs.utc(true)` (keepLocal)
+ *
+ * Layout: two-column responsive dialog content:
+ * - Left column — `DialogHeader` + `BookerStoreProvider`-wrapped `DatePicker`
+ * - Right column — `DayRanges` editor (or unavailable message), `Switch` toggle,
+ *   submit `Button` with toast feedback, and `DialogClose`
+ *
+ * @internal Not exported — used exclusively by {@link DateOverrideInputDialog}.
+ */
 const DateOverrideForm = ({
   value,
   workingHours,
@@ -49,6 +78,14 @@ const DateOverrideForm = ({
 
   const [selectedDates, setSelectedDates] = useState<Dayjs[]>(value ? [dayjs.utc(value[0].start)] : []);
 
+  /**
+   * Handles date selection/deselection in the calendar picker.
+   *
+   * - **Toggle**: clicking an already-selected date deselects it (compared via `yyyymmdd`).
+   * - **Create mode** (no existing `value`): allows multi-date selection by appending.
+   * - **Edit mode** (`value` exists): restricts to single-date selection, replacing the
+   *   current selection entirely.
+   */
   const onDateChange = (newDate: Dayjs) => {
     // If clicking on a selected date unselect it
     if (selectedDates.some((date) => yyyymmdd(date) === yyyymmdd(newDate))) {
@@ -65,6 +102,16 @@ const DateOverrideForm = ({
     setSelectedDates([newDate]);
   };
 
+  /**
+   * Derives default time ranges from the user's configured working hours.
+   *
+   * Scans the `workingHours` array for entries whose `days` include the day-of-week
+   * of the first selected date. For each match, constructs a UTC `TimeRange` using
+   * `dayjs.utc().startOf("day").add(minutes, "minute")`.
+   *
+   * Falls back to 9:00–17:00 (540–1020 minutes from midnight UTC) when no working
+   * hours match the selected day, since `DayRanges` does not support an empty state.
+   */
   const defaultRanges = (workingHours || []).reduce((dayRanges: TimeRange[], workingHour) => {
     if (selectedDates[0] && workingHour.days.includes(selectedDates[0].day())) {
       dayRanges.push({
@@ -82,6 +129,11 @@ const DateOverrideForm = ({
     });
   }
 
+  // React Hook Form in controlled mode: the `values` option re-syncs whenever
+  // the editing `value` or `defaultRanges` change. When editing an existing override
+  // whose start !== end (i.e. not "unavailable"), the ranges are reconstructed via
+  // `dayjs.utc().hour().minute().second(0).format()` → `new Date()` to produce
+  // clean UTC ISO timestamps. Otherwise, falls back to `defaultRanges`.
   const form = useForm({
     values: {
       range:
@@ -117,6 +169,9 @@ const DateOverrideForm = ({
         }
 
         if (datesUnavailable) {
+          // Unavailable path: emit zero-length ranges (start === end at midnight UTC).
+          // Downstream consumers (DateOverrideList, buildDateRanges) interpret these
+          // as "fully unavailable for the entire day".
           selectedDates.map((date) => {
             datesInRanges.push({
               start: date.utc(true).startOf("day").toDate(),
@@ -125,6 +180,10 @@ const DateOverrideForm = ({
           });
           onChange(datesInRanges);
         } else {
+          // Available path: for each selected date × each form time range, construct
+          // UTC dates by setting hour/minute from the form values onto the selected
+          // date, then calling `.utc(true)` (keepLocal) to preserve the local values
+          // as UTC coordinates. This ensures timezone-correct persistence.
           selectedDates.map((date) => {
             values.range.map((item) => {
               datesInRanges.push({
@@ -207,6 +266,22 @@ const DateOverrideForm = ({
   );
 };
 
+/**
+ * Public dialog component for creating or editing date-specific schedule overrides.
+ *
+ * Manages the `Dialog` open/close state and renders:
+ * - A `DialogTrigger` wrapping the caller-provided `Trigger` element
+ * - A `DialogContent` containing the internal {@link DateOverrideForm}
+ *
+ * Props are split into dialog-specific props (`Trigger`, `excludedDates`,
+ * `userTimeFormat`, `weekStart`, `className`) and pass-through props
+ * (`workingHours`, `onChange`, `value`, `isDryRun`) forwarded directly
+ * to `DateOverrideForm`. The `className` prop is merged with the base
+ * `"p-0"` class via the `cs` (classNames) utility.
+ *
+ * Consumed by `DateOverrideList` for inline editing and by schedule editor
+ * pages for creating new date overrides.
+ */
 const DateOverrideInputDialog = ({
   Trigger,
   excludedDates = [],

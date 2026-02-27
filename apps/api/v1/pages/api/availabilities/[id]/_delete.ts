@@ -36,6 +36,29 @@ import { schemaQueryIdParseInt } from "~/lib/validations/shared/queryIdTransform
  *       401:
  *        description: Authorization information is missing or invalid.
  */
+/**
+ * Deletes an availability record by its integer ID.
+ *
+ * The `id` path parameter is validated and coerced to an integer via the
+ * `schemaQueryIdParseInt` Zod schema before any database operation is attempted.
+ *
+ * @precondition Authorization is enforced by the `_auth-middleware.ts` layer that
+ *   executes before this handler is invoked. The requesting user must own the
+ *   availability record or hold sufficient permissions.
+ *
+ * @param req - The incoming Next.js API request whose `query.id` is parsed as an integer.
+ *
+ * @returns A `{ message: string }` object confirming deletion. The exact message
+ *   template is `"Availability with id: ${id} deleted successfully"` — this response
+ *   shape and message format are part of the public API contract and **MUST NOT**
+ *   change (Rule 0.7.4 — Backward Compatibility).
+ *
+ * @throws {ZodError} If `query.id` cannot be parsed as a valid integer by
+ *   `schemaQueryIdParseInt`.
+ * @throws {PrismaClientKnownRequestError} Prisma throws error code `P2025`
+ *   ("Record to delete does not exist") when no `Availability` row matches the
+ *   provided `id`.
+ */
 export async function deleteHandler(req: NextApiRequest) {
   const { query } = req;
   const { id } = schemaQueryIdParseInt.parse(query);

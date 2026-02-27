@@ -40,6 +40,39 @@ import { GetSlotsOutput_2024_09_04 } from "@/modules/slots/slots-2024-09-04/outp
 import { ReserveSlotOutputResponse_2024_09_04 } from "@/modules/slots/slots-2024-09-04/outputs/reserve-slot.output";
 import { SlotsService_2024_09_04 } from "@/modules/slots/slots-2024-09-04/services/slots.service";
 
+/**
+ * HTTP controller for the 2024-09-04 versioned Slots API (`/v2/slots`).
+ *
+ * Exposes 5 endpoints:
+ * - `GET  /v2/slots`                    — Retrieve available time slots for individual or team event types.
+ * - `POST /v2/slots/reservations`       — Reserve a slot to prevent double-booking (optional auth via `OptionalApiAuthGuard`).
+ * - `GET  /v2/slots/reservations/:uid`  — Look up a reservation by its UID (public, no auth required).
+ * - `PATCH /v2/slots/reservations/:uid` — Update an existing reservation by UID (public, no auth required).
+ * - `DELETE /v2/slots/reservations/:uid` — Cancel a reservation by UID (public, no auth required).
+ *
+ * All business logic is delegated to {@link SlotsService_2024_09_04}; this controller
+ * contains no domain logic and serves purely as the HTTP transport layer.
+ *
+ * **Authentication:** Only the `POST /reservations` handler is protected by
+ * `OptionalApiAuthGuard`, which enables optional authentication for user context
+ * (e.g., custom reservation duration). All other reservation endpoints (GET, PATCH, DELETE)
+ * are publicly accessible via the reservation UID — no auth guard is applied.
+ *
+ * **Query parsing:** The `GET /v2/slots` handler uses {@link GetSlotsInputPipe} to
+ * transform and validate incoming query parameters before delegating to the service.
+ *
+ * **DTO serialization:** Reservation responses are serialized through `plainToClass`
+ * with `{ strategy: "excludeAll" }`, ensuring only fields explicitly decorated with
+ * `@Expose()` in the DTO classes are included in the response payload.
+ *
+ * **Response formats:** The `GET /v2/slots` endpoint supports two response formats
+ * documented via a `@DocsResponse` `oneOf` schema:
+ * - **Map-based (default / `format=time`):** `{ [date]: Array<{ start: string }> }`
+ * - **Range-based (`format=range`):** `{ [date]: Array<{ start: string; end: string }> }`
+ *
+ * **Version gating:** `VERSION_2024_09_04` is applied via `@Controller({ version })` and
+ * enforced through the required `cal-api-version` HTTP header.
+ */
 @Controller({
   path: "/v2/slots",
   version: VERSION_2024_09_04,
@@ -57,6 +90,31 @@ import { SlotsService_2024_09_04 } from "@/modules/slots/slots-2024-09-04/servic
 export class SlotsController_2024_09_04 {
   constructor(private readonly slotsService: SlotsService_2024_09_04) {}
 
+  /**
+   * Returns available time slots for an individual user or team event type.
+   *
+   * Supports **4 user search patterns**:
+   * 1. By `eventTypeId` alone.
+   * 2. By `eventTypeSlug` + `username`.
+   * 3. By `eventTypeSlug` + `username` + `organizationSlug` (within an org).
+   * 4. By `usernames` (comma-separated) for dynamic multi-user events.
+   *
+   * Supports **3 team search patterns**:
+   * 1. By team `eventTypeId`.
+   * 2. By `eventTypeSlug` + `teamSlug`.
+   * 3. By `eventTypeSlug` + `teamSlug` + `organizationSlug` (within an org).
+   *
+   * **Required parameters:** `start`, `end` (ISO 8601 date strings, UTC).
+   * **Optional parameters:** `timeZone`, `duration`, `format`, `bookingUidToReschedule`.
+   *
+   * The response is a map of dates to slot arrays. Format depends on the `format` query
+   * parameter: time-based (default) returns `{ start }` per slot; range-based returns
+   * `{ start, end }` per slot. Seated event types additionally include `attendeesCount`
+   * and `bookingUid` in each slot object.
+   *
+   * Query parameters are parsed and validated by {@link GetSlotsInputPipe} before
+   * being forwarded to {@link SlotsService_2024_09_04.getAvailableSlots}.
+   */
   @Get("/")
   @ApiOperation({
     summary: "Get available time slots for an event type",
@@ -268,6 +326,17 @@ export class SlotsController_2024_09_04 {
     };
   }
 
+  /**
+   * Creates a time-slot reservation to prevent double-booking for a configurable window.
+   *
+   * Protected by {@link OptionalApiAuthGuard}: when authenticated (via OAuth, API key,
+   * or access token), the caller may specify a custom reservation duration. When
+   * unauthenticated, the reservation defaults to 5 minutes.
+   *
+   * The response DTO is serialized via `plainToClass` with `{ strategy: "excludeAll" }`,
+   * so only `@Expose()`-decorated fields on {@link ReserveSlotOutputType_2024_09_04}
+   * are included in the response.
+   */
   @Post("/reservations")
   @UseGuards(OptionalApiAuthGuard)
   @ApiOperation({
@@ -295,6 +364,13 @@ export class SlotsController_2024_09_04 {
     };
   }
 
+  /**
+   * Retrieves reservation details by the reservation's unique identifier (UID).
+   *
+   * No authentication is required — reservation lookup is public and addressed solely
+   * by UID. If the reservation has expired or does not exist, the `data` field in the
+   * response will be `null`.
+   */
   @Get("/reservations/:uid")
   @ApiOperation({
     summary: "Get reserved slot",
@@ -311,6 +387,15 @@ export class SlotsController_2024_09_04 {
     };
   }
 
+  /**
+   * Updates an existing slot reservation identified by UID.
+   *
+   * Applies the same validation pipeline as {@link reserveSlot}. The handler
+   * returns HTTP 200 via `@HttpCode(HttpStatus.OK)` to indicate a successful
+   * in-place update rather than the default 200 for PATCH.
+   *
+   * No authentication guard is applied — reservations are addressed by UID.
+   */
   @Patch("/reservations/:uid")
   @ApiOperation({
     summary: "Update a reserved slot",
@@ -331,6 +416,14 @@ export class SlotsController_2024_09_04 {
     };
   }
 
+  /**
+   * Deletes (cancels) a slot reservation identified by UID.
+   *
+   * Returns HTTP 200 via `@HttpCode(HttpStatus.OK)` with a simple
+   * `{ status: "success" }` payload upon successful deletion.
+   *
+   * No authentication guard is applied — reservations are addressed by UID.
+   */
   @Delete("/reservations/:uid")
   @ApiOperation({
     summary: "Delete a reserved slot",

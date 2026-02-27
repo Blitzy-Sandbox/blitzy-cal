@@ -19,6 +19,14 @@ import {
   ByTeamSlugAndEventTypeSlug_2024_09_04_type,
 } from "@calcom/platform-types";
 
+/**
+ * Internal query contract produced after normalizing a {@link GetSlotsInput_2024_09_04} DTO.
+ * Consumed by `SlotsService_2024_09_04.fetchAndFormatSlots` to drive slot availability lookups.
+ *
+ * Fields are resolved from the discriminated-union DTO: event type metadata is looked up
+ * from repositories, time boundaries are Luxon-adjusted to UTC ISO strings, and optional
+ * properties (`duration`, `rrHostSubsetIds`) are passed through when present.
+ */
 export type InternalGetSlotsQuery = {
   isTeamEvent: boolean;
   startTime: string;
@@ -33,6 +41,16 @@ export type InternalGetSlotsQuery = {
   rrHostSubsetIds?: number[];
 };
 
+/**
+ * Routing-extended variant of {@link InternalGetSlotsQuery} that carries four additional
+ * fields for contact-routing-aware slot queries. Produced by
+ * {@link SlotsInputService_2024_09_04.transformRoutingGetSlotsQuery}.
+ *
+ * - `routedTeamMemberIds` — pre-resolved member IDs from the routing engine (null if unset).
+ * - `skipContactOwner` — when true, excludes the contact owner from candidate hosts.
+ * - `teamMemberEmail` — email filter for a specific team member (null if unset).
+ * - `routingFormResponseId` — optional reference to the routing form submission.
+ */
 export type InternalGetSlotsQueryWithRouting = InternalGetSlotsQuery & {
   routedTeamMemberIds: number[] | null;
   skipContactOwner: boolean;
@@ -40,6 +58,37 @@ export type InternalGetSlotsQueryWithRouting = InternalGetSlotsQuery & {
   routingFormResponseId: number | undefined;
 };
 
+/**
+ * Input transformation service for the **2024-09-04 Slots API** version.
+ *
+ * Normalizes incoming {@link GetSlotsInput_2024_09_04} DTOs into the module-internal
+ * {@link InternalGetSlotsQuery} and {@link InternalGetSlotsQueryWithRouting} payloads
+ * that downstream services (`SlotsService_2024_09_04`) consume.
+ *
+ * **Event type resolution** follows a discriminated-union pattern:
+ * 1. `ById_2024_09_04_type` — direct repository lookup by numeric ID.
+ * 2. `ByUsernameAndEventTypeSlug_2024_09_04_type` — resolve user (optionally org-scoped),
+ *    then fetch event type by slug.
+ * 3. `ByTeamSlugAndEventTypeSlug_2024_09_04_type` — resolve team (optionally org-scoped),
+ *    then fetch event type by slug.
+ * 4. Default — returns the `dynamicEvent` placeholder with optional duration override.
+ *
+ * **Organization-scoped lookups**: when an `organizationSlug` is present, the service
+ * first resolves the organization and then performs org-scoped user/team lookups via
+ * {@link OrganizationsUsersRepository} / {@link OrganizationsTeamsRepository}.
+ *
+ * **Time boundary snapping** (Luxon-based, UTC):
+ * - Start time at midnight (00:00:00) → stays at 00:00:00 (start of day).
+ * - End time at midnight (00:00:00) → snaps to 23:59:59 (end of day, ensures full-day coverage).
+ * - Invalid ISO strings produce a `BadRequestException`.
+ *
+ * **Routing field normalization** (`transformRoutingGetSlotsQuery`):
+ * - `routedTeamMemberIds` / `teamMemberEmail` → `null` when falsy.
+ * - `skipContactOwner` → `false` when falsy.
+ * - `routingFormResponseId` → `undefined` when nullish.
+ *
+ * @see SlotsService_2024_09_04 — primary consumer of the transformed queries
+ */
 @Injectable()
 export class SlotsInputService_2024_09_04 {
   constructor(
@@ -52,6 +101,21 @@ export class SlotsInputService_2024_09_04 {
     private readonly teamsEventTypesRepository: TeamsEventTypesRepository
   ) {}
 
+  /**
+   * Transforms a raw {@link GetSlotsInput_2024_09_04} DTO into the normalized
+   * {@link InternalGetSlotsQuery} consumed by the slots service.
+   *
+   * Pipeline:
+   * 1. Resolves the event type via the discriminated-union {@link getEventType} helper.
+   * 2. Throws `NotFoundException` if no matching event type is found.
+   * 3. Determines `isTeamEvent` from the event type's `teamId`.
+   * 4. Adjusts start/end times via Luxon UTC parsing with midnight boundary snapping.
+   * 5. Extracts `usernameList`, `orgSlug`, `rescheduleUid`, and `rrHostSubsetIds` from the DTO.
+   *
+   * @param query - The incoming slots request DTO (discriminated union).
+   * @returns The fully resolved internal query payload.
+   * @throws {NotFoundException} When the resolved event type is null.
+   */
   async transformGetSlotsQuery(query: GetSlotsInput_2024_09_04): Promise<InternalGetSlotsQuery> {
     const eventType = await this.getEventType(query);
     if (!eventType) {
@@ -84,6 +148,21 @@ export class SlotsInputService_2024_09_04 {
     };
   }
 
+  /**
+   * Transforms a routing-aware slots DTO into {@link InternalGetSlotsQueryWithRouting}.
+   *
+   * Destructures the four routing-specific fields (`routedTeamMemberIds`,
+   * `skipContactOwner`, `teamMemberEmail`, `routingFormResponseId`) from the input,
+   * delegates the remaining base fields to {@link transformGetSlotsQuery}, then
+   * normalizes routing values:
+   * - `routedTeamMemberIds` → `null` when falsy.
+   * - `skipContactOwner` → `false` when falsy.
+   * - `teamMemberEmail` → `null` when falsy.
+   * - `routingFormResponseId` → `undefined` when nullish (`??`).
+   *
+   * @param query - The routing-extended slots request DTO.
+   * @returns The fully resolved internal query with routing metadata.
+   */
   async transformRoutingGetSlotsQuery(
     query: GetSlotsInputWithRouting_2024_09_04
   ): Promise<InternalGetSlotsQueryWithRouting> {
@@ -101,6 +180,22 @@ export class SlotsInputService_2024_09_04 {
     };
   }
 
+  /**
+   * Resolves the event type from the discriminated-union input DTO.
+   *
+   * Resolution paths:
+   * - `ById_2024_09_04_type`: Direct lookup via `eventTypeRepository.getEventTypeById`.
+   * - `ByUsernameAndEventTypeSlug_2024_09_04_type`: Resolve user (optionally org-scoped)
+   *   via {@link getEventTypeUser}, then fetch by slug via `getUserEventTypeBySlug`.
+   * - `ByTeamSlugAndEventTypeSlug_2024_09_04_type`: Resolve team (optionally org-scoped)
+   *   via {@link getEventTypeTeam}, then fetch by slug via `getEventTypeByTeamIdAndSlug`.
+   * - Default: Returns the `dynamicEvent` placeholder with optional `length` override
+   *   from `input.duration`.
+   *
+   * @param input - The discriminated-union slots input DTO.
+   * @returns The resolved event type entity, or `dynamicEvent` for dynamic bookings.
+   * @throws {NotFoundException} When a referenced user or team cannot be found.
+   */
   private async getEventType(input: GetSlotsInput_2024_09_04) {
     if (input.type === ById_2024_09_04_type) {
       return this.eventTypeRepository.getEventTypeById(input.eventTypeId);
@@ -125,6 +220,19 @@ export class SlotsInputService_2024_09_04 {
     return input.duration ? { ...dynamicEvent, length: input.duration } : dynamicEvent;
   }
 
+  /**
+   * Resolves the user entity for username-based event type lookups.
+   *
+   * - Without `organizationSlug`: performs a global username lookup via `usersRepository`.
+   * - With `organizationSlug`: first resolves the organization by slug, then performs an
+   *   org-scoped user lookup via `organizationsUsersRepository`. Throws `NotFoundException`
+   *   if the organization does not exist.
+   *
+   * @param input - The username + event-type-slug DTO containing the target username and
+   *   optional `organizationSlug`.
+   * @returns The resolved user entity, or `null`/`undefined` if not found.
+   * @throws {NotFoundException} When the specified organization slug cannot be resolved.
+   */
   private async getEventTypeUser(input: ByUsernameAndEventTypeSlug_2024_09_04) {
     if (!input.organizationSlug) {
       return await this.usersRepository.findByUsername(input.username);
@@ -143,6 +251,19 @@ export class SlotsInputService_2024_09_04 {
     );
   }
 
+  /**
+   * Resolves the team entity for team-slug-based event type lookups.
+   *
+   * - Without `organizationSlug`: performs a global team slug lookup via `teamsRepository`.
+   * - With `organizationSlug`: first resolves the organization by slug, then performs an
+   *   org-scoped team lookup via `organizationsTeamsRepository`. Throws `NotFoundException`
+   *   if the organization does not exist.
+   *
+   * @param input - The team-slug + event-type-slug DTO containing the target `teamSlug` and
+   *   optional `organizationSlug`.
+   * @returns The resolved team entity, or `null`/`undefined` if not found.
+   * @throws {NotFoundException} When the specified organization slug cannot be resolved.
+   */
   private async getEventTypeTeam(input: ByTeamSlugAndEventTypeSlug_2024_09_04) {
     if (!input.organizationSlug) {
       return await this.teamsRepository.findTeamBySlug(input.teamSlug);
@@ -158,6 +279,17 @@ export class SlotsInputService_2024_09_04 {
     return await this.organizationsTeamsRepository.findOrgTeamBySlug(organization.id, input.teamSlug);
   }
 
+  /**
+   * Parses and normalizes a start-time ISO string to UTC via Luxon.
+   *
+   * When the parsed time is exactly midnight (00:00:00), the value is explicitly set to
+   * `{ hour: 0, minute: 0, second: 0, millisecond: 0 }` — preserving the start-of-day
+   * boundary. This ensures the full day is included in slot generation.
+   *
+   * @param startTime - An ISO 8601 date-time string representing the query start.
+   * @returns The UTC-normalized ISO string.
+   * @throws {BadRequestException} When Luxon cannot produce a valid ISO representation.
+   */
   private adjustStartTime(startTime: string) {
     let dateTime = DateTime.fromISO(startTime, { zone: "utc" });
     if (dateTime.hour === 0 && dateTime.minute === 0 && dateTime.second === 0) {
@@ -172,6 +304,18 @@ export class SlotsInputService_2024_09_04 {
     return ISOStartTime;
   }
 
+  /**
+   * Parses and normalizes an end-time ISO string to UTC via Luxon.
+   *
+   * When the parsed time is exactly midnight (00:00:00), the value is snapped to
+   * `{ hour: 23, minute: 59, second: 59 }` — shifting to the end of the preceding day.
+   * This ensures full-day coverage when callers pass a bare date (which Luxon defaults
+   * to midnight).
+   *
+   * @param endTime - An ISO 8601 date-time string representing the query end.
+   * @returns The UTC-normalized ISO string.
+   * @throws {BadRequestException} When Luxon cannot produce a valid ISO representation.
+   */
   private adjustEndTime(endTime: string) {
     let dateTime = DateTime.fromISO(endTime, { zone: "utc" });
     if (dateTime.hour === 0 && dateTime.minute === 0 && dateTime.second === 0) {

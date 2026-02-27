@@ -27,7 +27,7 @@ import { SentryModule } from "@sentry/nestjs/setup";
  *   connection-pool sizing from the HTTP server's `PrismaModule`, ensuring that
  *   worker DB connections do not contend with request-serving connections.
  * - `AvailableSlotsModule` — Reuses the same 20-provider availability stack as the
- *   HTTP controller path (12 repositories + 8 services), with
+ *   HTTP controller path (11 repositories + 9 services), with
  *   `AvailableSlotsService` as the exported orchestrator responsible for slot
  *   generation, busy-time aggregation, and user-availability resolution.
  *

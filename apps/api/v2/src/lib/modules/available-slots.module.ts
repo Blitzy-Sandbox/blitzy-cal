@@ -26,14 +26,13 @@ import { Module } from "@nestjs/common";
  *
  * This module serves as the NestJS-native equivalent of the `@evyweb/ioctopus` DI container
  * defined in `packages/features/di/containers/AvailableSlots.ts`. It registers 20 providers
- * in total — 12 Prisma-backed repositories and 8 services — ensuring that every constructor
+ * in total — 11 Prisma-backed repositories and 9 services — ensuring that every constructor
  * dependency of {@link AvailableSlotsService} (16 direct deps) is satisfied.
  *
- * The 4 additional providers beyond the 16 direct dependencies serve transitive needs:
+ * The 3 additional providers beyond the 16 direct dependencies serve transitive needs:
  * - {@link PrismaHolidayRepository} — required by `UserAvailabilityService` for holiday blocking
  * - {@link PrismaMembershipRepository} — required by `NoSlotsNotificationService` and membership lookups
  * - {@link FilterHostsService} — required by `QualifiedHostsService` for host filtering
- * - {@link RedisService} — required by `UserAvailabilityService` for availability caching
  *
  * Only {@link AvailableSlotsService} is exported, keeping all repositories and supporting
  * services encapsulated within this module.

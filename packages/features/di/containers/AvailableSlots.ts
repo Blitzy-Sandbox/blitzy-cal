@@ -41,7 +41,6 @@ container.load(DI_TOKENS.CHECK_BOOKING_LIMITS_SERVICE_MODULE, checkBookingLimits
 container.load(DI_TOKENS.AVAILABLE_SLOTS_SERVICE_MODULE, availableSlotsModule);
 container.load(DI_TOKENS.GET_USER_AVAILABILITY_SERVICE_MODULE, getUserAvailabilityModule);
 container.load(DI_TOKENS.BUSY_TIMES_SERVICE_MODULE, busyTimesModule);
-container.load(DI_TOKENS.BUSY_TIMES_SERVICE_MODULE, busyTimesModule);
 container.load(DI_TOKENS.FILTER_HOSTS_SERVICE_MODULE, filterHostsModule);
 container.load(DI_TOKENS.QUALIFIED_HOSTS_SERVICE_MODULE, qualifiedHostsModule);
 container.load(DI_TOKENS.NO_SLOTS_NOTIFICATION_SERVICE_MODULE, noSlotsNotificationModule);

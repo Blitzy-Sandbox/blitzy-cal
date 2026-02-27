@@ -50,6 +50,8 @@ export function AvailabilityList({ availabilities }: AvailabilityListProps) {
       if (err instanceof HttpError) {
         const message = `${err.statusCode}: ${err.message}`;
         showToast(message, "error");
+      } else {
+        showToast(t("something_went_wrong"), "error");
       }
     },
     onSettled: () => {
@@ -77,6 +79,8 @@ export function AvailabilityList({ availabilities }: AvailabilityListProps) {
       if (err instanceof HttpError) {
         const message = `${err.statusCode}: ${err.message}`;
         showToast(message, "error");
+      } else {
+        showToast(t("something_went_wrong"), "error");
       }
     },
   });
@@ -99,6 +103,14 @@ export function AvailabilityList({ availabilities }: AvailabilityListProps) {
           showToast(t("bulk_updated_schedule_successfully"), "success");
           callback();
         },
+        onError: (err) => {
+          if (err instanceof HttpError) {
+            const message = `${err.statusCode}: ${err.message}`;
+            showToast(message, "error");
+          } else {
+            showToast(t("something_went_wrong"), "error");
+          }
+        },
       }
     );
   };
@@ -116,6 +128,8 @@ export function AvailabilityList({ availabilities }: AvailabilityListProps) {
       if (err instanceof HttpError) {
         const message = `${err.statusCode}: ${err.message}`;
         showToast(message, "error");
+      } else {
+        showToast(t("something_went_wrong"), "error");
       }
     },
   });

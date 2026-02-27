@@ -316,4 +316,111 @@ describe("UserAvailabilityService.calculateHolidayBlockedDates", () => {
       },
     });
   });
+
+  it("should include holidays on day 0 (Sunday) when user works Sundays", async () => {
+    mockHolidayRepo.findUserSettingsSelect.mockResolvedValue({
+      countryCode: "US",
+      disabledIds: [],
+    });
+
+    // Sunday, June 1, 2025
+    mockHolidayService.getHolidayDatesInRange.mockResolvedValue([
+      {
+        date: "2025-06-01",
+        holiday: {
+          id: "test_sunday_holiday",
+          name: "Test Sunday Holiday",
+          date: "2025-06-01",
+          year: 2025,
+        },
+      },
+    ]);
+
+    const result = await service.calculateHolidayBlockedDates(
+      123,
+      new Date("2025-06-01"),
+      new Date("2025-06-30"),
+      [createWorkingHours([0, 1, 2, 3, 4, 5, 6])] // All days including Sunday
+    );
+
+    expect(result).toEqual({
+      "2025-06-01": {
+        fromUser: null,
+        toUser: null,
+        reason: "Test Sunday Holiday",
+        emoji: expect.any(String),
+      },
+    });
+  });
+
+  it("should return empty object when availability has no working days", async () => {
+    mockHolidayRepo.findUserSettingsSelect.mockResolvedValue({
+      countryCode: "US",
+      disabledIds: [],
+    });
+
+    mockHolidayService.getHolidayDatesInRange.mockResolvedValue([
+      {
+        date: "2025-01-01",
+        holiday: {
+          id: "new_years_2025",
+          name: "New Year's Day",
+          date: "2025-01-01",
+          year: 2025,
+        },
+      },
+    ]);
+
+    // Empty availability = no working days
+    const result = await service.calculateHolidayBlockedDates(
+      123,
+      new Date("2025-01-01"),
+      new Date("2025-01-31"),
+      []
+    );
+
+    // No working days means no holidays match
+    expect(result).toEqual({});
+  });
+
+  it("should deduplicate working days from multiple overlapping schedules", async () => {
+    mockHolidayRepo.findUserSettingsSelect.mockResolvedValue({
+      countryCode: "US",
+      disabledIds: [],
+    });
+
+    // Wednesday, January 1, 2025
+    mockHolidayService.getHolidayDatesInRange.mockResolvedValue([
+      {
+        date: "2025-01-01",
+        holiday: {
+          id: "new_years_day_2025",
+          name: "New Year's Day",
+          date: "2025-01-01",
+          year: 2025,
+        },
+      },
+    ]);
+
+    // Multiple schedules with overlapping days (both include Wednesday=3)
+    const result = await service.calculateHolidayBlockedDates(
+      123,
+      new Date("2025-01-01"),
+      new Date("2025-01-31"),
+      [
+        createWorkingHours([1, 2, 3]), // Mon, Tue, Wed
+        createWorkingHours([3, 4, 5]), // Wed, Thu, Fri (overlaps on Wed)
+      ]
+    );
+
+    // Should still only produce one entry (not duplicated)
+    expect(result).toEqual({
+      "2025-01-01": {
+        fromUser: null,
+        toUser: null,
+        reason: "New Year's Day",
+        emoji: "🎆",
+      },
+    });
+  });
 });

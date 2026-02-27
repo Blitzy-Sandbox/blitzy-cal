@@ -58,6 +58,35 @@ export const useEvent = (props?: { fromRedirectOfNonOrgLink?: boolean; disabled?
  * The prefetchNextMonth argument can be used to prefetch two months at once,
  * useful when the user is viewing dates near the end of the month,
  * this way the multi day view will show data of both months.
+ *
+ * **Store vs Props Priority Resolution:**
+ * For `username`, `eventSlug`, `month`, and `duration`, values from the
+ * BookerStoreContext take priority over the prop values via the nullish
+ * coalescing (`??`) operator. This ensures the most recent booker state is
+ * always used while still allowing initial values to be passed as props for
+ * the first render.
+ *
+ * **Timezone Stabilization:**
+ * The raw timezone obtained from `useBookerTime()` is passed through
+ * `useStableTimezone`, which factors in the `restrictionSchedule`'s
+ * `useBookerTimezone` flag to produce a stable timezone value that does not
+ * flip-flop between renders.
+ *
+ * **Reschedule UID:**
+ * The `rescheduleUid` is extracted from the URL search params
+ * (`?rescheduleUid=...`) via `useCompatSearchParams` and forwarded to the
+ * underlying `useSchedule` hook so that busy-time calculations can exclude
+ * the booking being rescheduled.
+ *
+ * **Delegation:**
+ * After resolving store/prop values and stabilizing the timezone, this hook
+ * delegates entirely to `useSchedule` which handles the actual data fetching
+ * (via tRPC or API v2) and cache invalidation.
+ *
+ * **Return Shape:**
+ * Returns a curated subset of React Query state — `data`, `isPending`,
+ * `isError`, `isSuccess`, `isLoading`, `invalidate`, and `dataUpdatedAt` —
+ * to prevent leaking internal React Query internals to consumers.
  */
 export const useScheduleForEvent = ({
   username,
@@ -70,6 +99,10 @@ export const useScheduleForEvent = ({
   orgSlug,
   teamMemberEmail,
   isTeamEvent,
+  // Defaults to `true` here (the higher-level composition hook) while `useSchedule`
+  // (the lower-level query hook) defaults to `false`. This layered defaulting ensures
+  // backward compatibility for direct `useSchedule` consumers while pushing callers
+  // that go through `useScheduleForEvent` toward the newer API v2 path.
   useApiV2 = true,
   bookerLayout,
   restrictionSchedule,

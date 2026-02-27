@@ -1809,6 +1809,7 @@ model SelectedSlots {
   isSeat           Boolean  @default(false)
 
   @@unique(fields: [userId, slotUtcStartDate, slotUtcEndDate, uid], name: "selectedSlotUnique")
+  @@index([eventTypeId])
 }
 
 enum OAuthClientType {

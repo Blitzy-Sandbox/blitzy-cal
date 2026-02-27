@@ -1,3 +1,37 @@
+/**
+ * Unit test suite for `SlotsService_2024_09_04` — the main business-logic service
+ * for the 2024-09-04 versioned Slots API in the Cal.com platform.
+ *
+ * **Test framework**: Jest via NestJS `@nestjs/testing` TestingModule.
+ *
+ * **Test approach**: The real `SlotsService_2024_09_04` is injected while all 8 of
+ * its constructor dependencies are replaced with `jest.fn()` mocks:
+ *   1. `SlotsInputService_2024_09_04` — `transformGetSlotsQuery`, `transformRoutingGetSlotsQuery`
+ *   2. `EventTypesRepository_2024_06_14` — `getEventTypeById`
+ *   3. `SlotsRepository_2024_09_04` — empty mock (unused by routing path)
+ *   4. `SlotsOutputService_2024_09_04` — `getAvailableSlots`
+ *   5. `AvailableSlotsService` — `getAvailableSlots`
+ *   6. `MembershipsService` — empty mock (unused by routing path)
+ *   7. `MembershipsRepository` — empty mock (unused by routing path)
+ *   8. `TeamsRepository` — empty mock (unused by routing path)
+ *
+ * **Coverage areas**:
+ * - Routing-aware availability flow via `getAvailableSlotsWithRouting`, verifying that
+ *   routing parameters (`routedTeamMemberIds`, `skipContactOwner`, `teamMemberEmail`,
+ *   `routingFormResponseId`) are correctly passed through the transform → fetch pipeline.
+ * - Dependency error translation:
+ *     • `NotFoundException` passthrough (event type not found)
+ *     • `Error("Invalid time range given")` → `BadRequestException` translation
+ *     • Generic `Error` passthrough without modification
+ *     • Non-`Error` object passthrough
+ * - Edge cases for null/undefined routing values:
+ *     • Null and undefined routing params normalized to `null`/`false`/`undefined`
+ *     • Empty `routedTeamMemberIds` array passed through unchanged
+ *     • All routing params provided and forwarded correctly
+ *
+ * @note Tests exercise the private `fetchAndFormatSlots` method indirectly through
+ *       the public `getAvailableSlotsWithRouting` entry point.
+ */
 import { EventTypesRepository_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/event-types.repository";
 import { AvailableSlotsService } from "@/lib/services/available-slots.service";
 import { MembershipsRepository } from "@/modules/memberships/memberships.repository";

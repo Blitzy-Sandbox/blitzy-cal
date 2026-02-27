@@ -656,19 +656,22 @@ const TeamMemberSchedule = ({
   });
 
   const schedules = data?.schedules;
-  const options = schedules?.map((schedule) => ({
-    value: schedule.id,
-    label: schedule.name,
-    isDefault: schedule.isDefault,
-    isManaged: false,
-  }));
+  const options = schedules?.map(
+    (schedule: { id: number; name: string; isDefault: boolean }) => ({
+      value: schedule.id,
+      label: schedule.name,
+      isDefault: schedule.isDefault,
+      isManaged: false,
+    })
+  );
 
   //Set to defaultSchedule if Host Schedule is not previously selected
   const scheduleId = getValues(`hosts.${index}.scheduleId`);
-  const value = options?.find((option) =>
+  const value = options?.find((option: { value: number }) =>
     scheduleId
       ? option.value === scheduleId
-      : option.value === schedules?.find((schedule) => schedule.isDefault)?.id
+      : option.value === schedules?.find((schedule: { isDefault: boolean; id: number }) => schedule.isDefault)
+          ?.id
   );
 
   const member = teamMembers.find((mem) => mem.id === host.userId);

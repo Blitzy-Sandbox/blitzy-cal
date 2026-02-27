@@ -12,7 +12,7 @@ import { AvailabilitySettingsWebWrapper } from "~/availability/[schedule]/schedu
 const querySchema = z.object({
   schedule: z
     .string()
-    .refine((val) => !isNaN(Number(val)), {
+    .refine((val) => val.trim() !== "" && !isNaN(Number(val)), {
       message: "schedule must be a string that can be cast to a number",
     })
     .transform((val) => Number(val)),

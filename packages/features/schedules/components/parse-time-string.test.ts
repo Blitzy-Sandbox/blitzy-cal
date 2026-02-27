@@ -233,4 +233,68 @@ describe("parseTimeString", () => {
       expect(result?.getUTCMinutes()).toBe(5);
     });
   });
+
+  describe("additional edge cases for timezone and format validation", () => {
+    it("should always produce UTC hours regardless of input format", () => {
+      // Parse the same wall-clock time via 24h and 12h representations
+      const result24h = parseTimeString("14:30", 24);
+      const result12h = parseTimeString("2:30pm", 12);
+
+      expect(result24h).toBeInstanceOf(Date);
+      expect(result12h).toBeInstanceOf(Date);
+
+      // Both must yield identical UTC hours and minutes, confirming
+      // that parseTimeString output is timezone-agnostic
+      expect(result24h?.getUTCHours()).toBe(14);
+      expect(result24h?.getUTCMinutes()).toBe(30);
+      expect(result12h?.getUTCHours()).toBe(14);
+      expect(result12h?.getUTCMinutes()).toBe(30);
+    });
+
+    it("should parse 12:59am correctly (one minute before 1am)", () => {
+      // 12:59am in 12-hour format maps to 00:59 in 24-hour (midnight hour)
+      const result = parseTimeString("12:59am", 12);
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getUTCHours()).toBe(0);
+      expect(result?.getUTCMinutes()).toBe(59);
+    });
+
+    it("should parse 12:01pm correctly (one minute after noon)", () => {
+      // 12:01pm in 12-hour format maps to 12:01 in 24-hour
+      const result = parseTimeString("12:01pm", 12);
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getUTCHours()).toBe(12);
+      expect(result?.getUTCMinutes()).toBe(1);
+    });
+
+    it("should parse 12:59pm correctly", () => {
+      // 12:59pm in 12-hour format maps to 12:59 in 24-hour
+      const result = parseTimeString("12:59pm", 12);
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getUTCHours()).toBe(12);
+      expect(result?.getUTCMinutes()).toBe(59);
+    });
+
+    it("should handle colon-only input gracefully", () => {
+      // A bare colon is not a valid time string in any format
+      const result = parseTimeString(":", 24);
+      expect(result).toBeNull();
+    });
+
+    it("should handle single digit minutes as invalid in strict mode", () => {
+      // dayjs strict parsing requires exactly two digits for minutes (mm),
+      // so "9:5am" does not match "h:mma" or "HH:mm" and is rejected
+      const result = parseTimeString("9:5am", 12);
+      expect(result).toBeNull();
+    });
+
+    it("should handle 00:00 in 12h format as format fallback", () => {
+      // When timeFormat is 12, formats tried are ["h:mma", "HH:mm"].
+      // "00:00" fails h:mma (no am/pm suffix) but succeeds HH:mm via fallback.
+      const result = parseTimeString("00:00", 12);
+      expect(result).toBeInstanceOf(Date);
+      expect(result?.getUTCHours()).toBe(0);
+      expect(result?.getUTCMinutes()).toBe(0);
+    });
+  });
 });

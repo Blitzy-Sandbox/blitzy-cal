@@ -12,8 +12,12 @@ import {
 } from "./date-ranges";
 
 describe("processWorkingHours", () => {
-  // TEMPORAIRLY SKIPPING THIS TEST - Started failing after 29th Oct
-  it.skip("should return the correct working hours given a specific availability, timezone, and date range", () => {
+  // Fixed: pin system time to a date during EDT (UTC-4) so relative date calculations
+  // and hardcoded UTC offsets (T12:00:00Z = 8 AM EDT, T21:00:00Z = 5 PM EDT) are stable.
+  it("should return the correct working hours given a specific availability, timezone, and date range", () => {
+    // Pin to June 2023 (EDT, UTC-4) to make the test deterministic
+    vi.useFakeTimers().setSystemTime(new Date("2023-06-12T12:00:00.000Z"));
+
     const item = {
       days: [1, 2, 3, 4, 5], // Monday to Friday
       startTime: new Date(Date.UTC(2023, 5, 12, 8, 0)), // 8 AM
@@ -28,6 +32,7 @@ describe("processWorkingHours", () => {
     const results = Object.values(indexedResults);
     expect(results.length).toBe(2); // There should be two working days between the range
     // "America/New_York" day shifts -1, so we need to add a day to correct this shift.
+    // During EDT (UTC-4): 8 AM ET = 12:00 UTC, 5 PM ET = 21:00 UTC
     expect(results[0]).toEqual({
       start: dayjs(`${dateFrom.tz(timeZone).add(1, "day").format("YYYY-MM-DD")}T12:00:00Z`).tz(timeZone),
       end: dayjs(`${dateFrom.tz(timeZone).add(1, "day").format("YYYY-MM-DD")}T21:00:00Z`).tz(timeZone),
@@ -36,6 +41,8 @@ describe("processWorkingHours", () => {
       start: dayjs(`${dateTo.tz(timeZone).format("YYYY-MM-DD")}T12:00:00Z`).tz(timeZone),
       end: dayjs(`${dateTo.tz(timeZone).format("YYYY-MM-DD")}T21:00:00Z`).tz(timeZone),
     });
+
+    vi.useRealTimers();
   });
   it("should have availability on last day of month in the month were DST starts", () => {
     const item = {
@@ -159,15 +166,19 @@ describe("processWorkingHours", () => {
     vi.useRealTimers();
   });
 
-  // TEMPORAIRLY SKIPPING THIS TEST - Started failing after 29th Oct
-  it.skip("should return the correct working hours in the month were DST ends", () => {
+  // Fixed: pin system time to 2023 so dayjs() produces a known year where
+  // the first Sunday of November is Nov 5, 2023 (DST ends at 2 AM ET).
+  it("should return the correct working hours in the month were DST ends", () => {
+    // Pin to Oct 1, 2023 so dayjs().month(10) resolves to November 2023
+    vi.useFakeTimers().setSystemTime(new Date("2023-10-01T12:00:00.000Z"));
+
     const item = {
       days: [0, 1, 2, 3, 4, 5, 6], // Monday to Sunday
       startTime: new Date(Date.UTC(2023, 5, 12, 8, 0)), // 8 AM
       endTime: new Date(Date.UTC(2023, 5, 12, 17, 0)), // 5 PM
     };
 
-    // in America/New_York DST ends on first Sunday of November
+    // in America/New_York DST ends on first Sunday of November (Nov 5, 2023)
     const timeZone = "America/New_York";
 
     let firstSundayOfNovember = dayjs().startOf("day").month(10).date(1);
@@ -182,15 +193,19 @@ describe("processWorkingHours", () => {
       processWorkingHours({}, { item, timeZone, dateFrom, dateTo, travelSchedules: [] })
     );
 
+    // Before DST ends (EDT, UTC-4): 8 AM ET = 12:00 UTC
     const allDSTStartAt12 = results
       .filter((res) => res.start.isBefore(firstSundayOfNovember))
       .every((result) => result.start.utc().hour() === 12);
+    // After DST ends (EST, UTC-5): 8 AM ET = 13:00 UTC
     const allNotDSTStartAt13 = results
       .filter((res) => res.start.isAfter(firstSundayOfNovember))
       .every((result) => result.start.utc().hour() === 13);
 
     expect(allDSTStartAt12).toBeTruthy();
     expect(allNotDSTStartAt13).toBeTruthy();
+
+    vi.useRealTimers();
   });
 
   it("should skip event if it ends before it starts (different days)", () => {

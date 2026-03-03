@@ -30,6 +30,16 @@ import { UpdateScheduleInput_2024_04_15 } from "@calcom/platform-types";
 
 import { CreateScheduleInput_2024_04_15 } from "../inputs/create-schedule.input";
 
+/**
+ * Versioned NestJS REST controller for the April 15, 2024 enterprise schedule API.
+ *
+ * Routes HTTP requests for `/v2/schedules` to {@link SchedulesService_2024_04_15}.
+ * Applies {@link ApiAuthGuard} and {@link PermissionsGuard} globally — all endpoints require
+ * authentication and appropriate `SCHEDULE_READ`/`SCHEDULE_WRITE` permissions.
+ * Hidden from Swagger documentation via `@DocsExcludeController(true)`.
+ * Version-locked to {@link VERSION_2024_04_15_VALUE} — only clients sending the April 15, 2024
+ * API version header reach these endpoints.
+ */
 @Controller({
   path: "/v2/schedules",
   version: VERSION_2024_04_15_VALUE,
@@ -39,6 +49,14 @@ import { CreateScheduleInput_2024_04_15 } from "../inputs/create-schedule.input"
 export class SchedulesController_2024_04_15 {
   constructor(private readonly schedulesService: SchedulesService_2024_04_15) {}
 
+  /**
+   * Creates a new schedule for the authenticated user.
+   *
+   * @param user - The authenticated user with profile, injected via `@GetUser()`.
+   * @param bodySchedule - The schedule creation input (name, timeZone, isDefault, optional availabilities).
+   * @returns `CreateScheduleOutput_2024_04_15` with `SUCCESS_STATUS` and the created schedule data.
+   * @remarks Requires `SCHEDULE_WRITE` permission.
+   */
   @Post("/")
   @Permissions([SCHEDULE_WRITE])
   async createSchedule(
@@ -53,6 +71,13 @@ export class SchedulesController_2024_04_15 {
     };
   }
 
+  /**
+   * Retrieves the authenticated user's default schedule.
+   *
+   * @param user - The authenticated user with profile.
+   * @returns `GetDefaultScheduleOutput_2024_04_15` with `SUCCESS_STATUS` and the default schedule data, or null if no default exists.
+   * @remarks Requires `SCHEDULE_READ` permission.
+   */
   @Get("/default")
   @Permissions([SCHEDULE_READ])
   async getDefaultSchedule(
@@ -66,6 +91,14 @@ export class SchedulesController_2024_04_15 {
     };
   }
 
+  /**
+   * Retrieves a specific schedule by ID for the authenticated user.
+   *
+   * @param user - The authenticated user with profile.
+   * @param scheduleId - The schedule ID from the URL path parameter.
+   * @returns `GetScheduleOutput_2024_04_15` with `SUCCESS_STATUS` and the schedule data.
+   * @remarks Requires `SCHEDULE_READ` permission.
+   */
   @Get("/:scheduleId")
   @Permissions([SCHEDULE_READ])
   async getSchedule(
@@ -80,6 +113,13 @@ export class SchedulesController_2024_04_15 {
     };
   }
 
+  /**
+   * Retrieves all schedules for the authenticated user.
+   *
+   * @param user - The authenticated user with profile (provides timeZone and defaultScheduleId for enrichment).
+   * @returns `GetSchedulesOutput_2024_04_15` with `SUCCESS_STATUS` and the list of schedules.
+   * @remarks Requires `SCHEDULE_READ` permission.
+   */
   @Get("/")
   @Permissions([SCHEDULE_READ])
   async getSchedules(@GetUser() user: UserWithProfile): Promise<GetSchedulesOutput_2024_04_15> {
@@ -95,6 +135,15 @@ export class SchedulesController_2024_04_15 {
     };
   }
 
+  /**
+   * Updates an existing schedule by ID for the authenticated user. Currently used by Atoms only.
+   *
+   * @param user - The authenticated user with profile.
+   * @param bodySchedule - The schedule update input (partial fields).
+   * @param scheduleId - The schedule ID from the URL path parameter (string, converted to number internally).
+   * @returns `UpdateScheduleOutput_2024_04_15` with `SUCCESS_STATUS` and the updated schedule data.
+   * @remarks Requires `SCHEDULE_WRITE` permission.
+   */
   // note(Lauris): currently this endpoint is atoms only
   @Patch("/:scheduleId")
   @Permissions([SCHEDULE_WRITE])
@@ -115,6 +164,14 @@ export class SchedulesController_2024_04_15 {
     };
   }
 
+  /**
+   * Deletes a schedule by ID for the authenticated user.
+   *
+   * @param userId - The authenticated user's ID, extracted via `@GetUser("id")`.
+   * @param scheduleId - The schedule ID from the URL path parameter.
+   * @returns `DeleteScheduleOutput_2024_04_15` with `SUCCESS_STATUS` (no data payload).
+   * @remarks Requires `SCHEDULE_WRITE` permission. Uses `@HttpCode(HttpStatus.OK)` to standardize the success response code.
+   */
   @Delete("/:scheduleId")
   @HttpCode(HttpStatus.OK)
   @Permissions([SCHEDULE_WRITE])

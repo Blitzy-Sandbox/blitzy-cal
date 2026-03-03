@@ -1,3 +1,97 @@
+/**
+ * @file Comprehensive E2E test suite for user event-type slot availability, reservations,
+ *   and edge cases via the `VERSION_2024_09_04` Slots API.
+ *
+ * @module SlotsModule_2024_09_04 E2E Tests — User Event Type Slots (most comprehensive suite)
+ *
+ * @description
+ * Validates `GET /v2/slots` for individual user event types across all query patterns,
+ * response formats, timezone overrides, seated events, variable-length durations, booking
+ * side effects, OOO exclusions, and the full reservation CRUD lifecycle.
+ *
+ * ## Coverage Areas
+ *
+ * ### Slot Retrieval
+ * - By `eventTypeId` — `GET /v2/slots?eventTypeId=...&start=...&end=...`
+ * - By `username + eventTypeSlug` — slug-based resolution
+ * - With `format=range` — response format with start+end timestamps, asserted against `expectedSlotsUTCRange`
+ * - With `timeZone` overrides — `timeZone=Europe/Rome`, asserted against `expectedSlotsRome` and `expectedSlotsRomeRange`
+ * - With `start`/`end` date filtering — subset date range narrowing
+ *
+ * ### Seated Event Metadata
+ * - `seatsBooked`, `seatsRemaining`, `bookingUid` in slot response objects
+ *
+ * ### Variable-Length Duration
+ * - `duration=90` and `duration=120` on variable-length event types (`lengthInMinutes: "60,90,120"`)
+ *
+ * ### Reservation Lifecycle (POST/GET/PATCH/DELETE `/v2/slots/reservations`)
+ * - **Create**: Returns `ReserveSlotOutputResponse_2024_09_04` with `reservationUid`, `releaseAt`, timestamps
+ * - **Read**: Retrieves by UID, returns null if expired
+ * - **Update**: Changes slot time on existing reservation
+ * - **Delete**: Cancels reservation by UID
+ * - **Rejection**: Overlapping reservations, auth failures, invalid states
+ *
+ * ### Out-of-Office Exclusion
+ * - OOO user slots removed from availability results
+ *
+ * ### Booking Side Effects
+ * - Accepted bookings reduce slots for default events
+ * - Seated event bookings reduce `seatsRemaining`
+ * - Mixed-host bookings tested
+ *
+ * ### Reserved Slots
+ * - Reserved slots vanish from `GET /v2/slots` responses
+ *
+ * ### Time Mocking
+ * - `jest-date-mock` (`advanceTo`/`clear`) + `luxon` (`DateTime`) for deterministic reservation timestamps
+ *
+ * ### Golden Fixtures
+ * All 4 exports from `./expected-slots`:
+ * - `expectedSlotsUTC` — 07:00–14:00Z start-only format
+ * - `expectedSlotsRome` — 09:00–16:00+02:00 start-only format
+ * - `expectedSlotsUTCRange` — 07:00–15:00Z start+end range format
+ * - `expectedSlotsRomeRange` — 09:00–17:00+02:00 start+end range format
+ *
+ * ### Request Headers
+ * - `CAL_API_VERSION_HEADER` set to `VERSION_2024_09_04` on all requests
+ *
+ * ### Response DTOs
+ * - `GetSlotsOutput_2024_09_04` — slot listing response
+ * - `ReserveSlotOutputResponse_2024_09_04` — reservation create/update response
+ * - `GetReservedSlotOutput_2024_09_04` — reservation read response
+ *
+ * ## Test Infrastructure
+ * - `Test.createTestingModule` with `AppModule`, `PrismaModule`, `UsersModule`, `TokensModule`,
+ *   `SchedulesModule_2024_06_11`, `SlotsModule_2024_09_04`
+ * - `PermissionsGuard` overridden to always allow
+ * - API key authentication for reservation tests
+ *
+ * ## Fixture Setup
+ * - Multiple users: owner, teammate, outsider (unrelated), OOO user
+ * - API keys per user for authenticated requests
+ * - Memberships linking users to teams
+ * - Teams for multi-host scenarios
+ * - Multiple event types: default 60min, seated (`seatsPerTimeSlot`), variable-length
+ *   (`multipleDuration`), OOO event type
+ * - Mon–Fri 9AM–5PM Europe/Rome schedules via `SchedulesService_2024_06_11`
+ * - Deterministic bookings with attendees and booking seats
+ * - Selected slot entries for reservation testing
+ * - OOO entries via `OOORepositoryFixture`
+ *
+ * ## Cleanup
+ * - Time reset via `clear()`
+ * - Selected slot cleanup via `SelectedSlotRepositoryFixture.deleteByUId`
+ * - Booking/attendee cleanup via `BookingsRepositoryFixture.deleteAllBookings`
+ * - User deletion via `UserRepositoryFixture.deleteByEmail`
+ * - Team deletion via `TeamRepositoryFixture.delete`
+ * - OOO cleanup (implicit via user deletion cascade)
+ * - App closure via `app.close()`
+ *
+ * @see {@link ./expected-slots.ts} — Golden test fixture definitions
+ * @see {@link packages/features/schedules/lib/slots.ts} — Slot generation algorithm
+ * @see {@link packages/features/busyTimes/services/getBusyTimes.ts} — Busy time aggregation with buffer expansion
+ * @see {@link packages/features/availability/lib/getUserAvailability.ts} — Availability orchestration
+ */
 import { CAL_API_VERSION_HEADER, SUCCESS_STATUS, VERSION_2024_09_04 } from "@calcom/platform-constants";
 import type {
   CreateScheduleInput_2024_06_11,

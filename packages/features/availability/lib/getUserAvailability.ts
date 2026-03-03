@@ -60,6 +60,24 @@ type GetUsersAvailabilityQuery = {
   mode?: string;
 };
 
+/**
+ * Zod validation schema for incoming availability query parameters.
+ *
+ * Transforms raw string date inputs (`dateFrom`, `dateTo`) into Dayjs instances
+ * via {@link stringToDayjsZod}, enabling type-safe date arithmetic downstream.
+ *
+ * Fields:
+ * - `dateFrom` / `dateTo` — ISO-8601 strings parsed to Dayjs; define the query window.
+ * - `eventTypeId` — Optional event type to scope schedule/limit lookups.
+ * - `afterEventBuffer` / `beforeEventBuffer` — Minutes of padding applied by BusyTimesService.
+ * - `duration` — Requested booking duration override (minutes).
+ * - `withSource` — When true, busy-time entries include their originating calendar source.
+ * - `returnDateOverrides` — Controls whether per-date overrides are computed (CPU optimization).
+ * - `bypassBusyCalendarTimes` — Skips external calendar busy-time fetching when true.
+ * - `silentlyHandleCalendarFailures` — Suppresses calendar fetch errors instead of throwing.
+ * - `shouldServeCache` — Hint for Redis cache layer.
+ * - `mode` — Calendar fetch mode: "slots" | "overlay" | "booking" | "none" (default).
+ */
 const availabilitySchema: z.ZodType<GetUserAvailabilityParams, z.ZodTypeDef, unknown> = z.object({
   dateFrom: stringToDayjsZod,
   dateTo: stringToDayjsZod,
@@ -75,6 +93,14 @@ const availabilitySchema: z.ZodType<GetUserAvailabilityParams, z.ZodTypeDef, unk
   mode: z.enum(["slots", "overlay", "booking", "none"]).default("none"),
 });
 
+/**
+ * Parsed availability query parameters after Zod validation.
+ *
+ * `dateFrom` and `dateTo` are fully hydrated Dayjs instances (not strings),
+ * enabling direct timezone-aware arithmetic in the orchestration pipeline.
+ * Optional buffer, duration, and mode fields control downstream busy-time
+ * and slot-generation behavior.
+ */
 type GetUserAvailabilityParams = {
   withSource?: boolean;
   username?: string;
@@ -106,6 +132,24 @@ type GetUsersAvailabilityProps = {
 
 export type EventType = Awaited<ReturnType<(typeof UserAvailabilityService)["prototype"]["_getEventType"]>>;
 
+/**
+ * Pre-fetched data optimization type for the availability orchestration pipeline.
+ *
+ * When computing availability for multiple users (e.g., team events), callers can
+ * batch-fetch shared data (event type, bookings, OOO entries, limit-based busy times)
+ * once and pass it through `initialData` to avoid redundant per-user database queries.
+ *
+ * Key fields:
+ * - `user` — Enriched user record with schedules, credentials, calendars, and travel data.
+ * - `eventType` — Resolved event type with metadata, schedule, and limit configurations.
+ * - `currentSeats` — Pre-fetched seat occupancy for seated event types.
+ * - `rescheduleUid` — UID of the booking being rescheduled (excluded from busy-time checks).
+ * - `currentBookings` — Pre-fetched bookings for busy-time calculation.
+ * - `outOfOfficeDays` — Pre-fetched OOO entries with user, delegate, and reason data.
+ * - `busyTimesFromLimits` / `busyTimesFromLimitsBookings` — Pre-computed per-user limit busy times.
+ * - `eventTypeForLimits` — Event type scoped for booking/duration limit evaluation.
+ * - `teamBookingLimits` / `teamForBookingLimits` — Pre-computed team-level limit busy times.
+ */
 export type GetUserAvailabilityInitialData = {
   user: {
     isFixed?: boolean;
@@ -167,6 +211,22 @@ export type CurrentSeats = Awaited<
   ReturnType<(typeof UserAvailabilityService)["prototype"]["_getCurrentSeats"]>
 >;
 
+/**
+ * Complete availability result returned by {@link UserAvailabilityService._getUserAvailability}.
+ *
+ * This is the canonical output shape consumed by TRPC routers, API v1/v2, the web app,
+ * and the Platform SDK. Changes to this type constitute a **breaking change** for all consumers.
+ *
+ * Fields:
+ * - `busy` — Aggregated busy-time entries from bookings, calendars, and limit enforcement.
+ * - `timeZone` — The resolved timezone used for all date arithmetic (schedule → delegated → user fallback).
+ * - `dateRanges` — Available time windows after subtracting busy times from working hours.
+ * - `oooExcludedDateRanges` — Available windows that additionally exclude OOO periods.
+ * - `workingHours` — Computed weekly working hours with UTC offset adjustments.
+ * - `dateOverrides` — Per-date availability overrides within the query window.
+ * - `currentSeats` — Seat occupancy data for seated event types (null if not applicable).
+ * - `datesOutOfOffice` — Date-keyed map of OOO and holiday blocks with user/delegate metadata.
+ */
 export type GetUserAvailabilityResult = {
   busy: EventBusyDetails[];
   timeZone: string;
@@ -192,17 +252,37 @@ export type GetUserAvailabilityResult = {
   datesOutOfOffice?: IOutOfOfficeData;
 };
 
+/**
+ * Represents the user who is out of office (the originator of the OOO entry).
+ * Used within {@link IOutOfOfficeData} to identify who created the OOO block.
+ */
 export interface IFromUser {
   id: number;
   displayName: string | null;
 }
 
+/**
+ * Represents the delegate user who handles bookings during an OOO period.
+ * When a user is out of office, their bookings may be redirected to this delegate.
+ * `username` enables public profile linking; `displayName` is used in UI rendering.
+ */
 export interface IToUser {
   id: number;
   username: string | null;
   displayName: string | null;
 }
 
+/**
+ * Date-keyed map of out-of-office and holiday blocking entries.
+ *
+ * Keys are ISO date strings in "YYYY-MM-DD" format (UTC-normalized).
+ * Each entry contains the OOO originator (`fromUser`), optional delegate (`toUser`),
+ * reason/emoji metadata, and optional private notes controlled by `showNotePublicly`.
+ *
+ * This structure is consumed by `buildDateRanges` to exclude OOO windows from
+ * available time ranges, and is propagated to the slot generation engine for
+ * OOO metadata merging into bookable slot responses.
+ */
 export interface IOutOfOfficeData {
   [key: string]: {
     fromUser: IFromUser | null;
@@ -214,6 +294,16 @@ export interface IOutOfOfficeData {
   };
 }
 
+/**
+ * Dependency injection bag for {@link UserAvailabilityService}.
+ *
+ * Follows the `@evyweb/ioctopus` DI pattern (Rule 0.7.1): all external dependencies
+ * are declared as typed properties and injected through the constructor. This enables
+ * testability via mock injection and decouples the service from concrete implementations.
+ *
+ * Wired by {@link packages/features/di/modules/GetUserAvailability.ts} and bootstrapped
+ * via {@link packages/features/di/containers/GetUserAvailability.ts}.
+ */
 export interface IUserAvailabilityService {
   eventTypeRepo: EventTypeRepository;
   oooRepo: PrismaOOORepository;
@@ -222,10 +312,49 @@ export interface IUserAvailabilityService {
   holidayRepo: PrismaHolidayRepository;
 }
 
+/**
+ * Orchestration core for the Cal.com availability engine.
+ *
+ * This service is the **single composition point** for all availability sub-systems.
+ * It coordinates schedule detection, holiday blocking, busy-time aggregation,
+ * date-range arithmetic, and OOO processing into a unified availability response.
+ *
+ * **Consumed by**: TRPC viewer routers, API v1/v2 endpoints, Platform SDK, web app modules.
+ * **Re-exported by**: `packages/platform/libraries/schedules.ts` (public Platform SDK contract).
+ *
+ * All dependencies are injected via {@link IUserAvailabilityService} following the
+ * `@evyweb/ioctopus` DI pattern. All date-time operations use `@calcom/dayjs` exclusively.
+ *
+ * Key orchestration flow (see {@link _getUserAvailability}):
+ * 1. User validation and event type resolution
+ * 2. Schedule detection via `detectEventTypeScheduleForUser`
+ * 3. Timezone resolution (schedule → delegated calendar → user fallback)
+ * 4. Working hours computation and date override extraction
+ * 5. OOO + holiday blocking
+ * 6. Travel schedule integration
+ * 7. Date range construction via `buildDateRanges`
+ * 8. Busy-time aggregation (bookings + calendars + limits)
+ * 9. Availability subtraction and result composition
+ */
 export class UserAvailabilityService {
   constructor(public readonly dependencies: IUserAvailabilityService) {}
 
-  // Fetch timezones from outlook or google using delegated credentials (formely known as domain wide delegatiion)
+  /**
+   * Resolves the user's timezone from delegated calendar credentials (e.g., Google Workspace,
+   * Outlook domain-wide delegation).
+   *
+   * Fallback chain:
+   * 1. Check Redis cache (`user-timezone:{userId}`) — returns immediately if cached.
+   * 2. Iterate delegated calendar credentials and call `calendar.getMainTimeZone()`.
+   * 3. Cache the first non-"UTC" timezone in Redis with a 6-hour TTL.
+   * 4. Return `null` if no delegated credentials exist or all fail.
+   *
+   * All Redis operations are wrapped in try/catch to ensure graceful degradation —
+   * a cache failure never blocks the availability pipeline.
+   *
+   * @param user - Enriched user record with credentials and calendar data.
+   * @returns The resolved IANA timezone string, or `null` if unavailable.
+   */
   async getTimezoneFromDelegatedCalendars(user: NonNullable<GetAvailabilityUser>): Promise<string | null> {
     if (!user.credentials || user.credentials.length === 0) {
       return null;
@@ -282,6 +411,13 @@ export class UserAvailabilityService {
     return null;
   }
 
+  /**
+   * Fetches an event type by ID for availability computation, parsing its metadata
+   * through {@link EventTypeMetaDataSchema} to ensure runtime type safety.
+   *
+   * @param id - The event type ID to look up.
+   * @returns The event type with parsed metadata, or `undefined` if not found.
+   */
   async _getEventType(id: number) {
     const eventType = await this.dependencies.eventTypeRepo.findByIdForUserAvailability({ id });
     if (!eventType) {
@@ -295,6 +431,18 @@ export class UserAvailabilityService {
 
   getEventType = withReporting(this._getEventType.bind(this), "getEventType");
 
+  /**
+   * Fetches current seat occupancy for a seated event type within a date window.
+   *
+   * For team events (MANAGED, ROUND_ROBIN, COLLECTIVE), host emails are filtered out
+   * of the attendee count so that only invitee seats are reported. This enables the
+   * booker UI to display remaining capacity accurately.
+   *
+   * @param eventType - Event type with scheduling type, hosts, and ID.
+   * @param dateFrom - Start of the query window.
+   * @param dateTo - End of the query window.
+   * @returns Array of booking UIDs with start times and attendee counts.
+   */
   async _getCurrentSeats(
     eventType: {
       id?: number;
@@ -338,7 +486,42 @@ export class UserAvailabilityService {
 
   getCurrentSeats = withReporting(this._getCurrentSeats.bind(this), "getCurrentSeats");
 
-  /** This should be called getUsersWorkingHoursAndBusySlots (...and remaining seats, and final timezone) */
+  /**
+   * Core availability orchestration method — composes all sub-systems into a unified result.
+   *
+   * **Orchestration sequence (13 steps, executed in strict order):**
+   *
+   * 0. **User validation** — Throws HTTP 404 if user is null.
+   * 1. **Event type + seats resolution** — Resolves event type and fetches seat occupancy
+   *    for seated events. Calls `detectEventTypeScheduleForUser` for schedule priority resolution
+   *    (event-type schedule → host override → user default → `DEFAULT_SCHEDULE_DATA` fallback).
+   * 2. **Availability resolution** — Selects availability records from schedule → eventType → user.
+   *    Throws HTTP 400 if no availability data exists.
+   * 3. **Timezone delegation** — If the schedule has no explicit timezone, attempts to resolve
+   *    via delegated calendar credentials (Google/Outlook). Falls back to `schedule.timeZone`.
+   * 4. **Working hours computation** — Calls `getWorkingHours` with the final timezone to produce
+   *    UTC-offset-adjusted weekly working hour windows.
+   * 5. **Date override extraction** — When `returnDateOverrides` is true, computes per-date
+   *    availability overrides within the query window (Sentry-instrumented).
+   * 6. **OOO + holiday blocking** — Fetches OOO entries from the repository, computes
+   *    holiday-blocked dates, and merges both into a unified `datesOutOfOffice` map.
+   * 7. **Travel schedules** — For default schedules, applies user travel schedule timezone overrides.
+   * 8. **Date range construction** — Calls `buildDateRanges` with all accumulated data
+   *    (availability, timezone, travel schedules, OOO) to produce bookable date ranges.
+   * 9. **Early return** — If `dateRanges` is empty, returns an empty availability result immediately.
+   * 10. **Busy times from limits** — Evaluates booking-count, duration, and team-level limits
+   *     using pre-fetched `initialData` or individual queries as fallback.
+   * 11. **BusyTimesService call** — Fetches booking-based and calendar-based busy times with
+   *     buffer expansion (`beforeEventBuffer` / `afterEventBuffer`). Errors return empty availability.
+   * 12. **Availability subtraction** — Combines all busy-time sources and subtracts from
+   *     `dateRanges` via the `subtract` utility to produce final available windows.
+   * 13. **Result composition** — Assembles the {@link GetUserAvailabilityResult} with all
+   *     computed data: busy times, date ranges, working hours, overrides, seats, and OOO.
+   *
+   * @param params - Validated availability query parameters.
+   * @param initialData - Optional pre-fetched data for batch optimization.
+   * @returns Complete availability result conforming to Platform SDK contract.
+   */
   async _getUserAvailability(
     params: GetUserAvailabilityParams,
     initialData?: GetUserAvailabilityInitialData
@@ -659,12 +842,33 @@ export class UserAvailabilityService {
 
   getUserAvailability = withReporting(this._getUserAvailability.bind(this), "getUserAvailability");
 
+  /** Computes period boundary dates between two Dayjs instances for interval limit evaluation. */
   getPeriodStartDatesBetween = withReporting(
     (dateFrom: Dayjs, dateTo: Dayjs, period: IntervalLimitUnit, timeZone?: string) =>
       getPeriodStartDatesBetweenUtil(dateFrom, dateTo, period, timeZone),
     "getPeriodStartDatesBetween"
   );
 
+  /**
+   * Transforms raw OOO entries into a date-keyed {@link IOutOfOfficeData} map.
+   *
+   * Processing logic:
+   * - **Start date normalization**: If an OOO start date is in the past, it is clamped
+   *   to the current UTC day to avoid generating entries for expired periods.
+   * - **Day-of-week filtering**: Only dates that fall on the user's configured working days
+   *   (extracted from `availability`) generate OOO entries. Non-working days are skipped.
+   * - **Notes visibility**: The `showNotePublicly` flag controls whether private notes
+   *   are included in the output. When false, notes are nulled out.
+   * - **User metadata**: Each entry includes `fromUser` (OOO originator) and optional
+   *   `toUser` (booking delegate) with display names for UI rendering.
+   *
+   * Uses a reduce pattern over the OOO entries array, iterating day-by-day within each
+   * entry's date range to produce individual "YYYY-MM-DD" keyed records.
+   *
+   * @param outOfOfficeDays - Raw OOO entries from the repository.
+   * @param availability - User's availability records for working-day extraction.
+   * @returns Date-keyed OOO map consumed by `buildDateRanges` and slot generation.
+   */
   calculateOutOfOfficeRanges(
     outOfOfficeDays: GetUserAvailabilityInitialData["outOfOfficeDays"],
     availability: GetUserAvailabilityParamsDTO["availability"]
@@ -723,6 +927,20 @@ export class UserAvailabilityService {
     );
   }
 
+  /**
+   * Batch availability computation for multiple users (e.g., team events).
+   *
+   * - Emits a high-load warning when processing 50+ users to aid operational monitoring.
+   * - Parses the raw query through {@link availabilitySchema} for Zod validation.
+   * - Validates the date range (both `dateFrom` and `dateTo` must be valid Dayjs instances).
+   * - Executes `_getUserAvailability` for each user in parallel via `Promise.all`,
+   *   passing shared `initialData` to avoid redundant database queries.
+   * - Per-user `currentBookings` and `outOfOfficeDays` are extracted from the enriched
+   *   user objects and merged into the initialData for each call.
+   *
+   * @param props - Users array, raw query, and optional shared initial data.
+   * @returns Array of {@link GetUserAvailabilityResult}, one per user, in input order.
+   */
   async _getUsersAvailability({ users, query, initialData }: GetUsersAvailabilityProps) {
     if (users.length >= 50) {
       const userIds = users.map(({ id }) => id).join(", ");
@@ -760,6 +978,28 @@ export class UserAvailabilityService {
 
   getUsersAvailability = withReporting(this._getUsersAvailability.bind(this), "getUsersAvailability");
 
+  /**
+   * Computes holiday-blocked dates for a user based on their country-specific holiday settings.
+   *
+   * Processing strategy:
+   * 1. Fetches the user's holiday settings (`countryCode`, `disabledIds`) from the repository.
+   *    Returns empty if no settings or country code exist.
+   * 2. **Date range expansion**: Expands `startDate`/`endDate` to full UTC day boundaries
+   *    (`startOfDay` / `endOfDay`) because holidays are stored as midnight UTC timestamps.
+   *    Without expansion, a booking slot at 10:00 would miss a holiday stored at 00:00.
+   * 3. Queries the holiday service for all holidays in the expanded range, excluding
+   *    user-disabled holiday IDs.
+   * 4. **Working-day filtering**: Only holidays falling on the user's configured working days
+   *    are included. A holiday on a non-working Saturday is irrelevant for availability.
+   * 5. Produces an {@link IOutOfOfficeData} map with `fromUser: null` (system-generated),
+   *    holiday name as `reason`, and an emoji derived from the holiday name.
+   *
+   * @param userId - The user whose holiday settings to query.
+   * @param startDate - Start of the availability query window.
+   * @param endDate - End of the availability query window.
+   * @param availability - User's availability records for working-day extraction.
+   * @returns Date-keyed holiday blocking map, merged into `datesOutOfOffice` by the caller.
+   */
   async calculateHolidayBlockedDates(
     userId: number,
     startDate: Date,

@@ -5,14 +5,19 @@ import dayjs from "@calcom/dayjs";
 import {
   buildDateRanges,
   intersect,
+  mergeOverlappingRanges,
   processDateOverride,
   processWorkingHours,
   subtract,
 } from "./date-ranges";
 
 describe("processWorkingHours", () => {
-  // TEMPORAIRLY SKIPPING THIS TEST - Started failing after 29th Oct
-  it.skip("should return the correct working hours given a specific availability, timezone, and date range", () => {
+  // Fixed: pin system time to a date during EDT (UTC-4) so relative date calculations
+  // and hardcoded UTC offsets (T12:00:00Z = 8 AM EDT, T21:00:00Z = 5 PM EDT) are stable.
+  it("should return the correct working hours given a specific availability, timezone, and date range", () => {
+    // Pin to June 2023 (EDT, UTC-4) to make the test deterministic
+    vi.useFakeTimers().setSystemTime(new Date("2023-06-12T12:00:00.000Z"));
+
     const item = {
       days: [1, 2, 3, 4, 5], // Monday to Friday
       startTime: new Date(Date.UTC(2023, 5, 12, 8, 0)), // 8 AM
@@ -27,6 +32,7 @@ describe("processWorkingHours", () => {
     const results = Object.values(indexedResults);
     expect(results.length).toBe(2); // There should be two working days between the range
     // "America/New_York" day shifts -1, so we need to add a day to correct this shift.
+    // During EDT (UTC-4): 8 AM ET = 12:00 UTC, 5 PM ET = 21:00 UTC
     expect(results[0]).toEqual({
       start: dayjs(`${dateFrom.tz(timeZone).add(1, "day").format("YYYY-MM-DD")}T12:00:00Z`).tz(timeZone),
       end: dayjs(`${dateFrom.tz(timeZone).add(1, "day").format("YYYY-MM-DD")}T21:00:00Z`).tz(timeZone),
@@ -35,6 +41,8 @@ describe("processWorkingHours", () => {
       start: dayjs(`${dateTo.tz(timeZone).format("YYYY-MM-DD")}T12:00:00Z`).tz(timeZone),
       end: dayjs(`${dateTo.tz(timeZone).format("YYYY-MM-DD")}T21:00:00Z`).tz(timeZone),
     });
+
+    vi.useRealTimers();
   });
   it("should have availability on last day of month in the month were DST starts", () => {
     const item = {
@@ -158,15 +166,19 @@ describe("processWorkingHours", () => {
     vi.useRealTimers();
   });
 
-  // TEMPORAIRLY SKIPPING THIS TEST - Started failing after 29th Oct
-  it.skip("should return the correct working hours in the month were DST ends", () => {
+  // Fixed: pin system time to 2023 so dayjs() produces a known year where
+  // the first Sunday of November is Nov 5, 2023 (DST ends at 2 AM ET).
+  it("should return the correct working hours in the month were DST ends", () => {
+    // Pin to Oct 1, 2023 so dayjs().month(10) resolves to November 2023
+    vi.useFakeTimers().setSystemTime(new Date("2023-10-01T12:00:00.000Z"));
+
     const item = {
       days: [0, 1, 2, 3, 4, 5, 6], // Monday to Sunday
       startTime: new Date(Date.UTC(2023, 5, 12, 8, 0)), // 8 AM
       endTime: new Date(Date.UTC(2023, 5, 12, 17, 0)), // 5 PM
     };
 
-    // in America/New_York DST ends on first Sunday of November
+    // in America/New_York DST ends on first Sunday of November (Nov 5, 2023)
     const timeZone = "America/New_York";
 
     let firstSundayOfNovember = dayjs().startOf("day").month(10).date(1);
@@ -181,15 +193,19 @@ describe("processWorkingHours", () => {
       processWorkingHours({}, { item, timeZone, dateFrom, dateTo, travelSchedules: [] })
     );
 
+    // Before DST ends (EDT, UTC-4): 8 AM ET = 12:00 UTC
     const allDSTStartAt12 = results
       .filter((res) => res.start.isBefore(firstSundayOfNovember))
       .every((result) => result.start.utc().hour() === 12);
+    // After DST ends (EST, UTC-5): 8 AM ET = 13:00 UTC
     const allNotDSTStartAt13 = results
       .filter((res) => res.start.isAfter(firstSundayOfNovember))
       .every((result) => result.start.utc().hour() === 13);
 
     expect(allDSTStartAt12).toBeTruthy();
     expect(allNotDSTStartAt13).toBeTruthy();
+
+    vi.useRealTimers();
   });
 
   it("should skip event if it ends before it starts (different days)", () => {
@@ -1258,5 +1274,361 @@ describe("intersect function comprehensive tests", () => {
       expect(result[1].end.toISOString()).toBe("2024-06-01T12:30:00.000Z"); // Correct: no extension
       expect(result.find((r) => r.start.toISOString() === "2024-06-02T04:00:00.000Z")).toBeUndefined(); // Correct: June 2 excluded
     });
+  });
+});
+
+describe("processWorkingHours edge cases", () => {
+  it("should correctly normalize 23:59 endpoint to midnight", () => {
+    const item = {
+      days: [3], // Wednesday
+      startTime: new Date(Date.UTC(2023, 0, 1, 22, 0)), // 10 PM
+      endTime: new Date(Date.UTC(2023, 0, 1, 23, 59)), // 11:59 PM
+    };
+
+    const timeZone = "UTC";
+    // June 14, 2023 is a Wednesday
+    const dateFrom = dayjs.utc("2023-06-14");
+    const dateTo = dayjs.utc("2023-06-15");
+
+    const results = Object.values(
+      processWorkingHours({}, { item, timeZone, dateFrom, dateTo, travelSchedules: [] })
+    );
+
+    expect(results.length).toBe(1);
+    // Start should be 10 PM on June 14
+    expect(results[0].start.hour()).toBe(22);
+    expect(results[0].start.minute()).toBe(0);
+    expect(results[0].start.date()).toBe(14);
+
+    // End should be midnight (23:59 + 1 minute normalization = 00:00 next day)
+    expect(results[0].end.hour()).toBe(0);
+    expect(results[0].end.minute()).toBe(0);
+    expect(results[0].end.date()).toBe(15);
+  });
+
+  it("should handle spring forward DST transition correctly", () => {
+    // In 2023, US DST spring forward happened on March 12 at 2:00 AM EST → 3:00 AM EDT
+    vi.useFakeTimers().setSystemTime(new Date("2023-03-10T12:00:00.000Z"));
+
+    const item = {
+      days: [1, 2, 3, 4, 5], // Mon-Fri
+      startTime: new Date(Date.UTC(2023, 0, 1, 9, 0)), // 9 AM
+      endTime: new Date(Date.UTC(2023, 0, 1, 17, 0)), // 5 PM
+    };
+
+    const timeZone = "America/New_York";
+    const dateFrom = dayjs();
+    const dateTo = dayjs().add(5, "day");
+
+    const results = Object.values(
+      processWorkingHours({}, { item, timeZone, dateFrom, dateTo, travelSchedules: [] })
+    );
+
+    // March 10 is Friday — before spring forward (EST, UTC-5)
+    // 9AM EST = 14:00 UTC, 5PM EST = 22:00 UTC
+    const march10 = results.find((r) => r.start.date() === 10);
+    expect(march10).toBeDefined();
+    expect(march10!.start.utc().hour()).toBe(14);
+    expect(march10!.end.utc().hour()).toBe(22);
+
+    // March 13 is Monday — after spring forward (EDT, UTC-4)
+    // 9AM EDT = 13:00 UTC, 5PM EDT = 21:00 UTC
+    const march13 = results.find((r) => r.start.date() === 13);
+    expect(march13).toBeDefined();
+    expect(march13!.start.utc().hour()).toBe(13);
+    expect(march13!.end.utc().hour()).toBe(21);
+
+    vi.setSystemTime(vi.getRealSystemTime());
+    vi.useRealTimers();
+  });
+
+  it("should handle travel schedule boundary at exact day boundary", () => {
+    vi.useFakeTimers().setSystemTime(new Date("2023-06-12T00:00:00.000Z"));
+
+    const item = {
+      days: [0, 1, 2, 3, 4, 5, 6], // Every day
+      startTime: new Date(Date.UTC(2023, 0, 1, 9, 0)), // 9 AM
+      endTime: new Date(Date.UTC(2023, 0, 1, 17, 0)), // 5 PM
+    };
+
+    const timeZone = "America/New_York";
+    const dateFrom = dayjs().startOf("day");
+    const dateTo = dayjs().add(3, "day").startOf("day");
+
+    // Travel schedule starts exactly at midnight of June 13 (exact day boundary)
+    const travelSchedules = [
+      {
+        startDate: dayjs("2023-06-13T00:00:00.000Z").startOf("day"),
+        endDate: dayjs("2023-06-14T23:59:59.000Z").endOf("day"),
+        timeZone: "Europe/London",
+      },
+    ];
+
+    const results = Object.values(
+      processWorkingHours({}, { item, timeZone, dateFrom, dateTo, travelSchedules })
+    );
+
+    // June 12: Before travel schedule → use America/New_York (EDT in June, UTC-4)
+    // 9AM EDT = 13:00 UTC, 5PM EDT = 21:00 UTC
+    const june12 = results.find((r) => r.start.date() === 12);
+    expect(june12).toBeDefined();
+    expect(june12!.start.utc().hour()).toBe(13);
+    expect(june12!.end.utc().hour()).toBe(21);
+
+    // June 13: Travel schedule active → use Europe/London (BST in June, UTC+1)
+    // 9AM BST = 08:00 UTC, 5PM BST = 16:00 UTC
+    const june13 = results.find((r) => r.start.date() === 13);
+    expect(june13).toBeDefined();
+    expect(june13!.start.utc().hour()).toBe(8);
+    expect(june13!.end.utc().hour()).toBe(16);
+
+    vi.setSystemTime(vi.getRealSystemTime());
+    vi.useRealTimers();
+  });
+});
+
+describe("processOOO zero-length marker tests", () => {
+  it("should produce zero-length DateRange for OOO dates", () => {
+    // processOOO is a private function; tested through buildDateRanges.
+    // When OOO is set for a date, it creates a zero-length range (start === end)
+    // that replaces working hours for that date in oooExcludedDateRanges.
+    const items = [
+      {
+        days: [3], // Wednesday only
+        startTime: new Date(Date.UTC(2023, 0, 1, 9, 0)), // 9 AM
+        endTime: new Date(Date.UTC(2023, 0, 1, 17, 0)), // 5 PM
+      },
+    ];
+
+    // OOO on June 14 (Wednesday) — same date as the only working day
+    const outOfOffice = {
+      "2023-06-14": {
+        fromUser: { id: 1, displayName: "Test User" },
+      },
+    };
+
+    const timeZone = "UTC";
+    const dateFrom = dayjs("2023-06-14T00:00:00Z");
+    const dateTo = dayjs("2023-06-15T00:00:00Z");
+
+    const { dateRanges, oooExcludedDateRanges } = buildDateRanges({
+      availability: items,
+      timeZone,
+      dateFrom,
+      dateTo,
+      travelSchedules: [],
+      outOfOffice,
+    });
+
+    // dateRanges (without OOO awareness) still include the working hours
+    expect(dateRanges.length).toBe(1);
+    expect(dateRanges[0].start.utc().hour()).toBe(9);
+    expect(dateRanges[0].end.utc().hour()).toBe(17);
+
+    // oooExcludedDateRanges: the OOO zero-length marker replaces working hours
+    // for that date (via object spread), then gets filtered out as zero-length.
+    // Result: no availability ranges on the OOO date.
+    expect(oooExcludedDateRanges.length).toBe(0);
+  });
+});
+
+describe("buildDateRanges edge cases", () => {
+  it("should return empty dateRanges for empty availability array", () => {
+    const { dateRanges, oooExcludedDateRanges } = buildDateRanges({
+      availability: [],
+      timeZone: "UTC",
+      dateFrom: dayjs("2023-06-13T00:00:00Z"),
+      dateTo: dayjs("2023-06-15T00:00:00Z"),
+      travelSchedules: [],
+    });
+
+    expect(dateRanges).toEqual([]);
+    expect(oooExcludedDateRanges).toEqual([]);
+  });
+
+  it("should return empty dateRanges when only working hours with no matching days exist", () => {
+    const items = [
+      {
+        days: [6], // Saturday only
+        startTime: new Date(Date.UTC(2023, 0, 1, 9, 0)), // 9 AM
+        endTime: new Date(Date.UTC(2023, 0, 1, 17, 0)), // 5 PM
+      },
+    ];
+
+    // June 12 (Mon) to June 16 (Fri) — no Saturday in this range
+    const { dateRanges } = buildDateRanges({
+      availability: items,
+      timeZone: "UTC",
+      dateFrom: dayjs("2023-06-12T00:00:00Z"),
+      dateTo: dayjs("2023-06-16T00:00:00Z"),
+      travelSchedules: [],
+    });
+
+    expect(dateRanges).toEqual([]);
+  });
+
+  it("should correctly filter zero-length OOO markers from dateRanges but include working hours", () => {
+    const items = [
+      {
+        days: [1, 2, 3, 4, 5], // Mon-Fri
+        startTime: new Date(Date.UTC(2023, 0, 1, 9, 0)), // 9 AM
+        endTime: new Date(Date.UTC(2023, 0, 1, 17, 0)), // 5 PM
+      },
+    ];
+
+    // OOO on June 14 (Wednesday)
+    const outOfOffice = {
+      "2023-06-14": {
+        fromUser: { id: 1, displayName: "Test User" },
+      },
+    };
+
+    const timeZone = "UTC";
+    const dateFrom = dayjs("2023-06-13T00:00:00Z"); // Tuesday
+    const dateTo = dayjs("2023-06-15T00:00:00Z"); // Thursday start
+
+    const { dateRanges, oooExcludedDateRanges } = buildDateRanges({
+      availability: items,
+      timeZone,
+      dateFrom,
+      dateTo,
+      travelSchedules: [],
+      outOfOffice,
+    });
+
+    // dateRanges (no OOO awareness) should include both June 13 and June 14
+    expect(dateRanges.length).toBe(2);
+
+    // oooExcludedDateRanges: June 14 working hours replaced by OOO zero-length marker
+    // which gets filtered out. Only June 13 working hours remain.
+    expect(oooExcludedDateRanges.length).toBe(1);
+    expect(oooExcludedDateRanges[0].start.format("YYYY-MM-DD")).toBe("2023-06-13");
+  });
+});
+
+describe("subtract edge cases", () => {
+  it("should handle subtract with empty excludedRanges array", () => {
+    const sourceRanges = [
+      { start: dayjs.utc("2023-07-05T08:00:00Z"), end: dayjs.utc("2023-07-05T12:00:00Z") },
+      { start: dayjs.utc("2023-07-06T08:00:00Z"), end: dayjs.utc("2023-07-06T12:00:00Z") },
+    ];
+
+    const result = subtract(sourceRanges, []);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].start.valueOf()).toBe(sourceRanges[0].start.valueOf());
+    expect(result[0].end.valueOf()).toBe(sourceRanges[0].end.valueOf());
+    expect(result[1].start.valueOf()).toBe(sourceRanges[1].start.valueOf());
+    expect(result[1].end.valueOf()).toBe(sourceRanges[1].end.valueOf());
+  });
+
+  it("should handle subtract with empty sourceRanges array", () => {
+    const excludedRanges = [
+      { start: dayjs.utc("2023-07-05T08:00:00Z"), end: dayjs.utc("2023-07-05T12:00:00Z") },
+    ];
+
+    const result = subtract([], excludedRanges);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("should pass through extra metadata from source ranges", () => {
+    const sourceRanges = [
+      {
+        start: dayjs.utc("2023-07-05T08:00:00Z"),
+        end: dayjs.utc("2023-07-05T16:00:00Z"),
+        customField: "test-value",
+        numericField: 42,
+      },
+    ];
+    const excludedRanges = [
+      { start: dayjs.utc("2023-07-05T12:00:00Z"), end: dayjs.utc("2023-07-05T13:00:00Z") },
+    ];
+
+    const result = subtract(sourceRanges, excludedRanges);
+
+    // Subtract creates two segments: 8:00-12:00 and 13:00-16:00
+    expect(result).toHaveLength(2);
+
+    // First segment: 8:00-12:00 with metadata preserved
+    expect(result[0].start.format()).toBe(dayjs.utc("2023-07-05T08:00:00Z").format());
+    expect(result[0].end.format()).toBe(dayjs.utc("2023-07-05T12:00:00Z").format());
+    expect((result[0] as Record<string, unknown>).customField).toBe("test-value");
+    expect((result[0] as Record<string, unknown>).numericField).toBe(42);
+
+    // Second segment: 13:00-16:00 with metadata preserved
+    expect(result[1].start.format()).toBe(dayjs.utc("2023-07-05T13:00:00Z").format());
+    expect(result[1].end.format()).toBe(dayjs.utc("2023-07-05T16:00:00Z").format());
+    expect((result[1] as Record<string, unknown>).customField).toBe("test-value");
+    expect((result[1] as Record<string, unknown>).numericField).toBe(42);
+  });
+});
+
+describe("mergeOverlappingRanges tests", () => {
+  it("should return empty array for empty input", () => {
+    const result = mergeOverlappingRanges([]);
+    expect(result).toEqual([]);
+  });
+
+  it("should return single range for non-overlapping single input", () => {
+    const ranges = [{ start: new Date("2023-06-13T09:00:00Z"), end: new Date("2023-06-13T17:00:00Z") }];
+    const result = mergeOverlappingRanges(ranges);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].start.getTime()).toBe(new Date("2023-06-13T09:00:00Z").getTime());
+    expect(result[0].end.getTime()).toBe(new Date("2023-06-13T17:00:00Z").getTime());
+  });
+
+  it("should merge two overlapping ranges", () => {
+    const ranges = [
+      { start: new Date("2023-06-13T09:00:00Z"), end: new Date("2023-06-13T12:00:00Z") },
+      { start: new Date("2023-06-13T11:00:00Z"), end: new Date("2023-06-13T15:00:00Z") },
+    ];
+    const result = mergeOverlappingRanges(ranges);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].start.getTime()).toBe(new Date("2023-06-13T09:00:00Z").getTime());
+    expect(result[0].end.getTime()).toBe(new Date("2023-06-13T15:00:00Z").getTime());
+  });
+
+  it("should handle adjacent (touching) ranges", () => {
+    const ranges = [
+      { start: new Date("2023-06-13T09:00:00Z"), end: new Date("2023-06-13T12:00:00Z") },
+      { start: new Date("2023-06-13T12:00:00Z"), end: new Date("2023-06-13T15:00:00Z") },
+    ];
+    const result = mergeOverlappingRanges(ranges);
+
+    // Adjacent ranges (end === start) are merged because the check uses <=
+    expect(result).toHaveLength(1);
+    expect(result[0].start.getTime()).toBe(new Date("2023-06-13T09:00:00Z").getTime());
+    expect(result[0].end.getTime()).toBe(new Date("2023-06-13T15:00:00Z").getTime());
+  });
+
+  it("should not merge non-overlapping ranges", () => {
+    const ranges = [
+      { start: new Date("2023-06-13T09:00:00Z"), end: new Date("2023-06-13T10:00:00Z") },
+      { start: new Date("2023-06-13T14:00:00Z"), end: new Date("2023-06-13T15:00:00Z") },
+    ];
+    const result = mergeOverlappingRanges(ranges);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].start.getTime()).toBe(new Date("2023-06-13T09:00:00Z").getTime());
+    expect(result[0].end.getTime()).toBe(new Date("2023-06-13T10:00:00Z").getTime());
+    expect(result[1].start.getTime()).toBe(new Date("2023-06-13T14:00:00Z").getTime());
+    expect(result[1].end.getTime()).toBe(new Date("2023-06-13T15:00:00Z").getTime());
+  });
+
+  it("should handle multiple overlapping ranges", () => {
+    const ranges = [
+      { start: new Date("2023-06-13T09:00:00Z"), end: new Date("2023-06-13T11:00:00Z") },
+      { start: new Date("2023-06-13T10:00:00Z"), end: new Date("2023-06-13T13:00:00Z") },
+      { start: new Date("2023-06-13T12:00:00Z"), end: new Date("2023-06-13T15:00:00Z") },
+    ];
+    const result = mergeOverlappingRanges(ranges);
+
+    // All three ranges overlap transitively → merged into one
+    expect(result).toHaveLength(1);
+    expect(result[0].start.getTime()).toBe(new Date("2023-06-13T09:00:00Z").getTime());
+    expect(result[0].end.getTime()).toBe(new Date("2023-06-13T15:00:00Z").getTime());
   });
 });

@@ -1,3 +1,67 @@
+/**
+ * @file E2E test suite for the `bookingUidToReschedule` parameter in the `VERSION_2024_09_04` Slots API.
+ * @module SlotsModule_2024_09_04 E2E Tests — Reschedule UID Functionality
+ *
+ * @description
+ * Validates that `GET /v2/slots` correctly handles the `bookingUidToReschedule` query parameter,
+ * ensuring that a pre-existing booking's time slot remains available when the correct UID is
+ * supplied for rescheduling. This is critical for the reschedule workflow where users must be
+ * able to re-select their originally booked time slot.
+ *
+ * ## Coverage Areas
+ *
+ * - **`bookingUidToReschedule` parameter validation**: Accepts optional string, handles non-string
+ *   (numeric) values via query parameter coercion, empty strings, and special characters gracefully.
+ * - **Matching booking UID**: When `bookingUidToReschedule` matches an existing booking, the slot
+ *   at the booked time (2050-09-05T11:00:00Z) remains available for rescheduling — the availability
+ *   engine excludes that booking from busy-time calculation.
+ * - **Missing/incorrect booking UID**: When the UID is absent or does not match any booking, the
+ *   slot at the booked time is correctly blocked (busy) in the response.
+ * - **Slug-based query**: Validates the `username + eventTypeSlug` route pattern works with
+ *   `bookingUidToReschedule`, asserting against `expectedSlotsUTC` golden fixture.
+ * - **`format=range` response format**: Asserts response structure contains `start` and `end`
+ *   properties per slot, validated against `expectedSlotsUTCRange` golden fixture.
+ * - **`timeZone=Europe/Rome` override**: Verifies timezone conversion produces `+02:00` offset
+ *   slots and that the booked time (11:00 UTC = 13:00 Rome) is available for rescheduling.
+ * - **Response typing**: All responses validated as `GetSlotsOutput_2024_09_04` with
+ *   `SUCCESS_STATUS` assertion.
+ * - **5-day date range**: All queries use 2050-09-05 through 2050-09-09, expecting 5 days of slots.
+ * - **`CAL_API_VERSION_HEADER`**: Set to `VERSION_2024_09_04` on every request.
+ *
+ * ## Test Infrastructure
+ *
+ * Uses `Test.createTestingModule` (no `withApiAuth` wrapper) with the following modules:
+ * `AppModule`, `PrismaModule`, `UsersModule`, `TokensModule`, `SchedulesModule_2024_06_11`,
+ * `SlotsModule_2024_09_04`. The `PermissionsGuard` is overridden to always allow access.
+ *
+ * ## Fixture Setup
+ *
+ * - User created with a random email via `UserRepositoryFixture`
+ * - Event type with a random slug created via `EventTypesRepositoryFixture`
+ * - Default Mon-Fri 9AM-5PM schedule in `Europe/Rome` timezone via `SchedulesService_2024_06_11`
+ * - Pre-existing booking at 2050-09-05T11:00:00Z (1 hour duration) created via
+ *   `BookingsRepositoryFixture` — this is the booking targeted by `bookingUidToReschedule`
+ *
+ * ## Cleanup
+ *
+ * `afterAll` performs: booking deletion by ID, user bookings cleanup by user ID and email,
+ * user deletion by email, and application closure.
+ *
+ * ## Golden Fixtures
+ *
+ * - `expectedSlotsUTC` — Start-only format golden fixture from `./expected-slots`
+ * - `expectedSlotsUTCRange` — Start+end pair format golden fixture from `./expected-slots`
+ *
+ * ## Key Behavioral Insight
+ *
+ * When `bookingUidToReschedule` matches an existing booking, the availability engine excludes
+ * that booking from the busy-time calculation pipeline, making the original slot available for
+ * rebooking. This ensures users can always re-select their current time slot during rescheduling.
+ *
+ * @see {@link file://./expected-slots.ts} Golden test fixture definitions
+ * @see {@link file://packages/features/schedules/lib/slots.ts} Slot generation algorithm with reschedule UID awareness
+ * @see {@link file://packages/features/busyTimes/services/getBusyTimes.ts} Busy time service with `rescheduleUid` exclusion logic
+ */
 import { CAL_API_VERSION_HEADER, SUCCESS_STATUS, VERSION_2024_09_04 } from "@calcom/platform-constants";
 import type { CreateScheduleInput_2024_06_11 } from "@calcom/platform-types";
 import type { Booking, User } from "@calcom/prisma/client";

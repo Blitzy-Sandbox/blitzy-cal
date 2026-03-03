@@ -16,16 +16,74 @@ import { BookingStatus } from "@calcom/prisma/enums";
 import type { CalendarFetchMode, EventBusyDetails } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
 
+/**
+ * Number of user IDs per Prisma query batch for limit check queries.
+ * This value balances database query planner efficiency against memory usage
+ * for large teams/organizations. Per Rule 0.7.5, this constant caps the
+ * IN-clause size to prevent query planner degradation.
+ */
 const BATCH_SIZE_FOR_LIMIT_CHECKS = 50;
+
+/**
+ * Maximum number of concurrent batch queries for limit checks.
+ * Controls parallelism when processing chunked user ID batches via Promise.all.
+ * Prevents overwhelming the database connection pool for very large organizations.
+ */
 const MAX_CONCURRENT_LIMIT_CHECK_BATCHES = 5;
 
+/**
+ * Dependency injection contract for BusyTimesService.
+ * Follows the repository pattern (Rule 0.7.1) — all database access goes through
+ * the BookingRepository abstraction, never direct Prisma calls from service code.
+ */
 export interface IBusyTimesService {
   bookingRepo: BookingRepository;
 }
 
+/**
+ * Core busy-time aggregation service consumed by the availability engine.
+ *
+ * Orchestrates the full busy-time pipeline:
+ * 1. Buffer expansion — extends booking start/end by beforeEventBuffer and afterEventBuffer
+ * 2. Booking fetch — retrieves existing bookings via BookingRepository (or uses pre-supplied bookings)
+ * 3. Seat reference tracking — maps seat counts per time slot, only blocks buffers when seats remain
+ * 4. Calendar integration — fetches calendar busy times, subtracts open-seat ranges, applies buffers
+ * 5. Limit check batching — batched parallel queries for booking-count and duration limit enforcement
+ *
+ * Uses `@calcom/dayjs` (Rule 0.7.2) for all date-time operations and `withReporting` for
+ * Sentry error capture and performance telemetry.
+ *
+ * @see IBusyTimesService for the DI contract
+ * @see packages/features/di/containers/BusyTimes.ts for DI container wiring
+ */
 export class BusyTimesService {
   constructor(public readonly dependencies: IBusyTimesService) {}
 
+  /**
+   * Core busy-time computation method (wrapped by `getBusyTimes` via `withReporting`).
+   *
+   * Pipeline:
+   * 1. Expands start/end times when rescheduling (by duration) and by max defined buffer times
+   * 2. Fetches bookings via BookingRepository or uses pre-supplied `currentBookings`
+   * 3. For each booking:
+   *    a. Computes buffer windows (beforeEventBuffer + afterEventBuffer from host perspective)
+   *    b. Tracks seat references — when seats remain AND same event type, only buffer times are busy
+   *    c. Excludes booking matching rescheduleUid
+   *    d. Appends buffer-expanded busy intervals with title and source identifiers
+   * 4. When credentials exist and `bypassBusyCalendarTimes` is false:
+   *    a. Fetches calendar busy times via getBusyCalendarTimes
+   *    b. Builds open-seat date ranges from bookingSeatCountMap
+   *    c. Subtracts open-seat ranges from calendar busy times
+   *    d. Applies buffer expansion to remaining calendar busy times
+   * 5. Returns aggregated EventBusyDetails[]
+   *
+   * IMPORTANT: Buffer inversion is intentional — `minutesToBlockBeforeEvent` includes
+   * `afterEventBuffer` and vice versa, because buffers are applied from the host's
+   * perspective relative to adjacent bookings.
+   *
+   * @param params - Complete parameter bag including credentials, buffers, booking data, and mode
+   * @returns EventBusyDetails[] - Aggregated busy time intervals
+   */
   async _getBusyTimes(params: {
     credentials: CredentialForCalendarService[];
     userId: number;
@@ -286,6 +344,22 @@ export class BusyTimesService {
 
   getBusyTimes = withReporting(this._getBusyTimes.bind(this), "getBusyTimes");
 
+  /**
+   * Computes the expanded date window required for limit check queries.
+   *
+   * Expands the original [startDate, endDate] range to align with calendar unit boundaries
+   * (day, week, month) for each configured limit type. This ensures limit checks account for
+   * bookings that overlap the boundary of each period.
+   *
+   * NOTE: PER_YEAR limits are intentionally excluded from this expansion and are handled
+   * separately in the limits pipeline for performance reasons (yearly queries are expensive).
+   *
+   * @param startDate - Original start date as ISO string
+   * @param endDate - Original end date as ISO string
+   * @param bookingLimits - Optional booking count limits per interval
+   * @param durationLimits - Optional duration limits per interval
+   * @returns Expanded limitDateFrom and limitDateTo as dayjs instances
+   */
   getStartEndDateforLimitCheck(
     startDate: string,
     endDate: string,
@@ -311,6 +385,18 @@ export class BusyTimesService {
     return { limitDateFrom, limitDateTo };
   }
 
+  /**
+   * Orchestrates busy-time fetching for booking and duration limit enforcement.
+   *
+   * Flow:
+   * 1. Short-circuits with empty array when no limits exist
+   * 2. Expands date range via getStartEndDateforLimitCheck
+   * 3. Delegates to fetchBookingsForLimitChecksBatched for the actual database queries
+   * 4. Maps Prisma booking results to EventBusyDetails with source identifiers
+   *
+   * @param params - User IDs, event type, date range, optional reschedule UID, and limits
+   * @returns EventBusyDetails[] - Busy times derived from limit-relevant bookings
+   */
   async getBusyTimesForLimitChecks(params: {
     userIds: number[];
     eventTypeId: number;

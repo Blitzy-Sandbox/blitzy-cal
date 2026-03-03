@@ -6,6 +6,16 @@ import { SchedulingType } from "@calcom/prisma/enums";
 import { filterRedundantDateRanges } from "./date-range-utils/filterRedundantDateRanges";
 import { mergeOverlappingDateRanges } from "./date-range-utils/mergeOverlappingDateRanges";
 
+/**
+ * Sorts date ranges by start time (then end time as tiebreaker) and removes
+ * duplicates identified by matching numeric start/end valueOf() pairs.
+ *
+ * This ensures the aggregation pipeline receives canonical, deterministically
+ * ordered inputs before containment-aware pruning.
+ *
+ * @param ranges - Unsorted, potentially duplicated DateRange array
+ * @returns Sorted, deduplicated DateRange array
+ */
 function uniqueAndSortedDateRanges(ranges: DateRange[]): DateRange[] {
   const seen = new Set<string>();
 
@@ -22,6 +32,25 @@ function uniqueAndSortedDateRanges(ranges: DateRange[]): DateRange[] {
     });
 }
 
+/**
+ * Computes deterministic aggregated availability windows across multiple hosts
+ * for team scheduling scenarios (COLLECTIVE and ROUND_ROBIN).
+ *
+ * Algorithm:
+ * 1. Determine if this is a team event (COLLECTIVE, ROUND_ROBIN, or >1 participant)
+ * 2. Identify fixed hosts: all hosts when COLLECTIVE or no scheduling type; otherwise only isFixed hosts
+ * 3. Intersect fixed hosts' ranges and merge overlapping intervals to form the fixed constraint
+ * 4. Group round-robin hosts by groupId (or DEFAULT_GROUP_ID for ungrouped hosts)
+ * 5. Each group's ranges are flattened and added as a separate entry in dateRangesToIntersect
+ * 6. Intersect all entries in dateRangesToIntersect — every group MUST contribute at least one range
+ * 7. Sort, deduplicate, and prune redundant (fully contained) ranges
+ *
+ * For team events, uses oooExcludedDateRanges (availability minus OOO) instead of raw dateRanges.
+ *
+ * @param userAvailability - Array of per-user availability with dateRanges, oooExcludedDateRanges, and user metadata
+ * @param schedulingType - The event's scheduling type (COLLECTIVE, ROUND_ROBIN, or null)
+ * @returns Canonical, sorted, deduplicated DateRange[] representing available windows
+ */
 export const getAggregatedAvailability = (
   userAvailability: {
     dateRanges: DateRange[];

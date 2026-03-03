@@ -12,6 +12,25 @@ import { trpc } from "@calcom/trpc/react";
 
 import { useApiV2AvailableSlots } from "./useApiV2AvailableSlots";
 
+/**
+ * Configuration arguments for the {@link useSchedule} hook.
+ *
+ * @property username - The booking page owner's username (or comma-separated list for multi-user events).
+ * @property eventSlug - The event type slug. Takes priority over `eventId` for identifying the event type.
+ * @property eventId - The event type numeric ID. Used as fallback when `eventSlug` is not available.
+ * @property month - The target month in ISO format (e.g., "2024-03"). Drives the date range for slot queries.
+ * @property timezone - The invitee's IANA timezone (e.g., "America/New_York"). Required for correct slot display.
+ * @property selectedDate - A specific selected date in ISO format. Used to narrow the slot fetch window.
+ * @property duration - The desired event duration in minutes. Coerced to string for the TRPC input contract.
+ * @property dayCount - Number of days to fetch slots for. Used by `useTimesForSchedule` to compute the time window.
+ * @property rescheduleUid - UID of an existing booking being rescheduled. Excludes this booking from busy-time checks.
+ * @property isTeamEvent - Whether the event is a team event. Determines eligibility for API v2 slot fetching.
+ * @property orgSlug - The organization slug for org-scoped event types.
+ * @property teamMemberEmail - Specific team member email for targeted availability queries.
+ * @property useApiV2 - When true and combined with `isTeamEvent`, routes slot fetching through the API v2 endpoint.
+ * @property enabled - External enable/disable flag. Combined with internal guards to control query execution.
+ * @property bookerLayout - Layout metadata for prefetch heuristics (layout type, extra days, column view config).
+ */
 export type UseScheduleWithCacheArgs = {
   username?: string | null;
   eventSlug?: string | null;
@@ -37,6 +56,11 @@ export type UseScheduleWithCacheArgs = {
   };
 };
 
+/**
+ * Constructs the payload for the `availabilityLoaded` SDK event.
+ * Returns a pass-through object containing the event's numeric ID and slug,
+ * used by {@link sdkActionManager}.fire to notify embed consumers when slot data is ready.
+ */
 const getAvailabilityLoadedEventPayload = ({
   eventId,
   eventSlug,
@@ -50,6 +74,29 @@ const getAvailabilityLoadedEventPayload = ({
   };
 };
 
+/**
+ * Main orchestrator hook for fetching available time slots.
+ *
+ * Coordinates between the legacy TRPC `viewer.slots.getSchedule` endpoint and the
+ * newer API v2 `/api/v2/slots/available` endpoint (for team events). The hook:
+ *
+ * 1. **Computes the time window** via {@link useTimesForSchedule} based on month, dayCount,
+ *    selectedDate, and bookerLayout prefetch heuristics.
+ * 2. **Parses URL search params** to extract routing form IDs, embed flags, email,
+ *    skip-fetch toggles, and dry-run markers.
+ * 3. **Assembles the normalized input** with event identifiers (slug priority over ID),
+ *    timezone, duration (as string for TRPC), team member routing, and embed metadata.
+ * 4. **Conditionally routes** to API v2 when `useApiV2`, `isTeamEvent`, and `enabled`
+ *    are all true; otherwise falls back to the legacy TRPC query.
+ * 5. **Synchronizes embed state** via `updateEmbedBookerState` and fires the
+ *    `availabilityLoaded` SDK event when slot data loads successfully.
+ * 6. **Returns a unified interface** spreading the React Query result with an `invalidate`
+ *    helper — v2 uses `refetch()` (direct re-query), legacy uses TRPC cache invalidation
+ *    via `utils.viewer.slots.getSchedule.invalidate(input)`.
+ *
+ * @param args - Configuration matching {@link UseScheduleWithCacheArgs}
+ * @returns React Query result with additional `invalidate()` method for cache management
+ */
 export const useSchedule = ({
   month,
   timezone,
@@ -112,6 +159,8 @@ export const useSchedule = ({
     teamMemberEmail,
     routedTeamMemberIds,
     skipContactOwner,
+    // Queued form responses take priority over routing form responses — they are mutually exclusive,
+    // and a queued response indicates a deferred/queued booking flow that supersedes standard routing.
     ...(queuedFormResponseId ? { queuedFormResponseId } : { routingFormResponseId }),
     email,
     // Ensures that connectVersion causes a refresh of the data
@@ -141,6 +190,8 @@ export const useSchedule = ({
       enabledProp,
   };
 
+  // API v2 slot fetching requires all three conditions: explicit v2 opt-in, team event context,
+  // and an active query (all input guards satisfied). If any condition is false, falls back to legacy TRPC.
   const isCallingApiV2Slots = useApiV2 && Boolean(isTeamEvent) && options.enabled;
 
   // API V2 query for team events

@@ -72,6 +72,42 @@ import { schemaQueryIdParseInt } from "~/lib/validations/shared/queryIdTransform
  *       401:
  *        description: Authorization information is missing or invalid.
  */
+
+/**
+ * Partially updates an existing availability record identified by its integer ID
+ * using PATCH semantics. Only the fields provided in the request body are updated;
+ * omitted fields remain unchanged on the record.
+ *
+ * **Body Validation**: The request body is validated against
+ * `schemaAvailabilityEditBodyParams` (Zod 3.25.76), which accepts optional fields:
+ * `startTime`, `endTime`, `days`, `date`, and `scheduleId`. Any subset of these
+ * fields may be provided per standard PATCH semantics.
+ *
+ * **Timezone Note**: The `Availability` model does not carry a timezone field.
+ * Timezone configuration resides on the parent `Schedule` model (Rule 0.7.2).
+ * Consumers that need to modify the schedule timezone must use the schedule
+ * update endpoint instead.
+ *
+ * **Ownership Chain**: The Prisma `update` call includes
+ * `Schedule: { select: { userId: true } }` so that the returned payload carries
+ * the owning user's ID. This supports downstream authorization auditing without
+ * requiring a separate lookup (Rule 0.7.6).
+ *
+ * **Response Contract**: Returns `{ availability: AvailabilityReadPublic }`.
+ * The response shape is stripped of internal fields via
+ * `schemaAvailabilityReadPublic.parse()`. This shape **MUST remain unchanged**
+ * to preserve backward compatibility with Platform SDK and API consumers
+ * (Rule 0.7.4).
+ *
+ * **Error Behavior**: If no availability record exists for the given `id`,
+ * Prisma's `update` will throw a `PrismaClientKnownRequestError` (P2025),
+ * which propagates as an error response through `defaultResponder`.
+ *
+ * @param req - The Next.js API request containing `query.id` (integer path
+ *   parameter) and an optional JSON body with availability fields to update.
+ * @returns An object `{ availability }` containing the updated, publicly-safe
+ *   availability record.
+ */
 export async function patchHandler(req: NextApiRequest) {
   const { query, body } = req;
   const { id } = schemaQueryIdParseInt.parse(query);

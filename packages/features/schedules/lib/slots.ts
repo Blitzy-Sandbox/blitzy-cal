@@ -9,6 +9,29 @@ import type { DateRange } from "@calcom/features/schedules/lib/date-ranges";
 import { getTimeZone } from "@calcom/lib/dayjs";
 import { withReporting } from "@calcom/lib/sentryWrapper";
 
+/**
+ * Input configuration for the slot generation engine.
+ *
+ * @property inviteeDate - The reference date in the invitee's local timezone, used to derive the
+ *   display timezone for all generated slot times via `getTimeZone`.
+ * @property frequency - The recurrence interval in minutes between consecutive slot start times
+ *   (e.g., 15, 30, 60). Clamped to a minimum of 1 by `minimumOfOne`.
+ * @property dateRanges - Array of available `DateRange` windows (start/end Dayjs pairs) produced
+ *   by the upstream date-range processor after subtracting busy times and applying working hours.
+ * @property minimumBookingNotice - Number of minutes from the current UTC moment within which
+ *   slots are filtered out, enforcing the event type's minimum notice period.
+ * @property eventLength - Duration of the event in minutes. A candidate slot is only emitted if
+ *   the full event length fits within the remaining range (inclusive 1-second boundary).
+ * @property offsetStart - Optional additional minutes to add to each slot start time, shifting
+ *   the entire slot grid forward. Defaults to 0 and is clamped to a minimum of 1 when provided.
+ * @property datesOutOfOffice - Optional lookup map keyed by "YYYY-MM-DD" containing OOO metadata
+ *   (away flag, fromUser, toUser, reason, emoji, notes, showNotePublicly) to merge into slot data.
+ * @property showOptimizedSlots - When true, the slot alignment algorithm attempts to nudge start
+ *   times to cleaner boundaries (interval → 15-min → 5-min) while preserving maximum slot count.
+ *   When false or absent, snaps to the top of the hour and rounds up to the nearest interval.
+ * @property datesOutOfOfficeTimeZone - Optional IANA timezone string for resolving OOO date keys.
+ *   When set, slot dates are converted to this timezone before looking up OOO data; otherwise UTC.
+ */
 export type GetSlots = {
   inviteeDate: Dayjs;
   frequency: number;
@@ -20,10 +43,46 @@ export type GetSlots = {
   showOptimizedSlots?: boolean | null;
   datesOutOfOfficeTimeZone?: string;
 };
+/**
+ * Represents a discrete time window associated with one or more users.
+ *
+ * @property userIds - Optional array of user IDs whose availability contributes to this frame.
+ * @property startTime - Numeric start boundary (minutes from midnight in working-hours context).
+ * @property endTime - Numeric end boundary (minutes from midnight in working-hours context).
+ */
 export type TimeFrame = { userIds?: number[]; startTime: number; endTime: number };
 
+/**
+ * Safety guard that clamps a numeric input to a minimum value of 1.
+ * Applied to `frequency`, `eventLength`, and `offsetStart` before slot generation
+ * to prevent zero-division, infinite loops, or nonsensical zero-length events.
+ */
 const minimumOfOne = (input: number) => (input < 1 ? 1 : input);
 
+/**
+ * Aligns a candidate slot start time to a clean boundary within the given date range.
+ *
+ * This function implements two distinct alignment strategies:
+ *
+ * **Optimized mode** (`showOptimizedSlots = true`):
+ * Attempts a three-tier boundary nudge while preserving maximum possible slot count:
+ *   1. Tries to advance to the next full interval boundary (e.g., top of the hour for 60-min events)
+ *   2. Falls back to the next 15-minute boundary if insufficient extra minutes exist
+ *   3. Falls back to the next 5-minute boundary as a final attempt
+ * Each nudge is only applied when the "extra minutes" (total range remainder after fitting
+ * maximum slots) are sufficient to cover the required forward shift. This guarantees no slot
+ * loss while producing cleaner start times for the invitee.
+ *
+ * **Standard mode** (`showOptimizedSlots = false | null | undefined`):
+ * Snaps to the top of the current hour, then rounds up to the nearest interval multiple.
+ * This may produce fewer slots than optimized mode for ranges starting mid-interval.
+ *
+ * @param slotStartTime - The raw candidate start time (already in target timezone).
+ * @param range - The date range window constraining available minutes.
+ * @param showOptimizedSlots - Flag selecting the alignment strategy.
+ * @param interval - The highest divisor of frequency from [60, 30, 20, 15, 10, 5] used for snapping.
+ * @returns The corrected slot start time aligned to the appropriate boundary.
+ */
 function getCorrectedSlotStartTime({
   slotStartTime,
   range,
@@ -68,6 +127,49 @@ function getCorrectedSlotStartTime({
   return slotStartTime.startOf("hour").add(Math.ceil(slotStartTime.minute() / interval) * interval, "minute");
 }
 
+/**
+ * Core slot generation engine that transforms timezone-aware date ranges into bookable time slots.
+ *
+ * **Pipeline overview:**
+ * 1. **Input normalization** — `frequency`, `eventLength`, and `offsetStart` are clamped via
+ *    `minimumOfOne` to prevent zero-division or infinite-loop edge cases.
+ * 2. **Range sorting** — Date ranges are sorted ascending by start time to ensure deterministic
+ *    slot ordering and correct boundary coordination between adjacent ranges.
+ * 3. **Interval detection** — Reads `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL` env var, then
+ *    selects the highest divisor from [60, 30, 20, 15, 10, 5] that evenly divides the frequency.
+ *    This determines the alignment grid for slot start times.
+ * 4. **Notice window enforcement** — Computes `dayjs.utc().add(minimumBookingNotice, "minute")` as
+ *    the earliest allowable slot start. Slots before this threshold are skipped.
+ * 5. **Timezone conversion** — Each range's start is converted to the target timezone BEFORE
+ *    checking interval alignment. This prevents misalignment in half-hour offset timezones
+ *    like Asia/Kolkata (GMT+5:30).
+ * 6. **Slot alignment** — If the local-time minute is not aligned to the interval grid,
+ *    `getCorrectedSlotStartTime` applies optimized or standard boundary snapping.
+ * 7. **Boundary tracking** — A `slotBoundaries` Map records the start timestamp of every emitted
+ *    slot. When processing subsequent overlapping ranges, boundary coordination ensures slots
+ *    align with previously emitted boundaries rather than creating duplicates or gaps.
+ * 8. **Event length fit check** — A slot is only emitted when `slotStart + eventLength - 1s` does
+ *    not exceed the range end (the 1-second subtraction makes the boundary inclusive).
+ * 9. **ISO-keyed deduplication** — A `Map<string, SlotData>` keyed by the ISO timestamp ensures
+ *    each start time appears at most once, even across overlapping date ranges.
+ * 10. **OOO metadata propagation** — For each slot, the generator looks up the corresponding date
+ *     in `datesOutOfOffice` (using `datesOutOfOfficeTimeZone` when set, otherwise UTC) and merges
+ *     away status, fromUser, toUser, reason, emoji, notes, and showNotePublicly into the slot data.
+ *
+ * **Complexity**: O(total_slots) — each range is iterated once, each slot is a constant-time Map
+ * insertion, and boundary coordination is linear in the number of previously emitted boundaries.
+ *
+ * @param dateRanges - Available time windows after busy-time subtraction.
+ * @param frequency - Interval in minutes between consecutive slot starts.
+ * @param eventLength - Duration in minutes of the event being scheduled.
+ * @param timeZone - IANA timezone for slot display (derived from invitee date).
+ * @param minimumBookingNotice - Minutes of advance notice required before a slot is bookable.
+ * @param offsetStart - Optional forward shift in minutes applied to every slot start.
+ * @param datesOutOfOffice - Optional OOO metadata map keyed by "YYYY-MM-DD".
+ * @param showOptimizedSlots - Controls the slot alignment strategy (optimized vs. standard).
+ * @param datesOutOfOfficeTimeZone - Optional timezone for OOO date key resolution.
+ * @returns Array of slot objects, each containing a `time` Dayjs and optional OOO metadata.
+ */
 function buildSlotsWithDateRanges({
   dateRanges,
   frequency,
@@ -229,6 +331,17 @@ function buildSlotsWithDateRanges({
   return Array.from(slots.values());
 }
 
+/**
+ * Public API entry point for slot generation.
+ *
+ * Resolves the invitee's display timezone from `inviteeDate` via `getTimeZone`, then delegates
+ * to `buildSlotsWithDateRanges` for the full generation pipeline. This function is wrapped with
+ * `withReporting` (Sentry instrumentation) and exported as the module's default export.
+ *
+ * @param config - A `GetSlots` configuration object containing all scheduling parameters.
+ * @returns Array of slot objects with `time` (Dayjs in invitee timezone) and optional metadata
+ *   including `userIds`, `away`, `fromUser`, `toUser`, `reason`, `emoji`.
+ */
 const getSlots = ({
   inviteeDate,
   frequency,

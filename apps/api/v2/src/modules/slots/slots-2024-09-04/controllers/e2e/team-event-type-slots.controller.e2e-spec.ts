@@ -1,3 +1,100 @@
+/**
+ * @file E2E test suite for team event-type slot availability and reservation lifecycle
+ *       via the `VERSION_2024_09_04` Slots API.
+ *
+ * @module SlotsModule_2024_09_04 E2E Tests — Team Event Type Slots & Reservations
+ *
+ * @description
+ * Validates `GET /v2/slots` for team event types (collective + round-robin),
+ * `POST/GET/PATCH/DELETE /v2/slots/reservations` for the full reservation CRUD lifecycle,
+ * and booking-to-availability side effects.
+ *
+ * ## Coverage Areas
+ *
+ * - **Slug-based team slot queries**: `teamSlug + eventTypeSlug` route pattern for
+ *   resolving team event types by slug instead of numeric ID.
+ *
+ * - **`rrHostSubsetIds` round-robin host subset filtering**: Restricts slot availability
+ *   to specific hosts within a round-robin event type via query parameter.
+ *
+ * - **Capacity enforcement**: Verifies capacity-limited team event types respect
+ *   maximum attendee limits and reject excess reservations (HTTP 422).
+ *
+ * - **Reservation lifecycle**:
+ *   - `POST /v2/slots/reservations` — Creates a reservation, returns
+ *     `ReserveSlotOutputResponse_2024_09_04` with a `reservationUid`.
+ *   - `GET /v2/slots/reservations/:uid` — Retrieves a reservation by UID.
+ *   - `PATCH /v2/slots/reservations/:uid` — Updates a reservation with a new slot time.
+ *   - `DELETE /v2/slots/reservations/:uid` — Cancels a reservation by UID.
+ *
+ * - **Auth enforcement**:
+ *   - 401 for custom `reservationDuration` without any authentication.
+ *   - 403 for custom `reservationDuration` when the authenticated user is not a member
+ *     of the team that owns the event type.
+ *   - Successful custom duration reservation with a valid API key belonging to a teammate.
+ *
+ * - **`releaseAt`/`reservationUntil` window validation**: Uses
+ *   `SelectedSlotRepositoryFixture` to verify that the persisted `releaseAt` timestamp
+ *   matches `now + reservationDuration` minutes.
+ *
+ * - **Booking side effects**: Accepted, pending, and overlapping bookings reduce
+ *   available slots. Collective bookings remove the slot entirely; round-robin bookings
+ *   remove the slot only when all hosts are booked at that time.
+ *
+ * - **Reserved slots disappear**: After reserving a slot, `GET /v2/slots` no longer
+ *   includes it in the response for the corresponding date.
+ *
+ * - **Golden fixture assertions**: All slot assertions compare against `expectedSlotsUTC`
+ *   (07:00–14:00Z, 8 hourly slots × 5 weekdays) imported from `./expected-slots`.
+ *
+ * - **API versioning**: `CAL_API_VERSION_HEADER` is set to `VERSION_2024_09_04` on every
+ *   HTTP request to ensure version-specific routing and response shapes.
+ *
+ * - **Time mocking**: `jest-date-mock` (`advanceTo`/`clear`) and `luxon` (`DateTime`)
+ *   are used to freeze and manipulate the current date for deterministic reservation
+ *   window assertions.
+ *
+ * ## Test Infrastructure
+ *
+ * - `Test.createTestingModule` with `AppModule`, `PrismaModule`, `UsersModule`,
+ *   `TokensModule`, `SchedulesModule_2024_06_11`, and `SlotsModule_2024_09_04`.
+ * - `PermissionsGuard` is overridden to always allow access (guard logic tested
+ *   separately; this suite focuses on slot/reservation business logic).
+ * - API key authentication is used for reservation tests requiring team membership
+ *   verification.
+ *
+ * ## Fixture Setup
+ *
+ * - **Users**: 3 teammates + 1 outsider (non-team-member).
+ * - **API keys**: Created for all 3 teammates and the outsider.
+ * - **Team**: Single team with a unique slug.
+ * - **Memberships**: All 3 teammates added as MEMBER role (accepted).
+ * - **Event types**: Multiple team event types —
+ *   - Collective with 2 fixed hosts.
+ *   - Collective without explicit hosts (assignAllTeamMembers).
+ *   - Round-robin with 2 fixed hosts.
+ *   - Round-robin with 3 non-fixed hosts (`rrHostSubsetEnabled`).
+ *   - Round-robin with 1 fixed + 2 non-fixed hosts (`rrHostSubsetEnabled`).
+ * - **Schedules**: Mon–Fri 9AM–5PM Europe/Rome for teammates 1 & 2;
+ *   Mon & Fri only 9AM–5PM Europe/Rome for teammate 3.
+ * - **Bookings**: Deterministic bookings created mid-test to verify busy-time effects.
+ * - **Selected slots**: Created and cleaned up per reservation test.
+ *
+ * ## Cleanup
+ *
+ * `afterAll` performs: time reset (`clear()`), selected slot cleanup, booking cleanup,
+ * user deletion (all 4 users), team deletion, and NestJS app closure.
+ *
+ * ## Golden Fixtures
+ *
+ * `expectedSlotsUTC` — 8 hourly slots (07:00–14:00Z) across 5 weekdays
+ * (2050-09-05 through 2050-09-09), imported from `./expected-slots`.
+ *
+ * @see {@link ./expected-slots.ts} — Golden test fixture definitions
+ * @see {@link packages/features/schedules/lib/slots.ts} — Slot generation algorithm
+ * @see {@link packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts} — Multi-host aggregation for team events
+ * @see {@link packages/features/busyTimes/services/getBusyTimes.ts} — Busy time aggregation with buffer expansion
+ */
 import {
   CAL_API_VERSION_HEADER,
   ERROR_STATUS,

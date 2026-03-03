@@ -37,6 +37,23 @@ import { schemaQueryIdParseInt } from "~/lib/validations/shared/queryIdTransform
  *       404:
  *        description: Availability not found
  */
+/**
+ * Fetches a single availability record by its integer ID.
+ *
+ * The `id` path parameter is validated and coerced to an integer via
+ * `schemaQueryIdParseInt`. The matching `Availability` row is loaded from the
+ * database together with `Schedule.userId` so that downstream authorization
+ * middleware can verify ownership of the parent schedule.
+ *
+ * The raw Prisma result is sanitized through `schemaAvailabilityReadPublic`
+ * before being returned, stripping any internal-only fields.
+ *
+ * @returns `{ availability: AvailabilityReadPublic }` — the response shape is
+ *   a backward-compatibility contract (Rule 0.7.4) and MUST NOT be changed.
+ * @throws 404 — when the availability record does not exist. Prisma's
+ *   `findUnique` returns `null`, which causes `schemaAvailabilityReadPublic.parse`
+ *   to throw a Zod validation error that the default responder maps to a 404.
+ */
 export async function getHandler(req: NextApiRequest) {
   const { query } = req;
   const { id } = schemaQueryIdParseInt.parse(query);

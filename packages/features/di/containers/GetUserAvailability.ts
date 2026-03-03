@@ -11,6 +11,18 @@ import { getUserAvailabilityModule } from "../modules/GetUserAvailability";
 import { holidayRepositoryModule } from "../modules/Holiday";
 import { oooRepositoryModule } from "../modules/Ooo";
 
+/**
+ * DI container for UserAvailabilityService.
+ *
+ * Module load order: infrastructure (Prisma) → repositories (OOO, Booking,
+ * EventType, Holiday) → services (GetUserAvailability, BusyTimes) → Redis.
+ *
+ * Note: @evyweb/ioctopus resolves dependencies lazily at container.get() time,
+ * not at container.load() time. Load order therefore does not affect resolution
+ * correctness — all bindings simply need to be registered before the first
+ * container.get() call. Redis is loaded last here (unlike AvailableSlots.ts
+ * where it is loaded first) and both orderings are functionally equivalent.
+ */
 const container = createContainer();
 container.load(DI_TOKENS.PRISMA_MODULE, prismaModule);
 container.load(DI_TOKENS.OOO_REPOSITORY_MODULE, oooRepositoryModule);

@@ -8,6 +8,16 @@ import { mergeOverlappingDateRanges } from "./mergeOverlappingDateRanges";
 const november2 = "2023-11-02";
 const november3 = "2023-11-03";
 
+/**
+ * Test coverage matrix for mergeOverlappingDateRanges:
+ *
+ * - Full containment: multiple ranges collapse to one when an enclosing range exists
+ * - Cross-day overlaps: overlapping ranges merge across day boundaries; disjoint ranges preserved
+ * - Same-day overlaps: contiguous blocks merge on the same day; separate ranges preserved
+ * - Empty input: empty array returns empty array
+ * - Single input: single range returns unchanged
+ * - Non-overlapping: completely disjoint ranges remain separate
+ */
 describe("mergeOverlappingDateRanges", () => {
   it("should merge all ranges into one when one range includes all others", () => {
     const dateRanges = [
@@ -51,6 +61,33 @@ describe("mergeOverlappingDateRanges", () => {
     expect(mergedRanges[0].end.isSame(dayjs(dateRanges[0].end))).toBe(true);
     expect(mergedRanges[1].start.isSame(dayjs(dateRanges[2].start))).toBe(true);
     expect(mergedRanges[1].end.isSame(dayjs(dateRanges[2].end))).toBe(true);
+  });
+
+  it("should return an empty array for empty input", () => {
+    const result = mergeOverlappingDateRanges([]);
+    expect(result).toHaveLength(0);
+    expect(result).toEqual([]);
+  });
+
+  it("should return the same single range when given one input", () => {
+    const dateRanges = [createDateRange(`${november2}T09:00:00.000Z`, `${november2}T17:00:00.000Z`)];
+    const mergedRanges = mergeOverlappingDateRanges(dateRanges);
+    expect(mergedRanges).toHaveLength(1);
+    expect(mergedRanges[0].start.isSame(dayjs(dateRanges[0].start))).toBe(true);
+    expect(mergedRanges[0].end.isSame(dayjs(dateRanges[0].end))).toBe(true);
+  });
+
+  it("should preserve completely disjoint ranges without merging", () => {
+    const dateRanges = [
+      createDateRange(`${november2}T09:00:00.000Z`, `${november2}T10:00:00.000Z`),
+      createDateRange(`${november2}T12:00:00.000Z`, `${november2}T13:00:00.000Z`),
+    ];
+    const mergedRanges = mergeOverlappingDateRanges(dateRanges);
+    expect(mergedRanges).toHaveLength(2);
+    expect(mergedRanges[0].start.isSame(dayjs(dateRanges[0].start))).toBe(true);
+    expect(mergedRanges[0].end.isSame(dayjs(dateRanges[0].end))).toBe(true);
+    expect(mergedRanges[1].start.isSame(dayjs(dateRanges[1].start))).toBe(true);
+    expect(mergedRanges[1].end.isSame(dayjs(dateRanges[1].end))).toBe(true);
   });
 });
 

@@ -1,3 +1,63 @@
+/**
+ * @file E2E test suite for dynamic event-type slot availability via the `VERSION_2024_09_04` Slots API.
+ * @module SlotsModule_2024_09_04 E2E Tests — Dynamic Event Types
+ *
+ * @description
+ * Validates that `GET /v2/slots` with `usernames` (comma-separated) and `organizationSlug` query
+ * parameters correctly returns intersected availability for two organization teammates as a
+ * dynamic event type. The test exercises the full slot generation pipeline — from schedule
+ * creation through availability computation to API response serialization.
+ *
+ * ## Coverage Areas
+ *
+ * - **UTC slot retrieval (default timezone)** — Asserted against the `expectedSlotsUTC` golden
+ *   fixture, which defines 8 hourly slots (07:00–14:00 UTC) per day for the 5-day range.
+ * - **Europe/Rome timezone override** — Asserted against the `expectedSlotsRome` golden fixture,
+ *   which defines 8 hourly slots (09:00–16:00 +02:00) per day for the same 5-day range.
+ * - **5-day date range**: 2050-09-05 through 2050-09-09 with 60-minute duration slots.
+ * - **`CAL_API_VERSION_HEADER`** set to `VERSION_2024_09_04` on all HTTP requests.
+ * - **`GetSlotsOutput_2024_09_04`** response typing with `SUCCESS_STATUS` validation on each
+ *   response body.
+ *
+ * ## Test Infrastructure
+ *
+ * Uses `Test.createTestingModule` with the following NestJS modules:
+ * - `AppModule` — Root application module
+ * - `PrismaModule` — Database access layer
+ * - `UsersModule` — User management
+ * - `TokensModule` — Authentication token handling
+ * - `SchedulesModule_2024_06_11` — Schedule CRUD operations (used to seed test schedules)
+ * - `SlotsModule_2024_09_04` — Slot availability endpoint under test
+ *
+ * The `PermissionsGuard` is overridden to always return `true`, bypassing authorization checks
+ * for test determinism. The `withApiAuth` wrapper provides API key authentication context.
+ *
+ * ## Fixture Setup
+ *
+ * - **Organization**: Created with a random slug via `OrganizationRepositoryFixture`.
+ * - **Users**: Two users (`userOne`, `userTwo`) with random email addresses via
+ *   `UserRepositoryFixture`.
+ * - **Org Profiles**: Two organization profiles with usernames `"teammate-one"` and
+ *   `"teammate-two"` linked to the organization via `ProfileRepositoryFixture`.
+ * - **Schedules**: Default Mon–Fri 9 AM–5 PM Europe/Rome schedules for both users, created
+ *   via `SchedulesService_2024_06_11.createUserSchedule`.
+ *
+ * ## Cleanup
+ *
+ * - User deletion by email address
+ * - Organization deletion by ID
+ * - NestJS application closure
+ *
+ * ## Golden Fixtures
+ *
+ * - `expectedSlotsUTC` — 07:00–14:00 UTC slots per day (Mon–Fri), 8 hourly slots each day.
+ * - `expectedSlotsRome` — 09:00–16:00 Europe/Rome (+02:00) slots per day, 8 hourly slots each day.
+ *
+ * Both fixtures are imported from `./expected-slots`.
+ *
+ * @see {@link ./expected-slots.ts} — Golden test fixture definitions
+ * @see {@link packages/features/schedules/lib/slots.ts} — Slot generation algorithm producing these outputs
+ */
 import { CAL_API_VERSION_HEADER, SUCCESS_STATUS, VERSION_2024_09_04 } from "@calcom/platform-constants";
 import type { CreateScheduleInput_2024_06_11 } from "@calcom/platform-types";
 import type { Profile, Team, User } from "@calcom/prisma/client";

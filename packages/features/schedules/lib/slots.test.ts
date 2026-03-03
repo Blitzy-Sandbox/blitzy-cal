@@ -1185,3 +1185,175 @@ describe("Tests 40-minute duration slot generation", () => {
     expect(slots).toHaveLength(4);
   });
 });
+
+describe("Edge case slot tests", () => {
+  beforeAll(() => {
+    vi.setSystemTime(dayjs.utc("2021-06-20T11:59:59Z").toDate());
+  });
+
+  it("should return empty array when dateRanges is empty", async () => {
+    // An empty dateRanges array should produce zero slots since there are no ranges to iterate over
+    const result = getSlots({
+      inviteeDate: dayjs.utc().add(1, "day"),
+      frequency: 60,
+      minimumBookingNotice: 0,
+      eventLength: 60,
+      dateRanges: [],
+    });
+
+    expect(result).toHaveLength(0);
+    expect(result).toEqual([]);
+  });
+
+  it("should handle eventLength that exactly fits within date range", async () => {
+    // Range is exactly 30 minutes: 09:00-09:30
+    // eventLength is 30 minutes
+    // The boundary logic checks: slotStartTime.add(eventLength, "minutes").subtract(1, "second").utc().isAfter(range.end)
+    // For slot at 09:00: 09:00 + 30min - 1s = 09:29:59, which is NOT after 09:30:00 (isAfter is strict)
+    // Therefore the slot at 09:00 should be included
+    const nextDay = dayjs.utc().add(1, "day").startOf("day");
+
+    const slots = getSlots({
+      inviteeDate: nextDay,
+      frequency: 30,
+      minimumBookingNotice: 0,
+      eventLength: 30,
+      dateRanges: [
+        {
+          start: nextDay.hour(9),
+          end: nextDay.hour(9).minute(30),
+        },
+      ],
+      offsetStart: 0,
+    });
+
+    // Exactly one slot at 09:00 should fit — the event occupies 09:00-09:30 which is the entire range
+    expect(slots).toHaveLength(1);
+    expect(slots[0].time.format("HH:mm")).toBe("09:00");
+  });
+
+  it("should not generate slot when eventLength exceeds date range by more than 1 second", async () => {
+    // Range is 29 minutes 58 seconds: 09:00-09:29:58
+    // eventLength is 30 minutes
+    // For slot at 09:00: 09:00 + 30min - 1s = 09:29:59, which IS after 09:29:58
+    // Therefore no slot should be generated
+    const nextDay = dayjs.utc().add(1, "day").startOf("day");
+
+    const slots = getSlots({
+      inviteeDate: nextDay,
+      frequency: 30,
+      minimumBookingNotice: 0,
+      eventLength: 30,
+      dateRanges: [
+        {
+          start: nextDay.hour(9),
+          end: nextDay.hour(9).minute(29).second(58),
+        },
+      ],
+      offsetStart: 0,
+    });
+
+    // No slots should fit since the range is 2 seconds too short for a 30-minute event
+    expect(slots).toHaveLength(0);
+  });
+
+  it("should deduplicate slots with identical start times from overlapping ranges", async () => {
+    // Two identical date ranges should produce the same number of slots as one range
+    // due to the ISO-keyed Map deduplication in buildSlotsWithDateRanges
+    const nextDay = dayjs.utc().add(1, "day").startOf("day");
+    const identicalRange = {
+      start: nextDay.hour(9),
+      end: nextDay.hour(11),
+    };
+
+    const slotsFromSingleRange = getSlots({
+      inviteeDate: nextDay,
+      frequency: 60,
+      minimumBookingNotice: 0,
+      eventLength: 60,
+      dateRanges: [identicalRange],
+      offsetStart: 0,
+    });
+
+    const slotsFromDuplicateRanges = getSlots({
+      inviteeDate: nextDay,
+      frequency: 60,
+      minimumBookingNotice: 0,
+      eventLength: 60,
+      dateRanges: [identicalRange, identicalRange],
+      offsetStart: 0,
+    });
+
+    // 09:00-11:00 = 2 hours = 2 slots at 09:00 and 10:00
+    expect(slotsFromSingleRange).toHaveLength(2);
+    // Duplicate ranges should produce the same 2 slots (not 4) due to ISO-keyed Map deduplication
+    expect(slotsFromDuplicateRanges).toHaveLength(2);
+    // Verify the exact same slot times are returned
+    expect(slotsFromSingleRange.map((s) => s.time.toISOString())).toEqual(
+      slotsFromDuplicateRanges.map((s) => s.time.toISOString())
+    );
+  });
+});
+
+describe("Input validation tests", () => {
+  beforeAll(() => {
+    vi.setSystemTime(dayjs.utc("2021-06-20T11:59:59Z").toDate());
+  });
+
+  it("should clamp frequency to minimum of 1", async () => {
+    // frequency=0 is internally clamped to 1 by the minimumOfOne guard in buildSlotsWithDateRanges
+    // This test verifies that zero frequency does not cause an infinite loop and still produces valid slots
+    const nextDay = dayjs.utc().add(1, "day").startOf("day");
+
+    const result = getSlots({
+      inviteeDate: nextDay,
+      frequency: 0,
+      minimumBookingNotice: 0,
+      eventLength: 5,
+      dateRanges: [
+        {
+          start: nextDay.hour(9),
+          end: nextDay.hour(9).minute(10),
+        },
+      ],
+      offsetStart: 0,
+    });
+
+    // With frequency clamped to 1, the slot generator should produce valid slots without infinite looping
+    // 10-minute range with 5-minute event length and 1-minute frequency yields multiple slots
+    expect(result.length).toBeGreaterThan(0);
+    // Verify all returned slots have valid time objects
+    result.forEach((slot) => {
+      expect(slot.time.isValid()).toBe(true);
+    });
+  });
+
+  it("should clamp eventLength to minimum of 1", async () => {
+    // eventLength=0 is internally clamped to 1 by the minimumOfOne guard in buildSlotsWithDateRanges
+    // This test verifies that zero event length does not cause issues and still produces valid slots
+    const nextDay = dayjs.utc().add(1, "day").startOf("day");
+
+    const result = getSlots({
+      inviteeDate: nextDay,
+      frequency: 5,
+      minimumBookingNotice: 0,
+      eventLength: 0,
+      dateRanges: [
+        {
+          start: nextDay.hour(9),
+          end: nextDay.hour(9).minute(10),
+        },
+      ],
+      offsetStart: 0,
+    });
+
+    // With eventLength clamped to 1, the boundary check (slotStart + 1min - 1s) should work correctly
+    // 10-minute range with 1-minute event length and 5-minute frequency yields 2 slots (09:00, 09:05)
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).toHaveLength(2);
+    // Verify all returned slots have valid time objects
+    result.forEach((slot) => {
+      expect(slot.time.isValid()).toBe(true);
+    });
+  });
+});

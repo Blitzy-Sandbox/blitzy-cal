@@ -5,12 +5,29 @@ import type { Schedule, TimeRange, WorkingHours } from "@calcom/types/schedule";
 
 import { nameOfDay } from "./weekday";
 
-// sets the desired time in current date, needs to be current date for proper DST translation
+/**
+ * Default working-hours time range representing 9:00 AM – 5:00 PM UTC.
+ *
+ * Uses the **current date** with UTC hours so that downstream DST translation
+ * (via `processWorkingHours` in `date-ranges.ts`) correctly resolves the
+ * UTC-to-local offset for the user's timezone on the date being evaluated.
+ */
 export const defaultDayRange: TimeRange = {
   start: new Date(new Date().setUTCHours(9, 0, 0, 0)),
   end: new Date(new Date().setUTCHours(17, 0, 0, 0)),
 };
 
+/**
+ * Canonical default weekly schedule used when a user has no stored schedule.
+ *
+ * Structure: 7-element array indexed by day-of-week (0 = Sunday … 6 = Saturday).
+ *  - Index 0 (Sunday):    empty — no working hours
+ *  - Indices 1–5 (Mon–Fri): `[defaultDayRange]` — 9 AM to 5 PM UTC
+ *  - Index 6 (Saturday):  empty — no working hours
+ *
+ * Consumed by `ScheduleRepository.setupDefaultSchedule`, `detectEventTypeScheduleForUser`,
+ * and the Platform SDK as the fallback schedule data.
+ */
 export const DEFAULT_SCHEDULE: Schedule = [
   [],
   [defaultDayRange],
@@ -21,6 +38,20 @@ export const DEFAULT_SCHEDULE: Schedule = [
   [],
 ];
 
+/**
+ * Reduces a 7-day `Schedule` (array of `TimeRange[]` per weekday) into a compact
+ * `Availability[]` by deduplicating identical start/end time pairs and grouping
+ * their associated day indices.
+ *
+ * Deduplication compares `Date.toString()` representations of `start` and `end`
+ * to detect structurally identical time windows across different days.  When a
+ * duplicate is found the day index is appended to the existing entry's `days`
+ * array; otherwise a new `Availability` record is created.
+ *
+ * @param schedule - A 7-element array where each element is a list of `TimeRange`
+ *   objects for that weekday (index 0 = Sunday … 6 = Saturday).
+ * @returns Deduplicated `Availability[]` suitable for Prisma persistence.
+ */
 export function getAvailabilityFromSchedule(schedule: Schedule): Availability[] {
   return schedule.reduce((availability: Availability[], times: TimeRange[], day: number) => {
     const addNewTime = (time: TimeRange) =>
@@ -51,12 +82,37 @@ export function getAvailabilityFromSchedule(schedule: Schedule): Availability[] 
   }, [] as Availability[]);
 }
 
+/** Total minutes in a 24-hour day (1440). Used as the upper bound for day-overflow detection. */
 export const MINUTES_IN_DAY = 60 * 24;
+/** Last representable minute of a day (1439 = 23:59). Used for clamping end-of-day boundaries. */
 export const MINUTES_DAY_END = MINUTES_IN_DAY - 1;
+/** First minute of a day (0 = 00:00). Used for clamping start-of-day boundaries. */
 export const MINUTES_DAY_START = 0;
 
 /**
- * Allows "casting" availability (days, startTime, endTime) given in UTC to a timeZone or utcOffset
+ * Converts UTC-based availability records into localised `WorkingHours[]` for a
+ * given timezone or explicit UTC offset.
+ *
+ * **Three-path overflow mechanism:**
+ * 1. **Same-day path** — start/end are clamped to `[0, 1439]` and emitted when the
+ *    resulting range has positive duration.
+ * 2. **Previous-day overflow** — if the offset shifts the start or end *before*
+ *    midnight (negative minutes), an additional entry is created on the preceding
+ *    weekday with `+MINUTES_IN_DAY` applied to both offsets and `endTime` capped
+ *    at `MINUTES_DAY_END`.
+ * 3. **Next-day overflow** — if the offset shifts the start or end *past* 23:59
+ *    (> 1439 or > 1440), an additional entry is created on the following weekday
+ *    with `-MINUTES_IN_DAY` applied and `startTime` floored at `MINUTES_DAY_START`.
+ *
+ * Weekday indices wrap around using modulo arithmetic (0 = Sunday … 6 = Saturday).
+ *
+ * @param relativeTimeUnit - Either `{ timeZone }` (IANA string resolved via
+ *   `dayjs().tz()`) or `{ utcOffset }` (minutes from UTC). If both are supplied,
+ *   `utcOffset` takes precedence.
+ * @param availability - Array of recurring availability records. Entries with an
+ *   empty `days` array (date-specific overrides) are skipped.
+ * @returns Sorted `WorkingHours[]` in ascending `startTime` order, with an
+ *   optional `userId` passthrough.
  */
 export function getWorkingHours(
   relativeTimeUnit: {
@@ -126,6 +182,24 @@ export function getWorkingHours(
   return workingHours;
 }
 
+/**
+ * Formats an `Availability` record into a human-readable, locale-aware string
+ * such as `"Mon - Wed, 9:00 AM - 5:00 PM"`.
+ *
+ * **Day span logic (`weekSpan`):** Adjacent day indices are merged into ranges
+ * using a sliding-window algorithm. Non-adjacent days are separated by commas.
+ * Day names are localised via `nameOfDay(locale, day, "short")`.
+ *
+ * **Time span logic (`timeSpan`):** Start and end times are formatted with
+ * `Intl.DateTimeFormat` using the supplied `locale` and `hour12` toggle.
+ * The trailing `"Z"` is stripped from `toISOString()` before parsing so that
+ * the formatter treats the timestamp as local time rather than UTC.
+ *
+ * @param availability - An object containing `days` (weekday indices), `startTime`,
+ *   and `endTime` (Date instances).
+ * @param options - `locale` for `Intl.DateTimeFormat` and `hour12` toggle.
+ * @returns Formatted string combining the day range and the time range.
+ */
 export function availabilityAsString(
   availability: Pick<Availability, "days" | "startTime" | "endTime">,
   { locale, hour12 }: { locale?: string; hour12?: boolean }

@@ -1,3 +1,63 @@
+/**
+ * @file E2E Test Suite for SlotsController_2024_04_15
+ *
+ * Comprehensive end-to-end tests exercising the full `/v2/slots` API surface
+ * for the 2024-04-15 versioned slots controller.
+ *
+ * @description
+ * **API Endpoints Tested:**
+ * - `GET  /v2/slots/available`      — Retrieve available time slots
+ * - `POST /v2/slots/reserve`        — Reserve a selected time slot
+ * - `DELETE /v2/slots/selected-slot` — Release a previously reserved slot
+ *
+ * **Module Bootstrapping:**
+ * The NestJS testing module is composed from `AppModule`, `PrismaModule`,
+ * `UsersModule`, `TokensModule`, `SchedulesModule_2024_06_11`, and
+ * `SlotsModule_2024_04_15`. The `PermissionsGuard` is overridden with
+ * `{ canActivate: () => true }` to bypass authorization for test isolation.
+ *
+ * **Fixture Seeding (`beforeAll`):**
+ * - Creates a test user with a default schedule in the `Europe/Rome` timezone
+ *   (Monday–Friday, 9 AM–5 PM local time).
+ * - Creates a regular (non-seated) event type with a 60-minute duration.
+ * - Creates a seated event type (5 seats per time slot, attendees visible,
+ *   availability count shown, in-person location).
+ * - Bookings, attendees, and booking seats are created inline within
+ *   individual test cases as needed.
+ * - A selected (reserved) slot is created during the reservation flow test.
+ *
+ * **Expected Payload Fixtures:**
+ * Four readonly constant objects define the canonical expected responses for
+ * the Sept 5–9, 2050 date range (hourly grid, 9 AM–5 PM Europe/Rome =
+ * 7 AM–3 PM UTC):
+ * - `expectedSlotsUTC`       — `time` format in UTC
+ * - `expectedSlotsRome`      — `time` format in Europe/Rome (+02:00)
+ * - `expectedSlotsUTCRange`  — `range` format (startTime/endTime) in UTC
+ * - `expectedSlotsRomeRange` — `range` format (startTime/endTime) in Europe/Rome
+ *
+ * **Test Coverage Vectors:**
+ * 1. Availability lookup by `eventTypeId` (UTC and Europe/Rome timezone).
+ * 2. Availability lookup by `eventTypeSlug` + `usernameList` (UTC and
+ *    Europe/Rome timezone).
+ * 3. `slotFormat` toggle: `time` format (default) vs `range` format
+ *    (startTime/endTime pairs).
+ * 4. Reservation flow: `POST /reserve` → `GET /available` (reserved slot
+ *    excluded from results) → `DELETE /selected-slot` (slot released).
+ * 5. Booking exclusion: a confirmed booking removes its slot from the
+ *    available results.
+ * 6. Seated events: booked slot includes `attendees` count and `bookingUid`
+ *    metadata in both `time` and `range` output formats.
+ * 7. `routingFormResponseId` / `_isDryRun` validation matrix (5 edge cases):
+ *    - Dry-run with `routingFormResponseId=0` → allowed (200)
+ *    - Dry-run with `routingFormResponseId=1` → rejected (400)
+ *    - Non-dry-run with `routingFormResponseId=1` → allowed (200)
+ *    - Non-dry-run with `routingFormResponseId=0` → rejected (400)
+ *    - Non-dry-run with `routingFormResponseId=-1` → rejected (400)
+ *
+ * **Cleanup (`afterAll`):**
+ * Deletes the test user, reserved slot, and all bookings associated with
+ * the user, then closes the NestJS application instance.
+ */
 import { SUCCESS_STATUS } from "@calcom/platform-constants";
 import type { User } from "@calcom/prisma/client";
 import { INestApplication } from "@nestjs/common";

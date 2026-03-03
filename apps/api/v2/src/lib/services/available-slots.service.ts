@@ -19,6 +19,52 @@ import { AvailableSlotsService as BaseAvailableSlotsService } from "@calcom/plat
 
 import { UserAvailabilityService } from "./user-availability.service";
 
+/**
+ * NestJS DI adapter for the Cal.com features-layer `AvailableSlotsService`.
+ *
+ * This class extends {@link BaseAvailableSlotsService} (re-exported from
+ * `@calcom/platform-libraries/slots`, which itself re-exports the canonical
+ * `AvailableSlotsService` from `@calcom/trpc/server/routers/viewer/slots/util`).
+ *
+ * It is a **pure delegation class** — it contains no method overrides and no
+ * additional business logic. All availability computation (slot generation,
+ * busy-time subtraction, aggregated multi-host intersection, etc.) is handled
+ * entirely by the base class. The sole purpose of this adapter is to bridge
+ * the NestJS dependency-injection system to the `IAvailableSlotsService`
+ * interface contract expected by the base class constructor.
+ *
+ * ### Constructor Dependency Mappings
+ *
+ * All 16 NestJS-injected constructor parameters are forwarded to `super()`
+ * as an `IAvailableSlotsService` object (see interface definition at
+ * `packages/trpc/server/routers/viewer/slots/util.ts`):
+ *
+ * | # | NestJS Constructor Param              | `IAvailableSlotsService` Property   |
+ * |---|---------------------------------------|-------------------------------------|
+ * | 1 | `oooRepoDependency`                   | `oooRepo`                           |
+ * | 2 | `scheduleRepoDependency`              | `scheduleRepo`                      |
+ * | 3 | `teamRepository`                      | `teamRepo`                          |
+ * | 4 | `routingFormResponseRepository`       | `routingFormResponseRepo`           |
+ * | 5 | `bookingRepository`                   | `bookingRepo`                       |
+ * | 6 | `selectedSlotRepository`              | `selectedSlotRepo`                  |
+ * | 7 | `eventTypeRepository`                 | `eventTypeRepo`                     |
+ * | 8 | `userRepository`                      | `userRepo`                          |
+ * | 9 | `redisService`                        | `redisClient`                       |
+ * |10 | `featuresRepository`                  | `featuresRepo`                      |
+ * |11 | `qualifiedHostsService`               | `qualifiedHostsService` (shorthand) |
+ * |12 | `checkBookingLimitsService`           | `checkBookingLimitsService` (shorthand) |
+ * |13 | `userAvailabilityService`             | `userAvailabilityService` (shorthand) |
+ * |14 | `busyTimesService`                    | `busyTimesService` (shorthand)      |
+ * |15 | `noSlotsNotificationService`          | `noSlotsNotificationService` (shorthand) |
+ * |16 | `orgMembershipLookupService`          | `orgMembershipLookup`               |
+ *
+ * All 16 providers are registered by the NestJS `AvailableSlotsModule`
+ * (`apps/api/v2/src/lib/modules/available-slots.module.ts`).
+ *
+ * @see {@link BaseAvailableSlotsService} — base class from `@calcom/platform-libraries/slots`
+ * @see `IAvailableSlotsService` — interface at `packages/trpc/server/routers/viewer/slots/util.ts`
+ * @see `AvailableSlotsModule` — NestJS module at `apps/api/v2/src/lib/modules/available-slots.module.ts`
+ */
 @Injectable()
 export class AvailableSlotsService extends BaseAvailableSlotsService {
   constructor(

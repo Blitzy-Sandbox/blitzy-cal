@@ -1,3 +1,15 @@
+/**
+ * Integration tests for BusyTimesService.getBusyTimesForLimitChecks.
+ *
+ * These tests use real Prisma database operations (not mocks) to validate:
+ * - Cross-batch result aggregation for large user lists
+ * - RescheduleUid exclusion from busy time results
+ *
+ * Test fixtures are created and cleaned up via helper functions that
+ * track resource IDs in `createdResources` for reliable teardown.
+ *
+ * @see getBusyTimes.test.ts for unit tests with mocked Prisma
+ */
 import dayjs from "@calcom/dayjs";
 import { getBusyTimesService } from "@calcom/features/di/containers/BusyTimes";
 import { prisma } from "@calcom/prisma";
@@ -16,6 +28,10 @@ const createdResources: CreatedResources = {
   bookings: [],
 };
 
+/**
+ * Creates a test user with a unique email and username derived from the current timestamp
+ * and random suffix. The user ID is tracked in `createdResources` for automatic cleanup.
+ */
 const createTestUser = async (overrides?: { email?: string; username?: string }) => {
   const timestamp = `${Date.now()}-${Math.random()}`;
   const user = await prisma.user.create({
@@ -28,6 +44,10 @@ const createTestUser = async (overrides?: { email?: string; username?: string })
   return user;
 };
 
+/**
+ * Creates a test event type (30-minute duration) for the specified user with a unique slug.
+ * The event type ID is tracked in `createdResources` for automatic cleanup.
+ */
 const createTestEventType = async (userId: number) => {
   const timestamp = `${Date.now()}-${Math.random()}`;
   const eventType = await prisma.eventType.create({
@@ -45,6 +65,10 @@ const createTestEventType = async (userId: number) => {
   return eventType;
 };
 
+/**
+ * Creates a test booking with ACCEPTED status for the given user and event type.
+ * The booking ID is tracked in `createdResources` for automatic cleanup.
+ */
 const createTestBooking = async (params: {
   userId: number;
   eventTypeId: number;
@@ -115,6 +139,9 @@ describe("getBusyTimesForLimitChecks (integration)", () => {
       endTime: dayStart.set("hour", 12).toDate(),
     });
 
+    // Use high IDs (1,000,000+) as filler to exceed BATCH_SIZE_FOR_LIMIT_CHECKS (50)
+    // without conflicting with real user IDs in the database.
+    // Total: 2 real users + 58 fillers = 60 userIds, which forces 2 batches (50 + 10).
     const fillerIds = Array.from({ length: 58 }, (_, index) => 1_000_000 + index);
     const userIds = [user1.id, ...fillerIds, user2.id];
 

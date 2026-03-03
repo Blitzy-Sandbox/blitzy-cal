@@ -11,10 +11,19 @@ import { Tooltip } from "@calcom/ui/components/tooltip";
 
 import DateOverrideInputDialog from "./DateOverrideInputDialog";
 
+/**
+ * Comparator that sorts date-override entries in chronological order
+ * by comparing the start date of each entry's first time range.
+ */
 const sortByDate = (a: { ranges: TimeRange[]; id: string }, b: { ranges: TimeRange[]; id: string }) => {
   return a.ranges[0].start > b.ranges[0].start ? 1 : -1;
 };
 
+/**
+ * Describes a user's travel period used to display the active IANA timezone
+ * label alongside each date-override time range that falls within the travel window.
+ * An open-ended trip is represented by a `null` endDate.
+ */
 interface TravelSchedule {
   id: number;
   startDate: Date;
@@ -22,6 +31,31 @@ interface TravelSchedule {
   timeZone: string;
 }
 
+/**
+ * Renders a sorted, localized list of date-specific availability overrides with
+ * inline edit and delete controls.
+ *
+ * **Rendering paths:**
+ * - *Platform (Atoms) mode* — dates and times are formatted via `formatInTimeZone`
+ *   from `date-fns-tz` using explicit "UTC" timezone strings.
+ * - *Portal (web) mode* — dates and times are formatted via `Intl.DateTimeFormat`
+ *   with the active `i18n.language` locale and the caller-supplied `hour12` flag.
+ *
+ * **Field-array reconciliation:**
+ * `unsortedFieldArrayMap` maps each field `id` → its original unsorted index so
+ * that React Hook Form's `replace` helper always receives the correct positional
+ * reference even though the rendered list is sorted chronologically.
+ *
+ * **Edit flow:**
+ * Opens `DateOverrideInputDialog` with the current ranges. On change the handler
+ * replaces the matching entry in the fields array and calls
+ * `handleAvailabilityUpdate` to persist (unless `isDryRun` is true).
+ *
+ * **Delete flow:**
+ * Filters the target item out of the fields array via `replace`. The
+ * `handleAvailabilityUpdate` persistence callback is only invoked when
+ * `isDryRun` is false; local form state is always updated.
+ */
 // I would like this to be decoupled, but RHF really doesn't support this.
 const DateOverrideList = ({
   workingHours,
@@ -59,6 +93,15 @@ const DateOverrideList = ({
     return <></>;
   }
 
+  /**
+   * Formats a single {@link TimeRange} as a human-readable "start – end" string.
+   *
+   * - **Platform mode**: Uses `formatInTimeZone` (date-fns-tz) with the "UTC"
+   *   timezone and a fixed `"h:mm a"` pattern.
+   * - **Portal mode**: Uses `Intl.DateTimeFormat` with the active locale and
+   *   the `hour12` prop. The ISO string is sliced to strip the trailing "Z"
+   *   so that `Intl.DateTimeFormat` treats the value as local (UTC-equivalent).
+   */
   const timeSpan = ({ start, end }: TimeRange) => {
     if (isPlatform) {
       return `${formatInTimeZone(start, "UTC", "h:mm a")} - ${formatInTimeZone(end, "UTC", "h:mm a")}`;

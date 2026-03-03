@@ -1,3 +1,17 @@
+/**
+ * Unit tests for BusyTimesService — the core busy-time aggregation service.
+ *
+ * Uses a mocked Prisma client to validate:
+ * - Booking-to-busy-time translation with buffer extension logic
+ * - Seat-aware blocking (only buffers when seats remain)
+ * - Batched limit check queries (BATCH_SIZE=50, MAX_CONCURRENT=5)
+ * - RescheduleUid exclusion from Prisma queries
+ * - Null eventTypeId and userId propagation
+ *
+ * All date-time values are anchored to `startOfTomorrow` for deterministic assertions.
+ *
+ * @see getBusyTimes.integration-test.ts for Prisma-backed integration tests
+ */
 import { prisma } from "@calcom/prisma/__mocks__/prisma";
 import dayjs from "@calcom/dayjs";
 import { getBusyTimesService } from "@calcom/features/di/containers/BusyTimes";
@@ -11,6 +25,12 @@ vi.mock("@calcom/prisma", () => ({
 const startOfTomorrow = dayjs().add(1, "day").startOf("day");
 const tomorrowDate = startOfTomorrow.format("YYYY-MM-DD");
 
+/**
+ * Factory that creates an array of 2 mock booking objects for getBusyTimes tests.
+ * Booking 1: 10-11 AM with seatsReferences=1 (always present).
+ * Booking 2: 2-3 PM with seatsReferences only when seatsPerTimeSlot is provided.
+ * Both bookings have eventType.id=1 with configurable buffer and seat fields.
+ */
 const mockBookings = ({
   beforeEventBuffer = 0,
   afterEventBuffer = 0,
@@ -60,6 +80,7 @@ const mockBookings = ({
   },
 ];
 
+/** Tests for BusyTimesService.getBusyTimes — booking-to-busy-time translation and buffer logic */
 describe("getBusyTimes", () => {
   it("blocks a regular time slot", async () => {
     const busyTimesService = getBusyTimesService();
@@ -134,11 +155,17 @@ describe("getBusyTimes", () => {
   });
 });
 
+/** Tests for BusyTimesService.getBusyTimesForLimitChecks — batched limit check queries */
 describe("getBusyTimesForLimitChecks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
+  /**
+   * Factory for creating a single mock booking result with overridable fields.
+   * Used by getBusyTimesForLimitChecks tests to generate minimal booking payloads
+   * matching the Prisma select projection (id, startTime, endTime, eventTypeId, title, userId).
+   */
   const createMockBookingResult = (
     overrides: Partial<{
       id: number;

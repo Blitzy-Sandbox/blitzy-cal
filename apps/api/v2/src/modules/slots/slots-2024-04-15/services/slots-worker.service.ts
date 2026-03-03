@@ -29,6 +29,31 @@ interface WorkerResult {
   error?: Error;
 }
 
+/**
+ * Manages a configurable pool of Node.js `Worker` threads to offload availability slot
+ * computation to parallel threads, preventing the main event loop from blocking during
+ * CPU-intensive schedule calculations.
+ *
+ * **Worker Pool Lifecycle**: The pool is initialized at construction time based on
+ * `ConfigService` flags (`enableSlotsWorkers`, `slotsWorkerPoolSize`). Initialization
+ * is skipped in E2E test environments to avoid spawning unnecessary threads.
+ *
+ * **Task Queuing**: Incoming `GetScheduleOptions` requests are queued and dispatched to
+ * available workers via a FIFO queue. Each task uses `once` listeners for result handling,
+ * ensuring automatic cleanup after each response.
+ *
+ * **Failure Recovery**: Failed workers are automatically removed from the pool, terminated,
+ * and replaced with fresh instances to maintain the configured pool size via `handleWorkerFailure`.
+ *
+ * **Graceful Shutdown**: Implements `OnModuleDestroy` to terminate all workers when the
+ * NestJS module is destroyed, preventing resource leaks.
+ *
+ * **Thread Communication**: Uses structured `WorkerMessage` and `WorkerResult` interfaces
+ * for type-safe `postMessage`/`onMessage` communication between the main thread and workers.
+ *
+ * The worker script at `../workers/slots.worker.js` is a compiled NestJS application context
+ * bootstrapped in a worker thread.
+ */
 @Injectable()
 export class SlotsWorkerService_2024_04_15 implements OnModuleDestroy {
   private readonly logger = new Logger("SlotsWorkerService_2024_04_15");
@@ -236,6 +261,11 @@ export class SlotsWorkerService_2024_04_15 implements OnModuleDestroy {
     });
   }
 
+  /**
+   * NestJS lifecycle hook for graceful shutdown. Iterates and terminates all workers
+   * in the pool to prevent resource leaks. Called automatically by NestJS when the
+   * module is being destroyed.
+   */
   onModuleDestroy(): void {
     this.logger.log("Terminating worker pool...");
     for (const worker of this.workerPool) {

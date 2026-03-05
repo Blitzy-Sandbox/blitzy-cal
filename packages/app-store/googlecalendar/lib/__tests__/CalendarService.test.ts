@@ -1311,3 +1311,470 @@ describe("listCalendars", () => {
     expect(calendars[0].externalId).toBe("user@example.com");
   });
 });
+
+describe("CI-001: FreeBusy API parity tests", () => {
+  // Test FreeBusy API response handling matching Calendly's behavior
+
+  test("should handle FreeBusy query for exactly 90-day boundary (edge case)", async () => {
+    // Create a service and mock the API
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockBusyData = [
+      { start: "2024-01-01T10:00:00Z", end: "2024-01-01T11:00:00Z" },
+    ];
+
+    // Mock getFreeBusyData to return consistent data
+    const getFreeBusyDataSpy = vi
+      .spyOn(calendarService as any, "getFreeBusyData")
+      .mockResolvedValue(mockBusyData.map((item) => ({ ...item, id: "test@calendar.com" })));
+
+    // Exactly 90 days should use single API call (not chunked)
+    const result = await (calendarService as any).fetchAvailabilityData(
+      ["test@calendar.com"],
+      "2024-01-01T00:00:00Z",
+      "2024-03-31T00:00:00Z" // exactly 90 days
+    );
+
+    expect(getFreeBusyDataSpy).toHaveBeenCalledTimes(1);
+    expect(result.length).toBeGreaterThan(0);
+
+    getFreeBusyDataSpy.mockRestore();
+  });
+
+  test("should chunk FreeBusy query for 91-day range into 2 chunks", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockBusyData = [
+      { start: "2024-01-01T10:00:00Z", end: "2024-01-01T11:00:00Z" },
+    ];
+
+    const getFreeBusyDataSpy = vi
+      .spyOn(calendarService as any, "getFreeBusyData")
+      .mockResolvedValue(mockBusyData.map((item) => ({ ...item, id: "test@calendar.com" })));
+
+    // 91 days should require chunking (2 chunks)
+    const result = await (calendarService as any).fetchAvailabilityData(
+      ["test@calendar.com"],
+      "2024-01-01T00:00:00Z",
+      "2024-04-01T00:00:00Z" // 91 days
+    );
+
+    expect(getFreeBusyDataSpy).toHaveBeenCalledTimes(2);
+    expect(result.length).toBeGreaterThan(0);
+
+    getFreeBusyDataSpy.mockRestore();
+  });
+
+  test("should chunk FreeBusy query for 180-day range into 2 chunks", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockBusyData = [
+      { start: "2024-01-01T10:00:00Z", end: "2024-01-01T11:00:00Z" },
+    ];
+
+    const getFreeBusyDataSpy = vi
+      .spyOn(calendarService as any, "getFreeBusyData")
+      .mockResolvedValue(mockBusyData.map((item) => ({ ...item, id: "test@calendar.com" })));
+
+    // 180 days = exactly 2 full chunks
+    const result = await (calendarService as any).fetchAvailabilityData(
+      ["test@calendar.com"],
+      "2024-01-01T00:00:00Z",
+      "2024-06-29T00:00:00Z" // 180 days
+    );
+
+    expect(getFreeBusyDataSpy).toHaveBeenCalledTimes(2);
+    expect(result.length).toBeGreaterThan(0);
+
+    getFreeBusyDataSpy.mockRestore();
+  });
+
+  test("should correctly handle FreeBusy response with empty calendars", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    calendarListMock.mockImplementation(() => ({
+      data: { items: [{ id: "user@example.com" }] },
+    }));
+
+    // Mock freeBusy to return empty busy times
+    freebusyQueryMock.mockImplementation(() => ({
+      data: {
+        calendars: {
+          "user@example.com": { busy: [] },
+        },
+      },
+    }));
+
+    const result = await calendarService.getAvailability({
+      dateFrom: "2024-01-01",
+      dateTo: "2024-01-31",
+      selectedCalendars: [{ integration: "google_calendar", externalId: "user@example.com" }],
+      mode: "slots",
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  test("should correctly merge FreeBusy data from multiple calendars", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const busy1 = [{ start: "2024-01-01T10:00:00Z", end: "2024-01-01T11:00:00Z" }];
+    const busy2 = [{ start: "2024-01-01T14:00:00Z", end: "2024-01-01T15:00:00Z" }];
+    const busy3 = [{ start: "2024-01-02T09:00:00Z", end: "2024-01-02T10:00:00Z" }];
+
+    freebusyQueryMock.mockImplementation(({ requestBody }: { requestBody: any }) => {
+      const calendarsObject: any = {};
+      const allBusy = [busy1, busy2, busy3];
+      requestBody.items.forEach((item: any, index: number) => {
+        calendarsObject[item.id] = { busy: allBusy[index] || [] };
+      });
+      return { data: { calendars: calendarsObject } };
+    });
+
+    const result = await calendarService.getAvailability({
+      dateFrom: "2024-01-01",
+      dateTo: "2024-01-31",
+      selectedCalendars: [
+        { integration: "google_calendar", externalId: "cal1@test.com" },
+        { integration: "google_calendar", externalId: "cal2@test.com" },
+        { integration: "google_calendar", externalId: "cal3@test.com" },
+      ],
+      mode: "slots",
+    });
+
+    expect(result).toHaveLength(3);
+  });
+});
+
+describe("CI-001: Recurring event instance location parity", () => {
+  test("should locate correct recurring event instance by start time matching", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    // Mock a recurring event with multiple instances
+    const targetStartTime = "2024-06-22T10:00:00Z";
+    const mockInstances = [
+      {
+        id: "recurring-event-id_20240615T100000Z",
+        summary: "Weekly Meeting",
+        start: { dateTime: "2024-06-15T10:00:00Z", timeZone: "UTC" },
+        end: { dateTime: "2024-06-15T11:00:00Z", timeZone: "UTC" },
+      },
+      {
+        id: "recurring-event-id_20240622T100000Z",
+        summary: "Weekly Meeting",
+        start: { dateTime: targetStartTime, timeZone: "UTC" },
+        end: { dateTime: "2024-06-22T11:00:00Z", timeZone: "UTC" },
+      },
+      {
+        id: "recurring-event-id_20240629T100000Z",
+        summary: "Weekly Meeting",
+        start: { dateTime: "2024-06-29T10:00:00Z", timeZone: "UTC" },
+        end: { dateTime: "2024-06-29T11:00:00Z", timeZone: "UTC" },
+      },
+    ];
+
+    calendarMock.calendar_v3.Calendar().events.instances = vi.fn().mockResolvedValue({
+      data: { items: mockInstances },
+    });
+
+    calendarMock.calendar_v3.Calendar().events.patch = vi.fn().mockResolvedValue({
+      data: mockInstances[1],
+    });
+
+    const testCalEvent = {
+      type: "recurring-meeting",
+      title: "Weekly Meeting",
+      startTime: targetStartTime,
+      endTime: "2024-06-22T11:00:00Z",
+      organizer: {
+        id: 1,
+        name: "Organizer",
+        email: "organizer@example.com",
+        timeZone: "UTC",
+        language: { translate: (...args: any[]) => args[0], locale: "en" },
+      },
+      attendees: [],
+      existingRecurringEvent: {
+        recurringEventId: "recurring-event-id",
+      },
+      destinationCalendar: [{
+        id: 1,
+        integration: "google_calendar",
+        externalId: "primary",
+        primaryEmail: null,
+        userId: mockCredential.userId,
+        eventTypeId: null,
+        credentialId: mockCredential.id,
+        delegationCredentialId: null,
+        domainWideDelegationCredentialId: null,
+        createdAt: new Date("2024-06-15T11:00:00Z"),
+        updatedAt: new Date("2024-06-15T11:00:00Z"),
+        customCalendarReminder: null,
+      }],
+      calendarDescription: "Weekly team meeting",
+    };
+
+    const result = await calendarService.createEvent(testCalEvent, mockCredential.id);
+
+    // Should match the second instance based on start time
+    expect(result.id).toBe("recurring-event-id_20240622T100000Z");
+
+    // Verify instances endpoint was called with the correct recurring event ID
+    expect(calendarMock.calendar_v3.Calendar().events.instances).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: "recurring-event-id",
+      })
+    );
+  });
+
+  test("should fall back to first instance when no matching start time found", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockInstances = [
+      {
+        id: "recurring-event-id_20240615T100000Z",
+        summary: "Weekly Meeting",
+        start: { dateTime: "2024-06-15T10:00:00Z", timeZone: "UTC" },
+        end: { dateTime: "2024-06-15T11:00:00Z", timeZone: "UTC" },
+      },
+    ];
+
+    calendarMock.calendar_v3.Calendar().events.instances = vi.fn().mockResolvedValue({
+      data: { items: mockInstances },
+    });
+
+    calendarMock.calendar_v3.Calendar().events.patch = vi.fn().mockResolvedValue({
+      data: mockInstances[0],
+    });
+
+    const testCalEvent = {
+      type: "recurring-meeting",
+      title: "Weekly Meeting",
+      startTime: "2024-07-01T10:00:00Z", // Doesn't match any instance
+      endTime: "2024-07-01T11:00:00Z",
+      organizer: {
+        id: 1,
+        name: "Organizer",
+        email: "organizer@example.com",
+        timeZone: "UTC",
+        language: { translate: (...args: any[]) => args[0], locale: "en" },
+      },
+      attendees: [],
+      existingRecurringEvent: {
+        recurringEventId: "recurring-event-id",
+      },
+      destinationCalendar: [{
+        id: 1,
+        integration: "google_calendar",
+        externalId: "primary",
+        primaryEmail: null,
+        userId: mockCredential.userId,
+        eventTypeId: null,
+        credentialId: mockCredential.id,
+        delegationCredentialId: null,
+        domainWideDelegationCredentialId: null,
+        createdAt: new Date("2024-06-15T11:00:00Z"),
+        updatedAt: new Date("2024-06-15T11:00:00Z"),
+        customCalendarReminder: null,
+      }],
+      calendarDescription: "Weekly team meeting",
+    };
+
+    const result = await calendarService.createEvent(testCalEvent, mockCredential.id);
+
+    // Falls back to first instance
+    expect(result.id).toBe("recurring-event-id_20240615T100000Z");
+  });
+});
+
+describe("CI-001: Google Meet conference data parity", () => {
+  test("should attach conference data when conferenceData is present and location is MeetLocationType", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockMeetEvent = {
+      id: "meet-event-id",
+      summary: "Meeting with Google Meet",
+      start: { dateTime: "2024-06-15T10:00:00Z", timeZone: "UTC" },
+      end: { dateTime: "2024-06-15T11:00:00Z", timeZone: "UTC" },
+      hangoutLink: "https://meet.google.com/test-meet-link",
+      conferenceData: {
+        createRequest: { requestId: "test-request-id" },
+        entryPoints: [{ entryPointType: "video", uri: "https://meet.google.com/test-meet-link" }],
+      },
+    };
+
+    const eventsInsertMock = vi.fn().mockResolvedValue({ data: mockMeetEvent });
+    const eventsPatchMock = vi.fn().mockResolvedValue({ data: mockMeetEvent });
+    calendarMock.calendar_v3.Calendar().events.insert = eventsInsertMock;
+    calendarMock.calendar_v3.Calendar().events.patch = eventsPatchMock;
+
+    const testCalEvent = {
+      type: "test-event-type",
+      uid: "meet-event-uid",
+      title: "Meeting with Google Meet",
+      startTime: "2024-06-15T10:00:00Z",
+      endTime: "2024-06-15T11:00:00Z",
+      organizer: {
+        id: 1,
+        name: "Test Organizer",
+        email: "organizer@example.com",
+        timeZone: "UTC",
+        language: { translate: (...args: any[]) => args[0], locale: "en" },
+      },
+      attendees: [],
+      location: MeetLocationType,
+      conferenceData: {
+        createRequest: {
+          requestId: "test-request-id",
+          conferenceSolutionKey: { type: "hangoutsMeet" },
+        },
+      },
+      calendarDescription: "Meeting with Google Meet",
+      destinationCalendar: [{
+        id: 1,
+        integration: "google_calendar",
+        externalId: "primary",
+        primaryEmail: null,
+        userId: mockCredential.userId,
+        eventTypeId: null,
+        credentialId: mockCredential.id,
+        delegationCredentialId: null,
+        domainWideDelegationCredentialId: null,
+        createdAt: new Date("2024-06-15T11:00:00Z"),
+        updatedAt: new Date("2024-06-15T11:00:00Z"),
+        customCalendarReminder: null,
+      }],
+    };
+
+    await calendarService.createEvent(testCalEvent, mockCredential.id);
+
+    // Verify that insert was called with conferenceData
+    const insertCall = eventsInsertMock.mock.calls[0][0];
+    expect(insertCall.requestBody.conferenceData).toBeDefined();
+    expect(insertCall.requestBody.conferenceData.createRequest.requestId).toBe("test-request-id");
+
+    // Verify conferenceDataVersion is set to 1
+    expect(insertCall.conferenceDataVersion).toBe(1);
+  });
+
+  test("should NOT attach conference data when location is not MeetLocationType", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockEvent = {
+      id: "no-meet-event-id",
+      summary: "Meeting without Meet",
+      start: { dateTime: "2024-06-15T10:00:00Z", timeZone: "UTC" },
+      end: { dateTime: "2024-06-15T11:00:00Z", timeZone: "UTC" },
+    };
+
+    const eventsInsertMock = vi.fn().mockResolvedValue({ data: mockEvent });
+    calendarMock.calendar_v3.Calendar().events.insert = eventsInsertMock;
+
+    const testCalEvent = {
+      type: "test-event-type",
+      uid: "no-meet-event-uid",
+      title: "Meeting without Meet",
+      startTime: "2024-06-15T10:00:00Z",
+      endTime: "2024-06-15T11:00:00Z",
+      organizer: {
+        id: 1,
+        name: "Test Organizer",
+        email: "organizer@example.com",
+        timeZone: "UTC",
+        language: { translate: (...args: any[]) => args[0], locale: "en" },
+      },
+      attendees: [],
+      location: "Some physical location",
+      conferenceData: {
+        createRequest: {
+          requestId: "test-request-id",
+          conferenceSolutionKey: { type: "hangoutsMeet" },
+        },
+      },
+      calendarDescription: "Meeting without Meet",
+      destinationCalendar: [{
+        id: 1,
+        integration: "google_calendar",
+        externalId: "primary",
+        primaryEmail: null,
+        userId: mockCredential.userId,
+        eventTypeId: null,
+        credentialId: mockCredential.id,
+        delegationCredentialId: null,
+        domainWideDelegationCredentialId: null,
+        createdAt: new Date("2024-06-15T11:00:00Z"),
+        updatedAt: new Date("2024-06-15T11:00:00Z"),
+        customCalendarReminder: null,
+      }],
+    };
+
+    await calendarService.createEvent(testCalEvent, mockCredential.id);
+
+    // conferenceData should NOT be in the request when location is not MeetLocationType
+    const insertCall = eventsInsertMock.mock.calls[0][0];
+    expect(insertCall.requestBody.conferenceData).toBeUndefined();
+  });
+
+  test("should propagate hangoutLink to additionalInfo in createEvent response", async () => {
+    const calendarService = BuildCalendarService(mockCredential);
+    setFullMockOAuthManagerRequest();
+
+    const mockHangoutLink = "https://meet.google.com/abc-defg-hij";
+    const mockMeetEvent = {
+      id: "meet-event-id",
+      summary: "Meeting with Hangout",
+      start: { dateTime: "2024-06-15T10:00:00Z", timeZone: "UTC" },
+      end: { dateTime: "2024-06-15T11:00:00Z", timeZone: "UTC" },
+      hangoutLink: mockHangoutLink,
+    };
+
+    calendarMock.calendar_v3.Calendar().events.insert = vi.fn().mockResolvedValue({ data: mockMeetEvent });
+    calendarMock.calendar_v3.Calendar().events.patch = vi.fn().mockResolvedValue({ data: mockMeetEvent });
+
+    const testCalEvent = {
+      type: "test-event-type",
+      uid: "hangout-info-uid",
+      title: "Meeting with Hangout",
+      startTime: "2024-06-15T10:00:00Z",
+      endTime: "2024-06-15T11:00:00Z",
+      organizer: {
+        id: 1,
+        name: "Test Organizer",
+        email: "organizer@example.com",
+        timeZone: "UTC",
+        language: { translate: (...args: any[]) => args[0], locale: "en" },
+      },
+      attendees: [],
+      calendarDescription: "Meeting description",
+      destinationCalendar: [{
+        id: 1,
+        integration: "google_calendar",
+        externalId: "primary",
+        primaryEmail: null,
+        userId: mockCredential.userId,
+        eventTypeId: null,
+        credentialId: mockCredential.id,
+        delegationCredentialId: null,
+        domainWideDelegationCredentialId: null,
+        createdAt: new Date("2024-06-15T11:00:00Z"),
+        updatedAt: new Date("2024-06-15T11:00:00Z"),
+        customCalendarReminder: null,
+      }],
+    };
+
+    const result = await calendarService.createEvent(testCalEvent, mockCredential.id);
+
+    // hangoutLink should be in additionalInfo
+    expect(result.additionalInfo).toBeDefined();
+    expect(result.additionalInfo.hangoutLink).toBe(mockHangoutLink);
+  });
+});

@@ -522,4 +522,302 @@ describe("GoogleCalendarSubscriptionAdapter", () => {
       expect(result.items[0].id).toBe("event-1");
     });
   });
+
+  describe("cancellation-sync push notification channel", () => {
+    test("should call events.watch with cancellation-sync webhook URL", async () => {
+      const mockWatchResponse = {
+        data: {
+          id: "test-channel-id",
+          resourceId: "test-resource-id",
+          resourceUri: "test-resource-uri",
+          expiration: String(channelExpirationDate.getTime()),
+        },
+      };
+
+      mockClient.events.watch.mockResolvedValue(mockWatchResponse);
+
+      await adapter.subscribeCancellationSync(mockSelectedCalendar, mockCredential);
+
+      expect(mockClient.events.watch).toHaveBeenCalledWith({
+        calendarId: "test@example.com",
+        requestBody: {
+          id: "test-uuid",
+          type: "web_hook",
+          address: "https://example.com/api/webhooks/calendar-subscription/google_calendar/cancellation-sync",
+          token: "test-webhook-token",
+          params: {
+            ttl: "2592000",
+          },
+        },
+      });
+    });
+
+    test("should generate a UUID channel ID for cancellation-sync channels", async () => {
+      const mockWatchResponse = {
+        data: {
+          id: "test-channel-id",
+          resourceId: "test-resource-id",
+          resourceUri: "test-resource-uri",
+          expiration: String(channelExpirationDate.getTime()),
+        },
+      };
+
+      mockClient.events.watch.mockResolvedValue(mockWatchResponse);
+
+      await adapter.subscribeCancellationSync(mockSelectedCalendar, mockCredential);
+
+      expect(mockClient.events.watch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestBody: expect.objectContaining({
+            id: "test-uuid",
+          }),
+        })
+      );
+    });
+
+    test("should return CalendarSubscriptionResult with correct provider and expiration", async () => {
+      const mockWatchResponse = {
+        data: {
+          id: "cancellation-channel-id",
+          resourceId: "cancellation-resource-id",
+          resourceUri: "cancellation-resource-uri",
+          expiration: String(channelExpirationDate.getTime()),
+        },
+      };
+
+      mockClient.events.watch.mockResolvedValue(mockWatchResponse);
+
+      const result = await adapter.subscribeCancellationSync(mockSelectedCalendar, mockCredential);
+
+      expect(result).toEqual({
+        provider: "google_calendar",
+        id: "cancellation-channel-id",
+        resourceId: "cancellation-resource-id",
+        resourceUri: "cancellation-resource-uri",
+        expiration: channelExpirationDate,
+      });
+    });
+  });
+
+  describe("cancelled event detection", () => {
+    test("should extract IDs of events with status cancelled", () => {
+      const events = [
+        {
+          id: "event-1",
+          iCalUID: "event-1@cal.com",
+          start: oneWeekFromNow.toDate(),
+          end: eventEndTime.toDate(),
+          busy: true,
+          summary: "Cancelled Event",
+          description: null,
+          location: null,
+          kind: "calendar#event",
+          etag: "test-etag",
+          status: "cancelled",
+          isAllDay: false,
+          timeZone: "UTC",
+          recurringEventId: null,
+          originalStartDate: null,
+          createdAt: today.toDate(),
+          updatedAt: today.toDate(),
+        },
+        {
+          id: "event-2",
+          iCalUID: "event-2@cal.com",
+          start: oneWeekFromNow.toDate(),
+          end: eventEndTime.toDate(),
+          busy: true,
+          summary: "Another Cancelled",
+          description: null,
+          location: null,
+          kind: "calendar#event",
+          etag: "test-etag",
+          status: "cancelled",
+          isAllDay: false,
+          timeZone: "UTC",
+          recurringEventId: null,
+          originalStartDate: null,
+          createdAt: today.toDate(),
+          updatedAt: today.toDate(),
+        },
+      ];
+
+      const result = adapter.getCancelledEventIds(events);
+
+      expect(result).toEqual(["event-1", "event-2"]);
+    });
+
+    test("should return empty array when no events are cancelled", () => {
+      const events = [
+        {
+          id: "event-1",
+          iCalUID: "event-1@cal.com",
+          start: oneWeekFromNow.toDate(),
+          end: eventEndTime.toDate(),
+          busy: true,
+          summary: "Active Event",
+          description: null,
+          location: null,
+          kind: "calendar#event",
+          etag: "test-etag",
+          status: "confirmed",
+          isAllDay: false,
+          timeZone: "UTC",
+          recurringEventId: null,
+          originalStartDate: null,
+          createdAt: today.toDate(),
+          updatedAt: today.toDate(),
+        },
+      ];
+
+      const result = adapter.getCancelledEventIds(events);
+
+      expect(result).toEqual([]);
+    });
+
+    test("should exclude events with status confirmed", () => {
+      const events = [
+        {
+          id: "event-1",
+          iCalUID: "event-1@cal.com",
+          start: oneWeekFromNow.toDate(),
+          end: eventEndTime.toDate(),
+          busy: true,
+          summary: "Cancelled Event",
+          description: null,
+          location: null,
+          kind: "calendar#event",
+          etag: "test-etag",
+          status: "cancelled",
+          isAllDay: false,
+          timeZone: "UTC",
+          recurringEventId: null,
+          originalStartDate: null,
+          createdAt: today.toDate(),
+          updatedAt: today.toDate(),
+        },
+        {
+          id: "event-2",
+          iCalUID: "event-2@cal.com",
+          start: oneWeekFromNow.toDate(),
+          end: eventEndTime.toDate(),
+          busy: true,
+          summary: "Confirmed Event",
+          description: null,
+          location: null,
+          kind: "calendar#event",
+          etag: "test-etag",
+          status: "confirmed",
+          isAllDay: false,
+          timeZone: "UTC",
+          recurringEventId: null,
+          originalStartDate: null,
+          createdAt: today.toDate(),
+          updatedAt: today.toDate(),
+        },
+      ];
+
+      const result = adapter.getCancelledEventIds(events);
+
+      expect(result).toEqual(["event-1"]);
+    });
+  });
+
+  describe("fetchEvents with cancelled events", () => {
+    test("should include events with status cancelled in fetch results", async () => {
+      const mockEventsResponse = {
+        data: {
+          nextSyncToken: "new-sync-token",
+          items: [
+            {
+              id: "event-cancelled",
+              iCalUID: "event-cancelled@cal.com",
+              summary: "Cancelled Meeting",
+              description: "Was cancelled",
+              location: "Room A",
+              status: "cancelled",
+              transparency: "opaque",
+              kind: "calendar#event",
+              etag: "test-etag",
+              created: today.toISOString(),
+              updated: today.toISOString(),
+              start: {
+                dateTime: oneWeekFromNow.toISOString(),
+                timeZone: "UTC",
+              },
+              end: {
+                dateTime: eventEndTime.toISOString(),
+              },
+            },
+          ],
+        },
+      };
+
+      mockClient.events.list.mockResolvedValue(mockEventsResponse);
+
+      const result = await adapter.fetchEvents(mockSelectedCalendar, mockCredential);
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe("event-cancelled");
+      expect(result.items[0].status).toBe("cancelled");
+    });
+
+    test("should correctly set status field for Google Calendar API cancelled events", async () => {
+      const mockEventsResponse = {
+        data: {
+          nextSyncToken: "new-sync-token",
+          items: [
+            {
+              id: "event-confirmed",
+              iCalUID: "event-confirmed@cal.com",
+              summary: "Active Meeting",
+              status: "confirmed",
+              transparency: "opaque",
+              kind: "calendar#event",
+              etag: "test-etag",
+              created: today.toISOString(),
+              updated: today.toISOString(),
+              start: {
+                dateTime: oneWeekFromNow.toISOString(),
+                timeZone: "UTC",
+              },
+              end: {
+                dateTime: eventEndTime.toISOString(),
+              },
+            },
+            {
+              id: "event-cancelled",
+              iCalUID: "event-cancelled@cal.com",
+              summary: "Cancelled Meeting",
+              status: "cancelled",
+              transparency: "opaque",
+              kind: "calendar#event",
+              etag: "test-etag",
+              created: today.toISOString(),
+              updated: today.toISOString(),
+              start: {
+                dateTime: oneWeekFromNow.toISOString(),
+                timeZone: "UTC",
+              },
+              end: {
+                dateTime: eventEndTime.toISOString(),
+              },
+            },
+          ],
+        },
+      };
+
+      mockClient.events.list.mockResolvedValue(mockEventsResponse);
+
+      const result = await adapter.fetchEvents(mockSelectedCalendar, mockCredential);
+
+      expect(result.items).toHaveLength(2);
+
+      const confirmedEvent = result.items.find((item) => item.id === "event-confirmed");
+      const cancelledEvent = result.items.find((item) => item.id === "event-cancelled");
+
+      expect(confirmedEvent?.status).toBe("confirmed");
+      expect(cancelledEvent?.status).toBe("cancelled");
+    });
+  });
 });

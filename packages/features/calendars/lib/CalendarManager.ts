@@ -352,7 +352,8 @@ export const getBusyCalendarTimes = async (
         deduplicatedCredentials,
         startDate,
         endDate,
-        selectedCalendars
+        selectedCalendars,
+        statusFilter
       );
     } else {
       results = await getCalendarsEvents(
@@ -360,7 +361,8 @@ export const getBusyCalendarTimes = async (
         startDate,
         endDate,
         selectedCalendars,
-        mode ?? "slots"
+        mode ?? "slots",
+        statusFilter
       );
     }
   } catch (e) {

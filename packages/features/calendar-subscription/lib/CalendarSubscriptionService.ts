@@ -488,9 +488,6 @@ export class CalendarSubscriptionService {
     const credential = await getCredentialForSelectedCalendar(selectedCalendar);
     if (!credential) return null;
     return {
-      // Provide default for in-memory delegation credentials that lack externalCancellationSyncEnabled;
-      // DB-sourced (non-delegation) credentials will override this via the spread below.
-      externalCancellationSyncEnabled: null as boolean | null,
       ...credential,
       // biome-ignore lint/nursery/noTernary: conditional delegation credential mapping
       delegatedTo: credential.delegatedTo?.serviceAccountKey?.client_email

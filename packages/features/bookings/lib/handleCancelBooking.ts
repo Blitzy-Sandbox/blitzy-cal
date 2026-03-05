@@ -65,6 +65,11 @@ import { handleInternalNote } from "./handleInternalNote";
 import cancelAttendeeSeat from "./handleSeats/cancel/cancelAttendeeSeat";
 import type { IBookingCancelService } from "./interfaces/IBookingCancelService";
 
+// Calendar-driven cancellation sync (CI-001 gap):
+// CalendarCancellationSyncService (packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts)
+// calls this handler with source: "external_calendar" when external calendar event deletions/declines are detected.
+// The feature is gated behind the 'calendar-cancellation-sync' feature flag (disabled by default).
+
 const log = logger.getSubLogger({ prefix: ["handleCancelBooking"] });
 
 type PlatformParams = {
@@ -82,6 +87,11 @@ export type CancelBookingInput = {
   userUuid?: string;
   bookingData: z.infer<typeof bookingCancelInput>;
   actionSource: ValidActionSource;
+  /** Indicates the origin of the cancellation. Defaults to "user" for standard cancellations.
+   *  "external_calendar" is used when cancellation is triggered by detecting an event
+   *  deletion/decline in an external calendar (Google push notification or Microsoft Graph change notification).
+   *  This field is for internal audit/logging purposes only and is NOT included in webhook payloads. */
+  source?: "user" | "external_calendar";
 } & PlatformParams;
 
 type Dependencies = {
@@ -174,6 +184,11 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
   const userUuid = input.userUuid ?? null;
 
   const actionSource = input.actionSource;
+  const cancellationSource = input.source; // CI-001 gap: calendar-driven cancellation source
+
+  if (cancellationSource === "external_calendar") {
+    log.info("Processing calendar-driven cancellation", { bookingId: id, bookingUid: uid });
+  }
 
   const actorToUse = getAuditActor({
     userUuid,

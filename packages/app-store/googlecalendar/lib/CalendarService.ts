@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { randomUUID } from "node:crypto";
+import process from "node:process";
+
 import { MeetLocationType } from "@calcom/app-store/constants";
 import { getDestinationCalendarRepository } from "@calcom/features/di/containers/DestinationCalendar";
 import { SelectedCalendarRepository } from "@calcom/features/selectedCalendar/repositories/SelectedCalendarRepository";
@@ -67,9 +70,13 @@ export interface GoogleCalendar extends Calendar {
   /**
    * Subscribe to Google Calendar push notifications for detecting event changes.
    * Feature-gated behind 'calendar-cancellation-sync' feature flag.
+   *
+   * @param credentialId - The credential ID to associate with this subscription
+   * @param calendarId - Optional Google Calendar ID to monitor (defaults to "primary")
    */
   subscribeToChanges(
-    credentialId: number
+    credentialId: number,
+    calendarId?: string
   ): Promise<{ channelId: string; resourceId: string; expiration: string }>;
 
   /**
@@ -964,53 +971,117 @@ class GoogleCalendarService implements Calendar {
    * When events are deleted or declined in Google Calendar, a notification is sent
    * to the configured webhook URL, enabling automatic cancellation propagation.
    *
+   * The `token` field is included in every push notification via the `X-Goog-Channel-Token`
+   * header, allowing the webhook handler to validate notification authenticity.
+   *
    * Feature-gated behind 'calendar-cancellation-sync' feature flag.
    * Uses the existing @googleapis/calendar@9.7.9 library's channels resource.
    *
+   * **Known limitation**: Currently only monitors a single Google Calendar per subscription.
+   * Users with multiple connected Google Calendars will need separate subscriptions for each.
+   * Pass the `calendarId` parameter to monitor a specific calendar; defaults to "primary".
+   *
    * @param credentialId - The credential ID to associate with this subscription
+   * @param calendarId - Optional Google Calendar ID to monitor (defaults to "primary")
    * @returns Channel metadata including channelId, resourceId, and expiration
    */
   async subscribeToChanges(
-    credentialId: number
+    credentialId: number,
+    calendarId: string = "primary"
   ): Promise<{ channelId: string; resourceId: string; expiration: string }> {
-    const calendar = await this.authedCalendar();
-    const channelId = `cal-sync-${credentialId}-${Date.now()}`;
+    const webhookBaseUrl = process.env.GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL;
+    if (!webhookBaseUrl) {
+      throw new Error(
+        "GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL environment variable is required for push notification subscription"
+      );
+    }
 
-    const response = await calendar.events.watch({
-      calendarId: "primary",
-      requestBody: {
-        id: channelId,
-        type: "web_hook",
-        address: `${process.env.GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL || ""}/api/calendar/google/webhook`,
-        params: {
-          ttl: "604800", // 7 days in seconds
+    try {
+      const calendar = await this.authedCalendar();
+      const channelId = `cal-sync-${credentialId}-${Date.now()}`;
+      const token = randomUUID();
+
+      const response = await calendar.events.watch({
+        calendarId,
+        requestBody: {
+          id: channelId,
+          type: "web_hook",
+          address: `${webhookBaseUrl}/api/calendar/google/webhook`,
+          token,
+          params: {
+            ttl: "604800", // 7 days in seconds
+          },
         },
-      },
-    });
+      });
 
-    const data = response.data;
-    return {
-      channelId: data.id || channelId,
-      resourceId: data.resourceId || "",
-      expiration: data.expiration ? String(data.expiration) : "",
-    };
+      const data = response.data;
+
+      this.log.info("Google Calendar push notification channel created", {
+        channelId: data.id || channelId,
+        resourceId: data.resourceId,
+        expiration: data.expiration,
+        calendarId,
+        credentialId,
+      });
+
+      return {
+        channelId: data.id || channelId,
+        resourceId: data.resourceId || "",
+        expiration: data.expiration ? String(data.expiration) : "",
+      };
+    } catch (error) {
+      this.log.error("Failed to create Google Calendar push notification channel", {
+        credentialId,
+        calendarId,
+        error,
+      });
+      throw error;
+    }
   }
 
   /**
    * Unsubscribe from Google Calendar push notifications.
    * Stops a previously created push notification channel.
    *
+   * Handles 404 (channel not found) and 410 (resource gone) responses gracefully,
+   * as these indicate the channel has already expired or been cleaned up.
+   *
    * @param channelId - The channel ID returned from subscribeToChanges
    * @param resourceId - The resource ID returned from subscribeToChanges
    */
   async unsubscribeFromChanges(channelId: string, resourceId: string): Promise<void> {
-    const calendar = await this.authedCalendar();
-    await calendar.channels.stop({
-      requestBody: {
-        id: channelId,
-        resourceId: resourceId,
-      },
-    });
+    try {
+      const calendar = await this.authedCalendar();
+      await calendar.channels.stop({
+        requestBody: {
+          id: channelId,
+          resourceId: resourceId,
+        },
+      });
+
+      this.log.info("Google Calendar push notification channel stopped", {
+        channelId,
+        resourceId,
+      });
+    } catch (error) {
+      // Handle 404/410 gracefully — channel may have already expired or been cleaned up
+      const statusCode = (error as { code?: number })?.code;
+      if (statusCode === 404 || statusCode === 410) {
+        this.log.info("Google Calendar push notification channel already expired or removed", {
+          channelId,
+          resourceId,
+          statusCode,
+        });
+        return;
+      }
+
+      this.log.error("Failed to stop Google Calendar push notification channel", {
+        channelId,
+        resourceId,
+        error,
+      });
+      throw error;
+    }
   }
 }
 

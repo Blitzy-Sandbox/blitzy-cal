@@ -34,12 +34,29 @@ export type FindManyArgs = {
   select?: Prisma.SelectedCalendarSelect;
 };
 
+/**
+ * Where clause guard that ensures only user-level calendar selections (not event-type-specific)
+ * are returned. This is critical for the conflict detection pipeline (CI-004) where busy times
+ * are aggregated from user-level selected calendars via getBusyTimes → getBusyCalendarTimes → adapters.
+ */
 const ensureUserLevelWhere = {
   eventTypeId: null,
 };
 
 const MAX_SUBSCRIBE_ERRORS = 3;
 
+/**
+ * Repository for selected calendar persistence and queries.
+ *
+ * In the Sprint 3 calendar integrations pipeline, this repository provides:
+ * - User-level calendar scoping for CI-004 conflict detection (via `ensureUserLevelWhere`)
+ * - Subscription batch management for Google Calendar push notifications (CI-001 gap)
+ * - Credential-aware lookups for calendar service instantiation
+ *
+ * The `statusFilter` parameter (added in CI-004) flows at the service layer
+ * (getBusyTimes → getBusyCalendarTimes → adapters), not at this repository layer.
+ * This repository's responsibility is providing the correct set of selected calendars to query.
+ */
 export class SelectedCalendarRepository implements ISelectedCalendarRepository {
   constructor(private prismaClient: PrismaClient) {}
 
@@ -348,6 +365,13 @@ export class SelectedCalendarRepository implements ISelectedCalendarRepository {
     return calendars[0];
   }
 
+  /**
+   * Find a selected calendar by its Google Channel ID, with full credential data for calendar service
+   * instantiation. Used by the calendar-driven cancellation sync feature (CI-001 gap) when processing
+   * Google Calendar push notification events that indicate event deletion or status changes.
+   * The returned credential includes all fields required by `credentialForCalendarServiceSelect`
+   * to create a fully-functional calendar service instance for `getAvailability` calls with `statusFilter`.
+   */
   static async findFirstByGoogleChannelId(googleChannelId: string) {
     return await prisma.selectedCalendar.findFirst({
       where: {

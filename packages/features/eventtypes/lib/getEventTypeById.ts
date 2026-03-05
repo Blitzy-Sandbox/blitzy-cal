@@ -34,6 +34,53 @@ interface getEventTypeByIdProps {
 
 export type EventType = Awaited<ReturnType<typeof getEventTypeById>>;
 
+/**
+ * Central server-side helper that assembles enriched event type data for the tRPC layer.
+ *
+ * This function supports ALL 6 scheduling paradigms defined in Cal.com:
+ *
+ * 1. **One-on-One** (`schedulingType: null`): Default paradigm — single host paired with
+ *    a single invitee. Host is resolved from `rawEventType.users[0]` with a fallback
+ *    path (lines ~163-182) that fetches the requesting user if no explicit users are set.
+ *
+ * 2. **Group / Seated** (`seatsPerTimeSlot > 0`): Multiple attendees book the same time
+ *    slot up to the seat limit. Fields `seatsPerTimeSlot`, `seatsShowAttendees`, and
+ *    `seatsShowAvailabilityCount` are projected by `EventTypeRepository.findById` and
+ *    preserved in the output via the `...restEventType` spread.
+ *
+ * 3. **Round-Robin** (`schedulingType: ROUND_ROBIN`): Equitable host distribution across
+ *    team members. RR-specific fields — `isRRWeightsEnabled`, `rrSegmentQueryValue`,
+ *    `assignRRMembersUsingSegment`, `rescheduleWithSameRoundRobinHost`,
+ *    `includeNoShowInRRCalculation` — and per-host `priority`/`weight` data in the
+ *    `hosts` relation are all projected and preserved via the spread.
+ *
+ * 4. **Collective** (`schedulingType: COLLECTIVE`): All fixed hosts must be simultaneously
+ *    available. The `assignAllTeamMembers` flag and the team members list determine
+ *    which hosts are required. Team member enrichment (lines ~80-87) decorates each
+ *    member with their full profile for the UI.
+ *
+ * 5. **Managed** (`schedulingType: MANAGED`): Admin-defined templates propagated to child
+ *    event types. Children are enriched (lines ~89-99) with profile data, and a special
+ *    "members_default_location" option is injected into location options (lines ~205-216).
+ *
+ * 6. **Dynamic**: Multi-host link resolution is NOT handled here — it is resolved in
+ *    `getPublicEvent.ts`. This function does not contain dynamic-event-specific logic.
+ *
+ * **Paradigm-Specific Fields Verified in Repository Projection:**
+ * - ET-001 (1:1): `schedulingType`, `users`, `owner`, `schedule`
+ * - ET-002 (Group): `seatsPerTimeSlot`, `seatsShowAttendees`, `seatsShowAvailabilityCount`
+ * - ET-003 (RR): `isRRWeightsEnabled`, `rrSegmentQueryValue`, `assignRRMembersUsingSegment`,
+ *   `rescheduleWithSameRoundRobinHost`, `includeNoShowInRRCalculation`, `hosts.priority`,
+ *   `hosts.weight`, `hosts.groupId`
+ * - ET-004 (Collective): `assignAllTeamMembers`, `team.members`
+ * - ET-005 (Booking Windows): `periodType`, `periodDays`, `periodStartDate`, `periodEndDate`,
+ *   `periodCountCalendarDays`, `minimumBookingNotice`, `beforeEventBuffer`, `afterEventBuffer`
+ * - ET-006 (Custom Fields): `bookingFields`, `customInputs`
+ *
+ * @returns Enriched event type object with location options, team members, destination calendar,
+ *          and current user membership. The return shape feeds into webhook payloads —
+ *          do NOT alter without verifying backward compatibility.
+ */
 export const getEventTypeById = async ({
   currentOrganizationId,
   eventTypeId,
@@ -71,11 +118,25 @@ export const getEventTypeById = async ({
     }
   }
 
+  // Destructure locations (re-typed below as LocationObject[]) and metadata (re-parsed
+  // via Zod) from the raw event type. All remaining fields — including all paradigm-specific
+  // fields — are captured in `restEventType` and preserved via the spread in eventType assembly.
   const { locations, metadata, ...restEventType } = rawEventType;
+
+  // Cross-paradigm: The metadata schema (eventTypeMetaDataSchemaWithTypedApps) is
+  // paradigm-agnostic — it handles typed app metadata (e.g., Stripe, Giphy) regardless
+  // of whether this is a 1:1, group, RR, collective, or managed event type. The .parse()
+  // call validates and strips unknown keys, ensuring type safety downstream.
   const newMetadata = eventTypeMetaDataSchemaWithTypedApps.parse(metadata || {}) || {};
   const apps = newMetadata?.apps || {};
   const eventTypeWithParsedMetadata = { ...rawEventType, metadata: newMetadata };
   const userRepo = new UserRepository(prisma);
+
+  // ET-003 (Round-Robin) & ET-004 (Collective): Enrich team members with full user profiles.
+  // For RR events, the host weight/priority data lives on the `hosts` relation (not on members),
+  // but team members are enriched here so the UI can display correct avatars, names, and roles.
+  // For Collective events, all members listed here represent the fixed hosts whose mutual
+  // availability must intersect to produce bookable slots.
   const eventTeamMembershipsWithUserProfile = [];
   for (const eventTeamMembership of rawEventType.team?.members || []) {
     eventTeamMembershipsWithUserProfile.push({
@@ -86,6 +147,9 @@ export const getEventTypeById = async ({
     });
   }
 
+  // Managed event type (SchedulingType.MANAGED): Enrich child event types with their
+  // owner's profile data. Each child represents a propagated copy of the admin-defined
+  // template event type assigned to a specific team member.
   const childrenWithUserProfile = [];
   for (const child of rawEventType.children || []) {
     childrenWithUserProfile.push({
@@ -98,6 +162,10 @@ export const getEventTypeById = async ({
     });
   }
 
+  // ET-001 (One-on-One): For 1:1 events (schedulingType === null), users[0] is the
+  // single host. This enrichment ensures all event type users — regardless of paradigm —
+  // have their full profile data (including organization profile) for avatar rendering
+  // and booker URL resolution.
   const eventTypeUsersWithUserProfile = [];
   for (const eventTypeUser of rawEventType.users) {
     eventTypeUsersWithUserProfile.push(
@@ -116,6 +184,20 @@ export const getEventTypeById = async ({
 
   const parsedCustomInputs = (rawEventType.customInputs || []).map((input) => customInputSchema.parse(input));
 
+  // Assemble the enriched event type object. The `...restEventType` spread preserves ALL
+  // paradigm-specific fields from the repository projection that are not explicitly
+  // destructured above (i.e., everything except `locations` and `metadata`):
+  //
+  // - ET-002 (Group): seatsPerTimeSlot, seatsShowAttendees, seatsShowAvailabilityCount
+  // - ET-003 (RR): isRRWeightsEnabled, rrSegmentQueryValue, assignRRMembersUsingSegment,
+  //   rescheduleWithSameRoundRobinHost, includeNoShowInRRCalculation, hosts (with
+  //   priority, weight, groupId, scheduleId, isFixed)
+  // - ET-004 (Collective): assignAllTeamMembers
+  // - ET-005 (Booking Windows): periodType, periodDays, periodStartDate, periodEndDate,
+  //   periodCountCalendarDays, minimumBookingNotice, beforeEventBuffer, afterEventBuffer
+  // - ET-006 (Custom Fields): bookingFields (reassembled below via getBookingFieldsWithSystemFields)
+  //
+  // Note: `locations` is re-typed as LocationObject[], `metadata` is re-parsed via Zod.
   const eventType = {
     ...restEventType,
     schedule:
@@ -135,11 +217,18 @@ export const getEventTypeById = async ({
     metadata: parsedMetaData,
     customInputs: parsedCustomInputs,
     users: rawEventType.users,
+    // Booker URL resolution — paradigm-aware:
+    // - Team events (RR, Collective, Managed): Use the team's parent org URL
+    // - 1:1 events with an owner: Use the current organization's URL
+    // - Fallback: Use the global WEBSITE_URL (legacy 1:1 events without organization)
     bookerUrl: restEventType.team
       ? await getBookerBaseUrl(restEventType.team.parentId)
       : restEventType.owner
         ? await getBookerBaseUrl(currentOrganizationId)
         : WEBSITE_URL,
+    // Managed event type: Map child event types to include owner avatar, membership
+    // role, and the `created: true` flag. Children without owners are filtered out
+    // via flatMap returning an empty array for null owners.
     children: childrenWithUserProfile.flatMap((ch) =>
       ch.owner !== null
         ? {
@@ -160,7 +249,13 @@ export const getEventTypeById = async ({
     ),
   };
 
-  // backwards compat
+  // ET-001 (One-on-One) Fallback Path — Backward Compatibility:
+  // When an event type has no explicitly associated users AND no team (i.e., a legacy 1:1
+  // event type), we fall back to the requesting user as the host. This ensures older event
+  // types created before the users[] relation was enforced still produce a valid host
+  // assignment for the booking flow. The fallback user is pushed into eventType.users so
+  // downstream code (avatar rendering, schedule resolution, booking creation) can always
+  // rely on users[0] being the host for 1:1 events.
   if (eventType.users.length === 0 && !eventType.team) {
     const fallbackUser = await prisma.user.findUnique({
       where: {
@@ -202,6 +297,10 @@ export const getEventTypeById = async ({
     eventType.teamId ? { teamId: eventType.teamId } : { userId },
     t
   );
+  // Managed event type (SchedulingType.MANAGED): Inject a special "Members Default Location"
+  // option at the top of the location dropdown. This allows the admin-defined template to
+  // specify that each child event type should use the individual team member's default
+  // location, rather than a fixed location set on the parent template.
   if (eventType.schedulingType === SchedulingType.MANAGED) {
     locationOptions.splice(0, 0, {
       label: t("default"),
@@ -215,6 +314,16 @@ export const getEventTypeById = async ({
     });
   }
 
+  // Cross-paradigm: Determine if this is an organization team event for booking field
+  // system field injection. The `isOrgTeamEvent` flag affects which system fields
+  // (e.g., reschedule reason) are included in the booking form.
+  // ET-006 (Custom Fields): `getBookingFieldsWithSystemFields` normalizes the raw
+  // `bookingFields` JSON from the database, merges system fields (name, email, guests,
+  // notes, reschedule reason), and preserves all custom field types (text, radio,
+  // checkbox, phone, dropdown) regardless of scheduling paradigm.
+  // ET-005 (Booking Windows): `periodStartDate` and `periodEndDate` are serialized to
+  // strings for JSON transport to the client — the original Date objects from Prisma
+  // are not JSON-serializable.
   const isOrgTeamEvent = !!eventType?.teamId && !!eventType.team?.parentId;
   const eventTypeObject = Object.assign({}, eventType, {
     users: eventTypeUsers,
@@ -223,6 +332,10 @@ export const getEventTypeById = async ({
     bookingFields: getBookingFieldsWithSystemFields({ ...eventType, isOrgTeamEvent }),
   });
 
+  // ET-003 (Round-Robin) & ET-004 (Collective): Build the team members list for the UI.
+  // For organization events, all members (including not-yet-accepted) are included;
+  // for standalone team events, only accepted members appear. This list represents the
+  // full set of potential hosts for RR distribution or collective mutual-availability checks.
   const isOrgEventType = !!eventTypeObject.team?.parentId;
   const teamMembers = eventTypeObject.team
     ? eventTeamMembershipsWithUserProfile
@@ -267,6 +380,21 @@ export const getEventTypeById = async ({
   return finalObj;
 };
 
+/**
+ * Fetches the raw (un-enriched) event type from the database via `EventTypeRepository`.
+ *
+ * The repository's `CompleteEventTypeSelect` projection includes ALL paradigm-specific
+ * fields needed by the enrichment pipeline above. This function handles two access paths:
+ *
+ * 1. **Platform Organization Admin**: Can access any event type within their organization
+ *    (including sub-team events) without being a team member — delegates to
+ *    `findByIdForOrgAdmin`.
+ * 2. **Regular User**: Can access event types they own, are a member of (via users[]),
+ *    or belong to a team they are a member of — delegates to `findById`.
+ *
+ * Dynamic event types (multi-host links) are NOT resolved here; they use
+ * `getPublicEvent.ts` which has its own resolution logic.
+ */
 export async function getRawEventType({
   userId,
   eventTypeId,

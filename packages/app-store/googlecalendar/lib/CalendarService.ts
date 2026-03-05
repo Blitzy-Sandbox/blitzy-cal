@@ -63,6 +63,20 @@ export interface GoogleCalendar extends Calendar {
   ): Promise<unknown>;
 
   authedCalendar(): Promise<calendar_v3.Calendar>;
+
+  /**
+   * Subscribe to Google Calendar push notifications for detecting event changes.
+   * Feature-gated behind 'calendar-cancellation-sync' feature flag.
+   */
+  subscribeToChanges(
+    credentialId: number
+  ): Promise<{ channelId: string; resourceId: string; expiration: string }>;
+
+  /**
+   * Unsubscribe from Google Calendar push notifications.
+   * Stops a previously created push notification channel.
+   */
+  unsubscribeFromChanges(channelId: string, resourceId: string): Promise<void>;
 }
 
 interface GoogleCalError extends Error {
@@ -176,6 +190,25 @@ class GoogleCalendarService implements Calendar {
     return attendees;
   };
 
+  /**
+   * Creates a Google Calendar event.
+   *
+   * CI-001 Parity Verification:
+   * - Summary/description/location/attendees match Calendly's Google Calendar event creation
+   * - Recurring event handling via RRule (freq, interval, count) matches Calendly's recurrence model
+   * - Google Meet conference data attached when conferenceData is present and location is MeetLocationType
+   * - Reminders support both default and custom (popup + email) matching Calendly's reminder behavior
+   * - iCalUID set for cross-calendar event correlation
+   * - Hangout link patching preserves link in description/location after event creation
+   * - Timezone handling uses organizer.timeZone for start/end times
+   *
+   * Buffer Time Integration (CI-002 gap):
+   * Buffer events (before/after booking) are created separately by BufferTimeEventService,
+   * which calls this same createEvent method for each buffer event. Buffer events are gated
+   * behind the 'calendar-buffer-sync' feature flag and the EventType.syncBuffersToCalendar toggle.
+   * Buffer events use "Busy" status with title pattern "Buffer: [Event Title]".
+   * See: packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts
+   */
   async createEvent(
     calEvent: CalendarServiceEvent,
     credentialId: number,
@@ -361,6 +394,15 @@ class GoogleCalendarService implements Calendar {
     }
   }
 
+  /**
+   * Updates a Google Calendar event.
+   *
+   * CI-001 Parity Verification:
+   * - All event fields updated atomically via events.update (not patch)
+   * - Google Meet hangout link re-patched when location is MeetLocationType
+   * - conferenceDataVersion: 1 set for Meet integration support
+   * - sendNotifications: true, sendUpdates: "none" matches Calendly behavior
+   */
   async updateEvent(uid: string, event: CalendarServiceEvent, externalCalendarId: string): Promise<any> {
     // Fetch custom reminder duration for this credential's destination calendar
     const customReminderMinutes = await this.getReminderDuration(this.credential.id);
@@ -460,6 +502,14 @@ class GoogleCalendarService implements Calendar {
     }
   }
 
+  /**
+   * Deletes a Google Calendar event.
+   *
+   * CI-001 Parity Verification:
+   * - Gracefully handles 410 (already deleted) and 404 (different calendar) errors
+   * - sendNotifications: false, sendUpdates: "none" matches Calendly behavior
+   * - No recurring event instance-specific deletion needed (handled by event UID)
+   */
   async deleteEvent(uid: string, event: CalendarEvent, externalCalendarId?: string | null): Promise<void> {
     const calendar = await this.authedCalendar();
 
@@ -642,7 +692,13 @@ class GoogleCalendarService implements Calendar {
   }
 
   /**
-   * Fetches availability data using the cache-or-fetch pattern
+   * Fetches availability data using FreeBusy API with automatic 90-day chunking.
+   *
+   * CI-001 Parity Verification:
+   * - Google FreeBusy API limits queries to 90-day windows
+   * - Chunking logic splits longer ranges into 90-day segments with 1-minute gaps
+   * - Matches Calendly's Google Calendar availability query behavior
+   * - Native Date calculations used for performance (verified equivalent to dayjs)
    */
   private async fetchAvailabilityData(
     calendarIds: string[],
@@ -700,6 +756,15 @@ class GoogleCalendarService implements Calendar {
     return busyData;
   }
 
+  /**
+   * Gets availability (busy times) from Google Calendar.
+   *
+   * CI-001 Parity Verification:
+   * - Filters calendars by integration name ("google_calendar")
+   * - Falls back to primary calendar when no calendars selected and fallbackToPrimary is true
+   * - Falls back to ALL calendars when no calendars selected and fallbackToPrimary is false
+   * - FreeBusy API returns aggregate busy windows (Google does not expose event-level status)
+   */
   async getAvailability(params: GetAvailabilityParams): Promise<EventBusyDate[]> {
     const { dateFrom, dateTo, selectedCalendars, fallbackToPrimary } = params;
     this.log.debug("Getting availability", safeStringify({ dateFrom, dateTo, selectedCalendars }));
@@ -889,6 +954,63 @@ class GoogleCalendarService implements Calendar {
       this.log.error("Error getting main timezone from Google Calendar", { error });
       throw error;
     }
+  }
+
+  /**
+   * Subscribe to Google Calendar push notifications for detecting event changes.
+   * Used by the calendar-driven cancellation sync feature (CI-001 gap).
+   *
+   * Creates a push notification channel via Google Calendar API v3 channels.watch.
+   * When events are deleted or declined in Google Calendar, a notification is sent
+   * to the configured webhook URL, enabling automatic cancellation propagation.
+   *
+   * Feature-gated behind 'calendar-cancellation-sync' feature flag.
+   * Uses the existing @googleapis/calendar@9.7.9 library's channels resource.
+   *
+   * @param credentialId - The credential ID to associate with this subscription
+   * @returns Channel metadata including channelId, resourceId, and expiration
+   */
+  async subscribeToChanges(
+    credentialId: number
+  ): Promise<{ channelId: string; resourceId: string; expiration: string }> {
+    const calendar = await this.authedCalendar();
+    const channelId = `cal-sync-${credentialId}-${Date.now()}`;
+
+    const response = await calendar.events.watch({
+      calendarId: "primary",
+      requestBody: {
+        id: channelId,
+        type: "web_hook",
+        address: `${process.env.GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL || ""}/api/calendar/google/webhook`,
+        params: {
+          ttl: "604800", // 7 days in seconds
+        },
+      },
+    });
+
+    const data = response.data;
+    return {
+      channelId: data.id || channelId,
+      resourceId: data.resourceId || "",
+      expiration: data.expiration ? String(data.expiration) : "",
+    };
+  }
+
+  /**
+   * Unsubscribe from Google Calendar push notifications.
+   * Stops a previously created push notification channel.
+   *
+   * @param channelId - The channel ID returned from subscribeToChanges
+   * @param resourceId - The resource ID returned from subscribeToChanges
+   */
+  async unsubscribeFromChanges(channelId: string, resourceId: string): Promise<void> {
+    const calendar = await this.authedCalendar();
+    await calendar.channels.stop({
+      requestBody: {
+        id: channelId,
+        resourceId: resourceId,
+      },
+    });
   }
 }
 

@@ -2088,4 +2088,333 @@ describe("CalendarEventBuilder", () => {
       }
     });
   });
+
+  describe("adapter-specific CalendarEvent verification", () => {
+    /**
+     * Helper factory that creates a minimal BookingForCalEventBuilder-compatible
+     * mock booking with the user's destination calendar set to the given
+     * integration type. This lets each adapter test focus solely on verifying
+     * that fromBooking correctly propagates the destination calendar integration.
+     */
+    const createAdapterBookingMock = (
+      integration: string,
+      externalId: string
+    ): BookingForCalEventBuilder => {
+      return {
+        uid: `booking-${integration}`,
+        metadata: null,
+        title: "Adapter Test Event",
+        startTime: new Date(mockStartTime),
+        endTime: new Date(mockEndTime),
+        description: "Test event for adapter verification",
+        location: "Online",
+        responses: null,
+        customInputs: null,
+        iCalUID: null,
+        iCalSequence: 0,
+        oneTimePassword: null,
+        attendees: [
+          {
+            name: "Test Attendee",
+            email: "attendee@example.com",
+            timeZone: "America/New_York",
+            locale: "en",
+            phoneNumber: null,
+          },
+        ],
+        user: {
+          id: 1,
+          name: "Test Host",
+          email: "host@example.com",
+          username: "testhost",
+          timeZone: "UTC",
+          locale: "en",
+          timeFormat: 12,
+          destinationCalendar: {
+            id: 1,
+            integration,
+            externalId,
+            primaryEmail: "host@example.com",
+            userId: 1,
+            eventTypeId: null,
+            credentialId: 1,
+            createdAt: null,
+            updatedAt: null,
+            delegationCredentialId: null,
+            domainWideDelegationCredentialId: null,
+          },
+          profiles: [],
+        },
+        destinationCalendar: null,
+        eventType: {
+          id: 100,
+          title: "60 minutes",
+          slug: "adapter-test",
+          description: "Adapter test event",
+          hideCalendarNotes: false,
+          hideCalendarEventDetails: false,
+          hideOrganizerEmail: false,
+          schedulingType: null,
+          seatsPerTimeSlot: null,
+          seatsShowAttendees: false,
+          seatsShowAvailabilityCount: false,
+          customReplyToEmail: null,
+          disableRescheduling: false,
+          disableCancelling: false,
+          requiresConfirmation: false,
+          recurringEvent: null,
+          bookingFields: [],
+          metadata: null,
+          eventName: null,
+          team: null,
+          users: [],
+          hosts: [],
+          workflows: [],
+        },
+        references: [],
+        seatsReferences: [],
+      } as unknown as BookingForCalEventBuilder;
+    };
+
+    it("should produce CalendarEvent compatible with Google Calendar adapter", async () => {
+      const mockBooking = createAdapterBookingMock("google_calendar", "gcal-external-id");
+
+      const eventFromBooking = await CalendarEventBuilder.fromBooking(mockBooking);
+      const builtEvent = eventFromBooking.build();
+
+      expect(builtEvent).not.toBeNull();
+      if (builtEvent) {
+        // Destination calendar should carry the google_calendar integration
+        expect(builtEvent.destinationCalendar).toBeDefined();
+        expect(builtEvent.destinationCalendar).toHaveLength(1);
+        expect(builtEvent.destinationCalendar?.[0].integration).toBe("google_calendar");
+        expect(builtEvent.destinationCalendar?.[0].externalId).toBe("gcal-external-id");
+
+        // Core CalendarEvent fields required by all adapters
+        expect(builtEvent.startTime).toBe(new Date(mockStartTime).toISOString());
+        expect(builtEvent.endTime).toBe(new Date(mockEndTime).toISOString());
+        expect(builtEvent.title).toBe("Adapter Test Event");
+        expect(builtEvent.type).toBe("adapter-test");
+        expect(builtEvent.bookerUrl).toBeDefined();
+
+        // Organizer structure expected by Google Calendar adapter
+        expect(builtEvent.organizer).toBeDefined();
+        expect(builtEvent.organizer.name).toBe("Test Host");
+        expect(builtEvent.organizer.email).toBe("host@example.com");
+        expect(builtEvent.organizer.timeZone).toBe("UTC");
+        expect(builtEvent.organizer.language).toBeDefined();
+        expect(builtEvent.organizer.language.locale).toBe("en");
+
+        // Attendees structure for adapter consumption
+        expect(builtEvent.attendees).toHaveLength(1);
+        expect(builtEvent.attendees[0].email).toBe("attendee@example.com");
+        expect(builtEvent.attendees[0].name).toBe("Test Attendee");
+        expect(builtEvent.attendees[0].timeZone).toBe("America/New_York");
+      }
+    });
+
+    it("should produce CalendarEvent compatible with Outlook adapter", async () => {
+      const mockBooking = createAdapterBookingMock("office365_calendar", "outlook-external-id");
+
+      const eventFromBooking = await CalendarEventBuilder.fromBooking(mockBooking);
+      const builtEvent = eventFromBooking.build();
+
+      expect(builtEvent).not.toBeNull();
+      if (builtEvent) {
+        // Destination calendar should carry the office365_calendar integration
+        expect(builtEvent.destinationCalendar).toBeDefined();
+        expect(builtEvent.destinationCalendar).toHaveLength(1);
+        expect(builtEvent.destinationCalendar?.[0].integration).toBe("office365_calendar");
+        expect(builtEvent.destinationCalendar?.[0].externalId).toBe("outlook-external-id");
+
+        // Core CalendarEvent fields for Outlook adapter
+        expect(builtEvent.startTime).toBe(new Date(mockStartTime).toISOString());
+        expect(builtEvent.endTime).toBe(new Date(mockEndTime).toISOString());
+        expect(builtEvent.title).toBe("Adapter Test Event");
+        expect(builtEvent.type).toBe("adapter-test");
+        expect(builtEvent.bookerUrl).toBeDefined();
+
+        // Organizer and attendees for Outlook adapter
+        expect(builtEvent.organizer.name).toBe("Test Host");
+        expect(builtEvent.organizer.email).toBe("host@example.com");
+        expect(builtEvent.organizer.language.locale).toBe("en");
+        expect(builtEvent.attendees).toHaveLength(1);
+        expect(builtEvent.attendees[0].email).toBe("attendee@example.com");
+      }
+    });
+
+    it("should produce CalendarEvent compatible with Apple Calendar adapter", async () => {
+      const mockBooking = createAdapterBookingMock("apple_calendar", "apple-external-id");
+
+      const eventFromBooking = await CalendarEventBuilder.fromBooking(mockBooking);
+      const builtEvent = eventFromBooking.build();
+
+      expect(builtEvent).not.toBeNull();
+      if (builtEvent) {
+        // Destination calendar should carry the apple_calendar integration
+        expect(builtEvent.destinationCalendar).toBeDefined();
+        expect(builtEvent.destinationCalendar).toHaveLength(1);
+        expect(builtEvent.destinationCalendar?.[0].integration).toBe("apple_calendar");
+        expect(builtEvent.destinationCalendar?.[0].externalId).toBe("apple-external-id");
+
+        // Core CalendarEvent fields for Apple Calendar / CalDAV adapter
+        expect(builtEvent.startTime).toBe(new Date(mockStartTime).toISOString());
+        expect(builtEvent.endTime).toBe(new Date(mockEndTime).toISOString());
+        expect(builtEvent.title).toBe("Adapter Test Event");
+        expect(builtEvent.type).toBe("adapter-test");
+        expect(builtEvent.bookerUrl).toBeDefined();
+
+        // Organizer and attendees for CalDAV adapter
+        expect(builtEvent.organizer.name).toBe("Test Host");
+        expect(builtEvent.organizer.email).toBe("host@example.com");
+        expect(builtEvent.organizer.language.locale).toBe("en");
+        expect(builtEvent.attendees).toHaveLength(1);
+        expect(builtEvent.attendees[0].email).toBe("attendee@example.com");
+      }
+    });
+  });
+
+  describe("buildBufferEvent", () => {
+    /**
+     * Creates a minimal mock booking with buffer time configuration on the
+     * eventType, suitable for testing the static buildBufferEvent method.
+     * The before/afterEventBuffer fields are set via the params.
+     */
+    const createBufferBookingMock = (opts: {
+      beforeEventBuffer?: number;
+      afterEventBuffer?: number;
+      includeEventType?: boolean;
+    }) => {
+      const eventType = opts.includeEventType !== false
+        ? {
+            id: 100,
+            title: "60 minutes",
+            slug: "buffer-test",
+            description: "Buffer test event",
+            hideCalendarNotes: false,
+            hideCalendarEventDetails: false,
+            hideOrganizerEmail: false,
+            schedulingType: null,
+            seatsPerTimeSlot: null,
+            seatsShowAttendees: false,
+            seatsShowAvailabilityCount: false,
+            customReplyToEmail: null,
+            disableRescheduling: false,
+            disableCancelling: false,
+            requiresConfirmation: false,
+            recurringEvent: null,
+            bookingFields: [],
+            metadata: null,
+            eventName: null,
+            team: null,
+            users: [],
+            hosts: [],
+            workflows: [],
+            beforeEventBuffer: opts.beforeEventBuffer ?? 0,
+            afterEventBuffer: opts.afterEventBuffer ?? 0,
+          }
+        : null;
+
+      return {
+        uid: "booking-buffer-test",
+        metadata: null,
+        title: "Buffer Test Event",
+        startTime: new Date(mockStartTime),
+        endTime: new Date(mockEndTime),
+        description: "Test event for buffer verification",
+        location: "Online",
+        responses: null,
+        customInputs: null,
+        iCalUID: null,
+        iCalSequence: 0,
+        oneTimePassword: null,
+        attendees: [],
+        user: {
+          id: 1,
+          name: "Test Host",
+          email: "host@example.com",
+          username: "testhost",
+          timeZone: "UTC",
+          locale: "en",
+          timeFormat: 12,
+          destinationCalendar: null,
+          profiles: [],
+        },
+        destinationCalendar: null,
+        eventType,
+        references: [],
+        seatsReferences: [],
+      } as unknown as BookingForCalEventBuilder;
+    };
+
+    it("should create a pre-event buffer CalendarEvent", () => {
+      const mockBooking = createBufferBookingMock({ beforeEventBuffer: 15 });
+
+      const bufferEvent = CalendarEventBuilder.buildBufferEvent(mockBooking, "before");
+
+      expect(bufferEvent).not.toBeNull();
+      if (bufferEvent) {
+        // Title follows the "Buffer: [Event Title]" pattern
+        expect(bufferEvent.title).toBe("Buffer: Buffer Test Event");
+
+        // Buffer ends when the booking starts
+        expect(bufferEvent.endTime).toBe(new Date(mockStartTime).toISOString());
+
+        // Buffer starts 15 minutes before the booking
+        const expectedStart = dayjs(mockStartTime).subtract(15, "minutes").toISOString();
+        expect(bufferEvent.startTime).toBe(expectedStart);
+
+        // Event type metadata is preserved
+        expect(bufferEvent.type).toBe("buffer-test");
+        expect(bufferEvent.eventTypeId).toBe(100);
+      }
+    });
+
+    it("should create a post-event buffer CalendarEvent", () => {
+      const mockBooking = createBufferBookingMock({ afterEventBuffer: 10 });
+
+      const bufferEvent = CalendarEventBuilder.buildBufferEvent(mockBooking, "after");
+
+      expect(bufferEvent).not.toBeNull();
+      if (bufferEvent) {
+        // Title follows the "Buffer: [Event Title]" pattern
+        expect(bufferEvent.title).toBe("Buffer: Buffer Test Event");
+
+        // Buffer starts when the booking ends
+        expect(bufferEvent.startTime).toBe(new Date(mockEndTime).toISOString());
+
+        // Buffer ends 10 minutes after the booking
+        const expectedEnd = dayjs(mockEndTime).add(10, "minutes").toISOString();
+        expect(bufferEvent.endTime).toBe(expectedEnd);
+
+        // Event type metadata is preserved
+        expect(bufferEvent.type).toBe("buffer-test");
+        expect(bufferEvent.eventTypeId).toBe(100);
+      }
+    });
+
+    it("should return null when no buffer time exists for the given type", () => {
+      const mockBooking = createBufferBookingMock({
+        beforeEventBuffer: 0,
+        afterEventBuffer: 0,
+      });
+
+      const beforeBuffer = CalendarEventBuilder.buildBufferEvent(mockBooking, "before");
+      expect(beforeBuffer).toBeNull();
+
+      const afterBuffer = CalendarEventBuilder.buildBufferEvent(mockBooking, "after");
+      expect(afterBuffer).toBeNull();
+    });
+
+    it("should return null when buffer minutes is undefined", () => {
+      // Mock without buffer time properties on eventType
+      const mockBooking = createBufferBookingMock({});
+
+      const beforeBuffer = CalendarEventBuilder.buildBufferEvent(mockBooking, "before");
+      expect(beforeBuffer).toBeNull();
+
+      const afterBuffer = CalendarEventBuilder.buildBufferEvent(mockBooking, "after");
+      expect(afterBuffer).toBeNull();
+    });
+  });
 });

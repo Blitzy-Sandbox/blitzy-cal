@@ -15,6 +15,7 @@ export const credentialForCalendarServiceSelect = {
   encryptedKey: true,
   invalid: true,
   delegationCredentialId: true,
+  externalCancellationSyncEnabled: true,
 } satisfies Prisma.CredentialSelect;
 
 export const safeCredentialSelect = {

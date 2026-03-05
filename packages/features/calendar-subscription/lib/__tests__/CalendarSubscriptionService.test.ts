@@ -58,6 +58,7 @@ const mockCredential = {
   id: 1,
   key: { access_token: "test-token" },
   user: { email: "test@example.com" },
+  externalCancellationSyncEnabled: null,
   delegatedTo: null,
 };
 

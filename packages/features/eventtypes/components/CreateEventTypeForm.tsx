@@ -34,7 +34,7 @@ type CreateEventTypeFormValues = z.infer<typeof createEventTypeInput>;
  *   priorities, and segment queries are configured in settings after creation.
  * - **Collective (ET-004):** SchedulingType.COLLECTIVE set by parent; host configuration
  *   is managed in settings after creation.
- * - **Managed (ET-005 context):** isManagedEventType prop controls slug display,
+ * - **Managed:** isManagedEventType prop controls slug display,
  *   showing a username placeholder instead of the actual page slug.
  * - **Dynamic:** Not created through this form — uses getDefaultEvent with
  *   multi-user slug resolution instead.

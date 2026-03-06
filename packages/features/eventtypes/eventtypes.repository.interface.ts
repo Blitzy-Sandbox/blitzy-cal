@@ -66,5 +66,8 @@ export interface IEventTypesRepository {
    */
   findSchedulingType(
     eventTypeId: number
-  ): Promise<{ schedulingType: string | null; seatsPerTimeSlot: number | null } | null>;
+  ): Promise<{
+    schedulingType: "ROUND_ROBIN" | "COLLECTIVE" | "MANAGED" | null;
+    seatsPerTimeSlot: number | null;
+  } | null>;
 }

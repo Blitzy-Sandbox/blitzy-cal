@@ -781,6 +781,28 @@ describe("BookingLocationService", () => {
       });
     });
 
+    it("should treat credentialId 0 as a valid credential", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:zoom",
+          credentialId: 0,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [{ id: 0, type: "zoom_video" }],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:zoom",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: 0,
+      });
+    });
+
     it("should find matching credential for unknown app and link it via HostLocationRepository", async () => {
       const mockPrismaClient = {} as any;
 

@@ -179,8 +179,9 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
         timeZone: true,
       },
     },
-    // ET-005: Booking window configuration — periodType (UNLIMITED, RANGE, ROLLING) maps to
-    // Calendly's three booking window options: indefinitely, date range, and days into future.
+    // ET-005: Booking window configuration — periodType (UNLIMITED, RANGE, ROLLING, ROLLING_WINDOW)
+    // maps to Calendly's booking window options: indefinitely, date range, and days into future.
+    // ROLLING uses calendar days; ROLLING_WINDOW uses business days (AVL-GAP-001 parity).
     periodType: true,
     periodDays: true, // days if limiting future bookings (ROLLING window)
     periodEndDate: true, // end date limit by range (RANGE window)
@@ -302,6 +303,9 @@ export async function getEventTypeHosts({
 
   // Map enriched users back to the hosts, preserving host assignment metadata
   // (isFixed, priority, weight, weightAdjustment, groupId) via the spread of host properties.
+  // NOTE: Callers returning data to public/external consumers should strip internal RR metadata
+  // (weight, priority, weightAdjustment, groupId) before serialization — see getPublicEvent for
+  // the stripping pattern. isFixed is safe for public display (needed for collective event UX).
   const enrichedHosts = hosts.map((host, index) => ({
     ...host,
     user: enrichedUsers[index],
@@ -500,7 +504,10 @@ export const getPublicEvent = async (
   // Enrich users in a single batch call
   const enrichedUsers = await new UserRepository(prisma).enrichUsersWithTheirProfiles(usersAsHosts);
 
-  // Map enriched users back to the hosts
+  // Map enriched users back to the hosts, preserving all fields for internal function calls
+  // (getUsersFromEvent, getProfileFromEvent) that require the full Event["hosts"] type.
+  // Sensitive RR metadata (weight, priority, weightAdjustment, groupId) is stripped later
+  // at the public response boundary — see the return statement below.
   const hosts = event.hosts.map((host, index) => ({
     ...host,
     user: enrichedUsers[index],
@@ -590,11 +597,17 @@ export const getPublicEvent = async (
 
   // ET-001/ET-002: The spread of eventWithUserProfiles propagates all paradigm-specific fields
   // from the Prisma select, including seatsPerTimeSlot, seatsShowAvailabilityCount, schedulingType,
-  // and enriched host data (with isFixed, priority, weight, weightAdjustment, groupId).
-  // For group events (ET-002), the remaining seat count is calculated at booking time by the
-  // booking engine, not in this public event resolution step.
+  // and enriched host data. Internal RR distribution metadata (weight, priority, weightAdjustment,
+  // groupId) is stripped from subsetOfHosts/hosts to avoid exposing scheduling algorithm parameters
+  // to external bookers. isFixed is preserved — needed for collective event UX (ET-004).
+  const stripHostRRMetadata = (
+    hostList: typeof hosts
+  ) => hostList.map(({ weight, priority, weightAdjustment, groupId, ...publicHost }) => publicHost);
+
   return {
     ...eventWithUserProfiles,
+    subsetOfHosts: stripHostRRMetadata(eventWithUserProfiles.subsetOfHosts),
+    hosts: eventWithUserProfiles.hosts ? stripHostRRMetadata(eventWithUserProfiles.hosts) : undefined,
     bookerLayouts: bookerLayoutsSchema.parse(eventMetaData?.bookerLayouts || null),
     description: markdownToSafeHTML(eventWithUserProfiles.description),
     metadata: eventMetaData,

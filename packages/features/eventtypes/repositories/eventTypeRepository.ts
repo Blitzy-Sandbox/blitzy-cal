@@ -1998,7 +1998,7 @@ export class EventTypeRepository implements IEventTypesRepository {
    */
   async findSchedulingType(
     eventTypeId: number
-  ): Promise<{ schedulingType: string | null; seatsPerTimeSlot: number | null } | null> {
+  ): Promise<{ schedulingType: "ROUND_ROBIN" | "COLLECTIVE" | "MANAGED" | null; seatsPerTimeSlot: number | null } | null> {
     const eventType = await this.prismaClient.eventType.findUnique({
       where: { id: eventTypeId },
       select: {

@@ -181,10 +181,11 @@ export type FormValues = {
   minimumRescheduleNotice: number | null;
 
   // ── Booking window fields (ET-005) ────────────────────────────────────
-  // Maps to Calendly's three booking window options:
-  //   ROLLING  → "days into the future" (with calendar/business day toggle)
-  //   RANGE    → "date range" (explicit start/end)
-  //   UNLIMITED → "indefinitely into the future"
+  // Maps to Calendly's booking window options via PeriodType enum:
+  //   ROLLING        → "days into the future" (calendar days)
+  //   ROLLING_WINDOW → "days into the future" (business days only — AVL-GAP-001 parity)
+  //   RANGE          → "date range" (explicit start/end)
+  //   UNLIMITED      → "indefinitely into the future"
   periodType: PeriodType;
   /**
    * Number of days (applicable only for ROLLING period type).

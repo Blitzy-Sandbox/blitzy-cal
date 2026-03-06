@@ -81,13 +81,13 @@ model Credential {
 Two new feature flag rows are inserted into the existing `Feature` table with disabled-by-default status:
 
 ```sql
-INSERT INTO "Feature" ("slug", "enabled", "description", "type", "stale")
-VALUES ('calendar-cancellation-sync', false, 'Calendar-driven cancellation sync: detect event deletions/declines in external calendars to propagate cancellations back to Cal.com', 'OPERATIONAL', NULL)
-ON CONFLICT ("slug") DO NOTHING;
+INSERT INTO "Feature" (slug, enabled, description, "type")
+VALUES ('calendar-cancellation-sync', false, 'Enable calendar-driven cancellation sync from external calendars', 'OPERATIONAL')
+ON CONFLICT (slug) DO NOTHING;
 
-INSERT INTO "Feature" ("slug", "enabled", "description", "type", "stale")
-VALUES ('calendar-buffer-sync', false, 'Buffer time visualization: optionally write buffer periods as separate calendar events for visual clarity', 'OPERATIONAL', NULL)
-ON CONFLICT ("slug") DO NOTHING;
+INSERT INTO "Feature" (slug, enabled, description, "type")
+VALUES ('calendar-buffer-sync', false, 'Enable buffer time visualization in external calendars', 'OPERATIONAL')
+ON CONFLICT (slug) DO NOTHING;
 ```
 
 - **Pattern**: Pattern 5 — Feature flag gating with `ON CONFLICT DO NOTHING` for idempotent re-deployment
@@ -121,7 +121,7 @@ Extend `GetAvailabilityParams` interface with an optional `statusFilter` propert
 ```typescript
 interface GetAvailabilityParams {
   // ... existing properties ...
-  statusFilter?: string[]; // e.g., ["busy", "tentative", "away", "workingElsewhere", "oof"]
+  statusFilter?: string[]; // e.g., ["busy", "tentative", "oof", "workingElsewhere"]
 }
 ```
 
@@ -132,7 +132,7 @@ This allows each calendar adapter's `getAvailability` method to receive a config
 **File**: `packages/features/busyTimes/services/getBusyTimes.ts`
 
 - Pass `statusFilter` through to individual calendar adapter `getAvailability` calls
-- When `statusFilter` is not provided, use the default behavior (Busy + Tentative + Away + Working Elsewhere are all "unavailable")
+- When `statusFilter` is not provided, use the default behavior which skips `free` and `workingElsewhere` events, treating all other statuses (`busy`, `tentative`, `oof`, `unknown`) as "unavailable"
 - The `statusFilter` is read from user preferences and threaded through the busy time aggregation pipeline
 
 #### CalendarManager Modifications (CI-004, CI-001 gap, CI-002 gap)
@@ -221,7 +221,7 @@ The following adapters are verified for behavioral parity with Calendly — modi
 
 **Outlook/O365 Adapter** (`packages/app-store/office365calendar/lib/CalendarService.ts`)
 
-- Verify `getAvailability` correctly filters events by `showAs` status values: `busy`, `tentative`, `away`, `workingElsewhere`, `oof` (Out of Office)
+- Verify `getAvailability` correctly filters events by `showAs` status values: `free`, `tentative`, `busy`, `oof` (Out of Office), `workingElsewhere`, `unknown` (per Microsoft Graph `FreeBusyStatus` enum)
 - Verify batch API requests handle pagination via `@odata.nextLink` correctly
 - Verify retry-after logic respects HTTP 429 responses from Microsoft Graph API
 - Verify Teams online meeting integration when applicable

@@ -1,8 +1,15 @@
 # Calendar Integrations Implementation
 
-## Status: not-started
+## Status: in-progress
 
 ## Completed
+
+- PR 1: Spec artifacts creation — `specs/calendar-integrations/` folder with `design.md`, `implementation.md`, `decisions.md`, `CLAUDE.md`, `prompts.md`, `future-work.md`, and `docs/README.md` ✅
+- PR 2: Database migration — additive schema additions (`syncBuffersToCalendar` nullable Boolean on `EventType`, `externalCancellationSyncEnabled` nullable Boolean on `Credential`) + feature flag rows (`calendar-cancellation-sync`, `calendar-buffer-sync`) ✅
+- PR 3: Google Calendar parity verification (CI-001) — verified and aligned `CalendarService.ts` for Google adapter ✅
+- PR 4: Outlook/O365 parity verification (CI-002) — verified and aligned `CalendarService.ts` for Outlook adapter with `statusFilter` support ✅
+- PR 5: Apple Calendar parity verification (CI-003) — verified `CalendarService.ts` CalDAV operations ✅
+- PR 6: Conflict detection alignment (CI-004) — extended `getBusyTimes.ts` with configurable status filtering, added `statusFilter` to `GetAvailabilityParams` ✅
 
 ## In Progress
 

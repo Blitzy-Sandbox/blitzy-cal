@@ -152,12 +152,12 @@ Cal.com implements a pluggable calendar adapter architecture through `packages/a
 | **CI-002** | Outlook/Office 365 sync behavioral parity | Medium | M | AV-001 | `packages/app-store/office365calendar/` | ✅ Completed |
 | **CI-003** | iCloud/Apple Calendar sync parity | Medium | M | AV-001 | `packages/app-store/applecalendar/` | ✅ Completed |
 | **CI-004** | Conflict detection behavior alignment | High | L | CI-001, CI-002, CI-003 | `packages/features/calendars/` | ✅ Completed |
-| **CI-005** | Bi-directional sync verification | High | L | CI-001, CI-002 | `packages/features/calendars/` | ✅ Completed |
+| **CI-005** | Bi-directional sync verification | High | L | CI-001, CI-002 | `packages/features/calendars/` | 🔄 In Progress |
 
 <Info>
   **Cal.com Advantages:** Cal.com provides **11+ calendar adapters** vs. Calendly's **3 native integrations** (Google, Outlook, iCloud). Additional adapters include CalDAV, Exchange 2013/2016, Lark, Feishu, Zoho, and ICS Feed. Cal.com also provides **AES-256 credential encryption** for all stored OAuth tokens and calendar credentials, per-event-type calendar selection, and multi-calendar busy time aggregation.
 
-  All 5 Calendar Integration epics (CI-001 through CI-005) have been **completed in Sprint 3** and Gate 3 has been passed. Two additional gap closures (calendar-driven cancellation sync and buffer time visualization) have also been implemented behind feature flags.
+  Calendar Integration epics CI-001 through CI-004 have been completed in Sprint 3. CI-005 (Bi-directional sync verification) is in progress — dedicated verification tests are pending creation. Two additional gap closures (calendar-driven cancellation sync and buffer time visualization) have integration points ready (schema, DI tokens, feature flags) with service implementation pending. Gate 3 validation is in progress.
 </Info>
 
 </Accordion>
@@ -438,7 +438,7 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 | **Total** | **40** | **0** | **11** | **24** | **5** |
 
 <Note>
-  **Sprint 3 Complete:** All 5 Calendar Integrations epics (CI-001 through CI-005) have been completed and Gate 3 has been passed. This includes 2 High-priority epics (CI-004 Conflict Detection, CI-005 Bi-directional Sync) and 3 Medium-priority epics (CI-001 Google, CI-002 Outlook, CI-003 Apple).
+  **Sprint 3 In Progress:** Calendar Integration epics CI-001 through CI-004 have been completed. CI-005 (Bi-directional Sync) is in progress with dedicated verification tests pending creation. Gate 3 validation is in progress — final validation evidence will be recorded after all implementation and tests are complete.
 </Note>
 
 ### Priority Distribution
@@ -457,7 +457,7 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 ## Next Steps
 
 <Info>
-  **Sprint 3 Status:** Calendar Integrations (CI-001 through CI-005) have been completed and Gate 3 has been passed. Sprint 4 (Webhooks & Events) is now unblocked and can begin implementation following the gate workflow.
+  **Sprint 3 Status:** Calendar Integration epics CI-001 through CI-004 are complete. CI-005 and gap closure services are in progress. Gate 3 validation is pending — Sprint 4 (Webhooks & Events) remains blocked until Gate 3 is formally passed with all five validation dimensions verified.
 </Info>
 
 1. **Sprint Planning**: Use the [Sprint Roadmap Overview](/sprint-roadmap/overview) to understand how these epics are sequenced into sprints based on their dependency relationships and priority classifications.

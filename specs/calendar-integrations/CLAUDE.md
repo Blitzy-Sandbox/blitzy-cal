@@ -30,7 +30,7 @@ Key patterns to follow and reference implementations:
 
 - **Calendar adapter pattern**: Each adapter in `packages/app-store/*/lib/CalendarService.ts` implements the `Calendar` interface from `packages/types/Calendar.d.ts` with `createEvent`, `updateEvent`, `deleteEvent`, `getAvailability` methods
 - **Credential encryption**: AES-256 encryption via `CALENDSO_ENCRYPTION_KEY` — never modify the encryption algorithm, key derivation, or storage format
-- **Feature flag pattern**: New features gated behind `Feature` model rows with `enabled: false` by default — check `packages/prisma/schema.prisma` Feature model (line 1733)
+- **Feature flag pattern**: New features gated behind `Feature` model rows with `enabled: false` by default — check `packages/prisma/schema.prisma` Feature model (line 1735)
 - **Zero-downtime migrations**: Only additive patterns from `docs/migration/zero-downtime-strategy.mdx` — nullable columns (Pattern 2), feature flags (Pattern 5)
 - **DI pattern**: `@evyweb/ioctopus` IoC container for service registration in `packages/features/calendars/di/`
 - **Test patterns**: Vitest-based tests following existing patterns in `packages/app-store/googlecalendar/lib/__tests__/`

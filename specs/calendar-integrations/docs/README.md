@@ -14,7 +14,7 @@ Navigate to **Settings → My Account → Calendars** to connect your Google Cal
 
 ### Step 2: Configure Buffer-Sync Toggle and Conflict Detection Status Filter
 
-For buffer time visualization, enable the **Sync buffer times to calendar** toggle on your event type settings. This creates separate calendar events for pre-event and post-event buffer periods in your connected calendars, providing visual clarity in your schedule. For conflict detection configuration, select which event statuses (Busy, Tentative, Away, Working Elsewhere, Out of Office) should be considered 'unavailable' when checking for scheduling conflicts — this matches Calendly's 'What's considered unavailable?' behavior.
+For buffer time visualization, enable the **Sync buffer times to calendar** toggle on your event type settings. This creates separate calendar events for pre-event and post-event buffer periods in your connected calendars, providing visual clarity in your schedule. For conflict detection configuration, the system supports configuring which event statuses should be considered 'unavailable' when checking for scheduling conflicts — this matches Calendly's 'What's considered unavailable?' behavior. Valid Microsoft Graph `showAs` values are: `free`, `tentative`, `busy`, `oof` (Out of Office), `workingElsewhere`, `unknown`. By default, the system blocks `busy`, `tentative`, `oof`, and `unknown` events.
 
 ![Step 2 Screenshot](./screenshots/step-2.png)
 
@@ -24,7 +24,7 @@ For buffer time visualization, enable the **Sync buffer times to calendar** togg
 |--------|-------------|---------|
 | `syncBuffersToCalendar` | When enabled, creates separate calendar events for pre-event and post-event buffer periods in connected external calendars. Set per event type on the EventType model. | `off` (null, treated as false) |
 | `externalCancellationSyncEnabled` | When enabled on a credential, activates calendar-driven cancellation sync subscriptions so that events deleted or declined in the external calendar automatically cancel the corresponding Cal.com booking. | `off` (null, treated as false) |
-| `statusFilter` | JSON array of event statuses considered "unavailable" for conflict detection. Configurable values: `Busy`, `Tentative`, `Away`, `WorkingElsewhere`, `OutOfOffice`. Stored on the User model. | All statuses unavailable (`["Busy", "Tentative", "Away", "WorkingElsewhere", "OutOfOffice"]`) |
+| `statusFilter` | Optional array of event statuses considered "unavailable" for conflict detection, passed as a runtime TypeScript parameter via `GetAvailabilityParams.statusFilter?: string[]`. Valid Microsoft Graph `showAs` values: `free`, `tentative`, `busy`, `oof`, `workingElsewhere`, `unknown`. Currently a runtime-only parameter — database persistence on the User model is planned for a future sprint. | Default (no filter): skips `free` and `workingElsewhere`, blocking `busy`, `tentative`, `oof`, `unknown` |
 | `calendar-cancellation-sync` | Feature flag controlling the calendar-driven cancellation sync behavior. Stored in the Feature model. Must be explicitly enabled after validation. | `false` (disabled by default) |
 | `calendar-buffer-sync` | Feature flag controlling the buffer time visualization behavior. Stored in the Feature model. Must be explicitly enabled after validation. | `false` (disabled by default) |
 

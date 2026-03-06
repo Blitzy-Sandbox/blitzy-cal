@@ -172,19 +172,19 @@ The question is where in the data model this preference should live to balance s
 
 ### Decision
 
-Store the status filter preference on the **User model** as a nullable JSON array column (`unavailableStatuses`). When the value is `null`, the system defaults to Calendly's default behavior where Busy, Tentative, Away, and Working Elsewhere statuses are all treated as "unavailable" and block availability.
+For the current Sprint 3 implementation, the status filter is implemented as a **runtime-only TypeScript parameter** (`statusFilter?: string[]` on the `GetAvailabilityParams` interface in `packages/types/Calendar.d.ts`), threaded through the busy time aggregation pipeline without database persistence. When no `statusFilter` is provided, the default behavior skips `free` and `workingElsewhere` events, treating all other statuses (`busy`, `tentative`, `oof`, `unknown`) as blocking — matching Calendly's default conflict detection behavior.
 
-This is the simplest approach that achieves full Calendly parity. Calendly's own "What's considered unavailable?" setting is a user-level preference, not per-event-type or per-calendar, so matching that granularity is the correct parity target. Per-event-type override capability is documented in `future-work.md` as a potential Cal.com advantage to pursue in a later sprint.
+The architectural decision to store the preference on the **User model** as a nullable JSON array column (`unavailableStatuses`) is the intended future direction to achieve full Calendly UI parity with the "What's considered unavailable?" dropdown. This database persistence is deferred to a future sprint, as the runtime-only approach is sufficient for Sprint 3 parity verification. Calendly's own setting is a user-level preference, not per-event-type or per-calendar, so the User model is the correct parity target. Per-event-type override capability is documented in `future-work.md` as a potential Cal.com advantage to pursue in a later sprint.
 
 ### Consequences
 
-- Requires adding a nullable JSON column `unavailableStatuses` to the `User` model via a zero-downtime migration using Pattern 2 (nullable column, no default required)
-- The `getBusyTimes` service in `packages/features/busyTimes/services/getBusyTimes.ts` will read the user's `unavailableStatuses` preference and pass it as a `statusFilter` parameter to each adapter's `getAvailability` method
-- The `GetAvailabilityParams` interface in `packages/types/Calendar.d.ts` will be extended with an optional `statusFilter?: string[]` property
-- The Outlook adapter's `getAvailability` method will map `statusFilter` values to the `showAs` property filter when querying `calendarView` via Microsoft Graph API
+- The `GetAvailabilityParams` interface in `packages/types/Calendar.d.ts` has been extended with an optional `statusFilter?: string[]` property
+- The `getBusyTimes` service in `packages/features/busyTimes/services/getBusyTimes.ts` passes `statusFilter` through to each adapter's `getAvailability` method
+- The Outlook adapter's `getAvailability` method maps `statusFilter` values to the `showAs` property filter when querying `calendarView` via Microsoft Graph API (case-insensitive comparison)
 - For the Google adapter, status filtering has limited applicability since the FreeBusy API returns aggregate busy windows without per-event status; fine-grained status filtering for Google requires switching to `events.list` with per-event status inspection, which is documented as a future optimization in `future-work.md`
-- Default behavior when `unavailableStatuses` is `null` matches Calendly's defaults: `["busy", "tentative", "away", "workingElsewhere", "oof"]`
-- No UI changes are required in Sprint 3 for this storage decision; the preference will initially be managed via API v2 endpoints, with a Settings UI toggle deferred to a future sprint
+- Default behavior (no `statusFilter` provided) skips `free` and `workingElsewhere` events, blocking: `busy`, `tentative`, `oof`, `unknown`
+- **Database persistence deferred**: Adding a nullable JSON column `unavailableStatuses` to the `User` model is planned for a future sprint to enable user-configurable persistence via the Settings UI. The current runtime-only approach is sufficient for Sprint 3 behavioral parity verification.
+- No UI changes are required in Sprint 3; the preference will initially be managed via API v2 endpoints when database persistence is added, with a Settings UI toggle deferred to a later sprint
 
 ---
 

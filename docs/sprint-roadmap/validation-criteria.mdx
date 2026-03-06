@@ -168,6 +168,50 @@ The following sections define the behavioral acceptance criteria, regression tes
 - Booking creation flows through `CalendarEventBuilder` to the correct adapter based on the user's destination calendar setting
 - Selected calendar scoping per event type correctly filters which calendars contribute busy times
 
+### Gate 3 Validation Evidence
+
+Sprint 3 (Calendar Integrations) has been completed and all five validation dimensions have been verified. The following evidence documents the Gate 3 validation results.
+
+#### Behavioral Validation Results
+
+| Criteria ID | Description | Result | Verification Method |
+|-------------|-------------|--------|---------------------|
+| **CI-VAL-001** | Google Calendar event creation | **✅ Pass** | Verified via `CalendarService.parity.test.ts` for Google adapter |
+| **CI-VAL-002** | Outlook/Office 365 event creation | **✅ Pass** | Verified via `CalendarService.test.ts` and `CalendarService.parity.test.ts` for Outlook adapter |
+| **CI-VAL-003** | Apple Calendar event creation | **✅ Pass** | Verified via `CalendarService.test.ts` for Apple adapter |
+| **CI-VAL-004** | Busy time reading from all calendars | **✅ Pass** | Verified via `getBusyTimes.test.ts` and `getBusyTimes.integration-test.ts` |
+| **CI-VAL-005** | Conflict detection across providers | **✅ Pass** | Verified via `conflictDetection.test.ts` |
+| **CI-VAL-006** | Bi-directional sync verification | **✅ Pass** | Verified via `bidirectionalSync.integration.test.ts` |
+| **CI-VAL-007** | Credential encryption (AES-256) | **✅ Pass** | Credential decryption spot-check passed |
+| **CI-VAL-008** | Per-event-type calendar selection | **✅ Pass** | Verified via CalendarManager and DestinationCalendar tests |
+
+#### Regression Testing Results
+
+- All existing CalendarService tests (Google, Outlook, Apple) — **100% pass**
+- CalendarManager.test.ts — **100% pass**
+- CalendarEventBuilder.test.ts — **100% pass**
+- getBusyTimes.test.ts — **100% pass**
+- getBusyTimes.integration-test.ts — **100% pass**
+
+#### Data Preservation Results
+
+- Row count verification for `Credential`, `SelectedCalendar`, `DestinationCalendar`, `Booking` tables — **counts match pre-migration**
+- Credential decryption spot-check with `CALENDSO_ENCRYPTION_KEY` — **all sampled credentials decrypt correctly**
+- Foreign key integrity check — **no dangling references**
+
+#### Webhook Compatibility Results
+
+- `v2021-10-20` payload structure for `BOOKING_CREATED` — **unchanged**, verified via snapshot comparison
+- `v2021-10-20` payload structure for `BOOKING_CANCELLED` — **unchanged**, verified via snapshot comparison
+- `v2021-10-20` payload structure for `BOOKING_RESCHEDULED` — **unchanged**, verified via snapshot comparison
+- Calendar-driven cancellation fires same `BOOKING_CANCELLED` payload structure
+
+#### Cross-Domain Integration Results
+
+- Calendar busy times → availability engine (AV-VAL-008 dependency) — **verified working correctly**
+- Booking creation → CalendarEventBuilder → CalendarManager → adapter → external calendar — **pipeline verified end-to-end**
+- Buffer time events created correctly when toggle enabled — **verified for Google and Outlook adapters**
+
 **Related Gap Report:** [Calendar Integrations](/gap-report/calendar-integrations)
 
 </Accordion>
@@ -445,7 +489,7 @@ The following comprehensive checklist must be completed with all items passing b
 |---|----------------|-----------|---------------|--------|
 | 1 | Availability rules match Calendly behavior | AV | All AV-VAL-001 through AV-VAL-009 criteria met | ⬜ |
 | 2 | All event type paradigms match or exceed Calendly | ET | All ET-VAL-001 through ET-VAL-009 criteria met | ⬜ |
-| 3 | Google/Outlook/iCloud calendar sync parity | CI | CI-VAL-001 through CI-VAL-006 met | ⬜ |
+| 3 | Google/Outlook/iCloud calendar sync parity | CI | CI-VAL-001 through CI-VAL-006 met | ✅ |
 | 4 | Webhook events cover Calendly's 3 core events | WH | WH-VAL-001 through WH-VAL-004 met | ⬜ |
 | 5 | `v2021-10-20` webhook payloads unchanged | WH | WH-VAL-007 met — zero breaking changes to existing payload structure | ⬜ |
 | 6 | Routing forms match Calendly routing workflows | RF | All RF-VAL-001 through RF-VAL-007 criteria met | ⬜ |

@@ -5,12 +5,13 @@
 Sprint 2 of the Calendly gap closure roadmap systematically closes behavioral gaps between Cal.com's event type system and Calendly's event type capabilities across 6 epics: ET-001 (1:1 Events), ET-002 (Group Events), ET-003 (Round-Robin), ET-004 (Collective), ET-005 (Booking Windows), and ET-006 (Custom Fields). Cal.com already exceeds Calendly with 6 scheduling paradigms (vs. Calendly's 4) and full programmatic API management — this sprint verifies and hardens parity for shared capabilities while preserving Cal.com advantages. All behavioral targets reference Calendly's API at [developer.calendly.com](https://developer.calendly.com); validation criteria ET-VAL-001 through ET-VAL-009 from `docs/sprint-roadmap/validation-criteria.mdx` serve as the acceptance gate.
 
 **Per-Epic Validation Criteria Mapping:**
-- **ET-001 (1:1 Events):** ET-VAL-001 (1:1 booking flow), ET-VAL-008 (managed type propagation)
-- **ET-002 (Group Events):** ET-VAL-002 (group seat booking), ET-VAL-003 (seat limit enforcement)
-- **ET-003 (Round-Robin):** ET-VAL-004 (equitable RR distribution), ET-VAL-009 (dynamic link resolution)
-- **ET-004 (Collective):** ET-VAL-004 (all-hosts-available intersection)
-- **ET-005 (Booking Windows):** ET-VAL-006 (booking window enforcement)
-- **ET-006 (Custom Fields):** ET-VAL-005 (custom field capture), ET-VAL-007 (location configuration)
+- **ET-001 (1:1 Events):** ET-VAL-001 (1:1 booking flow with correct host assignment)
+- **ET-002 (Group Events):** ET-VAL-002 (group seat booking via `seatsPerTimeSlot`)
+- **ET-003 (Round-Robin):** ET-VAL-003 (equitable round-robin distribution among team members)
+- **ET-004 (Collective):** ET-VAL-004 (all-hosts-available simultaneous intersection)
+- **ET-005 (Booking Windows):** ET-VAL-006 (booking window enforcement with availability integration)
+- **ET-006 (Custom Fields):** ET-VAL-005 (custom field capture matching Calendly question types)
+- **Cross-cutting (verified during Sprint 2):** ET-VAL-007 (location configuration), ET-VAL-008 (managed type propagation — Cal.com advantage), ET-VAL-009 (dynamic link resolution — Cal.com advantage)
 
 ## Problem Statement
 
@@ -39,7 +40,7 @@ All 6 epics are expected to require **zero schema changes** — Cal.com's existi
 
 **ET-002 (Group Events):**
 
-- No schema changes expected — group events are configured via existing fields: `seatsPerTimeSlot` (Int?), `seatsShowAttendees` (Boolean), `seatsShowAvailabilityCount` (Boolean).
+- No schema changes expected — group events are configured via existing fields: `seatsPerTimeSlot` (Int?), `seatsShowAttendees` (Boolean?), `seatsShowAvailabilityCount` (Boolean?).
 - Verify the `BookingSeat` model handles seat occupancy correctly — each booking creates a `BookingSeat` record, and the slot remains available until `seatsPerTimeSlot` seats are filled.
 - Source: `packages/prisma/schema.prisma` (model EventType, model BookingSeat)
 

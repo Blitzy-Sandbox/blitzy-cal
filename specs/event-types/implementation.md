@@ -20,7 +20,8 @@
 
 ## Blocked
 
-- Sprint 2 depends on Sprint 1 (Availability & Scheduling, F-004) passing Gate 1. If Gate 1 is not passed, all event type epics are blocked.
+- **Inter-sprint dependency:** Sprint 2 depends on Sprint 1 (Availability & Scheduling, F-004) passing Gate 1. If Gate 1 is not passed, all event type epics are blocked.
+- **Intra-sprint dependency ordering:** ET-001 depends on AV-001 (availability engine from Sprint 1). ET-002, ET-003, ET-004, and ET-006 all depend on ET-001 completion (1:1 baseline). ET-005 depends on AV-005 (booking window availability from Sprint 1). Implementation must follow this dependency chain — ET-001 must be verified first before ET-002/ET-003/ET-004/ET-006 can proceed.
 
 ## Next Steps
 

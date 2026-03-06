@@ -15,6 +15,16 @@ import type { DestinationCalendar } from "@calcom/prisma/client";
 import type { Prisma } from "@calcom/prisma/client";
 import type { CalendarEvent, AdditionalInformation } from "@calcom/types/Calendar";
 
+/**
+ * InitParams for RR reschedule handler.
+ *
+ * ET-003 Audit: The `user` field MUST represent the NEW round-robin host (not the
+ * previous host). Callers (`roundRobinReassignment.ts`, `roundRobinManualReassignment.ts`)
+ * are responsible for enriching the new host with delegation credentials via
+ * `enrichUserWithDelegationCredentialsIncludeServiceAccountKey` before passing here.
+ * The intersection with `EventManagerInitParams["user"]` ensures `credentials` and
+ * other fields required by EventManager are present.
+ */
 type InitParams = {
   user: {
     id: number;
@@ -53,18 +63,36 @@ export const handleRescheduleEventManager = async ({
     prefix: ["handleRescheduleEventManager", `${bookingId}`],
   });
 
+  // ET-003 Audit: When organizer changed (RR host reassignment), skip deletion of the
+  // previous host's calendar events from the new host's EventManager. The old host's
+  // events are deleted separately by the caller before invoking this handler.
   const skipDeleteEventsAndMeetings = changedOrganizer;
 
+  // ET-003 Audit: Credential resolution for the NEW round-robin host. This fetches
+  // the user's personal credentials (already enriched by caller), plus team credentials
+  // and parent event type credentials via getAllCredentialsIncludeServiceAccountKey.
   const allCredentials = await getAllCredentialsIncludeServiceAccountKey(
     initParams.user,
     initParams?.eventType
   );
+
+  handleRescheduleEventManager.debug("Resolved credentials for RR host", {
+    userId: initParams.user.id,
+    credentialCount: allCredentials.length,
+    changedOrganizer: !!changedOrganizer,
+  });
 
   const eventManager = new EventManager(
     { ...initParams.user, credentials: allCredentials },
     initParams?.eventTypeAppMetadata
   );
 
+  // ET-003 Audit: EventManager.reschedule parameter mapping:
+  //   param 6 (isBookingRequestedReschedule) = undefined — RR reassignment is system-initiated,
+  //     not a booking-requested reschedule. This ensures location updates only trigger on actual
+  //     location changes or daily video room expiry, not unconditionally.
+  //   param 7 (skipDeleteEventsAndMeetings) = changedOrganizer — prevents the new host's
+  //     EventManager from deleting old host's events (caller handles deletion separately).
   const updateManager = await eventManager.reschedule(
     evt,
     rescheduleUid,
@@ -96,7 +124,12 @@ export const handleRescheduleEventManager = async ({
   let metadata: AdditionalInformation = {};
   metadata = videoMetadata;
   if (results.length) {
-    // Handle Google Meet results
+    // ET-003 Audit: Google Meet fallback logic. When the booking location is Google Meet,
+    // we find the google_calendar entry in referencesToCreate and use its index to locate
+    // the corresponding result in the results array. If Google Calendar is not installed
+    // (googleCalIndex === -1), googleCalResult is undefined, and we push a warning result.
+    // All subsequent hangout link extraction uses optional chaining so a missing
+    // googleCalResult is handled safely without runtime errors.
     if (bookingLocation === MeetLocationType) {
       const googleMeetResult = {
         appName: GoogleMeetMetadata.name,
@@ -164,6 +197,11 @@ export const handleRescheduleEventManager = async ({
 
     const calendarResult = results.find((result) => result.type.includes("_calendar"));
 
+    // ET-003 Audit: iCalUID handling for RR host reassignment.
+    // When organizer changed: use the CREATED event's iCalUID from the new host's calendar
+    //   provider (since a new calendar event was created), with a generated fallback via getICalUID.
+    // When organizer unchanged: use the UPDATED event's iCalUID (same calendar event updated),
+    //   falling back to the existing bookingICalUID to preserve continuity.
     if (changedOrganizer) {
       const providerICalUID = (evt.iCalUID = Array.isArray(calendarResult?.createdEvent)
         ? calendarResult?.createdEvent[0]?.iCalUID
@@ -176,6 +214,9 @@ export const handleRescheduleEventManager = async ({
     }
   }
 
+  // ET-003 Audit: Deep-clone all booking references before persistence to prevent
+  // mutations from affecting the source array. This includes any google_meet_video
+  // references added during Google Meet handling above.
   const newReferencesToCreate = structuredClone(updateManager.referencesToCreate);
 
   await BookingReferenceRepository.replaceBookingReferences({
@@ -183,6 +224,13 @@ export const handleRescheduleEventManager = async ({
     newReferencesToCreate,
   });
 
+  // ET-003 Audit: Booking update is wrapped in try/catch to prevent booking metadata
+  // persistence failures from breaking the reschedule flow. The calendar event has
+  // already been rescheduled at this point, so a booking row update failure is logged
+  // but intentionally does NOT propagate — the reschedule result is still valid.
+  // Metadata merging uses `typeof bookingMetadata === "object" && bookingMetadata` which
+  // is null-safe (typeof null === "object" but `&& null` short-circuits to null, and
+  // `...null` is a no-op), preserving existing metadata while adding videoCallUrl.
   try {
     if (bookingLocation?.startsWith("http")) {
       videoCallUrl = bookingLocation;
@@ -208,6 +256,11 @@ export const handleRescheduleEventManager = async ({
     handleRescheduleEventManager.error("Error while updating booking metadata", JSON.stringify({ error }));
   }
 
+  // ET-003 Audit: Return the complete CalendarEvent with additionalInformation attached.
+  // This object is consumed by downstream notification handlers (email/SMS) and webhook
+  // trigger flows. The spread of `evt` preserves all CalendarEvent fields including the
+  // updated iCalUID, while `additionalInformation` carries hangoutLink, conferenceData,
+  // entryPoints, and video metadata for webhook payloads and email templates.
   const evtWithAdditionalInfo = {
     ...evt,
     additionalInformation: metadata,

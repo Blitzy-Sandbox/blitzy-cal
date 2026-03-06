@@ -90,7 +90,7 @@ vi.mock("@calcom/app-store/locations", () => ({
 // ─── Module Under Test ──────────────────────────────────────────────────────────
 // Import AFTER all vi.mock() calls to ensure mocks are in place when the module loads.
 
-import { getBusyCalendarTimes, deduplicateCredentialsBasedOnSelectedCalendars } from "../CalendarManager";
+import { getBusyCalendarTimes } from "../CalendarManager";
 
 // ─── Test Helper Functions ──────────────────────────────────────────────────────
 

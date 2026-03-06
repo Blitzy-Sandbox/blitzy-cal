@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi, afterEach } from "vitest";
 
 import dayjs from "@calcom/dayjs";
 import type { SelectedCalendar } from "@calcom/prisma/client";
-import type { CredentialForCalendarServiceWithEmail } from "@calcom/types/Credential";
+import type { CalendarCredential } from "../../lib/CalendarSubscriptionPort.interface";
 
 import { Office365CalendarSubscriptionAdapter } from "../Office365CalendarSubscription.adapter";
 
@@ -52,7 +52,7 @@ const mockCredential = {
   delegatedTo: null,
   type: null,
   teamId: null,
-} as unknown as CredentialForCalendarServiceWithEmail;
+} as unknown as CalendarCredential;
 
 describe("Office365CalendarSubscriptionAdapter", () => {
   let adapter: Office365CalendarSubscriptionAdapter;
@@ -502,6 +502,144 @@ describe("Office365CalendarSubscriptionAdapter", () => {
       expect(cancelled?.status).toBe("cancelled");
     });
 
+    test("should follow @odata.nextLink for paginated delta results", async () => {
+      // When the initial delta query returns @odata.nextLink, the adapter should
+      // follow pagination until a @odata.deltaLink is received (final page)
+      const calendarWithNoToken: SelectedCalendar = {
+        ...mockSelectedCalendar,
+        syncToken: null,
+      };
+
+      const page1Response = {
+        "@odata.nextLink": `https://graph.microsoft.com/v1.0/me/calendars/${mockSelectedCalendar.externalId}/events/delta?$skiptoken=page2`,
+        value: [
+          {
+            id: "event-page1",
+            subject: "Page 1 Meeting",
+            showAs: "busy" as const,
+            start: { dateTime: oneWeekFromNow.toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.toISOString(), timeZone: "UTC" },
+          },
+        ],
+      };
+
+      const page2Response = {
+        "@odata.deltaLink":
+          "https://graph.microsoft.com/v1.0/me/calendars/test@example.com/events/delta?$deltatoken=final-token",
+        value: [
+          {
+            id: "event-page2",
+            subject: "Page 2 Meeting",
+            showAs: "tentative" as const,
+            start: { dateTime: oneWeekFromNow.add(1, "day").toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.add(1, "day").toISOString(), timeZone: "UTC" },
+          },
+        ],
+      };
+
+      fetchSpy
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => page1Response,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => page2Response,
+        });
+
+      const result = await adapter.fetchEvents(calendarWithNoToken, mockCredential);
+
+      // Adapter should have made 2 fetch calls (one per page)
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0].id).toBe("event-page1");
+      expect(result.items[1].id).toBe("event-page2");
+      // Final syncToken should be the deltaLink from the last page
+      expect(result.syncToken).toBe(page2Response["@odata.deltaLink"]);
+    });
+
+    test("should normalize showAs values to busy flag correctly", async () => {
+      // CI-004 conflict detection parity: verify all Graph API showAs values
+      // are correctly mapped to the busy boolean flag:
+      //   busy, tentative, oof → busy: true
+      //   free, workingElsewhere, unknown → busy: false
+      const calendarWithNoToken: SelectedCalendar = {
+        ...mockSelectedCalendar,
+        syncToken: null,
+      };
+
+      const mockDeltaResponse = {
+        "@odata.deltaLink": "https://graph.microsoft.com/v1.0/delta?$deltatoken=norm",
+        value: [
+          {
+            id: "event-busy",
+            subject: "Busy Event",
+            showAs: "busy" as const,
+            isCancelled: false,
+            start: { dateTime: oneWeekFromNow.toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.toISOString(), timeZone: "UTC" },
+          },
+          {
+            id: "event-free",
+            subject: "Free Event",
+            showAs: "free" as const,
+            isCancelled: false,
+            start: { dateTime: oneWeekFromNow.add(1, "hour").toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.add(1, "hour").toISOString(), timeZone: "UTC" },
+          },
+          {
+            id: "event-tentative",
+            subject: "Tentative Event",
+            showAs: "tentative" as const,
+            isCancelled: false,
+            start: { dateTime: oneWeekFromNow.add(2, "hours").toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.add(2, "hours").toISOString(), timeZone: "UTC" },
+          },
+          {
+            id: "event-oof",
+            subject: "Out of Office",
+            showAs: "oof" as const,
+            isCancelled: false,
+            start: { dateTime: oneWeekFromNow.add(3, "hours").toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.add(3, "hours").toISOString(), timeZone: "UTC" },
+          },
+          {
+            id: "event-working",
+            subject: "Working Elsewhere",
+            showAs: "workingElsewhere" as const,
+            isCancelled: false,
+            start: { dateTime: oneWeekFromNow.add(4, "hours").toISOString(), timeZone: "UTC" },
+            end: { dateTime: eventEndTime.add(4, "hours").toISOString(), timeZone: "UTC" },
+          },
+        ],
+      };
+
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockDeltaResponse,
+      });
+
+      const result = await adapter.fetchEvents(calendarWithNoToken, mockCredential);
+
+      const busyEvt = result.items.find((i) => i.id === "event-busy");
+      const freeEvt = result.items.find((i) => i.id === "event-free");
+      const tentativeEvt = result.items.find((i) => i.id === "event-tentative");
+      const oofEvt = result.items.find((i) => i.id === "event-oof");
+      const workingEvt = result.items.find((i) => i.id === "event-working");
+
+      // busy, tentative, oof → should be marked as busy
+      expect(busyEvt?.busy).toBe(true);
+      expect(tentativeEvt?.busy).toBe(true);
+      expect(oofEvt?.busy).toBe(true);
+
+      // free, workingElsewhere → should not be marked as busy
+      expect(freeEvt?.busy).toBe(false);
+      expect(workingEvt?.busy).toBe(false);
+    });
+
     test("should use existing sync token for delta queries", async () => {
       const mockDeltaResponse = {
         "@odata.deltaLink": "https://graph.microsoft.com/v1.0/delta?$deltatoken=updated-token",
@@ -604,6 +742,44 @@ describe("Office365CalendarSubscriptionAdapter", () => {
 
       expect(result).toBe(false);
     });
+
+    test("should validate notification with matching clientState in body", async () => {
+      // The adapter checks request.body as a plain object for clientState
+      // when headers don't contain it. This covers webhook payloads where
+      // clientState is embedded in the notification body.
+      const mockRequest = {
+        url: "https://example.com/webhook",
+        headers: {
+          get: vi.fn().mockReturnValue(null),
+        },
+        body: { clientState: "test-webhook-token" },
+      } as unknown as Request;
+
+      const result = await adapter.validate(mockRequest);
+
+      expect(result).toBe(true);
+    });
+
+    test("should reject when MICROSOFT_WEBHOOK_TOKEN is missing", async () => {
+      // When webhookToken is null, the adapter should reject all
+      // non-handshake requests regardless of clientState value
+      const adapterNoToken = new Office365CalendarSubscriptionAdapter({
+        baseUrl: "https://graph.microsoft.com/v1.0",
+        webhookToken: null,
+        webhookUrl: "https://example.com/api/webhooks/calendar-subscription/office365_calendar",
+      });
+
+      const mockRequest = new Request("https://example.com/webhook", {
+        method: "POST",
+        headers: {
+          clientState: "some-token",
+        },
+      });
+
+      const result = await adapterNoToken.validate(mockRequest);
+
+      expect(result).toBe(false);
+    });
   });
 
   describe("extractChannelId", () => {
@@ -617,6 +793,19 @@ describe("Office365CalendarSubscriptionAdapter", () => {
       const result = await adapter.extractChannelId(mockRequest);
 
       expect(result).toBe("sub-123");
+    });
+
+    test("should extract subscriptionId from request headers when body is empty", async () => {
+      // Falls back to headers when subscriptionId is not in the request body
+      const mockRequest = {
+        body: {},
+        url: "https://example.com/webhook",
+        headers: { get: vi.fn().mockReturnValue("sub-from-header") },
+      } as unknown as Request;
+
+      const result = await adapter.extractChannelId(mockRequest);
+
+      expect(result).toBe("sub-from-header");
     });
 
     test("should return null when subscriptionId is missing", async () => {

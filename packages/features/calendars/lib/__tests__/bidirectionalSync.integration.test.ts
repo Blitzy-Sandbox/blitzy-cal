@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CalendarEvent, CalendarServiceEvent, NewCalendarEventType } from "@calcom/types/Calendar";
+import type { CalendarEvent, CalendarServiceEvent } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
 
 // ---------------------------------------------------------------------------

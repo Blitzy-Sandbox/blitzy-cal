@@ -333,6 +333,11 @@ export class CalendarAuth {
 
     return new calendar_v3.Calendar({
       auth: googleAuthClient,
+      // Explicit 30-second timeout for all outbound Google Calendar API requests.
+      // Prevents indefinite hangs if Google Calendar API becomes unresponsive.
+      // The timeout applies to all API operations (events CRUD, freebusy queries,
+      // calendar listing, push notification channels) via the underlying gaxios HTTP client.
+      timeout: 30000,
     });
   }
 }

@@ -584,12 +584,24 @@ class Office365CalendarService implements Calendar {
     return office365Event;
   };
 
+  /**
+   * Sends an authenticated HTTP request to the Microsoft Graph API.
+   *
+   * Includes an explicit 30-second timeout via AbortSignal to prevent indefinite
+   * hangs if the Microsoft Graph API becomes unresponsive. If the caller already
+   * provides a signal in the init options, the caller's signal takes precedence.
+   */
   private fetcher = async (endpoint: string, init?: RequestInit | undefined) => {
+    // Explicit 30-second timeout for outbound Microsoft Graph API requests.
+    // Prevents indefinite hangs if Graph API becomes unresponsive.
+    // Caller-provided signals take precedence over the default timeout.
+    const signal = init?.signal ?? AbortSignal.timeout(30000);
     return this.auth.requestRaw({
       url: `${this.apiGraphUrl}${endpoint}`,
       options: {
         method: "get",
         ...init,
+        signal,
       },
     });
   };
@@ -904,12 +916,23 @@ class Office365CalendarService implements Calendar {
       throw new Error("OUTLOOK_GRAPH_NOTIFICATION_URL environment variable is not configured");
     }
 
+    // Validate MICROSOFT_WEBHOOK_TOKEN — must match the clientState that OutlookCancellationHandler
+    // validates against in incoming change notification requests.
+    // This ensures consistency with the adapter-level subscribeCancellationSync() in
+    // Office365CalendarSubscription.adapter.ts which also uses MICROSOFT_WEBHOOK_TOKEN.
+    const webhookToken = process.env.MICROSOFT_WEBHOOK_TOKEN;
+    if (!webhookToken) {
+      this.log.warn(
+        "MICROSOFT_WEBHOOK_TOKEN not configured — change notification validation will fail for subscriptions created via subscribeToChanges"
+      );
+    }
+
     const subscriptionPayload = {
       changeType: "created,updated,deleted",
       notificationUrl,
       resource,
       expirationDateTime,
-      clientState: `cal-credential-${credentialId}`,
+      clientState: webhookToken || "",
     };
 
     const response = await this.fetcher("/subscriptions", {

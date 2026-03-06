@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { randomUUID } from "node:crypto";
 import process from "node:process";
 
 import { MeetLocationType } from "@calcom/app-store/constants";
@@ -996,10 +995,20 @@ class GoogleCalendarService implements Calendar {
       );
     }
 
+    // Validate GOOGLE_WEBHOOK_TOKEN — must match the token the GoogleCancellationHandler
+    // validates against in incoming push notification requests (X-Goog-Channel-Token header).
+    // This ensures consistency with the adapter-level subscribeCancellationSync() in
+    // GoogleCalendarSubscription.adapter.ts which also uses GOOGLE_WEBHOOK_TOKEN.
+    const webhookToken = process.env.GOOGLE_WEBHOOK_TOKEN;
+    if (!webhookToken) {
+      this.log.warn(
+        "GOOGLE_WEBHOOK_TOKEN not configured — push notification validation will fail for channels created via subscribeToChanges"
+      );
+    }
+
     try {
       const calendar = await this.authedCalendar();
       const channelId = `cal-sync-${credentialId}-${Date.now()}`;
-      const token = randomUUID();
 
       const response = await calendar.events.watch({
         calendarId,
@@ -1007,7 +1016,7 @@ class GoogleCalendarService implements Calendar {
           id: channelId,
           type: "web_hook",
           address: `${webhookBaseUrl}/api/calendar/google/webhook`,
-          token,
+          token: webhookToken || "",
           params: {
             ttl: "604800", // 7 days in seconds
           },

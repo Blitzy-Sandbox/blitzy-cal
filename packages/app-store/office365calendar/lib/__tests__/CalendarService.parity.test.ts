@@ -1226,9 +1226,11 @@ describe("Office365CalendarService — Calendly Parity Tests", () => {
     test("should create a subscription via POST /subscriptions with correct payload", async () => {
       const service = BuildCalendarService(mockCredential);
 
-      // Store the original env and set the notification URL
+      // Store the original env and set the notification URL and webhook token
       const originalEnv = process.env.OUTLOOK_GRAPH_NOTIFICATION_URL;
+      const originalToken = process.env.MICROSOFT_WEBHOOK_TOKEN;
       process.env.OUTLOOK_GRAPH_NOTIFICATION_URL = "https://app.cal.com/api/webhooks/outlook-notifications";
+      process.env.MICROSOFT_WEBHOOK_TOKEN = "test-microsoft-webhook-token";
 
       try {
         const mockSubscriptionResponse = {
@@ -1261,7 +1263,9 @@ describe("Office365CalendarService — Calendly Parity Tests", () => {
         );
         expect(requestBody.resource).toContain("/me/events");
         expect(requestBody.expirationDateTime).toBeDefined();
-        expect(requestBody.clientState).toBe("cal-credential-1");
+        // clientState now uses MICROSOFT_WEBHOOK_TOKEN for consistency with
+        // OutlookCancellationHandler validation (was: cal-credential-${credentialId})
+        expect(requestBody.clientState).toBe("test-microsoft-webhook-token");
 
         // Verify the expirationDateTime is in the future
         const expiration = new Date(requestBody.expirationDateTime);
@@ -1279,6 +1283,11 @@ describe("Office365CalendarService — Calendly Parity Tests", () => {
           delete process.env.OUTLOOK_GRAPH_NOTIFICATION_URL;
         } else {
           process.env.OUTLOOK_GRAPH_NOTIFICATION_URL = originalEnv;
+        }
+        if (originalToken === undefined) {
+          delete process.env.MICROSOFT_WEBHOOK_TOKEN;
+        } else {
+          process.env.MICROSOFT_WEBHOOK_TOKEN = originalToken;
         }
       }
     });

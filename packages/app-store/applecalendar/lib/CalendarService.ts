@@ -75,6 +75,17 @@ import BaseCalendarService from "@calcom/lib/CalendarService";
 import type { Calendar } from "@calcom/types/Calendar";
 import type { CredentialPayload } from "@calcom/types/Credential";
 
+/**
+ * Apple Calendar (iCloud) service — thin subclass of the shared CalDAV BaseCalendarService.
+ *
+ * Timeout Note:
+ * Outbound CalDAV HTTP request timeouts are managed by the `tsdav` library used in
+ * BaseCalendarService (packages/lib/CalendarService.ts). Explicit timeout configuration
+ * for CalDAV operations (event CRUD, availability queries, calendar listing) should be
+ * added to BaseCalendarService to apply consistently across all CalDAV-based adapters
+ * (Apple Calendar, CalDAV Calendar). The tsdav library's `fetchOptions` parameter on
+ * DAVClient supports passing a custom `signal` for AbortController-based timeouts.
+ */
 class AppleCalendarService extends BaseCalendarService {
   constructor(credential: CredentialPayload) {
     super(credential, "apple_calendar", "https://caldav.icloud.com");

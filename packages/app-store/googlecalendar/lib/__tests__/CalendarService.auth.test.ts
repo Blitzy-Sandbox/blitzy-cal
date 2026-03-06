@@ -224,6 +224,7 @@ describe("GoogleCalendarService credential handling", () => {
 
       expect(calendarMock.calendar_v3.Calendar).toHaveBeenCalledWith({
         auth: getLastCreatedOAuth2Client(),
+        timeout: 30000,
       });
       await expectCredentialsInDb([
         expect.objectContaining({

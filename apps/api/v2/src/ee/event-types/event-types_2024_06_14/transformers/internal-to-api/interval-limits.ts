@@ -6,22 +6,21 @@ import type {
 
 export function transformIntervalLimitsInternalToApi(
   transformedBookingFields: TransformBookingLimitsSchema_2024_06_14 | null
-) {
+): { [K in BookingLimitsKeysInputType]?: number } | undefined {
   if (!transformedBookingFields) {
     return undefined;
   }
   const res: { [K in BookingLimitsKeysInputType]?: number } = {};
-  transformedBookingFields &&
-    Object.entries(transformedBookingFields).map(([key, value]) => {
-      const outputKey: BookingLimitsKeysInputType | undefined = Object.keys(
-        BookingLimitsEnum_2024_06_14
-      ).find(
-        (item) => BookingLimitsEnum_2024_06_14[item as keyof typeof BookingLimitsEnum_2024_06_14] === key
-      ) as BookingLimitsKeysInputType;
+  Object.entries(transformedBookingFields).map(([key, value]) => {
+    const outputKey: BookingLimitsKeysInputType | undefined = Object.keys(
+      BookingLimitsEnum_2024_06_14
+    ).find(
+      (item) => BookingLimitsEnum_2024_06_14[item as keyof typeof BookingLimitsEnum_2024_06_14] === key
+    ) as BookingLimitsKeysInputType;
 
-      if (outputKey) {
-        res[outputKey] = value as number;
-      }
-    });
+    if (outputKey) {
+      res[outputKey] = value as number;
+    }
+  });
   return res;
 }

@@ -10,13 +10,13 @@ Sprint 3: Calendar Integrations (F-003) ensures behavioral parity between Cal.co
 
 Navigate to **Settings → My Account → Calendars** to connect your Google Calendar, Outlook/Office 365, or Apple Calendar accounts. Each connected calendar will be available for bi-directional sync, meaning bookings created in Cal.com will automatically appear in your external calendar and vice versa. Select which connected calendars should be checked for conflicts using the calendar selection checkboxes.
 
-![Step 1 Screenshot](./screenshots/step-1.png)
+*Screenshot: Navigate to Settings → My Account → Calendars to view connected calendars and selection checkboxes. Capture this screenshot when the calendar settings UI is available and save as `./screenshots/step-1.png`.*
 
 ### Step 2: Configure Buffer-Sync Toggle and Conflict Detection Status Filter
 
 For buffer time visualization, enable the **Sync buffer times to calendar** toggle on your event type settings. This creates separate calendar events for pre-event and post-event buffer periods in your connected calendars, providing visual clarity in your schedule. For conflict detection configuration, the system supports configuring which event statuses should be considered 'unavailable' when checking for scheduling conflicts — this matches Calendly's 'What's considered unavailable?' behavior. Valid Microsoft Graph `showAs` values are: `free`, `tentative`, `busy`, `oof` (Out of Office), `workingElsewhere`, `unknown`. By default, the system blocks `busy`, `tentative`, `oof`, and `unknown` events.
 
-![Step 2 Screenshot](./screenshots/step-2.png)
+*Screenshot: Navigate to event type settings to view the buffer-sync toggle and conflict detection status filter configuration. Capture this screenshot when the feature flag is enabled and save as `./screenshots/step-2.png`.*
 
 ## Configuration Options
 

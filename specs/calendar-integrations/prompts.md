@@ -105,7 +105,7 @@ Promote internal docs to public Mintlify docs:
 1. Review `specs/calendar-integrations/docs/README.md` for completeness and accuracy
 2. Copy/adapt content to `docs/calendar-integrations.mdx` — rewrite for external audience
 3. Move screenshots to `docs/images/calendar-integrations/`
-4. Update `docs/mint.json` navigation to include the new calendar integrations page
+4. Update `docs/docs.json` navigation to include the new calendar integrations page
 5. Ensure customer-appropriate language:
    - Remove internal implementation details (DI tokens, service class names, Prisma schema references)
    - Focus on user-facing functionality (connecting calendars, configuring sync behavior, understanding conflict detection)

@@ -241,8 +241,8 @@ No new endpoints are created. The following existing endpoints are verified to p
 
 - `GET /v2/calendars` — Lists connected calendars via `calendars.controller.ts`
 - `GET /v2/calendars/busy-times` — Returns busy times for conflict checking
-- `POST /v2/calendars/credentials` — Manages calendar credential CRUD
-- `DELETE /v2/calendars/credentials` — Removes calendar credentials
+- `POST /v2/calendars/:calendar/credentials` — Saves Apple Calendar credentials (username/password for iCloud CalDAV)
+- `POST /v2/calendars/:calendar/disconnect` — Disconnects a calendar by deleting its credentials
 - Provider-specific services: `gcal.service.ts`, `outlook.service.ts`, `apple-calendar.service.ts`
 
 ### UI Changes

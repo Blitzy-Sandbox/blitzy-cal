@@ -39,6 +39,8 @@ export type AppFlags = {
   "active-user-billing": boolean;
   "sidebar-tips": boolean;
   "signup-watchlist-review": boolean;
+  "calendar-cancellation-sync": boolean;
+  "calendar-buffer-sync": boolean;
 };
 
 export type TeamFeatures = Record<keyof AppFlags, boolean>;

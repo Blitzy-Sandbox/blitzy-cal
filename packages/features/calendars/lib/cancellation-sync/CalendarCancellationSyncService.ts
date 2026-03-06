@@ -203,6 +203,10 @@ export class CalendarCancellationSyncService {
         // ValidActionSource is a string enum; "SYSTEM" is used for background jobs
         // and automated sync processes like this calendar-driven cancellation
         actionSource: "SYSTEM",
+        // CI-001 gap: Mark this cancellation as originating from an external calendar
+        // event deletion/decline. handleCancelBooking.ts checks this value (line 189)
+        // for proper audit logging of calendar-driven cancellations.
+        source: "external_calendar" as const,
       });
 
       log.info("Successfully processed external calendar cancellation", {
@@ -231,7 +235,7 @@ export class CalendarCancellationSyncService {
    * @param params - The notification payload fields to validate.
    * @returns true if the payload contains all required fields, false otherwise.
    */
-  async validateNotificationPayload(params: ValidateNotificationPayloadParams): Promise<boolean> {
+  validateNotificationPayload(params: ValidateNotificationPayloadParams): boolean {
     if (!params.externalEventUid) {
       log.warn("Missing externalEventUid in notification payload");
       return false;

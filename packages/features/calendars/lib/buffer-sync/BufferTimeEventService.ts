@@ -1,7 +1,7 @@
 import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import type { BookingForCalEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import { createEvent, deleteEvent } from "@calcom/features/calendars/lib/CalendarManager";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import type { FeatureId } from "@calcom/features/flags/config";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import type { CalendarEvent, NewCalendarEventType } from "@calcom/types/Calendar";
@@ -12,6 +12,9 @@ const log = logger.getSubLogger({ prefix: ["BufferTimeEventService"] });
 
 /** Type prefix used for buffer time BookingReference entries for identification and cleanup */
 const BUFFER_REFERENCE_TYPE_PREFIX = "buffer_time" as const;
+
+/** Feature flag slug for the buffer time visualization feature */
+const BUFFER_SYNC_FEATURE_SLUG: FeatureId = "calendar-buffer-sync";
 
 /**
  * Service for creating, updating, and deleting buffer time events in external calendars
@@ -32,6 +35,25 @@ const BUFFER_REFERENCE_TYPE_PREFIX = "buffer_time" as const;
  */
 export class BufferTimeEventService {
   /**
+   * Constructs BufferTimeEventService with optional dependency injection.
+   *
+   * Uses structural typing for the featureRepository dependency to keep the
+   * dependency lightweight — avoids importing IFeatureRepository directly.
+   * When resolved via DI, the featureRepository is provided automatically.
+   * When no dependency is provided (e.g., in tests or standalone usage),
+   * falls back to lazy-loading FeaturesRepository with the global Prisma client.
+   *
+   * @param deps - Optional service dependencies injected at construction time.
+   */
+  constructor(
+    private deps?: {
+      featureRepository?: {
+        checkIfFeatureIsEnabledGlobally(slug: FeatureId): Promise<boolean>;
+      };
+    }
+  ) {}
+
+  /**
    * Checks whether the global `calendar-buffer-sync` feature flag is enabled.
    *
    * Uses a fail-safe approach: if the feature flag check fails for any reason
@@ -42,11 +64,20 @@ export class BufferTimeEventService {
    */
   async isBufferSyncEnabled(): Promise<boolean> {
     try {
+      // Use injected repository if available, otherwise fall back to direct construction.
+      // IMPORTANT: The result MUST be `await`ed before returning — returning an un-awaited
+      // rejected promise inside a try block bypasses the catch, causing unhandled rejections.
+      if (this.deps?.featureRepository) {
+        const isEnabled = await this.deps.featureRepository.checkIfFeatureIsEnabledGlobally(
+          BUFFER_SYNC_FEATURE_SLUG
+        );
+        return isEnabled;
+      }
+      // Fallback: lazy-load FeaturesRepository for standalone usage
+      const { FeaturesRepository } = await import("@calcom/features/flags/features.repository");
       const featuresRepository = new FeaturesRepository(prisma);
-      // calendar-buffer-sync is a new feature flag added via migration.
-      // It may not yet be in the AppFlags type definition, so we use `as any` assertion.
       const isEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally(
-        "calendar-buffer-sync" as any
+        BUFFER_SYNC_FEATURE_SLUG
       );
       return isEnabled;
     } catch (error) {

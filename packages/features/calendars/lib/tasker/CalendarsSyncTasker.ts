@@ -1,11 +1,17 @@
+import type { CalendarCancellationSyncService } from "@calcom/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService";
 import type { ITaskerDependencies } from "@calcom/lib/tasker/types";
+import logger from "@calcom/lib/logger";
 import { nanoid } from "nanoid";
 
 import type { CalendarsTaskService } from "./CalendarsTaskService";
 import type { ICalendarsTasker } from "./types";
 
+// biome-ignore lint/nursery/useExplicitType: logger type is inferred
+const log = logger.getSubLogger({ prefix: ["CalendarsSyncTasker"] });
+
 export interface ICalendarsSyncTaskerDependencies {
   calendarsTaskService: CalendarsTaskService;
+  cancellationSyncService?: CalendarCancellationSyncService;
 }
 
 export class CalendarsSyncTasker implements ICalendarsTasker {
@@ -25,7 +31,10 @@ export class CalendarsSyncTasker implements ICalendarsTasker {
    * (Google push notifications, Microsoft Graph change notifications)
    * and propagates cancellations back to Cal.com.
    *
-   * Gated behind the 'calendar-cancellation-sync' feature flag.
+   * The CalendarCancellationSyncService is resolved from the DI container via the
+   * CALENDAR_CANCELLATION_SYNC_SERVICE token registered in CalendarsTaskService.module.ts.
+   *
+   * Gated behind the 'calendar-cancellation-sync' feature flag (checked inside the service).
    */
   async processCancellationSyncEvent(payload: {
     externalEventUid: string;
@@ -36,30 +45,20 @@ export class CalendarsSyncTasker implements ICalendarsTasker {
     const runId = `cancellation_sync_${nanoid(10)}`;
 
     try {
-      // Lazy import to avoid circular dependencies and heavy bootstrapping
-      const { CalendarCancellationSyncService } = await import(
-        "../cancellation-sync/CalendarCancellationSyncService"
-      );
-
-      // Minimal dependency injection — the service uses Prisma directly
-      // Feature flag check happens inside the service
-      const cancellationSyncService = new CalendarCancellationSyncService({
-        featureRepository: {
-          checkIfFeatureIsEnabledGlobally: async (slug: string) => {
-            // Lazy import of features repository to check feature flag
-            const { FeaturesRepository } = await import(
-              "@calcom/features/flags/features.repository"
-            );
-            const prisma = (await import("@calcom/prisma")).default;
-            const featuresRepo = new FeaturesRepository(prisma);
-            return featuresRepo.checkIfFeatureIsEnabledGlobally(slug as any);
-          },
-        },
-      });
+      const cancellationSyncService = this.dependencies.cancellationSyncService;
+      if (!cancellationSyncService) {
+        log.error("CalendarsSyncTasker: cancellationSyncService not available in DI container");
+        return { runId, success: false };
+      }
 
       const result = await cancellationSyncService.handleExternalCancellation(payload);
       return { runId, success: result.success };
     } catch (error) {
+      log.error("Failed to process cancellation sync event", {
+        provider: payload.provider,
+        externalEventUid: payload.externalEventUid,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return { runId, success: false };
     }
   }

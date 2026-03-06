@@ -68,15 +68,6 @@ const mockCancelledBookingReference = {
   },
 };
 
-// biome-ignore lint/correctness/noUnusedVariables: Mock data defined for REJECTED booking edge case — available for extended test scenarios
-const mockRejectedBookingReference = {
-  ...mockBookingReference,
-  booking: {
-    ...mockBookingReference.booking,
-    status: BookingStatus.REJECTED,
-  },
-};
-
 // --------------------------------------------------------------------------
 // Test Suite
 // --------------------------------------------------------------------------
@@ -147,6 +138,15 @@ describe("CalendarCancellationSyncService", () => {
       // Assert: handleCancelBooking was called to propagate the cancellation
       const handleCancelBooking = await getHandleCancelBookingMock();
       expect(handleCancelBooking).toHaveBeenCalledTimes(1);
+
+      // Assert: handleCancelBooking was called with source: "external_calendar"
+      // to distinguish calendar-driven cancellations from user-initiated ones in audit logs.
+      expect(handleCancelBooking).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source: "external_calendar",
+          actionSource: "SYSTEM",
+        })
+      );
     });
   });
 
@@ -168,7 +168,7 @@ describe("CalendarCancellationSyncService", () => {
       // Assert: Returns success
       expect(result.success).toBe(true);
 
-      // Assert: handleCancelBooking was called with the cancellation reason from the notification
+      // Assert: handleCancelBooking was called with the cancellation reason and source
       const handleCancelBooking = await getHandleCancelBookingMock();
       expect(handleCancelBooking).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -176,6 +176,7 @@ describe("CalendarCancellationSyncService", () => {
             cancellationReason: "Deleted in Google Calendar",
           }),
           actionSource: "SYSTEM",
+          source: "external_calendar",
         })
       );
     });
@@ -204,7 +205,7 @@ describe("CalendarCancellationSyncService", () => {
       // Assert: Returns success
       expect(result.success).toBe(true);
 
-      // Assert: handleCancelBooking was called with the Outlook cancellation reason
+      // Assert: handleCancelBooking was called with the Outlook cancellation reason and source
       const handleCancelBooking = await getHandleCancelBookingMock();
       expect(handleCancelBooking).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -212,6 +213,7 @@ describe("CalendarCancellationSyncService", () => {
             cancellationReason: "Declined in Outlook",
           }),
           actionSource: "SYSTEM",
+          source: "external_calendar",
         })
       );
     });
@@ -294,7 +296,7 @@ describe("CalendarCancellationSyncService", () => {
         })
       );
 
-      // Assert: handleCancelBooking was called with the booking ID and UID from the reference
+      // Assert: handleCancelBooking was called with the booking ID, UID, and external_calendar source
       const handleCancelBooking = await getHandleCancelBookingMock();
       expect(handleCancelBooking).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -305,6 +307,7 @@ describe("CalendarCancellationSyncService", () => {
             skipCancellationReasonValidation: true,
           }),
           actionSource: "SYSTEM",
+          source: "external_calendar",
         })
       );
 

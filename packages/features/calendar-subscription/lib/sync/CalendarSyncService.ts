@@ -95,12 +95,17 @@ export class CalendarSyncService {
       );
 
       await handleCancelBooking({
+        // Pass userId if available from the booking for proper audit actor resolution
+        userId: booking.userId ?? undefined,
         bookingData: {
           id: booking.id,
           uid: booking.uid,
           cancellationReason: "Cancelled from external calendar sync",
         },
         actionSource: "SYSTEM",
+        // CI-001 gap: Mark this cancellation as originating from an external calendar
+        // event deletion/decline so handleCancelBooking can produce proper audit logs.
+        source: "external_calendar" as const,
       });
 
       log.info("Successfully cancelled booking via calendar sync", {

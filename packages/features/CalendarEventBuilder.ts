@@ -292,6 +292,12 @@ export class CalendarEventBuilder {
     const eventType = booking.eventType;
     if (!eventType) return null;
 
+    // The booking must have an organizer (user) to construct a valid CalendarEvent
+    // that survives the processEvent → getRichDescription pipeline in CalendarManager,
+    // which accesses calEvent.organizer.language.translate.
+    const user = booking.user;
+    if (!user) return null;
+
     // Access buffer minutes from the eventType — these are integer fields representing minutes.
     // The fields may not be present in every BookingForCalEventBuilder select projection,
     // so we safely cast and default to 0.
@@ -323,7 +329,7 @@ export class CalendarEventBuilder {
 
     // bookerUrl is required by build() validation — use a non-empty placeholder
     // since buffer events are auxiliary calendar entries, not bookable links.
-    return new CalendarEventBuilder()
+    const builder = new CalendarEventBuilder()
       .withBasicDetails({
         bookerUrl: "buffer",
         title: `Buffer: ${booking.title}`,
@@ -334,8 +340,32 @@ export class CalendarEventBuilder {
         slug: eventType.slug,
         id: eventType.id,
         description: `Buffer time for ${booking.title}`,
-      })
-      .build();
+      });
+
+    // Buffer events require organizer and attendees to survive the CalendarManager
+    // processEvent → getRichDescription pipeline which accesses
+    // calEvent.organizer.language.translate. Without these fields, buffer event
+    // creation crashes with a TypeError at runtime.
+    // We construct a minimal organizer from the booking's user/host data and set
+    // attendees to an empty array since buffer events have no attendees.
+    builder.withOrganizer({
+      id: user.id,
+      name: user.name || "Nameless",
+      email: user.email,
+      username: user.username || undefined,
+      timeZone: user.timeZone,
+      language: {
+        // Use a passthrough translate function for buffer events — buffer event
+        // descriptions are static strings that do not require translation.
+        // The CalendarManager pipeline calls getRichDescription which accesses
+        // organizer.language.translate, so this must be a callable function.
+        translate: ((key: string) => key) as unknown as TFunction,
+        locale: user.locale ?? "en",
+      },
+    });
+    builder.withAttendees([]);
+
+    return builder.build();
   }
 
   withBasicDetails({

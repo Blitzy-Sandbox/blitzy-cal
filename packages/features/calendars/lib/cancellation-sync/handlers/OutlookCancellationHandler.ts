@@ -229,7 +229,28 @@ export class OutlookCancellationHandler {
       return [];
     }
 
-    return body.value as GraphChangeNotification[];
+    // Validate each notification element has the required shape before processing.
+    // Malformed elements are filtered out with a warning rather than allowing them
+    // to cause unexpected errors during processing.
+    const validNotifications: GraphChangeNotification[] = [];
+    for (const element of body.value) {
+      if (
+        element &&
+        typeof element === "object" &&
+        "changeType" in element &&
+        typeof (element as Record<string, unknown>).changeType === "string" &&
+        "resource" in element &&
+        typeof (element as Record<string, unknown>).resource === "string"
+      ) {
+        validNotifications.push(element as GraphChangeNotification);
+      } else {
+        log.warn("Skipping malformed notification element in Microsoft Graph payload", {
+          element: typeof element === "object" ? JSON.stringify(element) : String(element),
+        });
+      }
+    }
+
+    return validNotifications;
   }
 
   /**

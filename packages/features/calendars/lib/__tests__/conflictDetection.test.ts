@@ -16,7 +16,7 @@
  * @see CalendarManager.ts — getBusyCalendarTimes, deduplicateCredentialsBasedOnSelectedCalendars
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { EventBusyDate, SelectedCalendar } from "@calcom/types/Calendar";
+import type { SelectedCalendar } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
 
 // ─── Hoisted Mock Declarations ──────────────────────────────────────────────────

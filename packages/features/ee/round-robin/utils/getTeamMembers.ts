@@ -64,7 +64,13 @@ export async function getTeamMembers({
 
   const teamMembers = await Promise.all(teamMemberPromises);
 
-  if (reassignedHost.email !== organizer.email) {
+  // Append the reassigned host only when they differ from the organizer
+  // AND are not already present in the filtered team members list.
+  // This prevents duplicate entries when the reassigned host was already
+  // included via the eventTypeHosts filter (i.e., they are an attendee,
+  // not the organizer, and not the previous host).
+  const reassignedHostAlreadyIncluded = teamMembers.some((member) => member.email === reassignedHost.email);
+  if (reassignedHost.email !== organizer.email && !reassignedHostAlreadyIncluded) {
     const tReassignedHost = await getTranslation(reassignedHost.locale ?? "en", "common");
     teamMembers.push({
       id: reassignedHost.id,

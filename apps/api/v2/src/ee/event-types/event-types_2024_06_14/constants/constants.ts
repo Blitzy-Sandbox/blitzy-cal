@@ -41,4 +41,4 @@ export const DEFAULT_EVENT_TYPES = {
   thirtyMinutesVideo,
   sixtyMinutes,
   sixtyMinutesVideo,
-};
+} as const;

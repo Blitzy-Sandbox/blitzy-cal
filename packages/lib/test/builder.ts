@@ -122,6 +122,7 @@ export const buildEventType = (eventType?: Partial<EventType>): EventType => {
     minimumBookingNotice: 120,
     beforeEventBuffer: 0,
     afterEventBuffer: 0,
+    syncBuffersToCalendar: null,
     onlyShowFirstAvailableSlot: false,
     showOptimizedSlots: false,
     seatsPerTimeSlot: null,

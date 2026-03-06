@@ -38,6 +38,8 @@ const initialData: AppFlags = {
   "active-user-billing": false,
   "sidebar-tips": false,
   "signup-watchlist-review": false,
+  "calendar-cancellation-sync": false,
+  "calendar-buffer-sync": false,
 };
 
 if (process.env.NEXT_PUBLIC_IS_E2E) {

@@ -288,7 +288,7 @@ export class BookingLocationService {
     userId,
     prismaClient,
   }: GetPerHostLocationParams): Promise<GetPerHostLocationResult> {
-    if (hostLocation.credentialId) {
+    if (hostLocation.credentialId != null) {
       return {
         locationBodyString: hostLocation.type,
         organizerDefaultLocationUrl: null,

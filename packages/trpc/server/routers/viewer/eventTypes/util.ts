@@ -245,13 +245,17 @@ export function handlePeriodType(periodType: string | undefined): PeriodType | u
  * and delete in a single transaction.
  *
  * **Calendly Question Type Support:**
- * Custom inputs support all Calendly question types through the `EventTypeCustomInputType` enum:
+ * Custom inputs support most Calendly question types through the `EventTypeCustomInputType` enum:
  * - `TEXT` → Calendly single-line text question
  * - `TEXTLONG` → Calendly multi-line text (textarea equivalent)
  * - `NUMBER` → Numeric input field
  * - `BOOL` → Calendly checkbox question (boolean toggle)
  * - `RADIO` → Calendly radio button question (single-select from options)
  * - `PHONE` → Calendly phone number question
+ *
+ * Note: Calendly's **dropdown/select** question type is NOT supported by this legacy `customInputs`
+ * system. Dropdown fields are supported via the newer `bookingFields` system (JSON-based booking
+ * fields with `type: "select"`), which is the recommended approach for new field configurations.
  *
  * **Operation Logic:**
  * - Inputs with `hasToBeCreated: true` → batched via `createMany` (new custom inputs)

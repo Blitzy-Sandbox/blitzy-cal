@@ -12,42 +12,42 @@
  * update flow covers all 1:1 configuration (title, description, locations, duration).
  *
  * ### ET-002 — Group Events (Seats)
- * - `seatsPerTimeSlot` (destructured line 101, select line 115, update line 258):
+ * - `seatsPerTimeSlot` (in input destructuring, event type select, and `data` assembly):
  *   Controls max attendees per time slot. When non-null, enables group event behavior.
- * - Mutual exclusion: seats and recurring events cannot coexist (lines 207-216).
+ * - Mutual exclusion: seats and recurring events cannot coexist (in the seats+recurring validation block).
  * - Seat visibility: `seatsShowAttendees` and `seatsShowAvailabilityCount` via `...rest`.
  *
  * ### ET-003 — Round-Robin Distribution
- * - `isRRWeightsEnabled` (destructured line 96, select line 123, update line 249):
+ * - `isRRWeightsEnabled` (in input destructuring, event type select, and `data` assembly):
  *   Toggles weighted vs. equal distribution among RR hosts.
- * - `rrSegmentQueryValue` (update lines 250-251): RAQB filter for segment-based RR assignment.
- * - Host weight/priority handling (lines 500-609): Each host gets `priority` (0-4, default 2)
- *   and `weight` (min 0, default 100) for equitable distribution.
- * - `hostGroups` CRUD (lines 427-476): Group-based RR assignment.
- * - `isFixed` check (line 528, 573): Forces `isFixed=true` for COLLECTIVE scheduling type.
- * - `maxLeadThreshold` (line 259): Disabled when load balancing is off.
- * - Load balancing disabled check (lines 230-234): Based on `rrTimestampBasis` and multiple host groups.
+ * - `rrSegmentQueryValue` (in `data` assembly): RAQB filter for segment-based RR assignment.
+ * - Host weight/priority handling (in the host assignment section): Each host gets `priority` (0-4, app default 2)
+ *   and `weight` (min 0, app default 100) for equitable distribution.
+ * - `hostGroups` CRUD (in the host groups transaction block): Group-based RR assignment.
+ * - `isFixed` check (in host create/update mappings): Forces `isFixed=true` for COLLECTIVE scheduling type.
+ * - `maxLeadThreshold` (in `data` assembly): Disabled when load balancing is off.
+ * - Load balancing disabled check (in the `isLoadBalancingDisabled` computation): Based on `rrTimestampBasis` and multiple host groups.
  *
  * ### ET-004 — Collective Scheduling
- * - `assignAllTeamMembers` (destructured line 85, update lines 676-677):
+ * - `assignAllTeamMembers` (in input destructuring, and the assign-all-members section):
  *   Auto-assigns all team members as fixed hosts for collective events.
- * - `isFixed` forced true (line 528, 573): All hosts in COLLECTIVE type are fixed (must all be available).
+ * - `isFixed` forced true (in host create/update mappings): All hosts in COLLECTIVE type are fixed (must all be available).
  *
  * ### ET-005 — Booking Windows
- * - `periodType` (destructured line 74, update lines 264-265):
+ * - `periodType` (in input destructuring, and `data` assembly via `handlePeriodType()`):
  *   Mapped via `handlePeriodType()` from ../util.ts to PeriodType enum values:
  *   UNLIMITED → indefinitely, ROLLING → calendar days, ROLLING_WINDOW → business days, RANGE → date range.
  * - `periodStartDate`, `periodEndDate`, `periodDays`, `periodCountCalendarDays` via `...rest`.
  * - `minimumBookingNotice` via `...rest`.
- * - `bookingLimits` and `durationLimits` validation (lines 296-330).
+ * - `bookingLimits` and `durationLimits` validation (in the interval limits validation block).
  *
  * ### ET-006 — Custom Fields/Questions
- * - `bookingFields` (destructured line 92, validation lines 221-222, update lines 246-247):
- *   JSON array of booking form fields. Validated via `ensureUniqueBookingFields()` (no duplicate names)
- *   and `ensureEmailOrPhoneNumberIsPresent()` (contact method required). Supports all Calendly types:
+ * - `bookingFields` (in input destructuring, validated via `ensureUniqueBookingFields()` and
+ *   `ensureEmailOrPhoneNumberIsPresent()`, and included in `data` assembly):
+ *   JSON array of booking form fields. Supports all Calendly types:
  *   text, radio, checkbox, phone, select/dropdown.
- * - `customInputs` (destructured line 80, handling lines 292-293):
- *   Legacy custom input system — CRUD via `handleCustomInputs()` from ../util.ts.
+ * - `customInputs` (in input destructuring, handled via `handleCustomInputs()` from ../util.ts):
+ *   Legacy custom input system — CRUD operations batched in the Prisma update.
  *
  * @see {@link packages/trpc/server/routers/viewer/eventTypes/util.ts} for handlePeriodType, ensureUniqueBookingFields, ensureEmailOrPhoneNumberIsPresent, handleCustomInputs
  * @see {@link packages/features/eventtypes/lib/types.ts} for EventTypeUpdateInput type definition
@@ -125,11 +125,11 @@ export type UpdateEventTypeReturn = Awaited<ReturnType<typeof updateHandler>>;
 export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
   // === Input Destructuring ===
   // All paradigm-specific fields are destructured here. Key paradigm fields:
-  // - ET-002 (Group): seatsPerTimeSlot (line 101)
-  // - ET-003 (Round-Robin): isRRWeightsEnabled (line 96), hosts (line 86), hostGroups (line 104)
-  // - ET-004 (Collective): assignAllTeamMembers (line 85)
-  // - ET-005 (Booking Windows): periodType (line 74)
-  // - ET-006 (Custom Fields): bookingFields (line 92), customInputs (line 80)
+  // - ET-002 (Group): seatsPerTimeSlot
+  // - ET-003 (Round-Robin): isRRWeightsEnabled, hosts, hostGroups
+  // - ET-004 (Collective): assignAllTeamMembers
+  // - ET-005 (Booking Windows): periodType
+  // - ET-006 (Custom Fields): bookingFields, customInputs
   const {
     schedule,
     instantMeetingSchedule,
@@ -571,11 +571,11 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
 
   // === Host Assignment (ET-003 Round-Robin / ET-004 Collective) ===
   // Handles create/update/delete of hosts with paradigm-specific properties:
-  // - isFixed: forced true for COLLECTIVE (all hosts must be available) (lines 528, 573)
-  // - priority: 0-4 scale for RR ordering (default 2 = middle) (lines 529, 574)
-  // - weight: relative weight for weighted RR distribution (default 100) (lines 530, 575)
-  // - groupId: RR group assignment for group-based distribution (lines 531, 577)
-  // - scheduleId: per-host schedule override (lines 532, 576)
+  // - isFixed: forced true for COLLECTIVE (all hosts must be available) — see host create/update mappings below
+  // - priority: 0-4 scale for RR ordering (app default 2 = middle) — see host create/update mappings below
+  // - weight: relative weight for weighted RR distribution (app default 100) — see host create/update mappings below
+  // - groupId: RR group assignment for group-based distribution — see host create/update mappings below
+  // - scheduleId: per-host schedule override — see host create/update mappings below
   if (teamId && hosts) {
     // check if all hosts can be assigned (memberships that have accepted invite)
     const teamMemberIds = await membershipRepo.listAcceptedTeamMemberIds({ teamId });

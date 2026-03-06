@@ -9,12 +9,28 @@ type ListWithTeamOptions = {
 };
 
 /**
+ * Normalizes raw SQL PostgreSQL enum values to Prisma ORM enum names.
+ *
+ * Raw SQL queries return the database-level `@map` values (e.g., `"roundRobin"`),
+ * while Prisma ORM queries return TypeScript enum names (e.g., `"ROUND_ROBIN"`).
+ * This mapping ensures `listWithTeam` output is consistent with the ORM-based
+ * `list` handler, so consumers receive uniform `schedulingType` values regardless
+ * of which endpoint they call.
+ */
+const SCHEDULING_TYPE_DB_TO_ENUM: Record<string, string> = {
+  roundRobin: "ROUND_ROBIN",
+  collective: "COLLECTIVE",
+  managed: "MANAGED",
+};
+
+/**
  * Handler for the `viewer.eventTypes.listWithTeam` tRPC query.
  *
  * Lists event types owned by the current user AND event types from teams the
  * user is a member of via a raw SQL UNION query.
  *
- * The result includes `schedulingType` for paradigm-aware consumers:
+ * The result includes `schedulingType` for paradigm-aware consumers, normalized
+ * to Prisma enum names for consistency with the ORM-based `list` handler:
  *  - `null` — One-on-one (1:1) event type (default / implicit)
  *  - `"ROUND_ROBIN"` — Round-robin distributed across hosts
  *  - `"COLLECTIVE"` — Collective scheduling requiring all hosts available
@@ -59,6 +75,6 @@ export const listWithTeamHandler = async ({ ctx }: ListWithTeamOptions) => {
     slug: row.slug,
     length: row.length,
     username: row.teamId ? null : row.username,
-    schedulingType: row.schedulingType,
+    schedulingType: row.schedulingType ? (SCHEDULING_TYPE_DB_TO_ENUM[row.schedulingType] ?? row.schedulingType) : null,
   }));
 };

@@ -22,7 +22,7 @@
  * paradigm-specific field handling.
  *
  * Validation: `schedulingType` is validated via the upstream `createEventTypeInput` Zod schema's
- * `.superRefine()` rule, which requires `schedulingType` when `teamId` is present. This ensures
+ * `.refine()` rule, which requires `schedulingType` when `teamId` is present. This ensures
  * team event types always have an explicit paradigm.
  *
  * Permission checks: `PermissionCheckService` with PBAC covers all paradigm types:

@@ -4,6 +4,14 @@
 
 Sprint 2 of the Calendly gap closure roadmap systematically closes behavioral gaps between Cal.com's event type system and Calendly's event type capabilities across 6 epics: ET-001 (1:1 Events), ET-002 (Group Events), ET-003 (Round-Robin), ET-004 (Collective), ET-005 (Booking Windows), and ET-006 (Custom Fields). Cal.com already exceeds Calendly with 6 scheduling paradigms (vs. Calendly's 4) and full programmatic API management — this sprint verifies and hardens parity for shared capabilities while preserving Cal.com advantages. All behavioral targets reference Calendly's API at [developer.calendly.com](https://developer.calendly.com); validation criteria ET-VAL-001 through ET-VAL-009 from `docs/sprint-roadmap/validation-criteria.mdx` serve as the acceptance gate.
 
+**Per-Epic Validation Criteria Mapping:**
+- **ET-001 (1:1 Events):** ET-VAL-001 (1:1 booking flow), ET-VAL-008 (managed type propagation)
+- **ET-002 (Group Events):** ET-VAL-002 (group seat booking), ET-VAL-003 (seat limit enforcement)
+- **ET-003 (Round-Robin):** ET-VAL-004 (equitable RR distribution), ET-VAL-009 (dynamic link resolution)
+- **ET-004 (Collective):** ET-VAL-004 (all-hosts-available intersection)
+- **ET-005 (Booking Windows):** ET-VAL-006 (booking window enforcement)
+- **ET-006 (Custom Fields):** ET-VAL-005 (custom field capture), ET-VAL-007 (location configuration)
+
 ## Problem Statement
 
 Cal.com's gap report (`docs/gap-report/event-types.mdx`) identifies 2 gaps in the event type domain: ET-001 (Meeting Polls, Medium priority — deferred to `specs/event-types/future-work.md` as net-new functionality) and ET-002 (RR Fairness Cap Visualization, Low priority — deferred to `specs/event-types/future-work.md` as a UI enhancement). While Cal.com exceeds Calendly overall — offering 6 scheduling paradigms (one-on-one, group, round-robin, collective, managed, dynamic) versus Calendly's 4 types, plus full programmatic event type creation via API v2 — Sprint 2 ensures behavioral parity for all shared event type capabilities by verifying and hardening each scheduling paradigm against Calendly's documented behavior. The epic catalog (`docs/sprint-roadmap/epic-catalog.mdx`) defines 6 epics with a clear dependency graph: ET-001 depends on AV-001 (availability engine), ET-002/ET-003/ET-004/ET-006 depend on ET-001 (1:1 baseline), and ET-005 depends on AV-005 (booking window availability). Sprint 2 must pass Gate 2 validation across all 5 dimensions — behavioral testing, regression testing, data preservation, webhook compatibility, and cross-domain integration — before Sprint 3 (Calendar Integrations) can begin.
@@ -37,8 +45,8 @@ All 6 epics are expected to require **zero schema changes** — Cal.com's existi
 
 **ET-003 (Round-Robin):**
 
-- No schema changes expected — round-robin is configured via existing fields on the `EventType` model: `isRRWeightsEnabled` (Boolean, default: false), `rrSegmentQueryValue` (String?), `assignRRMembersUsingSegment` (Boolean, default: false), `assignAllTeamMembers` (Boolean, default: false), `rescheduleWithSameRoundRobinHost` (Boolean, default: false), `includeNoShowInRRCalculation` (Boolean, default: false).
-- Verify the `Host` model relation includes `weight` (Int, default: 100) and `priority` (Int, default: 2) fields for weighted round-robin distribution.
+- No schema changes expected — round-robin is configured via existing fields on the `EventType` model: `isRRWeightsEnabled` (Boolean, default: false), `rrSegmentQueryValue` (Json?), `assignRRMembersUsingSegment` (Boolean, default: false), `assignAllTeamMembers` (Boolean, default: false), `rescheduleWithSameRoundRobinHost` (Boolean, default: false), `includeNoShowInRRCalculation` (Boolean, default: false).
+- Verify the `Host` model relation includes `weight` (Int?, application default: 100) and `priority` (Int?, application default: 2) fields for weighted round-robin distribution. These fields are nullable at the database level; defaults of 100 and 2 are applied at the application layer in the tRPC update handler.
 - The `SchedulingType.ROUND_ROBIN` enum value (mapped to `"roundRobin"` in database) governs paradigm selection.
 - Source: `packages/prisma/schema.prisma` (enum SchedulingType, model EventType, model Host)
 

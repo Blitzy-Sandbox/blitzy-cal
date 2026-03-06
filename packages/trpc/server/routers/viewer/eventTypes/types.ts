@@ -23,7 +23,8 @@ import {
 import { z } from "zod";
 /**
  * Type alias for the event type update input, imported from the features layer.
- * @see packages/features/eventtypes/lib/types.ts (being updated by another agent for Sprint 2 paradigm documentation)
+ * Covers all scheduling paradigm fields: 1:1, group (seats), round-robin, collective, booking windows, and custom fields.
+ * @see packages/features/eventtypes/lib/types.ts for the canonical EventTypeUpdateInput definition
  */
 export type TUpdateInputSchema = EventTypeUpdateInput;
 

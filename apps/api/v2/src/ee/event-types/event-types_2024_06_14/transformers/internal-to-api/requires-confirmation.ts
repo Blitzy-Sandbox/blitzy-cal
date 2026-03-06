@@ -1,5 +1,10 @@
 import { ConfirmationPolicyEnum } from "@calcom/platform-enums";
-import type { NoticeThresholdTransformedSchema, ConfirmationPolicy_2024_06_14 } from "@calcom/platform-types";
+import type {
+  BaseConfirmationPolicy_2024_06_14,
+  ConfirmationPolicy_2024_06_14,
+  Disabled_2024_06_14,
+  NoticeThresholdTransformedSchema,
+} from "@calcom/platform-types";
 
 export function transformRequiresConfirmationInternalToApi(
   requiresConfirmation: boolean,
@@ -14,16 +19,16 @@ export function transformRequiresConfirmationInternalToApi(
         count: requiresConfirmationThreshold.time,
       },
       blockUnconfirmedBookingsInBooker: requiresConfirmationWillBlockSlot,
-    };
+    } satisfies BaseConfirmationPolicy_2024_06_14;
   } else if (requiresConfirmation) {
     return {
       type: ConfirmationPolicyEnum.ALWAYS,
       blockUnconfirmedBookingsInBooker: requiresConfirmationWillBlockSlot,
-    };
+    } satisfies BaseConfirmationPolicy_2024_06_14;
   } else if (!requiresConfirmation) {
     return {
       disabled: true,
-    };
+    } satisfies Disabled_2024_06_14;
   }
   return undefined;
 }

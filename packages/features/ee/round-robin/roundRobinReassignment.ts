@@ -188,7 +188,9 @@ export const roundRobinReassignment = async ({
     eventType,
     // ET-003: Use segment-filtered hosts for the RR pool so that LuckyUserService
     // computes equitable distribution only across segment-matching, non-fixed hosts.
-    allRRHosts: segmentFilteredHosts.filter((host) => !host.isFixed),
+    allRRHosts: segmentFilteredHosts
+      .filter((host) => !host.isFixed)
+      .map((host) => ({ ...host, createdAt: host.createdAt ?? new Date(0) })),
     routingFormResponse: null,
   });
 

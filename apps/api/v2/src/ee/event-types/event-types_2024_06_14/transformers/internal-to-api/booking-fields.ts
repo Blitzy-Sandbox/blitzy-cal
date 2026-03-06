@@ -26,6 +26,29 @@ import type {
   UrlFieldOutput_2024_06_14,
 } from "@calcom/platform-types";
 
+/**
+ * Transforms internal booking field representations (SystemField | CustomField) to the
+ * API-facing OutputBookingField_2024_06_14 format.
+ *
+ * ET-006 Calendly Question Type Parity — all five Calendly question types are mapped:
+ *   Calendly "text"     → Cal.com "text"      (TextFieldOutput_2024_06_14)
+ *   Calendly "radio"    → Cal.com "radio"      (RadioGroupFieldOutput_2024_06_14)
+ *   Calendly "checkbox" → Cal.com "checkbox"   (CheckboxGroupFieldOutput_2024_06_14)
+ *   Calendly "phone"    → Cal.com "phone"      (PhoneFieldOutput_2024_06_14)
+ *   Calendly "dropdown" → Cal.com "select"     (SelectFieldOutput_2024_06_14)
+ *
+ * Additional Cal.com-only types preserved: address, number, textarea, multiemail,
+ * boolean, multiselect, url.
+ *
+ * For option-based fields (select, multiselect, checkbox, radio), internal {label, value}
+ * pairs are flattened to value-only string[] per the platform type contracts.
+ *
+ * Unknown field types are safely handled via OutputUnknownBookingField_2024_06_14 fallback
+ * in both the system and custom field branches — this function never throws.
+ *
+ * @param databaseBookingFields - Array of system and custom booking fields from the database
+ * @returns Array of API-formatted booking field output objects
+ */
 export function transformBookingFieldsInternalToApi(
   databaseBookingFields: (SystemField | CustomField)[]
 ): OutputBookingField_2024_06_14[] {

@@ -6,643 +6,678 @@
 
 ### 0.1.1 Core Feature Objective
 
-Based on the prompt, the Blitzy platform understands that the new feature requirement is to **complete Sprint 1: Availability & Scheduling (F-004)** — the foundational availability engine for the Cal.com scheduling platform. The user explicitly identifies this as the bedrock upon which every downstream domain operates.
+Based on the prompt, the Blitzy platform understands that the new feature requirement is to **complete Sprint 3: Calendar Integrations (F-003)** of the Calendly gap closure initiative for Cal.com. This sprint targets behavioral parity between Cal.com's calendar integration subsystem and Calendly's native calendar connections across Google Calendar, Outlook/Office 365, and Apple Calendar/iCloud.
 
-The specific feature requirements, restated with enhanced clarity, are:
+The sprint roadmap defines Sprint 3 as one of three foundational sprints (blue tier), with a direct dependency on Sprint 1 (Availability & Scheduling) having already passed Gate 1. The sprint encompasses five cataloged epics from the Epic Catalog:
 
-- **Slot Generation Engine**: Implement the deterministic algorithm that transforms user-defined schedules (weekly working hours + date overrides) into concrete bookable time slots, respecting event duration, frequency intervals, and the `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL` environment configuration. The slot builder in `packages/features/schedules/lib/slots.ts` must produce invitee-timezone-aware results via `getSlots` / `buildSlotsWithDateRanges`.
-- **Buffer Time Enforcement**: Ensure before-event and after-event buffer windows are correctly applied during busy-time calculation in `packages/features/busyTimes/services/getBusyTimes.ts`, extending booking start/end boundaries so adjacent meetings never overlap the configured gap.
-- **Minimum Notice Period Enforcement**: The slot generation pipeline must respect `minimumBookingNotice` by filtering out any candidate slot whose start time falls within the notice window relative to the current UTC moment, as implemented in `packages/features/schedules/lib/slots.ts`.
-- **DST Normalization**: All date-range processing in `packages/features/schedules/lib/date-ranges.ts` must correctly handle Daylight Saving Time transitions via `processWorkingHours`, `getAdjustedTimezone`, and the travel-schedule override path, ensuring zero-length or shifted intervals are dropped and overlapping ranges are deduplicated through `mergeOverlappingRanges`.
-- **Busy Time Aggregation**: The `BusyTimesService` in `packages/features/busyTimes/services/getBusyTimes.ts` and its limit-enforcement layer in `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` must aggregate booking-based and calendar-based conflicts, apply per-user and team-level booking/duration limits, and produce a normalized `EventBusyDetails[]` that the availability engine subtracts from working hours.
-- **Aggregated Multi-Host Availability**: The `getAggregatedAvailability` routine in `packages/features/availability/lib/getAggregatedAvailability/` must correctly intersect fixed-host and round-robin participant windows, respecting group semantics, OOO exclusions, and deterministic deduplication.
+- **CI-001** — Google Calendar sync behavioral parity (Priority: Medium, Complexity: M) — Ensure `GoogleCalendarService` bi-directional sync matches Calendly's Google Calendar integration behavior using Google Calendar API v3 and FreeBusy API
+- **CI-002** — Outlook/Office 365 sync behavioral parity (Priority: Medium, Complexity: M) — Ensure `Office365CalendarService` bi-directional sync matches Calendly's Outlook integration behavior using Microsoft Graph API v1.0
+- **CI-003** — iCloud/Apple Calendar sync parity (Priority: Medium, Complexity: M) — Ensure `AppleCalendarService` sync behavior matches Calendly's (now-discontinued for new users) iCloud integration via CalDAV protocol
+- **CI-004** — Conflict detection behavior alignment (Priority: High, Complexity: L) — Align Cal.com's busy time aggregation across all connected calendars with Calendly's conflict detection model, including configurable status filtering (Busy/Tentative/Away/Working Elsewhere)
+- **CI-005** — Bi-directional sync verification (Priority: High, Complexity: L) — End-to-end verification that booking creation, rescheduling, and cancellation propagate correctly to/from external calendars for Google and Outlook adapters
 
-**Implicit requirements detected:**
+Additionally, the gap report identifies two Medium-severity gap closure items:
 
-- The `UserAvailabilityService` orchestrator in `packages/features/availability/lib/getUserAvailability.ts` must correctly compose all sub-systems (schedule detection, holiday blocking, busy-time fetching, date-range arithmetic) into a unified availability response.
-- Schedule CRUD operations via `ScheduleRepository` and `ScheduleService` in `packages/features/schedules/repositories/` and `packages/features/schedules/services/` must be fully operational for the availability engine to read and modify schedules.
-- The `detectEventTypeScheduleForUser` resolver in `packages/features/availability/lib/detectEventTypeScheduleForUser.ts` must follow the priority hierarchy: event-type schedule → host override → user default → `DEFAULT_SCHEDULE_DATA` fallback.
-- Holiday blocking via `calculateHolidayBlockedDates` must integrate with Google Calendar API holiday data.
-- The `useTimesForSchedule` hook in `packages/features/schedules/hooks/` must produce deterministic ISO time windows for booker layouts across all timezone scenarios.
+- **CI-001 (gap)** — Calendar-driven cancellation sync: Implement detection of event deletions/declines in external calendars (Outlook via Microsoft Graph change notifications, Google via push notification channels) to propagate cancellations back to Cal.com
+- **CI-002 (gap)** — Buffer time visualization in external calendars: Optionally write buffer periods as separate calendar events for visual clarity, with a user-configurable toggle
 
-### 0.1.2 Special Instructions and Constraints
+The sprint must also satisfy **Gate 3** validation criteria before Sprint 4 (Webhooks & Events) can begin, verifying that calendar sync reads correct availability and bi-directional event creation works for Google, Outlook, and Apple adapters.
 
-- **Source Directive**: The user explicitly identifies `packages/features/availability/` and `packages/features/schedules/` as the primary source packages. All implementation work must center on these directories and their transitive dependencies.
-- **Foundational Priority**: The user emphasizes that "every downstream domain — from event types to notifications — ultimately depends on the availability engine producing correct bookable slots." This means correctness and determinism take precedence over performance optimization.
-- **Existing Architecture Compliance**: All changes must follow the established Cal.com patterns:
-  - Dependency injection via `@evyweb/ioctopus` (v1.2.0) as configured in `packages/features/di/`
-  - Prisma-backed repository pattern (`ScheduleRepository`, `PrismaSelectedSlotRepository`)
-  - Zod schema validation for all tRPC procedure inputs
-  - `@calcom/dayjs` for all date/time operations (patched Day.js 1.11.4)
-  - Vitest for all unit and integration tests
-- **Backward Compatibility**: The availability engine feeds into the Platform SDK (`packages/platform/libraries/schedules.ts`), API v1 (`apps/api/v1/`), API v2 (`apps/api/v2/`), and the web application — all existing consumers must continue to receive consistent data contracts.
+### 0.1.2 Implicit Requirements Detected
 
-### 0.1.3 Technical Interpretation
+- **Spec-first development workflow**: Per `specs/README.md`, a design spec must be created at `specs/calendar-integrations/` before any implementation begins, including `design.md`, `implementation.md`, `decisions.md`, and `docs/` artifacts
+- **Zero-downtime migration compliance**: Any schema changes must follow the additive-only patterns documented in `docs/migration/zero-downtime-strategy.mdx` — no column renames, type changes, or NOT NULL without defaults
+- **Data preservation guarantees**: All existing `Credential` records (AES-256 encrypted via `CALENDSO_ENCRYPTION_KEY`), `SelectedCalendar` entries, and `DestinationCalendar` associations must remain intact after any migrations
+- **Webhook backward compatibility**: Existing `v2021-10-20` webhook payloads must not change — any calendar-related booking events (`BOOKING_CREATED`, `BOOKING_CANCELLED`, `BOOKING_RESCHEDULED`) must continue producing identical payloads
+- **PR size constraints**: Each PR must contain max 5–7 files changed (excluding tests), max 500 lines changed, and one focused change per PR
+- **Validation gate dimensions**: All five dimensions must pass — behavioral testing, regression testing, data preservation, webhook compatibility, and cross-domain integration testing
+
+### 0.1.3 Special Instructions and Constraints
+
+- **Source of truth documents must be read in full before any code**: The user explicitly requires reading all referenced docs plus any documents they reference
+- **Autonomous execution protocol**: Sprint 3 operates as a self-contained cycle — gap analysis review → epic selection → spec-first design → implementation → migration safety → validation → documentation update
+- **Calendly API as behavioral benchmark**: All parity validation references `developer.calendly.com` as the authoritative behavioral source
+- **Existing Cal.com advantages must be preserved**: Cal.com's 11+ calendar adapters, per-event-type calendar selection, unlimited connections, delegation credentials, and AES-256 encryption must not regress
+- **Feature flag gating**: New functionality must be gated behind disabled-by-default feature flags per the migration strategy patterns
+
+### 0.1.4 Technical Interpretation
 
 These feature requirements translate to the following technical implementation strategy:
 
-- To **implement slot generation**, we will validate and extend the `getSlots` / `buildSlotsWithDateRanges` functions in `packages/features/schedules/lib/slots.ts`, ensuring correct interval snapping, optimized-mode rounding, notice window enforcement, and out-of-office metadata propagation.
-- To **enforce buffer times**, we will validate the buffer expansion logic in `BusyTimesService._getBusyTimes` that extends booking start/end by `beforeEventBuffer` and `afterEventBuffer` minutes, and confirm that `getDefinedBufferTimes` in the calendar busy-time path correctly applies these windows.
-- To **normalize DST transitions**, we will validate `processWorkingHours` in `packages/features/schedules/lib/date-ranges.ts` for correct UTC offset calculations, travel timezone overrides via `getAdjustedTimezone`, overlapping interval deduplication via `endTimeToKeyMap`, and boundary handling at 23:59.
-- To **aggregate busy times**, we will validate the full `BusyTimesService` pipeline including batch-fetched limit checks (`fetchBookingsForLimitChecksBatched`), booking-count and duration-based limit enforcement, and team-level busy-time aggregation.
-- To **deliver aggregated multi-host availability**, we will validate the `getAggregatedAvailability` routine's intersection logic for fixed hosts, round-robin group semantics, and the `uniqueAndSortedDateRanges` / `filterRedundantDateRanges` utilities.
-- To **orchestrate the full availability query**, we will validate `UserAvailabilityService` in `getUserAvailability.ts`, ensuring it correctly composes schedule detection, holiday blocking, busy-time services, and date-range arithmetic (via `buildDateRanges`, `subtract`, `getWorkingHours`) into a complete availability response.
+- To **achieve Google Calendar sync parity (CI-001)**, we will verify and enhance `packages/app-store/googlecalendar/lib/CalendarService.ts` to ensure `createEvent`, `updateEvent`, `deleteEvent`, and `getAvailability` operations match Calendly's documented behavior, including FreeBusy API chunking for 90-day windows, recurring event support, and Google Meet integration
+- To **achieve Outlook sync parity (CI-002)**, we will verify and enhance `packages/app-store/office365calendar/lib/CalendarService.ts` to ensure Microsoft Graph API interactions match Calendly's Outlook behavior, including `showAs` status filtering (Busy/Tentative/Away/Working Elsewhere), batch API requests, and retry-after handling
+- To **achieve Apple Calendar sync parity (CI-003)**, we will verify `packages/app-store/applecalendar/lib/CalendarService.ts` CalDAV operations against Calendly's (now-discontinued) iCloud behavior
+- To **align conflict detection (CI-004)**, we will modify `packages/features/busyTimes/services/getBusyTimes.ts` and the individual adapter `getAvailability` implementations to support configurable status-based filtering matching Calendly's "What's considered unavailable?" dropdown behavior
+- To **verify bi-directional sync (CI-005)**, we will create end-to-end integration tests exercising the full `CalendarEventBuilder.fromBooking()` → `CalendarManager.processEvent()` → `CalendarService.createEvent/updateEvent/deleteEvent` pipeline for Google and Outlook adapters
+- To **implement calendar-driven cancellation sync (CI-001 gap)**, we will create new subscription handlers for Microsoft Graph change notifications and Google Calendar push notifications in the respective adapter packages, with cancellation propagation through the existing booking cancellation flow
+- To **implement buffer time visualization (CI-002 gap)**, we will extend the `createEvent` flow in Google and Outlook adapters to optionally create additional buffer time events, gated behind a user-configurable toggle stored on the `EventType` or `User` model
 
 ## 0.2 Repository Scope Discovery
 
-### 0.2.1 Comprehensive File Analysis
+### 0.2.1 Comprehensive File Analysis — Existing Modules to Modify
 
-The following exhaustive inventory catalogs every file and module within the availability and scheduling feature surface, organized by functional role.
+The following existing source files require modification or verification to complete Sprint 3: Calendar Integrations.
 
-#### Core Availability Business Logic (`packages/features/availability/`)
+**Calendar Adapter Core Files (Primary Targets)**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/availability/lib/getUserAvailability.ts` | MODIFY | Orchestration core — Zod request schemas, `UserAvailabilityService` class composing schedule detection, holiday blocking, busy-time services, date-range arithmetic, Redis caching, and OOO data |
-| `packages/features/availability/lib/detectEventTypeScheduleForUser.ts` | MODIFY | Schedule priority resolver — `DEFAULT_SCHEDULE_DATA`, event-type → host → user → fallback hierarchy with timezone propagation |
-| `packages/features/availability/lib/detectEventTypeScheduleForUser.test.ts` | MODIFY | Vitest behavioral spec covering priority hierarchy, timezone propagation, default flags |
-| `packages/features/availability/lib/findUsersForAvailabilityCheck.ts` | MODIFY | Async Prisma user enrichment helper with `availabilityUserSelect`, calendar normalization, delegation credential injection |
-| `packages/features/availability/lib/calculateHolidayBlockedDates.test.ts` | MODIFY | Vitest suite for holiday blocking matrix validation |
-| `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` | MODIFY | Deterministic aggregation for multi-host availability — fixed/round-robin intersection, group semantics, deduplication |
-| `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.test.ts` | MODIFY | Vitest regression suite for aggregation logic |
-| `packages/features/availability/lib/getAggregatedAvailability/date-range-utils/` | MODIFY | `filterRedundantDateRanges.ts`, `mergeOverlappingDateRanges.ts` and their test suites |
-| `packages/features/availability/components/SkeletonLoader.tsx` | MODIFY | Client-side skeleton UI for availability loading states |
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `packages/app-store/googlecalendar/lib/CalendarService.ts` | Google Calendar adapter — OAuth2, FreeBusy API, event CRUD, recurring events, Meet integration | Verify behavioral parity (CI-001); extend for push notification subscription (CI-001 gap); add buffer event creation (CI-002 gap) |
+| `packages/app-store/googlecalendar/lib/CalendarAuth.ts` | Google OAuth2 credential management and token refresh via `OAuthManager` | Verify token refresh reliability for parity testing |
+| `packages/app-store/googlecalendar/lib/getGoogleAppKeys.ts` | Google API key retrieval | Verify configuration for push notification channel setup |
+| `packages/app-store/googlecalendar/lib/googleCredentialSchema.ts` | Zod schema for Google credential validation | May extend for push notification channel metadata |
+| `packages/app-store/office365calendar/lib/CalendarService.ts` | Outlook/O365 adapter — Microsoft Graph API, batch requests, retry handling, Teams integration | Verify behavioral parity (CI-002); extend for Graph change notification subscription (CI-001 gap); add buffer event creation (CI-002 gap) |
+| `packages/app-store/office365calendar/lib/getOfficeAppKeys.ts` | Microsoft Azure AD app key retrieval | Verify configuration for change notification subscription |
+| `packages/app-store/office365calendar/types/Office365Calendar.ts` | TypeScript type definitions for Office 365 calendar data shapes | May extend for change notification types |
+| `packages/app-store/applecalendar/lib/CalendarService.ts` | Apple Calendar adapter — CalDAV protocol via `caldav.icloud.com` | Verify behavioral parity (CI-003) |
+| `packages/app-store/applecalendar/api/add.ts` | Apple Calendar credential add flow with AES-256 encryption | Verify credential encryption integrity |
 
-#### Core Scheduling Engine (`packages/features/schedules/`)
+**Calendar Feature Infrastructure**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/schedules/lib/date-ranges.ts` | MODIFY | Timezone-aware date-range processing — `processWorkingHours`, `processDateOverride`, `processOOO`, DST normalization, travel overrides, `intersect`/`subtract`/`mergeOverlappingRanges` |
-| `packages/features/schedules/lib/date-ranges.test.ts` | MODIFY | Comprehensive Vitest battery for DST, travel, override, subtract, intersect edge cases |
-| `packages/features/schedules/lib/slots.ts` | MODIFY | Slot generator — `GetSlots`/`TimeFrame` types, `buildSlotsWithDateRanges`, interval snapping, optimized rounding, notice enforcement, OOO metadata merging |
-| `packages/features/schedules/lib/slots.test.ts` | MODIFY | Vitest suite covering 24-hour distributions, notice, timezone offsets, performance, metadata propagation |
-| `packages/features/schedules/repositories/ScheduleRepository.ts` | MODIFY | Prisma-backed schedule CRUD with permission enforcement, default schedule lifecycle, Atom-compatible payloads |
-| `packages/features/schedules/repositories/ScheduleRepository.test.ts` | MODIFY | Vitest regression suite with prismaMock for all repository methods |
-| `packages/features/schedules/services/ScheduleService.ts` | MODIFY | Zod input schema (`ZUpdateInputSchema`), ownership/permission enforcement, transactional schedule update with availability normalization |
-| `packages/features/schedules/hooks/useTimesForSchedule.ts` | MODIFY | Scheduling window hook — ISO window calculation tied to BookerStoreContext, layout-driven prefetch |
-| `packages/features/schedules/hooks/useTimesForSchedule.timezone.test.ts` | MODIFY | Timezone regression suite covering month/week/column/mobile layouts |
-| `packages/features/schedules/components/DateOverrideInputDialog.tsx` | MODIFY | Modal for date-specific override editing with locale-aware calendar |
-| `packages/features/schedules/components/DateOverrideList.tsx` | MODIFY | Sorted, localized override list with inline edit/delete |
-| `packages/features/schedules/components/ScheduleComponent.tsx` | MODIFY | Weekly availability grid — React Hook Form, `DayRanges`, `parseTimeString`, `CopyTimes` |
-| `packages/features/schedules/components/ScheduleListItem.tsx` | MODIFY | Schedule row for master list with localized summaries and dropdown actions |
-| `packages/features/schedules/components/parse-time-string.test.ts` | MODIFY | Vitest suite for `parseTimeString` across timezone scenarios |
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `packages/features/calendars/lib/CalendarManager.ts` | Credential resolution, event processing orchestration, availability aggregation | Modify for configurable status-based conflict detection (CI-004); verify bi-directional sync pipeline (CI-005) |
+| `packages/features/CalendarEventBuilder.ts` | Fluent builder for constructing `CalendarEvent` objects from booking data | Verify builder produces correct data for all adapters; may extend for buffer event construction (CI-002 gap) |
+| `packages/features/calendars/repositories/DestinationCalendarRepository.ts` | Destination calendar persistence and queries | Verify per-event-type calendar selection functions correctly |
+| `packages/features/calendars/lib/getConnectedDestinationCalendars.ts` | Retrieves connected destination calendars for a user | Verify correct calendar listing for multi-calendar scenarios |
+| `packages/features/calendars/lib/getCalendarsEvents.ts` | Fetches calendar events across connected providers | Verify correct event aggregation for conflict detection |
+| `packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts` | Selected calendar CRUD for per-user conflict checking scope | Verify selected calendar scoping for CI-004 conflict detection |
+| `packages/features/busyTimes/services/getBusyTimes.ts` | Busy time aggregation from all connected calendars, bookings, and limits | Modify for configurable status filtering (CI-004); verify buffer time application |
+| `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` | Booking/duration limit enforcement in busy time calculation | Verify no regression during CI-004 changes |
+| `packages/features/availability/lib/getUserAvailability.ts` | Orchestration layer combining schedules, travel, busy times, holidays, OOO | Verify calendar busy times feed correctly into availability pipeline |
 
-#### Shared Library Utilities (`packages/lib/`)
+**Calendar Subscription and Sync Infrastructure**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/lib/availability.ts` | MODIFY | Canonical constants (`DEFAULT_SCHEDULE`, `defaultDayRange`), `getAvailabilityFromSchedule`, `getWorkingHours`, `availabilityAsString` |
-| `packages/lib/schedules/transformers/for-atom.ts` | MODIFY | Atom API adapters — `transformWorkingHoursForAtom`, `transformAvailabilityForAtom`, `transformDateOverridesForAtom` |
-| `packages/lib/schedules/transformers/index.ts` | MODIFY | Barrel exports for schedule transformers |
-| `packages/lib/schedules/transformers/getScheduleListItemData.ts` | MODIFY | Data transformer for schedule list item rendering |
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `packages/features/calendar-subscription/adapters/GoogleCalendarSubscription.adapter.ts` | Google Calendar subscription adapter | May extend for push notification channel management (CI-001 gap) |
+| `packages/features/calendar-subscription/adapters/Office365CalendarSubscription.adapter.ts` | Office 365 calendar subscription adapter | May extend for Graph change notification management (CI-001 gap) |
+| `packages/features/calendar-subscription/adapters/AdaptersFactory.ts` | Factory for creating subscription adapters | May extend to support cancellation-sync subscription types |
+| `packages/features/calendar-subscription/lib/CalendarSubscriptionService.ts` | Core subscription service orchestrating calendar subscriptions | Potential integration point for calendar-driven cancellation (CI-001 gap) |
+| `packages/features/calendar-subscription/lib/sync/CalendarSyncService.ts` | Calendar synchronization service | Potential integration point for bi-directional cancellation propagation |
+| `packages/features/calendars/lib/tasker/CalendarsSyncTasker.ts` | Background sync task executor | May process cancellation-sync events asynchronously |
+| `packages/features/calendars/lib/tasker/CalendarsTriggerTasker.ts` | Event-driven calendar task triggering | May trigger on external calendar change notifications |
+| `packages/features/calendars/di/tasker/*.module.ts` | DI module definitions for calendar taskers | May register new cancellation-sync services |
 
-#### Busy Times Feature (`packages/features/busyTimes/`)
+**Booking Lifecycle Touchpoints**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/busyTimes/services/getBusyTimes.ts` | MODIFY | `BusyTimesService` — buffer expansion, booking fetch, calendar busy-time aggregation, seat reference tracking |
-| `packages/features/busyTimes/services/getBusyTimes.test.ts` | MODIFY | Unit test suite for busy-time generation and limit checks |
-| `packages/features/busyTimes/services/getBusyTimes.integration-test.ts` | MODIFY | Prisma-backed integration test for batched limit checks |
-| `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` | MODIFY | Limit enforcement pipeline — booking-count, duration, team-level limits via `LimitManager` |
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `packages/features/bookings/lib/handleCancelBooking.ts` | Booking cancellation handler | Integration point for calendar-driven cancellation (CI-001 gap) |
+| `packages/features/bookings/lib/handleNewBooking/createBooking.ts` | Booking creation handler | Verify calendar event creation in external calendars (CI-005) |
+| `packages/features/bookings/lib/handleNewBooking/ensureAvailableUsers.ts` | Availability check during booking creation | Verify busy time aggregation from connected calendars |
 
-#### Dependency Injection Wiring (`packages/features/di/`)
+**API v2 Calendar Endpoints**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/di/containers/AvailableSlots.ts` | MODIFY | DI container bootstrapping for `AvailableSlotsService` with all repository and service modules |
-| `packages/features/di/containers/GetUserAvailability.ts` | MODIFY | DI container for `UserAvailabilityService` with Prisma, repositories, Redis |
-| `packages/features/di/containers/BusyTimes.ts` | MODIFY | DI container for `BusyTimesService` with Prisma and booking repository |
-| `packages/features/di/modules/AvailableSlots.ts` | MODIFY | Module binding for `AvailableSlotsService` with 15+ dependency tokens |
-| `packages/features/di/modules/GetUserAvailability.ts` | MODIFY | Module binding for `UserAvailabilityService` |
-| `packages/features/di/modules/SelectedSlots.ts` | MODIFY | Module binding for `PrismaSelectedSlotRepository` |
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts` | REST controller for calendar operations | Verify endpoints function correctly for connected calendars, busy times |
+| `apps/api/v2/src/ee/calendars/services/calendars.service.ts` | Calendar service for API v2 | Verify service layer integrations |
+| `apps/api/v2/src/ee/calendars/services/gcal.service.ts` | Google Calendar-specific API v2 service | Verify Google-specific endpoint behavior |
+| `apps/api/v2/src/ee/calendars/services/outlook.service.ts` | Outlook-specific API v2 service | Verify Outlook-specific endpoint behavior |
+| `apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts` | Apple Calendar-specific API v2 service | Verify Apple-specific endpoint behavior |
+| `apps/api/v2/src/ee/calendars/processors/calendars.processor.ts` | Calendar event processor for API v2 | Verify processor handles calendar operations correctly |
 
-#### tRPC Routers and Handlers (`packages/trpc/`)
+**Schema and Type Definitions**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/trpc/server/routers/viewer/availability/_router.tsx` | MODIFY | Viewer availability router — `list`, `user`, `listTeam`, `schedule`, `calendarOverlay` procedures |
-| `packages/trpc/server/routers/viewer/availability/schedule/_router.tsx` | MODIFY | Schedule sub-router — `get`, `create`, `delete`, `update`, `duplicate`, user/event slug lookups, bulk reset |
-| `packages/trpc/server/routers/viewer/availability/schedule/get.handler.ts` | MODIFY | GET handler delegating to `ScheduleRepository.findDetailedScheduleById` |
-| `packages/trpc/server/routers/viewer/availability/schedule/create.handler.ts` | MODIFY | CREATE handler — ownership check, normalized availability, default schedule backfill |
-| `packages/trpc/server/routers/viewer/availability/schedule/update.handler.ts` | MODIFY | UPDATE handler delegating to `ScheduleService.update` |
-| `packages/trpc/server/routers/viewer/availability/list.handler.ts` | MODIFY | LIST handler with default schedule resolution and backfill |
-| `packages/trpc/server/routers/viewer/slots/_router.tsx` | MODIFY | Viewer slots router — `getSchedule`, `reserveSlot`, `isAvailable`, `removeSelectedSlotMark` |
-| `packages/trpc/server/routers/viewer/slots/getSchedule.handler.ts` | MODIFY | Schedule handler delegating to `getAvailableSlotsService` |
-| `packages/trpc/server/routers/viewer/slots/types.ts` | MODIFY | Zod schemas for scheduling, reservation, availability inputs |
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `packages/prisma/schema.prisma` | Database schema — `Credential`, `SelectedCalendar`, `DestinationCalendar`, `Booking`, `Feature` models | Add nullable columns for buffer-sync toggle and cancellation-sync metadata; add feature flag rows |
+| `packages/prisma/selects/credential.ts` | Prisma select projections for credentials | Verify `credentialForCalendarServiceSelect` includes all needed fields |
+| `packages/types/Calendar.d.ts` | `Calendar` interface, `CalendarEvent`, `CalendarServiceEvent`, `EventBusyDate` type definitions | May extend `GetAvailabilityParams` for configurable status filtering (CI-004) |
 
-#### Web Application Modules (`apps/web/`)
+### 0.2.2 Test Files to Update or Create
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `apps/web/modules/availability/availability-view.tsx` | MODIFY | `/availability` page — `AvailabilityList` and `AvailabilityCTA` with TRPC mutations |
-| `apps/web/modules/availability/[schedule]/schedule-view.tsx` | MODIFY | `/availability/[schedule]` page — schedule editing with cache invalidation |
-| `apps/web/modules/availability/troubleshoot/troubleshoot-view.tsx` | MODIFY | Client-only availability troubleshooting wrapper |
-| `apps/web/modules/schedules/components/NewScheduleButton.tsx` | MODIFY | FAB/Dialog for schedule creation with TRPC mutation |
-| `apps/web/modules/schedules/components/Schedule.tsx` | MODIFY | React Hook Form adapter for `ScheduleComponent` |
-| `apps/web/modules/schedules/hooks/useSchedule.ts` | MODIFY | Availability fetching between legacy TRPC and API v2 |
-| `apps/web/modules/schedules/hooks/useEvent.ts` | MODIFY | Booker context hooks for event/schedule queries |
-| `apps/web/modules/schedules/hooks/useNonEmptyScheduleDays.ts` | MODIFY | Memoized slot day filtering |
-| `apps/web/modules/schedules/hooks/useSlotsForDate.ts` | MODIFY | Per-date slot lookups with confirmation toggle |
-| `apps/web/modules/schedules/lib/types.ts` | MODIFY | TRPC-derived type aliases (`Slots`, `Slot`, `GetSchedule`) |
-| `apps/web/app/(use-page-wrapper)/availability/[schedule]/page.tsx` | MODIFY | Server component for schedule detail route |
-| `apps/web/app/(use-page-wrapper)/(main-nav)/availability/page.tsx` | MODIFY | Server component for availability listing route |
-| `apps/web/modules/event-types/components/tabs/availability/` | MODIFY | Event type availability tab components and wrapper |
+**Existing Test Files Requiring Verification/Extension**
 
-#### Prisma Schema and Types
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts` | Unit tests for Google Calendar adapter | Extend with parity-specific test scenarios (CI-001) |
+| `packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts` | Auth-specific tests for Google adapter | Verify no regression |
+| `packages/app-store/googlecalendar/tests/google-calendar.e2e.ts` | E2E tests for Google Calendar | Extend with bi-directional sync scenarios (CI-005) |
+| `packages/features/calendars/lib/CalendarManager.test.ts` | CalendarManager unit tests | Extend with conflict detection alignment tests (CI-004) |
+| `packages/features/CalendarEventBuilder.test.ts` | CalendarEventBuilder unit tests | Verify builder output for all adapters |
+| `packages/features/busyTimes/services/getBusyTimes.test.ts` | BusyTimes service unit tests | Extend with configurable status filtering tests (CI-004) |
+| `packages/features/busyTimes/services/getBusyTimes.integration-test.ts` | BusyTimes integration tests | Extend with multi-calendar aggregation scenarios |
+| `packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts` | Google subscription adapter tests | Extend for push notification scenarios (CI-001 gap) |
+| `packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts` | Office 365 subscription adapter tests | Extend for Graph change notification scenarios (CI-001 gap) |
+| `packages/features/calendar-subscription/lib/__tests__/CalendarSubscriptionService.test.ts` | Subscription service tests | Extend for cancellation-sync service tests |
+| `apps/api/v2/src/ee/calendars/controllers/calendars.controller.e2e-spec.ts` | API v2 calendar controller E2E tests | Extend with parity-relevant endpoint tests |
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/prisma/schema.prisma` (models: `Schedule`, `Availability`, `SelectedSlots`) | MODIFY | Core data models for scheduling |
-| `packages/types/schedule.d.ts` | MODIFY | Shared TypeScript types — `TimeRange`, `Schedule`, `WorkingHours`, `TravelSchedule` |
-| `packages/platform/atoms/availability/types.ts` | MODIFY | Platform atom type contracts for availability forms |
+**New Test Files to Create**
 
-#### API Surface
-
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `apps/web/pages/api/trpc/availability/[trpc].ts` | MODIFY | Next.js API route for availability TRPC namespace |
-| `apps/api/v1/lib/validations/availability.ts` | MODIFY | Zod validation schemas for API v1 availability endpoints |
-| `apps/api/v1/lib/validations/schedule.ts` | MODIFY | Zod validation schemas for API v1 schedule endpoints |
-| `apps/api/v2/src/ee/schedules/schedules_2024_04_15/` | MODIFY | API v2 EE schedule module — repository, outputs, service |
-| `apps/api/v2/src/lib/services/available-slots.service.ts` | MODIFY | NestJS provider extending `BaseAvailableSlotsService` |
-| `apps/api/v2/src/lib/services/busy-times.service.ts` | MODIFY | NestJS provider extending `BaseBusyTimesService` |
-| `apps/api/v2/src/lib/modules/available-slots.module.ts` | MODIFY | NestJS module aggregating all availability DI providers |
-
-### 0.2.2 Integration Point Discovery
-
-- **API Endpoints**: `/api/trpc/availability/*` (TRPC), `/api/availabilities` (REST v1), `/api/v2/ee/schedules/*` (REST v2)
-- **Database Models**: `Schedule`, `Availability`, `SelectedSlots`, `SelectedCalendar`, `Booking` (for busy-time queries)
-- **Service Classes**: `UserAvailabilityService`, `BusyTimesService`, `AvailableSlotsService`, `ScheduleService`, `ScheduleRepository`
-- **Controllers/Handlers**: Viewer availability/schedule TRPC router handlers, API v1 availability controllers, API v2 schedule controllers
-- **Middleware**: Authentication via `authedProcedure` (TRPC), `authMiddleware` (API routes), permission checks via `hasReadPermissionsForUserId` / `hasEditPermissionForUserID`
+| File Path | Purpose |
+|-----------|---------|
+| `packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts` | Calendly parity-specific behavioral tests for Google Calendar adapter |
+| `packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts` | Unit tests for Outlook adapter (currently absent) |
+| `packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts` | Calendly parity-specific behavioral tests for Outlook adapter |
+| `packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts` | Unit tests for Apple Calendar adapter (currently absent) |
+| `packages/features/calendars/lib/__tests__/conflictDetection.test.ts` | Conflict detection alignment tests across all providers (CI-004) |
+| `packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts` | End-to-end bi-directional sync verification (CI-005) |
+| `packages/features/calendar-subscription/lib/__tests__/CalendarCancellationSync.test.ts` | Calendar-driven cancellation sync tests (CI-001 gap) |
+| `packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts` | Buffer time calendar event creation tests (CI-002 gap) |
 
 ### 0.2.3 New File Requirements
 
-No entirely new source files are required for this sprint. The availability and scheduling engine is an existing, mature codebase (`F-003` is marked as "Completed" in the feature catalog). This sprint focuses on **validating, hardening, and completing** the existing implementation to ensure all sub-systems produce correct results. Any new files would be limited to:
+**Spec-First Development Artifacts**
 
-- Additional test fixtures if specific edge cases are discovered during validation
-- Potential new Vitest test files for any untested integration paths between the sub-systems
+| File Path | Purpose |
+|-----------|---------|
+| `specs/calendar-integrations/design.md` | Design specification — source of truth for Sprint 3 implementation |
+| `specs/calendar-integrations/implementation.md` | Progress tracking for session continuity across Sprint 3 |
+| `specs/calendar-integrations/decisions.md` | Architecture Decision Records for calendar integration trade-offs |
+| `specs/calendar-integrations/CLAUDE.md` | Agent instructions for working on calendar integrations |
+| `specs/calendar-integrations/prompts.md` | Reusable prompts for calendar integration tasks |
+| `specs/calendar-integrations/future-work.md` | Deferred enhancements beyond Sprint 3 scope |
+| `specs/calendar-integrations/docs/README.md` | Internal documentation with screenshots |
+
+**Gap Closure Source Files**
+
+| File Path | Purpose |
+|-----------|---------|
+| `packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts` | Service handling cancellation propagation from external calendar event deletions/declines back to Cal.com bookings |
+| `packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts` | Handler for Google Calendar push notification events indicating event deletion or status change |
+| `packages/features/calendars/lib/cancellation-sync/handlers/OutlookCancellationHandler.ts` | Handler for Microsoft Graph change notification events indicating event deletion or decline |
+| `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` | Service for creating, updating, and deleting buffer time events in external calendars alongside booking events |
+
+**Database Migration Files**
+
+| File Path | Purpose |
+|-----------|---------|
+| `packages/prisma/migrations/[timestamp]_calendar_integration_gap_closure/migration.sql` | Additive schema changes — nullable columns for buffer-sync toggle, cancellation-sync metadata, and feature flag rows |
+
+### 0.2.4 Configuration and Documentation Files
+
+| File Path | Purpose | Sprint 3 Action |
+|-----------|---------|-----------------|
+| `.env.example` | Environment variable template | Add any new environment variables for push notification/change notification endpoints |
+| `docs/gap-report/calendar-integrations.mdx` | Calendar integrations gap report | Update parity status for completed gaps after implementation |
+| `docs/sprint-roadmap/epic-catalog.mdx` | Epic catalog | Mark CI-001 through CI-005 epics as completed |
+| `docs/sprint-roadmap/validation-criteria.mdx` | Validation criteria | Record validation evidence for Gate 3 criteria |
+
+### 0.2.5 Web Search Research Conducted
+
+No additional web search research is required at this stage. The source of truth documents comprehensively reference:
+- Calendly's API documentation at `developer.calendly.com` as the behavioral benchmark
+- Calendly Help Center for UI-level behavioral references
+- Google Calendar API v3, Microsoft Graph API v1.0, and CalDAV protocol specifications — all well-established and documented APIs whose behavior is captured in the existing Cal.com adapter implementations
 
 ## 0.3 Dependency Inventory
 
-### 0.3.1 Private and Public Packages
+### 0.3.1 Key Packages Relevant to Sprint 3
 
-The following table catalogs all key packages relevant to the availability and scheduling feature addition, with exact names and versions sourced from the repository's dependency manifests.
+The following table lists all key private (workspace) and public packages relevant to the Calendar Integrations feature addition exercise.
 
-| Registry | Package | Version | Purpose |
-|----------|---------|---------|---------|
-| workspace | `@calcom/features` | 1.0.0 | Main feature collocation package housing `availability/`, `schedules/`, `busyTimes/`, `selectedSlots/` |
-| workspace | `@calcom/lib` | workspace:* | Platform-wide utilities including `availability.ts`, `schedules/transformers/`, holiday helpers, timezone utilities |
-| workspace | `@calcom/dayjs` | workspace:* | Patched Day.js (1.11.4) wrapper with UTC, timezone, locale, and custom format plugins |
-| workspace | `@calcom/trpc` | workspace:* | Shared tRPC contract with viewer availability/schedule/slots routers |
-| workspace | `@calcom/ui` | workspace:* | React design system with `SkeletonText`, `Button`, `Dialog`, `Switch`, `Select` primitives |
-| workspace | `@calcom/prisma` | workspace:* | ORM tooling — Prisma 6.16.1 client, schema with `Schedule`/`Availability`/`SelectedSlots` models |
-| workspace | `@calcom/types` | workspace:* | Ambient type declarations — `TimeRange`, `Schedule`, `WorkingHours`, `TravelSchedule` |
-| workspace | `@calcom/atoms` | workspace:* | Platform Atoms UI components including `AvailabilitySettings`, `CreateSchedule`, `ListSchedules` |
-| workspace | `@calcom/testing` | workspace:* | Vitest fixtures, mocks, and test helpers |
-| workspace | `@calcom/platform-libraries` | workspace:* | Platform schedule/availability re-exports from features packages |
-| npm | `@evyweb/ioctopus` | 1.2.0 | Dependency injection container library used in `packages/features/di/` |
-| npm | `zustand` | 4.5.2 | State management for `BookerStoreContext` consumed by schedule hooks |
-| npm | `zod` | 3.25.76 | Runtime schema validation for all tRPC inputs, schedule schemas, availability validators |
-| npm | `react-hook-form` | 7.43.3 | Form management for `ScheduleComponent`, `DateOverrideInputDialog`, schedule CRUD forms |
-| npm | `date-fns-tz` | 3.2.0 | Timezone-aware date formatting used in `DateOverrideList` via `formatInTimeZone` |
-| npm | `framer-motion` | 10.12.8 | Animations for availability list transitions |
-| npm | `react-select` | 5.8.0 | Advanced select inputs for schedule/timezone pickers |
-| npm | `city-timezones` | 1.2.1 | City timezone lookup for `packages/features/cityTimezones/` |
-| npm | `vitest` | 4.0.16 | Test runner for all availability/schedules unit and integration tests |
-| npm | `prismock` | 1.35.3 | Prisma mock for repository test suites |
-| npm | `typescript` | 5.9.3 | Language compiler |
-| npm | `next` | >=14.0.0 (peer) | Web framework (actual: 16.1.5 in `apps/web`) |
-| npm | `react` | ^18.0.0 (peer) | UI library (actual: 18.2.0 in `apps/web`) |
+**Private (Workspace) Packages**
+
+| Registry | Package Name | Version | Purpose |
+|----------|-------------|---------|---------|
+| workspace | `@calcom/googlecalendar` | `0.0.0` | Google Calendar adapter — OAuth2, FreeBusy API, event CRUD |
+| workspace | `@calcom/office365calendar` | `0.0.0` | Outlook/Office 365 adapter — Microsoft Graph API, batch requests |
+| workspace | `@calcom/applecalendar` | `0.0.0` | Apple Calendar adapter — CalDAV protocol via iCloud |
+| workspace | `@calcom/prisma` | `workspace:*` | Prisma ORM, schema, migrations, type-safe client |
+| workspace | `@calcom/types` | `workspace:*` | Shared TypeScript types — `Calendar` interface, `CalendarEvent`, `EventBusyDate` |
+| workspace | `@calcom/lib` | `workspace:*` | Shared utilities — encryption, OAuthManager, logging |
+| workspace | `@calcom/features` | `workspace:*` | Feature modules — calendars, busyTimes, availability, bookings |
+| workspace | `@calcom/app-store` | `workspace:*` | Integration adapter registry and CLI tooling |
+
+**Public (External) Packages**
+
+| Registry | Package Name | Version | Purpose |
+|----------|-------------|---------|---------|
+| npm | `@googleapis/calendar` | `9.7.9` | Google Calendar API v3 client library (used by `@calcom/googlecalendar`) |
+| npm | `msw` | `2.7.0` | Mock Service Worker for API mocking in Outlook adapter tests |
+| npm | `windows-iana` | `5.1.0` | Windows timezone to IANA timezone conversion (used by `@calcom/office365calendar`) |
+| npm | `react-hook-form` | `7.43.3` | Form handling for Apple Calendar credential input UI |
+| npm | `@prisma/client` | `6.16.1` | Prisma generated client for database queries |
+| npm | `prisma` | `6.16.1` | Prisma CLI for schema management and migration deployment |
+| npm | `zod` | `3.25.76` | Runtime schema validation for credential and event data |
+| npm | `dayjs` | (from `@calcom/dayjs`) | Date/time manipulation used extensively in availability and slot generation |
+| npm | `vitest` | (from `vitest.workspace.ts`) | Test framework for unit and integration tests |
 
 ### 0.3.2 Dependency Updates
 
-#### Import Updates
+**Import Updates**
 
-Files requiring import verification across the availability surface (using wildcards):
+Files requiring new internal imports for gap closure features:
 
-- `packages/features/availability/**/*.ts` — Internal imports from `@calcom/lib`, `@calcom/prisma`, `@calcom/dayjs`, `@calcom/app-store`
-- `packages/features/schedules/**/*.ts` — Internal imports from `@calcom/lib`, `@calcom/prisma`, `@calcom/dayjs`, `@calcom/ui`
-- `packages/features/busyTimes/**/*.ts` — Internal imports from `@calcom/lib`, `@calcom/prisma`, `@calcom/features/schedules`
-- `packages/features/di/**/*.ts` — Token and module imports across the DI graph
-- `packages/trpc/server/routers/viewer/availability/**/*.ts` — Handler imports from `@calcom/features`, `@calcom/prisma`
-- `packages/trpc/server/routers/viewer/slots/**/*.ts` — Handler imports from `@calcom/features/di/containers`
-- `apps/web/modules/availability/**/*.tsx` — TRPC hooks, `@calcom/features`, `@calcom/ui` imports
-- `apps/web/modules/schedules/**/*.tsx` — TRPC hooks, component imports from `@calcom/features/schedules`
+- `packages/features/calendars/lib/CalendarManager.ts` — Import new `BufferTimeEventService` for buffer-sync gap closure
+- `packages/features/bookings/lib/handleCancelBooking.ts` — Import new `CalendarCancellationSyncService` for calendar-driven cancellation propagation
+- `packages/features/calendars/lib/tasker/CalendarsTriggerTasker.ts` — Import cancellation notification handlers for Google and Outlook adapters
+- `packages/features/calendars/di/tasker/*.module.ts` — Register new DI bindings for cancellation-sync and buffer-sync services
 
-#### External Reference Updates
+Import transformation rules for new service integrations:
 
-- `packages/features/package.json` — Verify all workspace dependency versions align
-- `packages/prisma/schema.prisma` — Ensure `Schedule`, `Availability`, `SelectedSlots` models are current
-- `packages/types/schedule.d.ts` — Verify type definitions match runtime implementations
-- `.env.example` — Confirm availability-related environment variables are documented (`NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`, `PUBLIC_QUERY_AVAILABLE_SLOTS_INTERVAL_SECONDS`, `calendar-cache` feature flag)
+- New: `import { CalendarCancellationSyncService } from "../cancellation-sync/CalendarCancellationSyncService"`
+- New: `import { BufferTimeEventService } from "../buffer-sync/BufferTimeEventService"`
+- Apply to: All files in `packages/features/calendars/lib/` and `packages/features/bookings/lib/` that orchestrate calendar operations
+
+**External Reference Updates**
+
+| File Pattern | Update Type | Purpose |
+|-------------|------------|---------|
+| `packages/prisma/schema.prisma` | Model additions | Add nullable fields for buffer-sync toggle, cancellation-sync notification channel metadata |
+| `.env.example` | New variables | Document any new environment variables required for push notification endpoints (e.g., `GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL`, `OUTLOOK_GRAPH_NOTIFICATION_URL`) |
+| `packages/app-store/googlecalendar/package.json` | No change expected | `@googleapis/calendar@9.7.9` already supports push notifications via the `channels` resource |
+| `packages/app-store/office365calendar/package.json` | No change expected | Microsoft Graph change notifications are accessed via the same `@calcom/lib` HTTP client |
+
+### 0.3.3 No New External Dependencies Required
+
+The current dependency set is sufficient for Sprint 3 implementation. Google Calendar push notifications use the existing `@googleapis/calendar@9.7.9` library's `channels` resource. Microsoft Graph change notifications are accessed via standard HTTP calls through the existing OAuth2 infrastructure in `@calcom/lib`. No new npm packages need to be installed.
 
 ## 0.4 Integration Analysis
 
 ### 0.4.1 Existing Code Touchpoints
 
-#### Direct Modifications Required
+**Direct Modifications Required**
 
-- **`packages/features/availability/lib/getUserAvailability.ts`**: The availability orchestration core. Validate that `UserAvailabilityService` correctly sequences: (1) schedule detection via `detectEventTypeScheduleForUser`, (2) holiday blocking via `calculateHolidayBlockedDates`, (3) busy-time fetching via `BusyTimesService`, (4) date-range arithmetic via `buildDateRanges`/`subtract`/`getWorkingHours`, and (5) Redis caching integration. Ensure Zod request schemas cover all edge cases and the service correctly reports seat counts, timezone delegation, and OOO data.
+- **`packages/features/busyTimes/services/getBusyTimes.ts`**: Extend busy time aggregation to support configurable event status filtering. Currently, Google uses the FreeBusy API (which returns aggregate busy windows) and Outlook uses `calendarView` with `showAs` filtering. The modification must align the status interpretation logic with Calendly's "What's considered unavailable?" behavior, where Tentative, Away, Out of Office, and Working Elsewhere statuses are all configurable
+- **`packages/features/calendars/lib/CalendarManager.ts`**: Extend `getCalendarCredentials` to support the new cancellation-sync subscription lifecycle. Extend `processEvent` to optionally trigger buffer event creation when the user has enabled buffer-sync
+- **`packages/features/CalendarEventBuilder.ts`**: Extend the builder to construct buffer event `CalendarEvent` objects with appropriate metadata (title prefix, busy/free status, relationship to parent booking) for the buffer-sync gap closure
+- **`packages/features/bookings/lib/handleCancelBooking.ts`**: Add integration point for calendar-driven cancellation — when a cancellation is initiated from an external calendar change notification, invoke the existing cancellation flow with a `source: "external_calendar"` indicator
+- **`packages/types/Calendar.d.ts`**: Extend `GetAvailabilityParams` interface to include optional `statusFilter` property for configurable conflict detection behavior. May also extend `Calendar` interface with optional `subscribeToChanges` and `unsubscribeFromChanges` methods
 
-- **`packages/features/schedules/lib/slots.ts`**: The slot generation engine. Validate `buildSlotsWithDateRanges` for: interval alignment via `getCorrectedSlotStartTime`, five-/15-minute boundary snapping in optimized mode, `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL` environment override, notice window enforcement (`minimumBookingNotice`), event-length fit checks before range end, deduplication via ISO-keyed Map, and out-of-office metadata merging (user IDs, reasons, emoji, `showNotePublicly`).
+**Dependency Injection Touchpoints**
 
-- **`packages/features/schedules/lib/date-ranges.ts`**: The timezone-aware date-range processor. Validate `processWorkingHours` for DST normalization, `getAdjustedTimezone` for travel schedule overrides, `processDateOverride` for one-off overrides, `processOOO` for zero-length OOO markers, and the `intersect`/`subtract`/`mergeOverlappingRanges` utilities for sorted, deterministic behavior.
+- **`packages/features/calendars/di/tasker/CalendarsTaskService.module.ts`**: Register new `CalendarCancellationSyncService` as a DI-bound service
+- **`packages/features/calendars/di/tasker/CalendarsTriggerTasker.module.ts`**: Register cancellation notification trigger handlers
+- **`packages/features/calendars/di/tasker/tokens.ts`**: Add new DI tokens for `CALENDAR_CANCELLATION_SYNC_SERVICE` and `BUFFER_TIME_EVENT_SERVICE`
 
-- **`packages/features/busyTimes/services/getBusyTimes.ts`**: The busy-time aggregation service. Validate buffer expansion, booking fetch, calendar busy-time queries, seat reference tracking, and the batched limit check pipeline (`fetchBookingsForLimitChecksBatched`).
+**Database/Schema Updates**
 
-- **`packages/features/busyTimes/lib/getBusyTimesFromLimits.ts`**: The limit enforcement layer. Validate `LimitManager`-based evaluation for booking-count, duration, and team-scoped constraints with `withReporting` instrumentation.
+- **`packages/prisma/schema.prisma`**: 
+  - Add nullable `syncBuffersToCalendar` Boolean field to `EventType` or `User` model (Pattern 2: nullable column, no default required) — controls whether buffer time events are written to external calendars
+  - Add nullable `externalCancellationSyncEnabled` Boolean field to `Credential` model — controls whether this credential has active cancellation-sync subscriptions
+  - Add `Feature` flag row for `calendar-cancellation-sync` (disabled by default, Pattern 5)
+  - Add `Feature` flag row for `calendar-buffer-sync` (disabled by default, Pattern 5)
+- **`packages/prisma/migrations/[timestamp]_calendar_integration_gap_closure/migration.sql`**: Migration file implementing the above schema additions using exclusively zero-downtime-safe patterns
 
-- **`packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts`**: Multi-host aggregation. Validate fixed-host intersection, round-robin group semantics, OOO exclusion handling, and the `uniqueAndSortedDateRanges`/`filterRedundantDateRanges` pipeline.
+### 0.4.2 Cross-Domain Integration Points
 
-#### Dependency Injection Touchpoints
-
-- **`packages/features/di/containers/AvailableSlots.ts`**: The DI container that bootstraps the `AvailableSlotsService`. Ensure all 15+ repository and service modules are correctly loaded in dependency order: Prisma → Redis → repositories (OOO, schedule, selected slots, team, user, booking, event type, routing form, features, membership, holiday) → services (booking limits, available slots, user availability, busy times, filter hosts, qualified hosts, no-slots notification).
-
-- **`packages/features/di/containers/GetUserAvailability.ts`**: The DI container for `UserAvailabilityService`. Validate module load order: Prisma → OOO repository → booking repository → event type repository → holiday repository → GetUserAvailability service → busy times service → Redis.
-
-- **`packages/features/di/modules/AvailableSlots.ts`**: Module binding with `satisfies Record<keyof IAvailableSlotsService, symbol>` compile-time guard. Verify all dependency tokens are current.
-
-#### Database/Schema Touchpoints
-
-- **`packages/prisma/schema.prisma`**: The `Schedule` model (fields: `id`, `userId`, `name`, `timeZone`, `availability[]`, `eventType[]`, `Host[]`) and `Availability` model (fields: `id`, `userId`, `eventTypeId`, `days[]`, `startTime`, `endTime`, `date`, `scheduleId`) must remain consistent with repository select projections.
-
-- **`packages/prisma/selects/`**: The `availabilityUserSelect` projection must include all fields required by `findUsersForAvailabilityCheck` — schedules with nested availability, selectedCalendars, and credential relations.
-
-- **`SelectedSlots` model** (fields: `id`, `eventTypeId`, `userId`, `slotUtcStartDate`, `slotUtcEndDate`, `uid`, `releaseAt`, `isSeat`): Used by the slot reservation system with unique constraint on `(userId, slotUtcStartDate, slotUtcEndDate, uid)`.
-
-### 0.4.2 Cross-Feature Integration Map
+Sprint 3 interacts with several upstream and downstream domains. The following diagram illustrates the integration boundaries:
 
 ```mermaid
-flowchart TB
-    subgraph AvailabilityEngine["Availability Engine (F-003)"]
-        UA[UserAvailabilityService]
-        SD[detectEventTypeScheduleForUser]
-        HB[calculateHolidayBlockedDates]
-        DR[date-ranges.ts<br/>buildDateRanges / subtract]
-        WH[getWorkingHours]
-        SG[slots.ts<br/>getSlots / buildSlotsWithDateRanges]
-        AGG[getAggregatedAvailability]
+flowchart TD
+    subgraph Sprint1["Sprint 1: Availability (Upstream ✅)"]
+        AV["Availability Engine\ngetUserAvailability\nScheduleService\nBusyTimesService"]
     end
 
-    subgraph BusyTimes["Busy Times"]
-        BTS[BusyTimesService]
-        BTL[getBusyTimesFromLimits]
-        CC[Calendar Busy Times]
+    subgraph Sprint3["Sprint 3: Calendar Integrations (Current)"]
+        GCS["Google Calendar\nCalendarService"]
+        OCS["Outlook Calendar\nCalendarService"]
+        ACS["Apple Calendar\nCalendarService"]
+        CM["CalendarManager\n(orchestration)"]
+        CEB["CalendarEventBuilder\n(event construction)"]
+        BTS["BusyTimesService\n(conflict detection)"]
+        CSS["CalendarCancellationSync\n(gap closure)"]
+        BES["BufferTimeEventService\n(gap closure)"]
     end
 
-    subgraph DataLayer["Data Layer"]
-        SR[ScheduleRepository]
-        SS[ScheduleService]
-        PR[Prisma Schema]
-        SEL[SelectedSlotRepository]
+    subgraph Downstream["Downstream Sprints"]
+        WH["Sprint 4: Webhooks\n(depends on Gate 3)"]
     end
 
-    subgraph DILayer["DI Layer"]
-        DIA[AvailableSlots Container]
-        DIU[GetUserAvailability Container]
-        DIB[BusyTimes Container]
-    end
-
-    subgraph Consumers["Downstream Consumers"]
-        TRPC[tRPC Viewer Routers]
-        WEB[Web App Modules]
-        API1[API v1 Endpoints]
-        API2[API v2 Endpoints]
-        SDK[Platform SDK / Atoms]
-    end
-
-    UA --> SD
-    UA --> HB
-    UA --> BTS
-    UA --> DR
-    UA --> WH
-    SG --> DR
-    AGG --> DR
-    BTS --> BTL
-    BTS --> CC
-    BTL --> SR
-    UA --> SR
-    SS --> SR
-    DIA --> DIU
-    DIA --> DIB
-    TRPC --> DIA
-    WEB --> TRPC
-    API1 --> UA
-    API2 --> DIA
-    SDK --> DIA
+    AV -->|"busy time data"| BTS
+    BTS -->|"calendar conflicts"| CM
+    CM --> GCS
+    CM --> OCS
+    CM --> ACS
+    CEB -->|"CalendarEvent objects"| CM
+    CSS -->|"cancellation propagation"| CM
+    BES -->|"buffer events"| GCS
+    BES -->|"buffer events"| OCS
+    Sprint3 -->|"Gate 3 validation"| WH
 ```
 
-### 0.4.3 Platform SDK Integration
+### 0.4.3 Booking Lifecycle Integration
 
-The `packages/platform/libraries/schedules.ts` file re-exports the following from the availability and schedules feature packages, establishing the public API contract for third-party consumers:
+The calendar integration touchpoints within the booking lifecycle are critical for CI-005 (bi-directional sync verification):
 
-- `ScheduleRepository` and `FindDetailedScheduleByIdReturnType` from `@calcom/features/schedules/repositories/ScheduleRepository`
-- `updateSchedule` and `UpdateScheduleResponse` from `@calcom/features/schedules/services/ScheduleService`
-- `UserAvailabilityService` from `@calcom/features/availability/lib/getUserAvailability`
-- TRPC handlers: `createScheduleHandler`, `getAvailabilityListHandler`, `duplicateScheduleHandler`, `getScheduleByEventSlugHandler`
-- Validation schemas: `CreateScheduleSchema` (from TRPC create schema)
+- **Booking Creation**: `handleNewBooking` → `CalendarEventBuilder.fromBooking()` → `CalendarManager.processEvent()` → `CalendarService.createEvent()` on each connected destination calendar
+- **Booking Rescheduling**: `handleNewBooking` (with reschedule context) → `CalendarService.updateEvent()` modifies the existing external event with new times
+- **Booking Cancellation**: `handleCancelBooking` → `CalendarService.deleteEvent()` removes the external calendar event. For calendar-driven cancellation (CI-001 gap), the flow is reversed: external event deletion → change notification → `CalendarCancellationSyncService` → `handleCancelBooking`
+- **Availability Query**: Slot generation → `getUserAvailability` → `getBusyTimes` → `CalendarService.getAvailability()` per connected calendar → busy time aggregation → slot subtraction
 
-Any changes to the function signatures or return types of these exports would break the platform SDK contract and must be validated for backward compatibility.
+### 0.4.4 API v2 Integration Surface
+
+The NestJS-based API v2 at `apps/api/v2/src/ee/calendars/` exposes calendar operations that must be verified for Sprint 3:
+
+- **`GET /v2/calendars`** — Lists connected calendars via `calendars.controller.ts`
+- **`GET /v2/calendars/busy-times`** — Returns busy times for conflict checking via `busy-times.output.ts`
+- **`POST /v2/calendars/credentials`** — Manages calendar credential CRUD
+- **`DELETE /v2/calendars/credentials`** — Removes calendar credentials via `delete-calendar-credentials.input.ts`
+- **Provider-specific services**: `gcal.service.ts`, `outlook.service.ts`, `apple-calendar.service.ts` — each wrapping the corresponding `@calcom/app-store` adapter for API v2 consumption
+
+These endpoints serve as the programmatic surface for calendar operations and must produce correct behavior after all Sprint 3 modifications.
 
 ## 0.5 Technical Implementation
 
 ### 0.5.1 File-by-File Execution Plan
 
-Every file listed below must be validated, hardened, or extended as part of this sprint. Files are grouped by execution priority to ensure foundational layers are solid before higher-level orchestration is addressed.
+**Group 1 — Spec-First Design Artifacts (Must Be Created First)**
 
-#### Group 1 — Core Date/Time Foundation
+- CREATE: `specs/calendar-integrations/design.md` — Source of truth for Sprint 3 implementation covering all 5 epics (CI-001 through CI-005) and 2 gap closures, with technical design for database changes, API modifications, UI changes, edge cases, and out-of-scope items
+- CREATE: `specs/calendar-integrations/implementation.md` — Progress tracking with Status header, Completed/In Progress/Blocked/Next Steps sections
+- CREATE: `specs/calendar-integrations/decisions.md` — ADRs for key trade-offs (e.g., push vs. polling for cancellation sync, buffer event naming conventions, status filter storage location)
+- CREATE: `specs/calendar-integrations/CLAUDE.md` — Agent instructions referencing `design.md`, `implementation.md`, and relevant directory paths
+- CREATE: `specs/calendar-integrations/prompts.md` — Lifecycle prompts for sync status, test generation, code review, and doc generation
+- CREATE: `specs/calendar-integrations/future-work.md` — Deferred items (e.g., CalDAV cancellation sync, Lark/Feishu push notifications)
+- CREATE: `specs/calendar-integrations/docs/README.md` — Internal docs with Overview, How to Use, Configuration Options, Common Use Cases
 
-- **MODIFY: `packages/features/schedules/lib/date-ranges.ts`** — Validate `processWorkingHours` for all DST transition scenarios. Confirm `getAdjustedTimezone` correctly applies travel schedule overrides by comparing `travelSchedules` against the current date. Verify `processDateOverride` handles midnight-bounding overrides and `processOOO` emits zero-length markers. Ensure `intersect` uses sorted two-pointer traversal with numeric caching and `subtract` correctly subtracts exclusion ranges with metadata passthrough. Confirm `mergeOverlappingRanges` operates on non-Dayjs Date objects for deterministic merging.
+**Group 2 — Database Migration (Additive-Only, Zero-Downtime)**
 
-- **MODIFY: `packages/features/schedules/lib/date-ranges.test.ts`** — Extend the Vitest battery to cover any untested edge cases discovered during validation: travel timezone recalculations, zero-length span drops, midnight-bounding overrides, and multi-range timezone-mixed exclusions.
+- CREATE: `packages/prisma/migrations/[timestamp]_calendar_integration_gap_closure/migration.sql` — Contains:
+  - `ALTER TABLE "EventType" ADD COLUMN "syncBuffersToCalendar" BOOLEAN;` (nullable, Pattern 2)
+  - `ALTER TABLE "Credential" ADD COLUMN "externalCancellationSyncEnabled" BOOLEAN;` (nullable, Pattern 2)
+  - `INSERT INTO "Feature" ... VALUES ('calendar-cancellation-sync', false, ...) ON CONFLICT DO NOTHING;` (Pattern 5)
+  - `INSERT INTO "Feature" ... VALUES ('calendar-buffer-sync', false, ...) ON CONFLICT DO NOTHING;` (Pattern 5)
+- MODIFY: `packages/prisma/schema.prisma` — Add the new nullable fields to `EventType` and `Credential` models; add nothing that breaks backward compatibility
 
-- **MODIFY: `packages/lib/availability.ts`** — Validate `DEFAULT_SCHEDULE` (seven weekday buckets with 9-5 Mon-Fri), `getAvailabilityFromSchedule` (deduplication + day grouping), `getWorkingHours` (UTC offset calculation, overflow handling for cross-midnight and cross-day scenarios), and `availabilityAsString` (locale-aware formatting).
+**Group 3 — Core Parity Verification (CI-001, CI-002, CI-003)**
 
-- **MODIFY: `packages/types/schedule.d.ts`** — Confirm `TimeRange`, `Schedule`, `WorkingHours`, and `TravelSchedule` type definitions match their runtime implementations across the codebase.
+- MODIFY: `packages/app-store/googlecalendar/lib/CalendarService.ts` — Verify and align `createEvent`, `updateEvent`, `deleteEvent`, `getAvailability` behavior with Calendly's documented Google Calendar behavior. Ensure FreeBusy API chunking handles 90-day windows correctly, recurring event instances are located properly, and Google Meet conference data is attached when applicable
+- MODIFY: `packages/app-store/office365calendar/lib/CalendarService.ts` — Verify and align Microsoft Graph API interactions. Ensure `calendarView` correctly filters events by `showAs` status (Busy, Tentative, Away, WorkingElsewhere, Oof), batch API requests handle pagination via `@odata.nextLink`, and retry-after logic respects HTTP 429 responses
+- MODIFY: `packages/app-store/applecalendar/lib/CalendarService.ts` — Verify CalDAV event CRUD operations produce correct results. Ensure `getAvailability` correctly queries busy times via CalDAV `REPORT` method
 
-#### Group 2 — Busy Time Aggregation
+**Group 4 — Conflict Detection Alignment (CI-004)**
 
-- **MODIFY: `packages/features/busyTimes/services/getBusyTimes.ts`** — Validate `BusyTimesService._getBusyTimes`: buffer expansion by `beforeEventBuffer`/`afterEventBuffer` minutes, booking fetch with Prisma, seat reference counting, calendar busy-time integration via `getBusyCalendarTimes` when credentials exist and `bypassBusyCalendarTimes` is false, and the `subtract`/`getDefinedBufferTimes` pipeline for calendar-based windows.
+- MODIFY: `packages/types/Calendar.d.ts` — Extend `GetAvailabilityParams` with optional `statusFilter?: string[]` property to enable configurable status-based conflict detection
+- MODIFY: `packages/features/busyTimes/services/getBusyTimes.ts` — Pass `statusFilter` through to individual calendar adapter `getAvailability` calls, enabling per-user configuration of which event statuses block availability
+- MODIFY: `packages/app-store/office365calendar/lib/CalendarService.ts` — Enhance `getAvailability` to accept and apply `statusFilter` parameter when querying `calendarView`, filtering by configurable `showAs` values instead of hardcoded ones
+- MODIFY: `packages/features/calendars/lib/CalendarManager.ts` — Thread `statusFilter` from user preferences through the calendar credential resolution pipeline to each adapter's `getAvailability` call
 
-- **MODIFY: `packages/features/busyTimes/services/getBusyTimes.test.ts`** — Verify unit tests cover ordinary booking constraints, buffer extensions, seat-limited blocking, batch limit checks with 75/100/150 userIds, rescheduleUid exclusions, and null propagation.
+**Group 5 — Bi-Directional Sync Verification (CI-005)**
 
-- **MODIFY: `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts`** — Validate `_getBusyTimesFromLimits` orchestration: `LimitManager` instantiation, booking-limit enforcement (descending interval keys, skip already-busy, yearly delegation to `getCheckBookingLimitsService`), duration-limit enforcement (sum overlapping minutes per unit), and team-level limit enforcement (team booking fetch, managed event inclusion).
+- CREATE: `packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts` — End-to-end integration tests verifying the complete outbound pipeline (booking → `CalendarEventBuilder` → `CalendarManager` → adapter → external calendar) and inbound pipeline (external calendar → `getAvailability` → busy time aggregation → slot subtraction)
+- MODIFY: `packages/features/CalendarEventBuilder.ts` — Verify `fromBooking` produces correct `CalendarEvent` objects for all three primary adapters (Google, Outlook, Apple)
 
-#### Group 3 — Schedule Detection and Holiday Blocking
+**Group 6 — Gap Closure: Calendar-Driven Cancellation Sync (CI-001 gap)**
 
-- **MODIFY: `packages/features/availability/lib/detectEventTypeScheduleForUser.ts`** — Validate the priority hierarchy: (1) event-type schedule → (2) host override → (3) stored user schedule via `defaultScheduleId` → (4) `DEFAULT_SCHEDULE_DATA` fallback. Confirm timezone propagation (`eventType.timeZone` → `user.timeZone`), `isDefaultSchedule`/`isTimezoneSet` flags, and host assignment reuse.
+- CREATE: `packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts` — Core service handling the flow: external calendar event deletion detected → lookup corresponding Cal.com booking by external event UID → invoke `handleCancelBooking` with `source: "external_calendar"` indicator → dispatch attendee notifications and webhook events
+- CREATE: `packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts` — Handler processing Google Calendar push notification payloads, verifying the event was deleted or declined, and delegating to `CalendarCancellationSyncService`
+- CREATE: `packages/features/calendars/lib/cancellation-sync/handlers/OutlookCancellationHandler.ts` — Handler processing Microsoft Graph change notification payloads for event deletion and decline detection
+- MODIFY: `packages/features/bookings/lib/handleCancelBooking.ts` — Accept optional `source` parameter to distinguish user-initiated vs. calendar-driven cancellations
 
-- **MODIFY: `packages/features/availability/lib/detectEventTypeScheduleForUser.test.ts`** — Verify all branches of the resolver's decision tree are covered.
+**Group 7 — Gap Closure: Buffer Time Calendar Visualization (CI-002 gap)**
 
-- **MODIFY: `packages/features/availability/lib/calculateHolidayBlockedDates.test.ts`** — Validate the holiday blocking matrix: missing settings, null country codes, normalized day boundaries, metadata merging, weekday filtering, multi-schedule coverage, disabled holiday IDs.
+- CREATE: `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` — Service that, when the `syncBuffersToCalendar` toggle is enabled, creates additional calendar events for pre-event and post-event buffer periods alongside the main booking event. On cancellation, deletes buffer events alongside the main event. Buffer events are marked as "Busy" with a distinctive title pattern (e.g., "Buffer: [Event Title]")
+- MODIFY: `packages/features/CalendarEventBuilder.ts` — Add `buildBufferEvent(booking, bufferType: "before" | "after")` method to construct `CalendarEvent` objects for buffer time periods
 
-- **MODIFY: `packages/features/availability/lib/findUsersForAvailabilityCheck.ts`** — Validate Prisma user enrichment with `availabilityUserSelect`, `selectedCalendars` relations, `withSelectedCalendars` normalization, and `enrichUserWithDelegationCredentialsIncludeServiceAccountKey`.
+**Group 8 — Tests and Documentation**
 
-#### Group 4 — Slot Generation
-
-- **MODIFY: `packages/features/schedules/lib/slots.ts`** — Validate `buildSlotsWithDateRanges`: sort DateRange inputs, determine working interval via `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`, snap to UTC now + notice window, deduplicate via ISO-keyed Map, convert to invitee timezone, apply offsets, enforce eventLength fit before range end, merge adjacent boundaries, and merge OOO metadata (user IDs, reasons, emoji, `showNotePublicly`).
-
-- **MODIFY: `packages/features/schedules/lib/slots.test.ts`** — Verify tests cover 24-hour distributions, booking notice, unordered overlaps, fractional durations, timezone offsets, optimized flag behavior, performance across thousands of ranges, environment-driven interval overrides, and cross-timezone OOO metadata.
-
-#### Group 5 — Availability Orchestration
-
-- **MODIFY: `packages/features/availability/lib/getUserAvailability.ts`** — Validate the `UserAvailabilityService` orchestration: Zod request schema validation, typed query interfaces, composition of `detectEventTypeScheduleForUser` → `calculateHolidayBlockedDates` → `BusyTimesService` → `buildDateRanges`/`subtract`/`getWorkingHours` → normalized response (busy slots, computed ranges, working hours, date overrides, seat summaries, OOO data). Verify Redis caching, timezone delegation helpers, and seat-count reporters.
-
-- **MODIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts`** — Validate: fixed-host filtering via metadata, collective semantics forcing all participants as fixed, round-robin grouping by `groupId` or `DEFAULT_GROUP_ID`, intersection enforcement (every group must contribute), and the `uniqueAndSortedDateRanges` → `filterRedundantDateRanges` pipeline.
-
-- **MODIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.test.ts`** — Verify regression coverage: overlapping exclusions, reversed timestamps, fixed-host merging, mixed fixed/round-robin with OOO, deduplication, grouped round-robin, empty-group edge cases, and group-contribution enforcement.
-
-#### Group 6 — Data Access and Services
-
-- **MODIFY: `packages/features/schedules/repositories/ScheduleRepository.ts`** — Validate `findDetailedScheduleById` (default schedule resolution, permission guard via `hasReadPermissionsForUserId`, ownership check, Atom transformation, timezone fallback), `getDefaultScheduleId`, `hasDefaultSchedule`, `setupDefaultSchedule`, and lightweight read methods.
-
-- **MODIFY: `packages/features/schedules/services/ScheduleService.ts`** — Validate `ZUpdateInputSchema` (Zod), ownership/edit permission enforcement, default schedule toggle delegation, name-less update short-circuit, transactional `prisma.schedule.update` (timezone, name, availability delete/recreate), and `transformScheduleToAvailabilityForAtom` conversion.
-
-#### Group 7 — UI Components and Hooks
-
-- **MODIFY: `packages/features/schedules/components/ScheduleComponent.tsx`** — Validate weekly grid: React Hook Form integration, `DayRanges` with `useFieldArray`, `parseTimeString` for 12/24-hour format normalization, `Switch` toggles restoring `DEFAULT_DAY_RANGE`, `CopyTimes` dropdown, and `LazySelect` time picker.
-
-- **MODIFY: `packages/features/schedules/hooks/useTimesForSchedule.ts`** — Validate ISO window calculation: `selectedDate`/`month`/`dayCount` resolution, `usePrefetch` layout heuristics, start/end time computation based on layout-driven prefetch, and integration with `BookerStoreContext`.
-
-- **MODIFY: `apps/web/modules/availability/availability-view.tsx`** — Validate TRPC mutation hooks (delete, update, bulk-update, duplicate), cache invalidation via `trpc.useUtils`, shared revalidation helpers, and toast feedback.
+- CREATE: `packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts` — Parity-specific tests for Google Calendar adapter
+- CREATE: `packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts` — Unit tests for Outlook adapter
+- CREATE: `packages/features/calendars/lib/__tests__/conflictDetection.test.ts` — Conflict detection alignment tests
+- CREATE: `packages/features/calendar-subscription/lib/__tests__/CalendarCancellationSync.test.ts` — Cancellation sync tests
+- CREATE: `packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts` — Buffer sync tests
+- MODIFY: `docs/gap-report/calendar-integrations.mdx` — Update parity status for completed gaps
+- MODIFY: `docs/sprint-roadmap/epic-catalog.mdx` — Mark CI-001 through CI-005 as completed
 
 ### 0.5.2 Implementation Approach per File
 
-- **Establish correctness foundation**: Start with `date-ranges.ts` and `availability.ts` since every higher-level component depends on timezone-aware interval arithmetic being deterministic.
-- **Validate busy-time aggregation**: Ensure `BusyTimesService` and `getBusyTimesFromLimits` correctly produce the exclusion set that feeds into availability subtraction.
-- **Confirm schedule detection chain**: Validate the `detectEventTypeScheduleForUser` resolver and holiday blocking before integrating with the orchestrator.
-- **Harden slot generation**: With correct date ranges and busy times confirmed, validate `slots.ts` for correct interval snapping, notice enforcement, and metadata propagation.
-- **Verify orchestration**: Validate `UserAvailabilityService` as the composition point for all sub-systems.
-- **Confirm UI fidelity**: Validate that all React components and hooks consume the availability data correctly and present deterministic results.
+The implementation follows the autonomous execution protocol defined in the sprint roadmap:
 
-### 0.5.3 User Interface Design
+- **Establish foundation** by creating spec artifacts (`specs/calendar-integrations/`) and executing the database migration with zero-downtime patterns
+- **Verify core parity** by systematically testing each adapter (Google, Outlook, Apple) against Calendly's documented behavior, modifying adapter code only where behavioral gaps are confirmed
+- **Align conflict detection** by extending the busy time aggregation pipeline with configurable status filtering, threading the configuration from user preferences through the DI system to each adapter
+- **Verify bi-directional sync** by creating end-to-end integration tests that exercise the complete booking lifecycle across all three primary adapters
+- **Close gaps** by implementing calendar-driven cancellation sync and buffer time visualization behind feature flags, using the existing calendar subscription and tasker infrastructure
+- **Validate comprehensively** by executing all five Gate 3 validation dimensions — behavioral testing (CI-VAL-001 through CI-VAL-008), regression testing (existing CalendarService and CalendarManager tests pass at 100%), data preservation (row counts, credential decryption), webhook compatibility (v2021-10-20 payloads unchanged), and cross-domain integration (calendar busy times feed correctly into availability engine)
 
-The availability and scheduling UI consists of the following key surfaces:
+### 0.5.3 User Interface Considerations
 
-- **Availability List Page** (`/availability`): Renders `AvailabilityList` with schedule rows (`ScheduleListItem`), each displaying localized availability summaries, timezone badges, and dropdown actions (set default, duplicate, delete). Uses `NewScheduleButton` FAB for creation.
-- **Schedule Editor** (`/availability/[schedule]`): Renders `AvailabilitySettings` with the weekly grid (`ScheduleComponent`), date override management (`DateOverrideInputDialog`/`DateOverrideList`), timezone selection, and a troubleshooting link.
-- **Event Type Availability Tab**: Renders `EventAvailabilityTab` with schedule/restriction selectors, team availability per host, and `SettingsToggle`-wrapped schedule controls.
-- **Booker Slot Display**: The `useSchedule` and `useSlotsForDate` hooks feed slot data to the Booker component for public-facing time slot selection.
-- **Skeleton Loading States**: `SkeletonLoader` (availability list) and `AvailabilityScheduleSkeleton` (schedule editor) provide consistent loading UX.
+Sprint 3 has minimal UI surface. The primary UI touchpoints are:
+
+- **Calendar Settings Page** (`apps/web/app/(use-page-wrapper)/settings/(settings-layout)/my-account/calendars/page.tsx`) — May need a new toggle for "Sync buffer times to calendar" if the buffer-sync gap closure is implemented with a per-user setting
+- **Event Type Settings** — May need a toggle for `syncBuffersToCalendar` if the setting is per-event-type
+- **Calendar Onboarding** (`apps/web/app/(use-page-wrapper)/onboarding/personal/calendar/page.tsx`) — No changes expected; existing onboarding flow handles calendar connection
+- **Destination Calendar Selector** (`packages/features/calendars/components/DestinationCalendarSelector.tsx`) — No changes expected; per-event-type calendar selection already supported
 
 ## 0.6 Scope Boundaries
 
 ### 0.6.1 Exhaustively In Scope
 
-#### Feature Source Files
+**Calendar Adapter Source Files**
 
-- `packages/features/availability/**/*.ts` — All availability business logic, tests, and components
-- `packages/features/schedules/**/*.ts` — All scheduling engine logic, components, hooks, repositories, services, and tests
-- `packages/features/busyTimes/**/*.ts` — Busy time services and limit enforcement logic
-- `packages/features/selectedSlots/**/*.ts` — Selected slot repositories and DTOs
+- `packages/app-store/googlecalendar/**/*.ts` — All Google Calendar adapter files including CalendarService, CalendarAuth, API routes, credential schema, and tests
+- `packages/app-store/office365calendar/**/*.ts` — All Outlook/O365 adapter files including CalendarService, API routes, types, and tests
+- `packages/app-store/applecalendar/**/*.ts` — All Apple Calendar adapter files including CalendarService, API routes, and tests
 
-#### Shared Library Utilities
+**Calendar Feature Infrastructure**
 
-- `packages/lib/availability.ts` — Canonical schedule constants and working hours helpers
-- `packages/lib/schedules/transformers/**/*.ts` — Atom API transformers and schedule list data
-- `packages/types/schedule.d.ts` — Shared TypeScript type definitions
+- `packages/features/calendars/lib/CalendarManager.ts` — Calendar credential resolution and event orchestration
+- `packages/features/calendars/lib/getConnectedDestinationCalendars.ts` — Connected calendar retrieval
+- `packages/features/calendars/lib/getCalendarsEvents.ts` — Cross-provider event fetching
+- `packages/features/calendars/repositories/DestinationCalendarRepository.ts` — Destination calendar persistence
+- `packages/features/calendars/lib/tasker/**/*.ts` — Calendar sync and trigger taskers
+- `packages/features/calendars/di/tasker/**/*.ts` — DI modules for calendar services
+- `packages/features/CalendarEventBuilder.ts` — Event construction builder
+- `packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts` — Selected calendar CRUD
+- `packages/features/calendar-subscription/**/*.ts` — Calendar subscription adapters and services
 
-#### Dependency Injection
+**Busy Time and Availability**
 
-- `packages/features/di/containers/AvailableSlots.ts` — DI container for slot availability
-- `packages/features/di/containers/GetUserAvailability.ts` — DI container for user availability
-- `packages/features/di/containers/BusyTimes.ts` — DI container for busy times
-- `packages/features/di/modules/AvailableSlots.ts` — Module binding for `AvailableSlotsService`
-- `packages/features/di/modules/GetUserAvailability.ts` — Module binding for `UserAvailabilityService`
-- `packages/features/di/modules/SelectedSlots.ts` — Module binding for `PrismaSelectedSlotRepository`
-- `packages/features/di/modules/NoSlotsNotification.ts` — Module binding for `NoSlotsNotificationService`
+- `packages/features/busyTimes/services/getBusyTimes.ts` — Busy time aggregation service
+- `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` — Limit-based busy time enforcement
+- `packages/features/availability/lib/getUserAvailability.ts` — Availability orchestration layer
 
-#### tRPC Routers and Handlers
+**Booking Lifecycle**
 
-- `packages/trpc/server/routers/viewer/availability/**/*.ts` — All availability router procedures and handlers
-- `packages/trpc/server/routers/viewer/slots/**/*.ts` — All slot router procedures, types, and handlers
+- `packages/features/bookings/lib/handleCancelBooking.ts` — Cancellation handler (for calendar-driven cancellation integration)
+- `packages/features/bookings/lib/handleNewBooking/createBooking.ts` — Booking creation (for calendar event creation verification)
+- `packages/features/bookings/lib/handleNewBooking/ensureAvailableUsers.ts` — Availability verification during booking
 
-#### Web Application
+**Type Definitions**
 
-- `apps/web/modules/availability/**/*.tsx` — Availability page views and actions
-- `apps/web/modules/schedules/**/*.tsx` — Schedule components, hooks, and types
-- `apps/web/app/(use-page-wrapper)/availability/**/*.tsx` — App Router pages, skeletons, actions
-- `apps/web/app/(use-page-wrapper)/(main-nav)/availability/**/*.tsx` — Navigation-scoped availability pages
-- `apps/web/modules/event-types/components/tabs/availability/**/*.tsx` — Event type availability tab
-- `apps/web/pages/api/trpc/availability/**/*.ts` — Next.js API route for availability TRPC
-- `apps/web/test/lib/getAvailabilityFromSchedule.test.ts` — Availability grouping test suite
+- `packages/types/Calendar.d.ts` — `Calendar` interface, `CalendarEvent`, `GetAvailabilityParams`, `EventBusyDate`
 
-#### API Surface
+**Schema and Migration**
 
-- `apps/api/v1/lib/validations/availability.ts` — API v1 availability validation schemas
-- `apps/api/v1/lib/validations/schedule.ts` — API v1 schedule validation schemas
-- `apps/api/v1/pages/api/availabilities/**/*.ts` — API v1 availability endpoints
-- `apps/api/v2/src/ee/schedules/**/*.ts` — API v2 EE schedule module
-- `apps/api/v2/src/lib/services/available-slots.service.ts` — API v2 available slots NestJS provider
-- `apps/api/v2/src/lib/services/busy-times.service.ts` — API v2 busy times NestJS provider
-- `apps/api/v2/src/lib/modules/available-slots.module.ts` — API v2 available slots NestJS module
-- `apps/api/v2/src/modules/slots/**/*.ts` — API v2 versioned slot modules
+- `packages/prisma/schema.prisma` — Credential, SelectedCalendar, DestinationCalendar, EventType, Feature models
+- `packages/prisma/migrations/[timestamp]_calendar_integration_gap_closure/**` — New migration directory
+- `packages/prisma/selects/credential.ts` — Credential select projections
 
-#### Prisma and Database
+**API v2 Calendar Surface**
 
-- `packages/prisma/schema.prisma` (models: `Schedule`, `Availability`, `SelectedSlots`, `SelectedCalendar`)
-- `packages/prisma/selects/` — `availabilityUserSelect` and related projections
-- `packages/prisma/migrations/` — Availability-related migrations (`20210630014738`, `20211115182559`, `20220305233635`)
+- `apps/api/v2/src/ee/calendars/**/*.ts` — Calendar controllers, services, processors, inputs, outputs
+- `apps/api/v2/src/modules/cal-unified-calendars/**/*.ts` — Unified calendar endpoints
+- `apps/api/v2/src/modules/selected-calendars/**/*.ts` — Selected calendar management
+- `apps/api/v2/src/modules/destination-calendars/**/*.ts` — Destination calendar management
 
-#### Platform SDK
+**Tests**
 
-- `packages/platform/libraries/schedules.ts` — Platform re-exports of schedule/availability services
-- `packages/platform/atoms/availability/types.ts` — Atom availability type contracts
-- `packages/platform/atoms/hooks/schedules/types.ts` — Atom schedule hook types
+- `packages/app-store/googlecalendar/lib/__tests__/**/*.ts` — Google adapter tests
+- `packages/app-store/googlecalendar/tests/**/*.ts` — Google E2E tests
+- `packages/features/calendars/lib/CalendarManager.test.ts` — CalendarManager tests
+- `packages/features/CalendarEventBuilder.test.ts` — CalendarEventBuilder tests
+- `packages/features/busyTimes/services/getBusyTimes.test.ts` — BusyTimes tests
+- `packages/features/busyTimes/services/getBusyTimes.integration-test.ts` — BusyTimes integration tests
+- `packages/features/calendar-subscription/adapters/__tests__/**/*.ts` — Subscription adapter tests
+- `packages/features/calendar-subscription/lib/__tests__/**/*.ts` — Subscription service tests
+- `apps/api/v2/src/ee/calendars/controllers/calendars.controller.e2e-spec.ts` — API v2 E2E tests
 
-#### Configuration
+**Spec Artifacts**
 
-- `.env.example` — `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`, `PUBLIC_QUERY_AVAILABLE_SLOTS_INTERVAL_SECONDS`
-- `packages/features/package.json` — Feature package dependencies
+- `specs/calendar-integrations/**/*` — All design, implementation, decisions, docs artifacts
+
+**Documentation**
+
+- `docs/gap-report/calendar-integrations.mdx` — Gap report update
+- `docs/sprint-roadmap/epic-catalog.mdx` — Epic status update
+- `docs/sprint-roadmap/validation-criteria.mdx` — Validation evidence recording
+
+**Configuration**
+
+- `.env.example` — Environment variable additions if needed
 
 ### 0.6.2 Explicitly Out of Scope
 
-- **Booking Lifecycle Management (F-002)**: Booking creation, confirmation, rescheduling, and cancellation flows — except where they intersect with busy-time generation
-- **Event Type Management (F-001)**: Event type CRUD operations — except where event types reference schedules
-- **Calendar Integrations (F-004 App Store)**: Individual calendar provider implementations (Google Calendar, Outlook, Apple) — only the aggregated busy-time interface is in scope
-- **Enterprise Features**: Organization multi-tenancy (F-006), SSO (F-007), Directory Sync (F-008), Workflow Automation (F-009), Round-Robin Assignment (F-019) — except where they consume availability data
-- **Communication Stack (F-010)**: Email and SMS notification flows
-- **Performance Optimizations**: Redis caching strategies beyond functional correctness validation
-- **Embed Distribution (F-013)**: Embed widget rendering — except the shared hooks consumed by embeds
-- **Refactoring**: Any structural refactoring of existing code unrelated to availability correctness
-- **New Feature Development**: Features not specified in the sprint scope (e.g., restriction schedules, new API endpoints)
-- **Infrastructure**: CI/CD pipeline changes, Docker configuration, deployment scripts
+- **Non-primary calendar adapters**: CalDAV (`caldavcalendar`), Exchange 2013 (`exchange2013calendar`), Exchange 2016 (`exchange2016calendar`), Lark (`larkcalendar`), Feishu (`feishucalendar`), Zoho (`zohocalendar`), ICS Feed (`ics-feedcalendar`), and generic Exchange (`exchangecalendar`) — these adapters are not part of Calendly's native integrations and are explicitly Cal.com advantages; no parity work needed
+- **Sprint 1 (Availability & Scheduling)**: Assumed complete with Gate 1 passed — `packages/features/schedules/`, `packages/features/holidays/`, `packages/features/travelSchedule/` are not modified
+- **Sprint 2 (Event Types)**: Not in scope — `packages/features/eventtypes/` is not modified beyond verifying event-type-level calendar selection works
+- **Sprint 4+ features (Webhooks, Routing Forms, Embed, Admin, Notifications)**: Downstream sprints depend on Gate 3 passing but are not implemented in this sprint
+- **Webhook payload modifications**: No changes to `packages/features/webhooks/` — existing `v2021-10-20` payloads must remain unchanged
+- **Performance optimization**: Beyond what is needed for parity — no refactoring of existing adapter code for performance unless it directly affects behavioral parity
+- **UI redesign**: The existing calendar settings UI is functional — only minor additions (buffer-sync toggle) are in scope, not visual redesign
+- **Embed system**: `packages/embeds/` is not in scope for Sprint 3
+- **Email/SMS notification changes**: `packages/emails/` and `packages/sms/` are not modified — notification behavior is Sprint 8 scope
+- **Pricing/payment integration**: No changes to Stripe/PayPal payment flows
 
 ## 0.7 Rules for Feature Addition
 
-### 0.7.1 Architecture and Pattern Compliance
+### 0.7.1 Spec-First Development Workflow
 
-- **Dependency Injection First**: All new services and repositories must be registered through the `@evyweb/ioctopus` DI container system. Directly instantiating services is prohibited. New modules must follow the token-based pattern established in `packages/features/di/modules/` with `satisfies Record<keyof Interface, symbol>` compile-time guards.
-- **Repository Pattern Enforcement**: All database access must go through repository abstractions. No direct Prisma calls from service or handler code. Repository interfaces must be defined separately from their Prisma implementations to preserve testability.
-- **tRPC Router Conventions**: New availability or scheduling procedures must be added to the existing viewer routers at `packages/trpc/server/routers/viewer/availability/` or `packages/trpc/server/routers/viewer/slots/`. Every handler must have a co-located Zod schema in a `*.schema.ts` file and a separate `*.handler.ts` file.
-- **Zod Validation at Boundaries**: All external inputs (tRPC inputs, API request bodies, configuration parsing) must be validated with Zod 3.25.76 schemas. Internal function signatures may use TypeScript types inferred from Zod schemas via `z.infer<>`.
+- Every implementation change must be preceded by a design spec in `specs/calendar-integrations/design.md` that documents what to build and how
+- Progress must be tracked in `specs/calendar-integrations/implementation.md` for session continuity
+- All architectural trade-offs must be documented in `specs/calendar-integrations/decisions.md` using the ADR format (Context, Options Considered with pros/cons, Decision, Consequences)
+- The spec folder must be created by copying `specs/_templates` before any code changes begin
 
-### 0.7.2 Timezone and Date-Time Handling
+### 0.7.2 Zero-Downtime Migration Compliance
 
-- **dayjs as the Canonical Library**: All date-time manipulation must use `@calcom/dayjs` (the project's extended dayjs instance), never raw `Date` objects or alternative libraries. The `@calcom/dayjs` package includes timezone, UTC, and localization plugins.
-- **DST Normalization**: Every function that processes working hours or date ranges must call through `processWorkingHours` in `packages/features/schedules/lib/date-ranges.ts`, which handles DST boundary shifts. Never manually adjust UTC offsets.
-- **Timezone Storage Convention**: User schedules store an optional `timeZone` field on the `Schedule` model. When absent, the system falls back to the user's profile timezone. All slot calculations must normalize to UTC before comparison and convert to the requested display timezone for output.
-- **Date Range Arithmetic**: Use the `DateRange` class and its `intersect`, `subtract`, and `merge` utilities from `date-ranges.ts` for all interval math. Do not implement custom overlap logic.
+- All schema changes must use exclusively backward-compatible patterns from `docs/migration/zero-downtime-strategy.mdx`
+- Permitted patterns: additive columns with defaults (Pattern 1), nullable columns (Pattern 2), enum creation with column addition (Pattern 4), feature flag gating (Pattern 5), concurrent index creation (Pattern 7)
+- Prohibited operations: column renames, column type changes, NOT NULL without defaults, column drops in same deployment, table drops with active foreign keys, enum value removal
+- Every migration must include a rollback SQL script tested in staging
+- Row count verification and credential decryption spot-checks must pass before and after migration
 
-### 0.7.3 Testing Requirements
+### 0.7.3 Data Preservation Requirements
 
-- **Test Framework**: All tests must use Vitest 4.0.16 as the test runner, consistent with the monorepo root configuration. Do not introduce Jest or Mocha.
-- **Co-located Tests**: Unit tests should be co-located alongside their source files using the `*.test.ts` naming convention (e.g., `date-ranges.test.ts` next to `date-ranges.ts`).
-- **Coverage Requirements**: Every new utility function, service method, and repository method must have corresponding unit tests. Edge cases for DST transitions, midnight boundaries, multi-day spans, and empty availability must be explicitly tested.
-- **Integration Tests**: tRPC handler changes must be validated with integration-style tests that exercise the handler through the router context, not by calling internal functions directly.
-- **Existing Test Preservation**: All existing tests must continue to pass. Modifications to existing test files must maintain backward compatibility with the assertions already in place.
+- All existing `Credential` records with AES-256 encrypted keys must remain decryptable with the existing `CALENDSO_ENCRYPTION_KEY` — the encryption algorithm, key derivation, and storage format must not be modified
+- All existing `SelectedCalendar` entries must be preserved — no deletions or modifications to existing calendar selection configurations
+- All existing `DestinationCalendar` associations must be preserved — per-user and per-event-type calendar assignments remain intact
+- All existing `Booking` records and their `BookingReference` entries (containing external calendar event UIDs) must be preserved
+- No orphaned records may be created — all foreign key relationships must remain consistent
 
-### 0.7.4 Backward Compatibility
+### 0.7.4 Webhook Backward Compatibility
 
-- **Platform SDK Contract**: The re-exports in `packages/platform/libraries/schedules.ts` define the public API surface for third-party platform consumers. Any change to function signatures, return types, or export names of `ScheduleRepository`, `updateSchedule`, or `UserAvailabilityService` constitutes a breaking change and must be avoided or handled via deprecation.
-- **tRPC Response Shape Stability**: Existing tRPC procedure response shapes consumed by the web app and embeds must not change. New fields may be added, but existing fields must not be renamed, removed, or have their types changed.
-- **Database Migration Safety**: New Prisma migrations must be additive only — new columns with defaults, new tables, new indexes. No column renames, type changes, or deletions on the `Schedule`, `Availability`, or `SelectedSlots` models without a two-phase migration strategy.
+- Existing `v2021-10-20` webhook payloads must not change — no field removals, renames, or type changes in any `WebhookTriggerEvents` payload
+- Booking events triggered by calendar-driven cancellation must fire the same `BOOKING_CANCELLED` webhook event with the same payload structure as user-initiated cancellations
+- The `PayloadBuilderFactory` versioning system must not be modified during Sprint 3
+- All existing webhook subscribers must continue receiving correct payloads without any code changes on their side
 
-### 0.7.5 Performance Considerations
+### 0.7.5 PR Size and Review Constraints
 
-- **Slot Generation Efficiency**: The slot generation algorithm in `slots.ts` uses optimized interval snapping and rounding. Any modifications must preserve O(n) complexity relative to the number of time slots in the requested range.
-- **Busy Time Aggregation**: `BusyTimesService` performs batch limit checks and buffer expansion. New busy-time sources must be added through the service interface, not by modifying the aggregation loop directly.
-- **Redis Cache Awareness**: `UserAvailabilityService` uses Redis caching for computed availability. Any change to the availability computation logic must invalidate or version the cache key to prevent stale data.
+- Every PR must be reviewable in under 10 minutes
+- Maximum 5–7 files changed per PR (excluding tests)
+- Maximum 500 lines changed per PR
+- One focused change per PR — do not combine parity verification with gap closure features
+- Suggested PR decomposition for Sprint 3:
+  - PR 1: Spec artifacts creation
+  - PR 2: Database migration (schema additions + feature flags)
+  - PR 3: Google Calendar parity verification (CI-001)
+  - PR 4: Outlook parity verification (CI-002)
+  - PR 5: Apple Calendar parity verification (CI-003)
+  - PR 6: Conflict detection alignment (CI-004)
+  - PR 7: Bi-directional sync verification tests (CI-005)
+  - PR 8: Calendar-driven cancellation sync (CI-001 gap)
+  - PR 9: Buffer time visualization (CI-002 gap)
+  - PR 10: Documentation updates and Gate 3 validation evidence
 
-### 0.7.6 Security Requirements
+### 0.7.6 Feature Flag Gating
 
-- **Permission Enforcement**: `ScheduleRepository` enforces ownership via `userId` checks on all CRUD operations. New repository methods must include equivalent permission guards. No schedule or availability data may be returned without verifying the requesting user's access.
-- **Input Sanitization**: All user-supplied timezone strings must be validated against the IANA timezone database before use. Invalid timezones must be rejected with descriptive error messages, not silently defaulted.
-- **Rate Limiting Awareness**: Public-facing slot availability endpoints are rate-limited. New endpoints that expose availability data must integrate with the existing rate-limiting middleware.
+- New gap closure features (calendar-driven cancellation sync, buffer time visualization) must be gated behind disabled-by-default feature flags
+- Feature flag `calendar-cancellation-sync` controls the calendar-driven cancellation sync behavior
+- Feature flag `calendar-buffer-sync` controls the buffer time visualization behavior
+- Flags are inserted via the migration using `ON CONFLICT ("slug") DO NOTHING` for idempotent re-deployment
+- Features are not user-facing until the flags are explicitly enabled after validation passes
+
+### 0.7.7 Validation Gate Requirements
+
+Sprint 3 must pass Gate 3 before Sprint 4 (Webhooks & Events) can begin. The gate verifies five dimensions:
+
+- **Behavioral Validation**: All CI-VAL-001 through CI-VAL-008 acceptance criteria pass — Google/Outlook/Apple event creation, busy time reading, conflict detection, multi-calendar support, per-event-type calendar selection, and credential encryption
+- **Regression Testing**: All existing CalendarService, CalendarManager, CalendarEventBuilder, and BusyTimes tests pass at 100% — zero test failures
+- **Data Preservation**: Row counts for `Credential`, `SelectedCalendar`, `DestinationCalendar`, `Booking` tables match pre-migration counts; credential decryption spot-check passes
+- **Webhook Compatibility**: Existing webhook subscribers receive unchanged `v2021-10-20` payloads for `BOOKING_CREATED`, `BOOKING_CANCELLED`, and `BOOKING_RESCHEDULED` events
+- **Cross-Domain Integration**: Calendar busy times feed correctly into the availability engine (AV-VAL-008 dependency); booking creation through event types correctly creates external calendar events
+
+### 0.7.8 Calendly Behavioral Benchmark
+
+- All parity validation must reference Calendly's actual behavior at `developer.calendly.com`, not assumed behavior
+- Where Cal.com exceeds Calendly's capabilities (11+ adapters, per-event-type selection, unlimited connections, delegation credentials), document the advantage and ensure backward compatibility
+- Calendly's recent discontinuation of iCloud Calendar support (August 2024) means Cal.com's continued Apple Calendar support via CalDAV is a competitive advantage to be preserved, not a gap to close
 
 ## 0.8 References
 
-### 0.8.1 Repository Files and Folders Explored
+### 0.8.1 Source of Truth Documents Retrieved
 
-The following files and folders were systematically searched and analyzed to derive the conclusions in this Agent Action Plan:
+The following documents were read in full as the definitive source of truth for Sprint 3 planning:
 
-**Root Configuration**
-- `package.json` — Monorepo root, Yarn 4.12.0, workspaces, devDependencies (TypeScript 5.9.3, Vitest 4.0.16, Turbo 2.7.1, Biome 2.3.10, Playwright 1.57.0)
+| Document | Path | Summary |
+|----------|------|---------|
+| Sprint Roadmap Overview | `docs/sprint-roadmap/overview.mdx` | Defines the 8-sprint sequencing strategy, autonomous execution protocol, validation gate workflow, and risk management. Sprint 3 (Calendar Integrations, F-003) depends on Sprint 1 (Availability & Scheduling) and must pass Gate 3 before Sprint 4 (Webhooks) can begin. |
+| Epic Catalog | `docs/sprint-roadmap/epic-catalog.mdx` | Comprehensive registry of 40 epics across 8 domains. Sprint 3 contains 5 epics: CI-001 (Google sync, Medium/M), CI-002 (Outlook sync, Medium/M), CI-003 (Apple sync, Medium/M), CI-004 (Conflict detection, High/L), CI-005 (Bi-directional sync, High/L). |
+| Validation Criteria | `docs/sprint-roadmap/validation-criteria.mdx` | Defines 8 Calendar Integration acceptance criteria (CI-VAL-001 through CI-VAL-008) covering event creation, busy time reading, conflict detection, multi-calendar support, credential encryption, and calendar selection per event type. |
+| Calendar Integrations Gap Report | `docs/gap-report/calendar-integrations.mdx` | Detailed gap analysis comparing Cal.com's 11+ calendar adapters against Calendly's 3 native integrations. Identifies 2 Medium-severity gaps (calendar-driven cancellation sync, buffer time visualization) and 8 Cal.com advantages. |
+| Gap Report Overview | `docs/gap-report/overview.mdx` | Executive summary of Cal.com's Calendly parity status across 8 feature domains. Calendar Integrations rated as "Exceeds Parity" with Low gap severity. |
+| Availability & Scheduling Gap Report | `docs/gap-report/availability-scheduling.mdx` | Upstream domain analysis confirming Cal.com's availability engine exceeds Calendly. Documents the slot generation pipeline, DST normalization, and busy time aggregation that calendar integrations depend on. |
+| Zero-Downtime Migration Strategy | `docs/migration/zero-downtime-strategy.mdx` | Defines 7 safe migration patterns, blue-green deployment approach, anti-patterns, rollback procedures, and the migration pipeline flow. All Sprint 3 schema changes must use these patterns exclusively. |
+| Data Preservation Guide | `docs/migration/data-preservation.mdx` | Documents the data inventory (Booking, EventType, Credential, User, etc.), encryption key handling (`CALENDSO_ENCRYPTION_KEY`), migration safeguards, backup procedures, and formal preservation guarantees. |
+| Webhook Backward Compatibility | `docs/migration/webhook-compatibility.mdx` | Defines the `PayloadBuilderFactory` versioned architecture, `v2021-10-20` payload preservation guarantees, additive-only payload field rules, and consumer migration path. |
+| Spec-First Development Workflow | `specs/README.md` | Defines the spec-first development protocol: template duplication, design review before coding, implementation tracking, ADR logging, documentation with screenshots, and PR size constraints (5–7 files, 500 lines). |
 
-**Core Availability Engine**
-- `packages/features/availability/lib/getUserAvailability.ts` — Orchestration core with Zod schemas and UserAvailabilityService composition
-- `packages/features/availability/lib/detectEventTypeScheduleForUser.ts` — Schedule resolution priority chain
-- `packages/features/availability/lib/findUsersForAvailabilityCheck.ts` — Multi-user lookup for team availability
-- `packages/features/availability/lib/calculateHolidayBlockedDates.test.ts` — Holiday blocking test suite
-- `packages/features/availability/lib/getAggregatedAvailability/` — Multi-host availability intersection (index.ts, types.ts, utils.ts, test file)
-- `packages/features/availability/components/SkeletonLoader.tsx` — Loading skeleton UI
+### 0.8.2 Repository Files and Folders Searched
 
-**Scheduling Engine**
-- `packages/features/schedules/lib/date-ranges.ts` — DateRange class, processWorkingHours, DST normalization, travel overrides, intersect/subtract/merge
-- `packages/features/schedules/lib/date-ranges.test.ts` — Date range unit tests
-- `packages/features/schedules/lib/slots.ts` — Slot generator with interval snapping, notice enforcement, OOO metadata
-- `packages/features/schedules/lib/slots.test.ts` — Slot generation unit tests
-- `packages/features/schedules/repositories/ScheduleRepository.ts` — Prisma-backed repository with permission enforcement
-- `packages/features/schedules/repositories/ScheduleRepository.test.ts` — Repository unit tests
-- `packages/features/schedules/services/ScheduleService.ts` — Zod-validated schedule updates with ownership checks
-- `packages/features/schedules/components/` — DateOverrideInputDialog.tsx, DateOverrideList.tsx, ScheduleComponent.tsx, ScheduleListItem.tsx
-- `packages/features/schedules/hooks/useTimesForSchedule.ts` — Time options hook
+The following repository paths were explored and analyzed to derive conclusions for this Agent Action Plan:
 
-**Busy Times**
-- `packages/features/busyTimes/services/getBusyTimes.ts` — BusyTimesService with buffer expansion and batch limit checks
-- `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` — LimitManager-based enforcement
+**Root-Level Files**
 
-**Selected Slots**
-- `packages/features/selectedSlots/repositories/ISelectedSlotRepository.ts` — Repository interface
-- `packages/features/selectedSlots/repositories/PrismaSelectedSlotRepository.ts` — Prisma implementation
+- `package.json` — Monorepo configuration, Yarn 4 workspaces, script definitions, engine requirements (npm >=7.0.0, yarn >=4.12.0)
+- `turbo.json` — Turborepo task definitions and environment variable whitelist
+- `.env.example` — Environment variable template including `CALENDSO_ENCRYPTION_KEY`
 
-**Dependency Injection**
-- `packages/features/di/containers/AvailableSlots.ts` — 15+ module DI container
-- `packages/features/di/containers/GetUserAvailability.ts` — Availability DI container
-- `packages/features/di/containers/BusyTimes.ts` — Busy times DI container
-- `packages/features/di/modules/AvailableSlots.ts` — Module binding
-- `packages/features/di/modules/GetUserAvailability.ts` — Module binding
-- `packages/features/di/modules/SelectedSlots.ts` — Module binding
-- `packages/features/di/modules/NoSlotsNotification.ts` — Module binding
+**Calendar Adapter Packages**
 
-**tRPC Routers**
-- `packages/trpc/server/routers/viewer/availability/_router.tsx` — Availability router
-- `packages/trpc/server/routers/viewer/availability/schedule/_router.tsx` — Schedule sub-router
-- `packages/trpc/server/routers/viewer/availability/list.handler.ts` — List handler
-- `packages/trpc/server/routers/viewer/availability/schedule/get.handler.ts` — Schedule get handler
-- `packages/trpc/server/routers/viewer/availability/schedule/create.handler.ts` — Schedule create handler
-- `packages/trpc/server/routers/viewer/availability/schedule/update.handler.ts` — Schedule update handler
-- `packages/trpc/server/routers/viewer/slots/_router.tsx` — Slots router
+- `packages/app-store/googlecalendar/` — 20 files including `CalendarService.ts`, `CalendarAuth.ts`, `getGoogleAppKeys.ts`, credential schema, API routes, mock files, and test files
+- `packages/app-store/office365calendar/` — 11 files including `CalendarService.ts`, `getOfficeAppKeys.ts`, API routes, and type definitions
+- `packages/app-store/applecalendar/` — 7 files including `CalendarService.ts` (extends CalDAV base), API routes
 
-**Web Application**
-- `apps/web/modules/availability/availability-view.tsx` — Availability list page
-- `apps/web/modules/availability/[schedule]/schedule-view.tsx` — Schedule editor page
-- `apps/web/modules/availability/troubleshoot/` — Troubleshooting tools
-- `apps/web/modules/schedules/components/` — NewScheduleButton, Schedule, date-override-list.test
-- `apps/web/modules/schedules/hooks/` — useSchedule, useEvent, useNonEmptyScheduleDays, useSlotsForDate, useApiV2AvailableSlots
-- `apps/web/app/(use-page-wrapper)/availability/` — Server components and loading skeletons
+**Calendar Feature Packages**
 
-**API Surface**
-- `apps/api/v1/lib/validations/availability.ts` — v1 validation schemas
-- `apps/api/v1/lib/validations/schedule.ts` — v1 schedule schemas
-- `apps/api/v2/src/lib/services/available-slots.service.ts` — v2 NestJS provider
-- `apps/api/v2/src/lib/services/busy-times.service.ts` — v2 NestJS provider
-- `apps/api/v2/src/ee/schedules/` — v2 enterprise schedule module
+- `packages/features/calendars/` — 30+ files including `CalendarManager.ts`, `DestinationCalendarRepository.ts`, `DestinationCalendarSelector.tsx`, tasker infrastructure, DI modules, weekly view components, and tests
+- `packages/features/calendar-subscription/` — 20 files including `GoogleCalendarSubscription.adapter.ts`, `Office365CalendarSubscription.adapter.ts`, `CalendarSubscriptionService.ts`, cache and sync layers
+- `packages/features/CalendarEventBuilder.ts` — Builder pattern for constructing calendar events from booking data
+- `packages/features/selectedCalendar/` — 3 files — `SelectedCalendarRepository.ts`, interface, and tests
+- `packages/features/busyTimes/` — 4 files — `getBusyTimes.ts`, `getBusyTimesFromLimits.ts`, and tests
+- `packages/features/availability/` — `getUserAvailability.ts` and related modules
 
-**Prisma and Database**
-- `packages/prisma/schema.prisma` — Schedule (line 961), Availability (line 976), SelectedSlots (line 1801), SelectedCalendar models
-- `packages/prisma/selects/` — Availability user selects
+**Schema and Types**
 
-**Platform SDK**
-- `packages/platform/libraries/schedules.ts` — Platform re-exports
-- `packages/features/package.json` — Feature workspace dependencies
+- `packages/prisma/schema.prisma` — Full schema with `Credential` (line 304), `DestinationCalendar` (line 346), `SelectedCalendar` (line 994), `Webhook` (line 1162), `Feature` (line 1733) models
+- `packages/prisma/selects/credential.ts` — `credentialForCalendarServiceSelect` and `safeCredentialSelect` projections
+- `packages/types/Calendar.d.ts` — `Calendar` interface (line 294), `CalendarEvent` (line 163), `CalendarServiceEvent` (line 290)
 
-**Shared Libraries**
-- `packages/lib/availability.ts` — Schedule constants and helpers
-- `packages/lib/schedules/transformers/` — for-atom.ts, getScheduleListItemData.ts, index.ts
+**API v2 Calendar Surface**
 
-### 0.8.2 Technical Specification Sections Referenced
+- `apps/api/v2/src/ee/calendars/` — 20+ files including controllers, services (gcal, outlook, apple-calendar, calendars-cache), processors, inputs, outputs, and E2E tests
+- `apps/api/v2/src/modules/cal-unified-calendars/` — Unified calendar endpoints and pipes
+- `apps/api/v2/src/modules/selected-calendars/` — Selected calendar controller and tests
+- `apps/api/v2/src/modules/destination-calendars/` — Destination calendar controller and tests
 
-| Section | Title | Key Information Extracted |
-|---------|-------|--------------------------|
-| 2.1 | Feature Catalog | F-003 mapping, 20 features across 8 categories, module paths |
-| 2.2 | Functional Requirements | RQ-001 through RQ-008 for Availability & Schedule Management |
-| 3.2 | Frameworks & Libraries | Runtime versions (Next.js 16.1.5, React 18.2.0, Prisma 6.16.1, Zod 3.25.76) |
-| 4.1 | High-Level System Workflow | Entry points, Core Scheduling Engine pipeline, post-processing |
-| 6.2 | Database Design | 118 Prisma models, Schedule/Availability/SelectedSlots schemas, caching tiers |
+**Web Application Calendar Pages**
 
-### 0.8.3 Attachments
+- `apps/web/app/(use-page-wrapper)/settings/(settings-layout)/my-account/calendars/page.tsx` — Calendar settings page
+- `apps/web/app/(use-page-wrapper)/onboarding/personal/calendar/page.tsx` — Calendar onboarding page
 
-No attachments were provided for this project. No Figma URLs were specified.
+**Booking Lifecycle**
+
+- `packages/features/bookings/lib/handleCancelBooking.ts` — Cancellation handler
+- `packages/features/bookings/lib/handleNewBooking/createBooking.ts` — Booking creation handler
+- `packages/features/bookings/lib/handleNewBooking/ensureAvailableUsers.ts` — Availability check during booking
+
+**Spec Templates**
+
+- `specs/README.md` — Spec-first workflow documentation
+- `specs/_templates/` — Template artifacts for new feature specs
+
+### 0.8.3 Technical Specification Sections Retrieved
+
+The following sections from the existing Technical Specification document were retrieved for additional context:
+
+- **1.1 Executive Summary** — Project overview confirming Cal.com is a TypeScript monorepo (`calcom-monorepo`) at version `@calcom/web v6.2.0`, serving as the open-source Calendly successor with 38.1k+ GitHub stars
+- **5.2 Component Details** — Detailed component documentation including App Store architecture (100+ integration adapters), feature services layer (80+ domain modules), Prisma data layer (100+ models, Prisma 6.16.1), DI system (`@evyweb/ioctopus` IoC container), and tRPC communication layer
+
+### 0.8.4 Attachments
+
+No attachments were provided for this project. No Figma URLs or design files were referenced.
 

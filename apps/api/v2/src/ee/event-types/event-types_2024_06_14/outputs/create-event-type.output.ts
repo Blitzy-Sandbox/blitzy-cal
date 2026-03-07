@@ -12,6 +12,8 @@ export class CreateEventTypeOutput_2024_06_14 {
 
   @ApiProperty({
     type: EventTypeOutput_2024_06_14,
+    description:
+      "The created event type with full configuration including scheduling, booking, and paradigm-specific settings",
   })
   @IsNotEmptyObject()
   @ValidateNested()

@@ -182,4 +182,24 @@ export const createEventTypeInput: z.ZodType<TCreateEventTypeInput> = z
   .refine((data) => (data.teamId ? data.teamId && data.schedulingType : true), {
     path: ["schedulingType"],
     message: "You must select a scheduling type for team events",
-  });
+  })
+  .refine(
+    (data) => {
+      // Bidirectional validation: if schedulingType requires team context, teamId must be present.
+      // ROUND_ROBIN, COLLECTIVE, and MANAGED scheduling types are only valid for team event types.
+      const teamOnlyTypes: string[] = [
+        SchedulingType.ROUND_ROBIN,
+        SchedulingType.COLLECTIVE,
+        SchedulingType.MANAGED,
+      ];
+      if (data.schedulingType && teamOnlyTypes.includes(data.schedulingType)) {
+        return !!data.teamId;
+      }
+      return true;
+    },
+    {
+      path: ["teamId"],
+      message:
+        "Team-based scheduling types (ROUND_ROBIN, COLLECTIVE, MANAGED) require a teamId to be provided",
+    }
+  );

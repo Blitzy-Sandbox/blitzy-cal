@@ -35,5 +35,17 @@ export function errorFormatter({ shape, error }: ErrorFormatterOptions): ErrorSh
       },
     };
   }
+
+  // Defense-in-depth: strip stack traces and internal details from error responses
+  // in non-development environments to prevent information disclosure (CWE-209).
+  // In development mode, stack traces are preserved for debugging convenience.
+  if (process.env.NODE_ENV !== "development") {
+    const { stack: _stack, ...safeData } = shape.data;
+    return {
+      ...shape,
+      data: safeData as ErrorShape["data"],
+    };
+  }
+
   return shape;
 }

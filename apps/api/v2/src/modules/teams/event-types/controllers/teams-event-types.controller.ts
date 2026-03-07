@@ -171,6 +171,9 @@ export class TeamsEventTypesController {
     };
   }
 
+  @Roles("TEAM_MEMBER")
+  @UseGuards(ApiAuthGuard, RolesGuard)
+  @ApiHeader(API_KEY_HEADER)
   @Get("/")
   @ApiOperation({
     summary: "Get team event types",

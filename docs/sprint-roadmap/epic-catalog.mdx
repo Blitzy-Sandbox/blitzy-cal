@@ -119,14 +119,14 @@ Cal.com implements six scheduling paradigms through the `SchedulingType` Prisma 
 `Source: packages/features/eventtypes/repositories/eventTypeRepository.ts`
 `Source: packages/prisma/schema.prisma (enum SchedulingType)`
 
-| Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package |
-|---------|-------|----------|------------|-------------|----------------|
-| **ET-001** | 1:1 event type behavioral parity | Medium | M | AV-001 | `packages/features/eventtypes/` |
-| **ET-002** | Group event type parity (seatsPerTimeSlot) | Medium | M | ET-001 | `packages/features/eventtypes/` |
-| **ET-003** | Round-robin distribution parity | High | L | ET-001 | `packages/features/eventtypes/` |
-| **ET-004** | Collective scheduling parity | Medium | M | ET-001 | `packages/features/eventtypes/` |
-| **ET-005** | Booking window configuration alignment | Medium | S | AV-005 | `packages/features/eventtypes/` |
-| **ET-006** | Custom fields/questions parity | Low | M | ET-001 | `packages/features/eventtypes/` |
+| Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
+|---------|-------|----------|------------|-------------|----------------|--------|
+| **ET-001** | 1:1 event type behavioral parity | Medium | M | AV-001 | `packages/features/eventtypes/` | ✅ Completed (Sprint 2) — verified against ET-VAL-001 |
+| **ET-002** | Group event type parity (seatsPerTimeSlot) | Medium | M | ET-001 | `packages/features/eventtypes/` | ✅ Completed (Sprint 2) — verified against ET-VAL-002 |
+| **ET-003** | Round-robin distribution parity | High | L | ET-001 | `packages/features/eventtypes/` | ✅ Completed (Sprint 2) — verified against ET-VAL-003 |
+| **ET-004** | Collective scheduling parity | Medium | M | ET-001 | `packages/features/eventtypes/` | ✅ Completed (Sprint 2) — verified against ET-VAL-004 |
+| **ET-005** | Booking window configuration alignment | Medium | S | AV-005 | `packages/features/eventtypes/` | ✅ Completed (Sprint 2) — verified against ET-VAL-006 |
+| **ET-006** | Custom fields/questions parity | Low | M | ET-001 | `packages/features/eventtypes/` | ✅ Completed (Sprint 2) — verified against ET-VAL-005 |
 
 <Info>
   **Cal.com Advantages:** Cal.com offers **6 scheduling paradigms** vs. Calendly's **4 types**. Additional Cal.com-exclusive capabilities include managed event types (`SchedulingType.MANAGED`) for admin-pushed templates, dynamic ad-hoc meeting links, and full **programmatic event type creation via API v2** — Calendly's API does NOT support programmatic event type creation.
@@ -423,17 +423,17 @@ flowchart TD
 
 The following table aggregates all 40 epics across the eight gap analysis domains by priority classification.
 
-| Domain | Total Epics | Critical | High | Medium | Low |
-|--------|------------|----------|------|--------|-----|
-| Availability & Scheduling | 7 | 0 | 1 | 5 | 1 |
-| Event Types | 6 | 0 | 1 | 4 | 1 |
-| Calendar Integrations | 5 | 0 | 2 | 3 | 0 |
-| Webhooks & Events | 5 | 0 | 3 | 2 | 0 |
-| Routing Forms | 4 | 0 | 0 | 3 | 1 |
-| Embed & Share | 4 | 0 | 0 | 3 | 1 |
-| Admin & Teams | 4 | 0 | 1 | 2 | 1 |
-| Notifications | 5 | 0 | 3 | 2 | 0 |
-| **Total** | **40** | **0** | **11** | **24** | **5** |
+| Domain | Total Epics | Critical | High | Medium | Low | Sprint Status |
+|--------|------------|----------|------|--------|-----|---------------|
+| Availability & Scheduling | 7 | 0 | 1 | 5 | 1 | |
+| Event Types | 6 | 0 | 1 | 4 | 1 | All 6 ✅ Sprint 2 |
+| Calendar Integrations | 5 | 0 | 2 | 3 | 0 | |
+| Webhooks & Events | 5 | 0 | 3 | 2 | 0 | |
+| Routing Forms | 4 | 0 | 0 | 3 | 1 | |
+| Embed & Share | 4 | 0 | 0 | 3 | 1 | |
+| Admin & Teams | 4 | 0 | 1 | 2 | 1 | |
+| Notifications | 5 | 0 | 3 | 2 | 0 | |
+| **Total** | **40** | **0** | **11** | **24** | **5** | |
 
 ### Priority Distribution
 

@@ -10,6 +10,9 @@ export class GetEventTypesOutput_2024_06_14 {
   @IsIn([SUCCESS_STATUS, ERROR_STATUS])
   status!: typeof SUCCESS_STATUS | typeof ERROR_STATUS;
 
+  @ApiProperty({
+    type: [EventTypeOutput_2024_06_14],
+  })
   @ValidateNested({ each: true })
   @Type(() => EventTypeOutput_2024_06_14)
   @IsArray()

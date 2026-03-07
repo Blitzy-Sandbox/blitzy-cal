@@ -129,6 +129,32 @@ type Input = Pick<
   | "showOptimizedSlots"
 >;
 
+/**
+ * Output transformation service for v2024-06-14 personal event types.
+ *
+ * Transforms Prisma `EventType` database records into the versioned
+ * `EventTypeOutput_2024_06_14` API DTO. Handles locations, booking fields,
+ * recurrence, metadata, booking limits, seat controls, booking windows,
+ * destination calendars, disable-reschedule/cancel policies, CalVideo
+ * settings, and booking URLs.
+ *
+ * Sprint 2 Event Type Parity Coverage:
+ *   - ET-001 (1:1 Events): Default flow — schedulingType is null for personal events,
+ *     host assignment is implicit (owner). This service handles the personal event type
+ *     output; team-specific paradigm fields (hosts, weights, schedulingType) are surfaced
+ *     through the team event type output service.
+ *   - ET-002 (Group Events): Seat configuration via `transformSeats` — seatsPerTimeSlot,
+ *     seatsShowAttendees, seatsShowAvailabilityCount all mapped to API contract.
+ *   - ET-003 (Round-Robin): schedulingType is NOT in `EventTypeOutput_2024_06_14` — RR
+ *     metadata (hosts, weights, priorities) is exposed via `TeamEventTypeOutput_2024_06_14`.
+ *   - ET-004 (Collective): Same as ET-003 — collective scheduling fields are on the team DTO.
+ *   - ET-005 (Booking Windows): All 4 period types (RANGE, ROLLING_WINDOW, ROLLING, UNLIMITED)
+ *     and the calendar-day vs. business-day distinction (AVL-GAP-001) are correctly transformed.
+ *   - ET-006 (Custom Fields): BookingFieldSchema recognises all Calendly question types (text,
+ *     radio, checkbox, phone, dropdown/select) plus Cal.com-specific extras (address, number,
+ *     textarea, multiemail, multiselect, boolean, url). Unknown fields are wrapped as
+ *     `OutputUnknownBookingField_2024_06_14` for forward compatibility.
+ */
 @Injectable()
 export class OutputEventTypesService_2024_06_14 {
   constructor(
@@ -136,6 +162,19 @@ export class OutputEventTypesService_2024_06_14 {
     private readonly usersService: UsersService
   ) {}
 
+  /**
+   * Transforms a database event type into the v2024-06-14 API response format.
+   *
+   * This method is paradigm-agnostic for fields present in `EventTypeOutput_2024_06_14`:
+   * - 1:1 events (ET-001): standard transformation, single host in `users` array
+   * - Group events (ET-002): seat configuration emitted via `transformSeats`
+   * - Booking windows (ET-005): all period types handled by `transformBookingWindow`
+   * - Custom fields (ET-006): all field types handled by `transformBookingFields`
+   *
+   * Note: `schedulingType` is intentionally NOT included in the return object because
+   * `EventTypeOutput_2024_06_14` does not define it. Team-specific paradigm fields
+   * (schedulingType, hosts, assignAllTeamMembers) are on `TeamEventTypeOutput_2024_06_14`.
+   */
   getResponseEventType(
     ownerId: number,
     databaseEventType: Input,
@@ -184,6 +223,9 @@ export class OutputEventTypesService_2024_06_14 {
 
     const locations = this.transformLocations(databaseEventType.locations);
     const customName = databaseEventType?.eventName ?? undefined;
+    // ET-006: Booking fields support all Calendly question types (text, radio, checkbox, phone,
+    // dropdown/select). Unknown field types are preserved as OutputUnknownBookingField_2024_06_14
+    // for forward compatibility with new field types.
     const bookingFields = databaseEventType.bookingFields
       ? this.transformBookingFields(databaseEventType.bookingFields)
       : this.getDefaultBookingFields(isOrgTeamEvent);
@@ -204,7 +246,12 @@ export class OutputEventTypesService_2024_06_14 {
     );
     delete metadata["bookerLayouts"];
     delete metadata["requiresConfirmationThreshold"];
+    // ET-002: Seat configuration for group events — seatsPerTimeSlot enables multiple attendees
+    // per time slot. When null, the transformer returns { disabled: true }.
     const seats = this.transformSeats(seatsPerTimeSlot, seatsShowAttendees, seatsShowAvailabilityCount);
+    // ET-005: Booking window configuration — maps all 4 period types (UNLIMITED, RANGE, ROLLING,
+    // ROLLING_WINDOW) to the API format. periodCountCalendarDays distinguishes calendar days from
+    // business days (AVL-GAP-001 parity).
     const bookingWindow = this.transformBookingWindow({
       periodType: databaseEventType.periodType,
       periodDays: databaseEventType.periodDays,
@@ -214,7 +261,8 @@ export class OutputEventTypesService_2024_06_14 {
     } as TransformFutureBookingsLimitSchema_2024_06_14);
     const destinationCalendar = this.transformDestinationCalendar(databaseEventType.destinationCalendar);
     const bookerActiveBookingsLimit = this.transformBookerActiveBookingsLimit(databaseEventType);
-    const bookingUrl = this.buildBookingUrl(databaseEventType.users[0], slug);
+    // Defensive: use optional chaining in case users array is empty (buildBookingUrl handles undefined).
+    const bookingUrl = this.buildBookingUrl(databaseEventType.users?.[0], slug);
     const disableReschedulingOutput = this.transformDisableRescheduling(
       disableRescheduling,
       minimumRescheduleNotice
@@ -325,6 +373,20 @@ export class OutputEventTypesService_2024_06_14 {
     };
   }
 
+  /**
+   * Transforms persisted booking fields into the v2024-06-14 API output format.
+   *
+   * ET-006 (Custom Fields Parity): Supports all Calendly question types:
+   *   - text → TextFieldOutput / TextAreaFieldOutput
+   *   - radio → RadioGroupFieldOutput
+   *   - checkbox → CheckboxGroupFieldOutput
+   *   - phone → PhoneFieldOutput
+   *   - dropdown → SelectFieldOutput / MultiSelectFieldOutput
+   * Plus Cal.com-specific types: address, number, boolean, multiemail, url.
+   *
+   * Unknown fields are preserved as `OutputUnknownBookingField_2024_06_14` to ensure
+   * forward compatibility when new field types are added.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transformBookingFields(bookingFields: any) {
     if (!bookingFields) return [];
@@ -396,6 +458,13 @@ export class OutputEventTypesService_2024_06_14 {
     return transformIntervalLimitsInternalToApi(bookingLimitsParsed);
   }
 
+  /**
+   * Transforms booking window configuration for the API response.
+   *
+   * ET-005 (Booking Window Alignment): Delegates to transformFutureBookingLimitsInternalToApi
+   * which handles all 4 period types — RANGE, ROLLING_WINDOW, ROLLING, UNLIMITED — and
+   * preserves the calendar-day vs. business-day distinction via periodCountCalendarDays.
+   */
   transformBookingWindow(bookingLimits: TransformFutureBookingsLimitSchema_2024_06_14) {
     return transformFutureBookingLimitsInternalToApi(bookingLimits);
   }
@@ -425,6 +494,13 @@ export class OutputEventTypesService_2024_06_14 {
     return transformEventTypeColorsInternalToApi(parsedeventTypeColor);
   }
 
+  /**
+   * Transforms seat configuration for the API response.
+   *
+   * ET-002 (Group Events): Maps internal seat fields to the API contract.
+   * When seatsPerTimeSlot is null, returns `{ disabled: true }`.
+   * Double-bang (`!!`) ensures boolean conversion from nullable database columns.
+   */
   transformSeats(
     seatsPerTimeSlot: number | null,
     seatsShowAttendees: boolean | null,
@@ -468,6 +544,13 @@ export class OutputEventTypesService_2024_06_14 {
     return `${normalizedBaseUrl}/${username}/${slug}`;
   }
 
+  /**
+   * Filters hidden booking fields from a list of event types.
+   *
+   * This method only operates on the `bookingFields` array within each event type.
+   * Paradigm-specific properties (seatsPerTimeSlot, schedulingType, etc.) are NOT
+   * affected by hidden-field filtering, ensuring correct output for all paradigms.
+   */
   getResponseEventTypesWithoutHiddenFields(
     eventTypes: EventTypeOutput_2024_06_14[]
   ): EventTypeOutput_2024_06_14[] {

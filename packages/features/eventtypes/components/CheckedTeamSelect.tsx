@@ -109,80 +109,78 @@ export const CheckedTeamSelect = ({
         )}
         ref={animationRef}>
         {valueFromGroup.map((option, index) => (
-          <>
-            <li
-              key={option.value}
-              className={classNames(
-                `flex px-3 py-2 ${index === valueFromGroup.length - 1 ? "" : "border-subtle border-b"}`,
-                customClassNames?.selectedHostList?.listItem?.container
-              )}>
-              {!isPlatform && <Avatar size="sm" imageSrc={option.avatar} alt={option.label} />}
-              {isPlatform && (
-                <Icon
-                  name="user"
-                  className={classNames(
-                    "mt-0.5 h-4 w-4",
-                    customClassNames?.selectedHostList?.listItem?.avatar
-                  )}
-                />
-              )}
-              <p
+          <li
+            key={option.value}
+            className={classNames(
+              `flex px-3 py-2 ${index === valueFromGroup.length - 1 ? "" : "border-subtle border-b"}`,
+              customClassNames?.selectedHostList?.listItem?.container
+            )}>
+            {!isPlatform && <Avatar size="sm" imageSrc={option.avatar} alt={option.label} />}
+            {isPlatform && (
+              <Icon
+                name="user"
                 className={classNames(
-                  "text-emphasis my-auto ms-3 text-sm",
-                  customClassNames?.selectedHostList?.listItem?.name
-                )}>
-                {option.label}
-              </p>
-              <div className="ml-auto flex items-center">
-                {option && !option.isFixed ? (
-                  <>
-                    <Tooltip content={t("change_priority")}>
-                      <Button
-                        color="minimal"
-                        onClick={() => {
-                          setPriorityDialogOpen(true);
-                          setCurrentOption(option);
-                        }}
-                        className={classNames(
-                          "mr-6 h-2 p-0 text-sm hover:bg-transparent",
-                          getPriorityTextAndColor(option.priority).color,
-                          customClassNames?.selectedHostList?.listItem?.changePriorityButton
-                        )}>
-                        {t(getPriorityTextAndColor(option.priority).text)}
-                      </Button>
-                    </Tooltip>
-                    {isRRWeightsEnabled ? (
-                      <Button
-                        color="minimal"
-                        className={classNames(
-                          "mr-6 h-2 w-4 p-0 text-sm hover:bg-transparent",
-                          customClassNames?.selectedHostList?.listItem?.changeWeightButton
-                        )}
-                        onClick={() => {
-                          setWeightDialogOpen(true);
-                          setCurrentOption(option);
-                        }}>
-                        {option.weight ?? 100}%
-                      </Button>
-                    ) : (
-                      <></>
-                    )}
-                  </>
-                ) : (
-                  <></>
+                  "mt-0.5 h-4 w-4",
+                  customClassNames?.selectedHostList?.listItem?.avatar
                 )}
-
-                <Icon
-                  name="x"
-                  onClick={() => props.onChange(value.filter((item) => item.value !== option.value))}
-                  className={classNames(
-                    "my-auto ml-2 h-4 w-4",
-                    customClassNames?.selectedHostList?.listItem?.removeButton
+              />
+            )}
+            <p
+              className={classNames(
+                "text-emphasis my-auto ms-3 text-sm",
+                customClassNames?.selectedHostList?.listItem?.name
+              )}>
+              {option.label}
+            </p>
+            <div className="ml-auto flex items-center">
+              {option && !option.isFixed ? (
+                <>
+                  <Tooltip content={t("change_priority")}>
+                    <Button
+                      color="minimal"
+                      onClick={() => {
+                        setPriorityDialogOpen(true);
+                        setCurrentOption(option);
+                      }}
+                      className={classNames(
+                        "mr-6 h-2 p-0 text-sm hover:bg-transparent",
+                        getPriorityTextAndColor(option.priority).color,
+                        customClassNames?.selectedHostList?.listItem?.changePriorityButton
+                      )}>
+                      {t(getPriorityTextAndColor(option.priority).text)}
+                    </Button>
+                  </Tooltip>
+                  {isRRWeightsEnabled ? (
+                    <Button
+                      color="minimal"
+                      className={classNames(
+                        "mr-6 h-2 w-4 p-0 text-sm hover:bg-transparent",
+                        customClassNames?.selectedHostList?.listItem?.changeWeightButton
+                      )}
+                      onClick={() => {
+                        setWeightDialogOpen(true);
+                        setCurrentOption(option);
+                      }}>
+                      {option.weight ?? 100}%
+                    </Button>
+                  ) : (
+                    <></>
                   )}
-                />
-              </div>
-            </li>
-          </>
+                </>
+              ) : (
+                <></>
+              )}
+
+              <Icon
+                name="x"
+                onClick={() => props.onChange(value.filter((item) => item.value !== option.value))}
+                className={classNames(
+                  "my-auto ml-2 h-4 w-4",
+                  customClassNames?.selectedHostList?.listItem?.removeButton
+                )}
+              />
+            </div>
+          </li>
         ))}
       </ul>
       {currentOption && !currentOption.isFixed ? (

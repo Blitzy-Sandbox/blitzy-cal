@@ -30,6 +30,14 @@ type TeamMemberItemProps = {
   onWeightChange: (memberId: string, weight: number) => void;
 };
 
+/** Clamp and validate a weight input value to a non-negative integer within a safe range. */
+const parseAndClampWeight = (rawValue: string): number | null => {
+  const parsed = parseInt(rawValue, 10);
+  if (isNaN(parsed)) return null;
+  // Enforce non-negative integer, capped at 999 to prevent excessively large values
+  return Math.min(Math.max(Math.floor(parsed), 0), 999);
+};
+
 const TeamMemberItem = ({ member, onWeightChange }: TeamMemberItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +47,14 @@ const TeamMemberItem = ({ member, onWeightChange }: TeamMemberItemProps) => {
       inputRef.current.focus();
     }
   }, [isEditing]);
+
+  const handleWeightCommit = (rawValue: string) => {
+    const validWeight = parseAndClampWeight(rawValue);
+    if (validWeight !== null) {
+      onWeightChange(member.value, validWeight);
+    }
+    setIsEditing(false);
+  };
 
   return (
     <div className="border-subtle flex h-12 items-center border-b px-3 py-1 last:border-b-0">
@@ -52,24 +68,15 @@ const TeamMemberItem = ({ member, onWeightChange }: TeamMemberItemProps) => {
                 ref={inputRef}
                 type="number"
                 min="0"
+                max="999"
+                step="1"
                 inputMode="numeric"
                 className="bg-cal-muted border-default text-emphasis h-7 w-12 rounded-l-sm border px-2 text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 defaultValue={member.weight ?? 100}
-                onBlur={(e) => {
-                  const newWeight = parseInt(e.target.value);
-                  if (!isNaN(newWeight)) {
-                    onWeightChange(member.value, newWeight);
-                  }
-                  setIsEditing(false);
-                }}
+                onBlur={(e) => handleWeightCommit(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    const input = e.target as HTMLInputElement;
-                    const newWeight = parseInt(input.value);
-                    if (!isNaN(newWeight)) {
-                      onWeightChange(member.value, newWeight);
-                    }
-                    setIsEditing(false);
+                    handleWeightCommit((e.target as HTMLInputElement).value);
                   }
                   if (e.key === "Escape") {
                     setIsEditing(false);
@@ -248,7 +255,7 @@ export const EditWeightsForAllTeamMembers = ({
         {t("edit_team_member_weights")}
       </Button>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <form className="flex h-full flex-col">
+        <div className="flex h-full flex-col">
           <SheetContent>
             <SheetHeader>
               <SheetTitle>{t("edit_team_member_weights")}</SheetTitle>
@@ -339,7 +346,7 @@ export const EditWeightsForAllTeamMembers = ({
               <Button onClick={handleSave}>{t("done")}</Button>
             </SheetFooter>
           </SheetContent>
-        </form>
+        </div>
       </Sheet>
     </>
   );

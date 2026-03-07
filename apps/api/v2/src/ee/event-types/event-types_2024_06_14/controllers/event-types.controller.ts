@@ -87,7 +87,27 @@ export class EventTypesController_2024_06_14 {
   @ApiHeader(API_KEY_OR_ACCESS_TOKEN_HEADER)
   @ApiOperation({
     summary: "Create an event type",
-    description: `<Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
+    description: `Create a personal event type supporting the following scheduling paradigms:
+
+      **One-on-one (default):** When no seats configuration is provided, the event type is created as a standard 1:1 event with a single host paired with a single invitee.
+
+      **Group/seated events:** Provide the \`seats\` object with \`seatsPerTimeSlot\`, \`seatsShowAttendees\`, and \`seatsShowAvailabilityCount\` to allow multiple attendees to book the same time slot up to the configured seat limit.
+
+      **Supported configuration fields:**
+      - \`bookingFields\` — Custom booking questions supporting text, radio, checkbox, phone, and dropdown field types.
+      - \`bookingWindow\` — Booking window restrictions: business days into the future, calendar days into the future, a specific date range, or disabled (indefinite).
+      - \`minimumBookingNotice\` — Minimum notice period in minutes before a booking can be made.
+      - \`bookingLimitsCount\` / \`bookingLimitsDuration\` — Per-day/week/month/year booking count and duration limits.
+      - \`confirmationPolicy\` — Require host confirmation before booking is finalized. Note: seats and confirmation are mutually exclusive.
+      - \`recurrence\` — Recurring event configuration.
+
+      **Validation rules enforced:**
+      - Seated events require exactly one location configured.
+      - Seated events and confirmation policy are mutually exclusive.
+
+      For team event types (round-robin, collective, managed), use the team event types endpoint.
+
+      <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
   })
   async createEventType(
     @Body() body: CreateEventTypeInput_2024_06_14,
@@ -112,17 +132,35 @@ export class EventTypesController_2024_06_14 {
   @ApiHeader(API_KEY_OR_ACCESS_TOKEN_HEADER)
   @ApiOperation({
     summary: "Get an event type",
-    description: `<Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>
-    
-    Access control: This endpoint fetches an event type by ID and returns it only if the authenticated user is authorized. Authorization is granted to:
-    - System admins
-    - The event type owner
-    - Hosts of the event type or users assigned to the event type
-    - Team admins/owners of the team that owns the team event type
-    - Organization admins/owners of the event type owner's organization
-    - Organization admins/owners of the team's parent organization
+    description: `Retrieve an event type by ID. The response is a **union type** determined by whether the event type belongs to a team:
 
-    Note: Update and delete endpoints remain restricted to the event type owner only.`,
+      **Personal event types** (1:1, group/seated) return \`EventTypeOutput_2024_06_14\` containing:
+      - \`ownerId\` and \`users\` — the host identity
+      - \`seats\` — group event seat configuration (\`seatsPerTimeSlot\`, visibility flags)
+      - \`bookingFields\` — custom booking questions (text, radio, checkbox, phone, dropdown)
+      - \`bookingWindow\` and \`minimumBookingNotice\` — booking window restrictions
+      - \`bookingUrl\` — the public booking link
+
+      **Team event types** (round-robin, collective, managed) return \`TeamEventTypeOutput_2024_06_14\` containing:
+      - \`schedulingType\` — ROUND_ROBIN, COLLECTIVE, or MANAGED
+      - \`hosts\` — array of team members with \`userId\`, \`mandatory\`, \`priority\`, \`name\`, \`username\`, \`avatarUrl\`
+      - \`assignAllTeamMembers\` and \`rescheduleWithSameRoundRobinHost\` — team assignment configuration
+      - \`team\` — team metadata (slug, name, logoUrl)
+      - \`bookingFields\`, \`bookingWindow\`, \`minimumBookingNotice\` — shared configuration fields
+
+      The paradigm is determined by the \`teamId\` property: null indicates a personal event type, non-null indicates a team event type.
+
+      **Access control:** This endpoint returns the event type only if the authenticated user is authorized. Authorization is granted to:
+      - System admins
+      - The event type owner
+      - Hosts of the event type or users assigned to the event type
+      - Team admins/owners of the team that owns the team event type
+      - Organization admins/owners of the event type owner's organization
+      - Organization admins/owners of the team's parent organization
+
+      Note: Update and delete endpoints remain restricted to the event type owner only.
+
+      <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
   })
   async getEventTypeById(
     @Param("eventTypeId") eventTypeId: string,
@@ -153,10 +191,19 @@ export class EventTypesController_2024_06_14 {
   @Get("/")
   @ApiOperation({
     summary: "Get all event types",
-    description: `Hidden event types are returned only if authentication is provided and it belongs to the event type owner.
-      
+    description: `List personal event types with complete paradigm-specific configuration. Returned event types include:
+
+      - **One-on-one events** — standard single-host events with booking fields and window settings.
+      - **Group/seated events** — events with \`seats\` configuration (\`seatsPerTimeSlot\`, \`seatsShowAttendees\`, \`seatsShowAvailabilityCount\`).
+      - **Custom booking fields** — all configured booking questions (text, radio, checkbox, phone, dropdown field types) are included in the response.
+      - **Booking window settings** — \`bookingWindow\` and \`minimumBookingNotice\` configurations are included.
+
+      Hidden event types are returned only if authentication is provided and the authenticated user is the event type owner. Booking field entries marked as \`hidden: true\` are filtered from the response, but paradigm-specific fields (seats, booking windows, custom field definitions) are always preserved.
+
       Use the optional \`sortCreatedAt\` query parameter to order results by creation date (by ID). Accepts "asc" (oldest first) or "desc" (newest first). When not provided, no explicit ordering is applied.
-      
+
+      For team event types (round-robin, collective, managed), use the team event types listing endpoint.
+
       <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>
       `,
   })
@@ -186,7 +233,24 @@ export class EventTypesController_2024_06_14 {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: "Update an event type",
-    description: `<Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
+    description: `Update a personal event type with partial updates to any paradigm-specific configuration field. All fields are optional — only provided fields are updated while existing configuration is preserved.
+
+      **Supported partial update fields include:**
+      - \`seats\` — Update group event seat configuration (\`seatsPerTimeSlot\`, \`seatsShowAttendees\`, \`seatsShowAvailabilityCount\`).
+      - \`bookingFields\` — Replace the entire booking fields array. Supports all question types: text, radio, checkbox, phone, and dropdown.
+      - \`bookingWindow\` — Update booking window restrictions (business days, calendar days, date range, or disabled/indefinite).
+      - \`minimumBookingNotice\` — Update the minimum notice period in minutes.
+      - \`bookingLimitsCount\` / \`bookingLimitsDuration\` — Update per-period booking limits.
+      - \`confirmationPolicy\` — Update or disable host confirmation requirement.
+      - \`recurrence\` — Update recurring event settings.
+
+      **Validation rules enforced:**
+      - Seated events require exactly one location configured.
+      - Seated events and confirmation policy are mutually exclusive.
+
+      For team event type updates (round-robin hosts, collective scheduling, managed types), use the team event types update endpoint.
+
+      <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
   })
   async updateEventType(
     @Param("eventTypeId", ParseIntPipe) eventTypeId: number,
@@ -213,7 +277,11 @@ export class EventTypesController_2024_06_14 {
   @ApiHeader(API_KEY_OR_ACCESS_TOKEN_HEADER)
   @ApiOperation({
     summary: "Delete an event type",
-    description: `<Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
+    description: `Delete a personal event type (1:1 or group/seated) by ID. Related records including booking seats and associated bookings are cascade-deleted as defined by the database schema.
+
+      For team event types (round-robin, collective, managed), use the team event types deletion endpoint.
+
+      <Note>Please make sure to pass in the cal-api-version header value as mentioned in the Headers section. Not passing the correct value will default to an older version of this endpoint.</Note>`,
   })
   async deleteEventType(
     @Param("eventTypeId") eventTypeId: number,

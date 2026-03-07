@@ -12,6 +12,7 @@ export class UpdateEventTypeOutput_2024_06_14 {
 
   @ApiProperty({
     type: EventTypeOutput_2024_06_14,
+    description: "The updated event type with full configuration including all paradigm-specific settings",
   })
   @IsNotEmptyObject()
   @ValidateNested()

@@ -11,6 +11,12 @@ import type {
   OrganizerConferencingSchema,
 } from "../internal/locations";
 
+/**
+ * Maps external API integration slugs to internal "integrations:{slug}" format.
+ * Covers all 29 supported conferencing/video integrations.
+ * Used by `transformLocation` for the "integration" location type across all
+ * scheduling paradigms (one-on-one, group, round-robin, collective, managed, dynamic).
+ */
 export const apiToInternalintegrationsMapping = {
   "cal-video": "integrations:daily",
   "google-meet": "integrations:google:meet",
@@ -62,6 +68,12 @@ function transformLocation<T extends InputLocation_2024_06_14>(location: T) {
       } satisfies OrganizerLinkLocation;
     case "integration":
       const integrationLabel = apiToInternalintegrationsMapping[location.integration];
+      // Defensive guard: although TypeScript types and runtime DTO validation both constrain
+      // location.integration to the 29 supported slugs, guard against unexpected values at
+      // the transformer boundary to avoid producing an internal location with undefined type.
+      if (!integrationLabel) {
+        throw new Error(`Unsupported integration type '${location.integration}'`);
+      }
       return { type: integrationLabel } satisfies OrganizerIntegrationLocation;
     case "phone":
       return {
@@ -78,10 +90,30 @@ function transformLocation<T extends InputLocation_2024_06_14>(location: T) {
   }
 }
 
+/**
+ * Transforms an array of API location payloads into internal location records.
+ * Paradigm-agnostic: works identically for one-on-one (ET-001), group/seated (ET-002),
+ * and individual-host event types. For team event types (round-robin ET-003,
+ * collective ET-004), use `transformTeamLocationsApiToInternal` instead.
+ *
+ * Returns an empty array when input is `undefined`, preserving deterministic
+ * ordering via `.map()`.
+ */
 export function transformLocationsApiToInternal(inputLocations: InputLocation_2024_06_14[] | undefined) {
   return inputLocations ? inputLocations.map(transformLocation) : [];
 }
 
+/**
+ * Transforms an array of team-scoped API location payloads into internal records.
+ * Extends `transformLocationsApiToInternal` with the `"organizersDefaultApp"` type,
+ * which is critical for round-robin (ET-003) and collective (ET-004) scheduling:
+ * the `{type: "conferencing"}` internal value instructs the booking engine to
+ * resolve the conferencing app from the assigned host's default integration,
+ * rather than a fixed event-level integration.
+ *
+ * All other location types delegate to the shared `transformLocation` handler.
+ * Returns an empty array when input is `undefined`.
+ */
 export function transformTeamLocationsApiToInternal(
   inputLocations: InputTeamLocation_2024_06_14[] | undefined
 ) {
@@ -89,6 +121,9 @@ export function transformTeamLocationsApiToInternal(
 
   return inputLocations.map((location) => {
     if (location.type === "organizersDefaultApp") {
+      // Maps to internal "conferencing" type — the booking engine resolves the actual
+      // conferencing app from the assigned host's default integration at booking time.
+      // This is the standard location type for round-robin and collective team events.
       return { type: "conferencing" } satisfies OrganizerConferencingSchema;
     }
     return transformLocation(location);

@@ -164,7 +164,7 @@ export const createEventTypeInput: z.ZodType<TCreateEventTypeInput> = z
     title: z.string().trim().min(1),
     slug: eventTypeSlug,
     description: z.string().nullish(),
-    length: z.number().int(),
+    length: z.number().int().min(1),
     hidden: z.boolean(),
     teamId: z.number().int().nullish(),
     schedulingType: z.nativeEnum(SchedulingType).nullish(),

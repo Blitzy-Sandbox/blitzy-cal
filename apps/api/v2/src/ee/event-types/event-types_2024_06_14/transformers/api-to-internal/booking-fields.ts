@@ -1,3 +1,23 @@
+/**
+ * Booking Fields API-to-Internal Transformer (ET-006 Custom Fields/Questions Parity)
+ *
+ * Converts incoming `InputBookingField_2024_06_14` API payloads into the internal
+ * booking field format used by Cal.com's persistence and form builder layers.
+ *
+ * Calendly Question Type Coverage (ET-006 parity verified):
+ *  - text      → generic fallback handler (TextFieldInput_2024_06_14)
+ *  - radio     → fieldIsSelect handler (RadioGroupFieldInput_2024_06_14)
+ *  - checkbox  → fieldIsSelect handler (CheckboxGroupFieldInput_2024_06_14)
+ *  - phone     → generic fallback handler (PhoneFieldInput_2024_06_14) for custom fields;
+ *                fieldIsDefaultAttendeePhone for system attendeePhoneNumber
+ *  - dropdown  → generic fallback handler (SelectFieldInput_2024_06_14) + options attachment
+ *
+ * Additional Cal.com field types beyond Calendly:
+ *  - address, number, textarea, multiselect, multiemail, boolean, url
+ *
+ * System default fields (cloned from shared templates to avoid mutation):
+ *  - location, attendeePhone, name, splitName, email, title, notes, guests, rescheduleReason
+ */
 import type {
   InputBookingField_2024_06_14,
   PhoneDefaultFieldOutput_2024_06_14,
@@ -30,6 +50,13 @@ import {
 
 type InputBookingField = InputBookingField_2024_06_14 | PhoneDefaultFieldOutput_2024_06_14;
 
+/**
+ * Transforms an array of API booking field inputs into the internal field format.
+ * Handles system default fields (location, name, email, etc.), select-type fields
+ * (checkbox, radio, multiselect), and all custom field types via a generic fallback.
+ * Options arrays for select/checkbox/radio/multiselect are attached after base property
+ * extraction to produce the complete internal representation.
+ */
 export function transformBookingFieldsApiToInternal(bookingFields: InputBookingField[]) {
   const customBookingFields = bookingFields.map((field) => {
     const baseProperties = getBaseProperties(field);
@@ -51,6 +78,9 @@ export function transformBookingFieldsApiToInternal(bookingFields: InputBookingF
 }
 
 function getBaseProperties(field: InputBookingField): CustomField | SystemField {
+  // Calendly parity: checkbox and radio types (ET-006), plus Cal.com multiselect.
+  // Note: select (dropdown) is intentionally NOT included here — it uses the generic
+  // fallback handler because select fields support placeholder while checkbox/radio do not.
   if (fieldIsSelect(field)) {
     return {
       name: field.slug,
@@ -67,7 +97,9 @@ function getBaseProperties(field: InputBookingField): CustomField | SystemField 
       editable: "user",
       required: field.required,
       disableOnPrefill: !!field.disableOnPrefill,
-      hidden: "hidden" in field ? field.hidden : false,
+      // Use !! coercion for consistency: hidden is optional (boolean | undefined) on
+      // select-type input fields, and all other handlers use !!field.hidden.
+      hidden: "hidden" in field ? !!field.hidden : false,
     };
   }
 
@@ -234,6 +266,9 @@ function getBaseProperties(field: InputBookingField): CustomField | SystemField 
     };
   }
 
+  // Generic fallback: handles Calendly parity types text (ET-006) and phone (ET-006),
+  // as well as Calendly dropdown equivalent (select with options attached by parent),
+  // and additional Cal.com types: address, number, textarea, multiemail.
   return {
     name: field.slug,
     type: field.type,
@@ -309,6 +344,12 @@ function fieldIsSelect(
   );
 }
 
+/**
+ * Converts API option strings into the internal `{label, value}` pair format
+ * used by select, multiselect, checkbox, and radio field types. Both `label`
+ * and `value` are set to the option string — the internal form builder treats
+ * the value as the canonical identifier and the label as the display text.
+ */
 export function transformSelectOptionsApiToInternal(options: string[]) {
   return options.map((option) => ({
     label: option,

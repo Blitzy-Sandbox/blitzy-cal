@@ -10,6 +10,7 @@ Cal.com's event type system supports six scheduling paradigms: one-on-one (defau
 
 Navigate to the Event Types page and click "New Event Type". Select the scheduling paradigm: one-on-one (default for personal events), group (enable seats for multi-attendee), round-robin or collective (available for team event types), managed (admin-pushed templates for teams), or dynamic (ad-hoc meeting links). The paradigm determines how hosts and invitees are matched and how availability is calculated.
 
+<!-- Screenshot placeholder: Save event type creation form screenshot as ./screenshots/step-1.png -->
 ![Step 1 — Create Event Type](./screenshots/step-1.png)
 
 ### Step 2: Configure Event Type Settings
@@ -23,18 +24,21 @@ Configure the event type settings based on the selected paradigm:
 - **Booking Windows:** Configure `periodType` (UNLIMITED, ROLLING, ROLLING_WINDOW, RANGE), set `minimumBookingNotice`, and define date restrictions via `periodStartDate`/`periodEndDate` or `periodDays`.
 - **Custom Fields:** Add booking fields matching Calendly's question types: text, radio, checkbox, phone, and dropdown.
 
+<!-- Screenshot placeholder: Save event type settings configuration screenshot as ./screenshots/step-2.png -->
 ![Step 2 — Configure Settings](./screenshots/step-2.png)
 
 ### Step 3: Verify Booking Page
 
 Preview the booking page to verify correct slot generation, host assignment, and custom field rendering for the selected paradigm. For group events, verify the remaining seat count display. For round-robin, verify host distribution across bookings. For collective, verify that only mutually available slots are presented.
 
+<!-- Screenshot placeholder: Save booking page verification screenshot as ./screenshots/step-3.png -->
 ![Step 3 — Verify Booking Page](./screenshots/step-3.png)
 
 ### Step 4: Validate Webhook Compatibility
 
 Verify that booking lifecycle events (`BOOKING_CREATED`, `BOOKING_RESCHEDULED`, `BOOKING_CANCELLED`) fire correctly for the configured event type paradigm and that existing `v2021-10-20` webhook payloads remain unchanged. All six scheduling paradigms must produce correct webhook payloads without altering the existing payload structure.
 
+<!-- Screenshot placeholder: Save webhook validation screenshot as ./screenshots/step-4.png -->
 ![Step 4 — Webhook Validation](./screenshots/step-4.png)
 
 ## Configuration Options

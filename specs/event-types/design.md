@@ -146,7 +146,7 @@ Sprint 2 UI work is primarily **verification and alignment** of existing compone
 
 **ET-006 — Booking Fields Configuration (Booking fields UI):**
 
-- Verify booking field configuration supports all Calendly question types: text (free-form input), radio (single-select from options), checkbox (multi-select from options), phone (with international format validation), and dropdown (single-select from options list).
+- Verify booking field configuration supports all Calendly question types: text (free-form input), radio (single-select from options), checkbox (multi-select from options), phone (with international format validation), and dropdown (single-select from options list). Note: Calendly's "dropdown" type maps to Cal.com's `select` field type in `bookingFieldsManager.ts` (see `CALENDLY_FIELD_TYPE_MAP` at line 63–64). The design uses "dropdown" to match Calendly's terminology, but implementers should use `select` as the Cal.com internal type name.
 - Verify field rendering on the booking page matches the configured field type — each field type must render the appropriate HTML input control.
 - Verify the booking fields manager (`packages/features/eventtypes/lib/bookingFieldsManager.ts`) correctly normalizes field definitions for both new `bookingFields` JSON and legacy `customInputs`.
 

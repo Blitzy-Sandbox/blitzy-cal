@@ -32,10 +32,11 @@ Continue working on event types. Read specs/event-types/implementation.md for cu
 
 Generate documentation for event types with screenshots:
 
-1. Open the event type configuration UI in the browser
-2. Take screenshots of key UI states: creation form (all paradigm options), booking window config, custom fields builder, round-robin host editing, collective host selection
-3. Save screenshots to specs/event-types/docs/screenshots/
-4. Create/update specs/event-types/docs/README.md with:
+1. Ensure the screenshots directory exists: `mkdir -p specs/event-types/docs/screenshots/`
+2. Open the event type configuration UI in the browser
+3. Take screenshots of key UI states: creation form (all paradigm options), booking window config, custom fields builder, round-robin host editing, collective host selection
+4. Save screenshots to specs/event-types/docs/screenshots/
+5. Create/update specs/event-types/docs/README.md with:
    - Feature overview covering all 6 scheduling paradigms
    - How to use (step-by-step with screenshots for each paradigm)
    - Configuration options (booking windows, custom fields, seats, RR weights)

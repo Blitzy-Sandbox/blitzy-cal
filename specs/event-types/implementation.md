@@ -1,6 +1,6 @@
 # Event Types (Sprint 2) Implementation
 
-## Status: in-progress
+## Status: completed
 
 ## Completed
 
@@ -8,33 +8,28 @@
 - Gap analysis reviewed (`docs/gap-report/event-types.mdx`)
 - Validation criteria identified (ET-VAL-001 through ET-VAL-009 from `docs/sprint-roadmap/validation-criteria.mdx`)
 - ADRs documented (ADR-001: Schema vs. Metadata, ADR-002: RR Fairness Approach)
+- **ET-001 — 1:1 Event Type Behavioral Parity (Medium, M):** Verified one-on-one event types produce correct bookable flows with single host, single invitee, host assignment, and confirmation workflow. Verified against ET-VAL-001. Key files: `packages/features/eventtypes/lib/getEventTypeById.ts`, `packages/features/eventtypes/lib/getPublicEvent.ts`
+- **ET-002 — Group Event Type Parity via seatsPerTimeSlot (Medium, M):** Verified group event behavior where multiple attendees book the same time slot up to seat limit. Verified against ET-VAL-002. Key files: `packages/features/schedules/lib/slots.ts`, EventType `seatsPerTimeSlot` field
+- **ET-003 — Round-Robin Distribution Parity (High, L):** Audited and aligned RR distribution logic including weight/priority handling and segment-based filtering. Verified against ET-VAL-003. Key files: `packages/features/ee/round-robin/**/*.ts`, `packages/features/availability/lib/getAggregatedAvailability/`
+- **ET-004 — Collective Scheduling Parity (Medium, M):** Verified COLLECTIVE type requires all hosts simultaneously available. Verified against ET-VAL-004. Key files: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts`
+- **ET-005 — Booking Window Configuration Alignment (Medium, S):** Verified booking window settings match Calendly's options (days into future, date range, indefinitely). Verified against ET-VAL-006. Key files: `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx`
+- **ET-006 — Custom Fields/Questions Parity (Low, M):** Verified booking field types match Calendly's question types (text, radio, checkbox, phone, dropdown). Verified against ET-VAL-005. Key files: `packages/features/eventtypes/lib/bookingFieldsManager.ts`
+- Parity test suites created: `packages/features/eventtypes/lib/__tests__/eventTypeParity.test.ts`, `packages/features/eventtypes/lib/__tests__/bookingWindowParity.test.ts`, `packages/features/eventtypes/lib/__tests__/customFieldsParity.test.ts`, `packages/features/ee/round-robin/__tests__/distributionParity.test.ts`
+- Gate 2 validation passed across all five dimensions (behavioral, regression, data preservation, webhook compatibility, cross-domain integration) — see `specs/event-types/docs/validation-report.md`
+- `docs/gap-report/event-types.mdx` and `docs/sprint-roadmap/epic-catalog.mdx` updated with completion status
 
 ## In Progress
 
-- **ET-001 — 1:1 Event Type Behavioral Parity (Medium, M):** Verify one-on-one event types produce correct bookable flows with single host, single invitee, host assignment, and confirmation workflow. Key files: `packages/features/eventtypes/lib/getEventTypeById.ts`, `packages/features/eventtypes/lib/getPublicEvent.ts`
-- **ET-002 — Group Event Type Parity via seatsPerTimeSlot (Medium, M):** Verify group event behavior where multiple attendees book the same time slot up to seat limit. Key files: `packages/features/schedules/lib/slots.ts`, EventType `seatsPerTimeSlot` field
-- **ET-003 — Round-Robin Distribution Parity (High, L):** Audit and align RR distribution logic including weight/priority handling and segment-based filtering. Key files: `packages/features/ee/round-robin/**/*.ts`, `packages/features/availability/lib/getAggregatedAvailability/`
-- **ET-004 — Collective Scheduling Parity (Medium, M):** Verify COLLECTIVE type requires all hosts simultaneously available. Key files: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts`
-- **ET-005 — Booking Window Configuration Alignment (Medium, S):** Verify booking window settings match Calendly's options (days into future, date range, indefinitely). Key files: `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx`
-- **ET-006 — Custom Fields/Questions Parity (Low, M):** Verify booking field types match Calendly's question types (text, radio, checkbox, phone, dropdown). Key files: `packages/features/eventtypes/lib/bookingFieldsManager.ts`
+(No items — all epics completed.)
 
 ## Blocked
 
-- **Inter-sprint dependency:** Sprint 2 depends on Sprint 1 (Availability & Scheduling, F-004) passing Gate 1. If Gate 1 is not passed, all event type epics are blocked.
-- **Intra-sprint dependency ordering:** ET-001 depends on AV-001 (availability engine from Sprint 1). ET-002, ET-003, ET-004, and ET-006 all depend on ET-001 completion (1:1 baseline). ET-005 depends on AV-005 (booking window availability from Sprint 1). Implementation must follow this dependency chain — ET-001 must be verified first before ET-002/ET-003/ET-004/ET-006 can proceed.
+(No blockers — Sprint 1 Gate 1 passed, all intra-sprint dependencies resolved.)
 
 ## Next Steps
 
-1. Begin ET-001 verification: Audit `getEventTypeById.ts` enrichment pipeline for 1:1 event types
-2. Create behavioral parity test suite: `packages/features/eventtypes/lib/__tests__/eventTypeParity.test.ts`
-3. Begin ET-003 audit: Review round-robin distribution in `packages/features/ee/round-robin/`
-4. Create RR distribution test suite: `packages/features/ee/round-robin/__tests__/distributionParity.test.ts`
-5. Begin ET-005 alignment: Review `EventLimitsTab.tsx` booking window controls
-6. Create booking window test suite: `packages/features/eventtypes/lib/__tests__/bookingWindowParity.test.ts`
-7. Begin ET-006 audit: Review `bookingFieldsManager.ts` for custom field type coverage
-8. Create custom fields test suite: `packages/features/eventtypes/lib/__tests__/customFieldsParity.test.ts`
-9. Run Gate 2 validation across all five dimensions (behavioral, regression, data preservation, webhook compatibility, cross-domain integration)
-10. Update `docs/gap-report/event-types.mdx` and `docs/sprint-roadmap/epic-catalog.mdx` with completion status
+1. Proceed to Sprint 3 (Calendar Integrations, F-003) — Gate 2 passed, Sprint 3 prerequisites satisfied
+2. Monitor for any regression reports from downstream consumers (Platform SDK, API v2, tRPC routes, web app)
 
 ## Session Notes
 

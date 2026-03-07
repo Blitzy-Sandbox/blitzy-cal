@@ -19,7 +19,9 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   Min,
+  MinLength,
   ValidateNested,
 } from "class-validator";
 
@@ -216,10 +218,13 @@ export class BaseCreateEventTypeInput {
   lengthInMinutesOptions?: number[];
 
   @IsString()
+  @MinLength(1, { message: "title must not be empty" })
   @DocsProperty({ example: CREATE_EVENT_TITLE_EXAMPLE })
   title!: string;
 
   @IsString()
+  @MinLength(1, { message: "slug must not be empty" })
+  @Matches(/^[^/\\]+$/, { message: "slug must not contain forward slashes or backslashes" })
   @DocsProperty({ example: CREATE_EVENT_SLUG_EXAMPLE })
   slug!: string;
 

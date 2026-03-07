@@ -16,6 +16,7 @@ export class GetEventTypeOutput_2024_06_14 {
       { $ref: getSchemaPath(EventTypeOutput_2024_06_14) },
       { $ref: getSchemaPath(TeamEventTypeOutput_2024_06_14) },
     ],
+    nullable: true,
   })
   @Type(() => Object)
   data!: EventTypeOutput_2024_06_14 | TeamEventTypeOutput_2024_06_14 | null;

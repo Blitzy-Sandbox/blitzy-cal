@@ -6,643 +6,642 @@
 
 ### 0.1.1 Core Feature Objective
 
-Based on the prompt, the Blitzy platform understands that the new feature requirement is to **complete Sprint 1: Availability & Scheduling (F-004)** — the foundational availability engine for the Cal.com scheduling platform. The user explicitly identifies this as the bedrock upon which every downstream domain operates.
+Based on the prompt, the Blitzy platform understands that the new feature requirement is to **complete Sprint 2: Event Types (F-002)** as defined in the Calendly gap closure sprint roadmap for Cal.com's open-source scheduling platform. This sprint encompasses the systematic closure of all identified behavioral gaps between Cal.com's event type system and Calendly's event type capabilities, as documented across eight source-of-truth documents.
 
-The specific feature requirements, restated with enhanced clarity, are:
+The specific feature requirements are:
 
-- **Slot Generation Engine**: Implement the deterministic algorithm that transforms user-defined schedules (weekly working hours + date overrides) into concrete bookable time slots, respecting event duration, frequency intervals, and the `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL` environment configuration. The slot builder in `packages/features/schedules/lib/slots.ts` must produce invitee-timezone-aware results via `getSlots` / `buildSlotsWithDateRanges`.
-- **Buffer Time Enforcement**: Ensure before-event and after-event buffer windows are correctly applied during busy-time calculation in `packages/features/busyTimes/services/getBusyTimes.ts`, extending booking start/end boundaries so adjacent meetings never overlap the configured gap.
-- **Minimum Notice Period Enforcement**: The slot generation pipeline must respect `minimumBookingNotice` by filtering out any candidate slot whose start time falls within the notice window relative to the current UTC moment, as implemented in `packages/features/schedules/lib/slots.ts`.
-- **DST Normalization**: All date-range processing in `packages/features/schedules/lib/date-ranges.ts` must correctly handle Daylight Saving Time transitions via `processWorkingHours`, `getAdjustedTimezone`, and the travel-schedule override path, ensuring zero-length or shifted intervals are dropped and overlapping ranges are deduplicated through `mergeOverlappingRanges`.
-- **Busy Time Aggregation**: The `BusyTimesService` in `packages/features/busyTimes/services/getBusyTimes.ts` and its limit-enforcement layer in `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` must aggregate booking-based and calendar-based conflicts, apply per-user and team-level booking/duration limits, and produce a normalized `EventBusyDetails[]` that the availability engine subtracts from working hours.
-- **Aggregated Multi-Host Availability**: The `getAggregatedAvailability` routine in `packages/features/availability/lib/getAggregatedAvailability/` must correctly intersect fixed-host and round-robin participant windows, respecting group semantics, OOO exclusions, and deterministic deduplication.
+- **ET-001 — 1:1 Event Type Behavioral Parity (Medium, M):** Ensure one-on-one event types produce bookable flows that match Calendly's documented one-on-one event behavior — single host paired with a single invitee, correct host assignment, and confirmation workflow. Depends on availability engine (AV-001).
+- **ET-002 — Group Event Type Parity via `seatsPerTimeSlot` (Medium, M):** Verify and align group event behavior where multiple attendees book the same time slot, matching Calendly's group event type semantics. Depends on ET-001.
+- **ET-003 — Round-Robin Distribution Parity (High, L):** Align Cal.com's `SchedulingType.ROUND_ROBIN` distribution logic — including host weights, priority, and segment-based filtering — with Calendly's equitable round-robin assignment behavior. This is the highest-priority epic in Sprint 2. Depends on ET-001.
+- **ET-004 — Collective Scheduling Parity (Medium, M):** Ensure `SchedulingType.COLLECTIVE` correctly requires all hosts to be simultaneously available before presenting bookable slots, matching Calendly's collective event behavior. Depends on ET-001.
+- **ET-005 — Booking Window Configuration Alignment (Medium, S):** Verify that event-type-level booking window settings (minimum notice, maximum advance) integrate correctly with availability rules and match Calendly's date-range restrictions. Depends on AV-005.
+- **ET-006 — Custom Fields/Questions Parity (Low, M):** Align custom booking field types and capture behavior with Calendly's supported question types (text, radio, checkbox, phone, dropdown). Depends on ET-001.
 
-**Implicit requirements detected:**
+Implicit requirements detected:
 
-- The `UserAvailabilityService` orchestrator in `packages/features/availability/lib/getUserAvailability.ts` must correctly compose all sub-systems (schedule detection, holiday blocking, busy-time fetching, date-range arithmetic) into a unified availability response.
-- Schedule CRUD operations via `ScheduleRepository` and `ScheduleService` in `packages/features/schedules/repositories/` and `packages/features/schedules/services/` must be fully operational for the availability engine to read and modify schedules.
-- The `detectEventTypeScheduleForUser` resolver in `packages/features/availability/lib/detectEventTypeScheduleForUser.ts` must follow the priority hierarchy: event-type schedule → host override → user default → `DEFAULT_SCHEDULE_DATA` fallback.
-- Holiday blocking via `calculateHolidayBlockedDates` must integrate with Google Calendar API holiday data.
-- The `useTimesForSchedule` hook in `packages/features/schedules/hooks/` must produce deterministic ISO time windows for booker layouts across all timezone scenarios.
+- **Spec-First Workflow Compliance:** Before implementing any gap closure changes, a design spec must be created following `specs/README.md` conventions — `cp -r specs/_templates specs/event-types` — with `design.md`, `implementation.md`, `decisions.md`, and `docs/` artifacts.
+- **Validation Gate Readiness (Gate 2):** Sprint 2 must pass Gate 2 before Sprint 3 (Calendar Integrations) can begin. All five validation dimensions — behavioral testing, regression testing, data preservation, webhook compatibility, and cross-domain integration — must pass.
+- **Zero-Downtime Migration Safety:** Any schema changes required by event type epics must follow additive-only patterns from `docs/migration/zero-downtime-strategy.mdx`. No column renames, type changes, or NOT NULL additions without defaults.
+- **Webhook Backward Compatibility:** Event type changes must not alter existing `v2021-10-20` webhook payloads. The `BOOKING_CREATED`, `BOOKING_RESCHEDULED`, and `BOOKING_CANCELLED` events must continue producing identical payload structures.
+- **PR Size Constraints:** Every PR must be reviewable in under 10 minutes — max 5–7 files changed (excluding tests), max 500 lines changed, one focused change per PR.
 
 ### 0.1.2 Special Instructions and Constraints
 
-- **Source Directive**: The user explicitly identifies `packages/features/availability/` and `packages/features/schedules/` as the primary source packages. All implementation work must center on these directories and their transitive dependencies.
-- **Foundational Priority**: The user emphasizes that "every downstream domain — from event types to notifications — ultimately depends on the availability engine producing correct bookable slots." This means correctness and determinism take precedence over performance optimization.
-- **Existing Architecture Compliance**: All changes must follow the established Cal.com patterns:
-  - Dependency injection via `@evyweb/ioctopus` (v1.2.0) as configured in `packages/features/di/`
-  - Prisma-backed repository pattern (`ScheduleRepository`, `PrismaSelectedSlotRepository`)
-  - Zod schema validation for all tRPC procedure inputs
-  - `@calcom/dayjs` for all date/time operations (patched Day.js 1.11.4)
-  - Vitest for all unit and integration tests
-- **Backward Compatibility**: The availability engine feeds into the Platform SDK (`packages/platform/libraries/schedules.ts`), API v1 (`apps/api/v1/`), API v2 (`apps/api/v2/`), and the web application — all existing consumers must continue to receive consistent data contracts.
+- **Read All Docs Before Coding:** The user explicitly requires reading all source-of-truth documents in full before writing any code. If referenced documents point to additional documents, those must be read as well.
+- **Sprint Dependency Prerequisite:** Sprint 2 depends on Sprint 1 (Availability & Scheduling, F-004) having passed Gate 1. Event type slot generation, buffer enforcement, and booking windows all rely on the availability engine producing correct results.
+- **Follow Existing Cal.com Conventions:** All implementations must adhere to established architectural patterns — `@evyweb/ioctopus` DI, Prisma repositories, Zod validation, `@calcom/dayjs`, and Vitest testing.
+- **Maintain Backward Compatibility:** Platform SDK (`packages/platform/`), API v1 (`apps/api/v1/`), API v2 (`apps/api/v2/`), and web consumers (`apps/web/`) must all continue functioning without regression.
+- **Calendly API as Behavioral Source of Truth:** All behavioral targets reference Calendly's API documentation at `developer.calendly.com` as the authoritative benchmark for expected scheduling platform behavior.
 
 ### 0.1.3 Technical Interpretation
 
 These feature requirements translate to the following technical implementation strategy:
 
-- To **implement slot generation**, we will validate and extend the `getSlots` / `buildSlotsWithDateRanges` functions in `packages/features/schedules/lib/slots.ts`, ensuring correct interval snapping, optimized-mode rounding, notice window enforcement, and out-of-office metadata propagation.
-- To **enforce buffer times**, we will validate the buffer expansion logic in `BusyTimesService._getBusyTimes` that extends booking start/end by `beforeEventBuffer` and `afterEventBuffer` minutes, and confirm that `getDefinedBufferTimes` in the calendar busy-time path correctly applies these windows.
-- To **normalize DST transitions**, we will validate `processWorkingHours` in `packages/features/schedules/lib/date-ranges.ts` for correct UTC offset calculations, travel timezone overrides via `getAdjustedTimezone`, overlapping interval deduplication via `endTimeToKeyMap`, and boundary handling at 23:59.
-- To **aggregate busy times**, we will validate the full `BusyTimesService` pipeline including batch-fetched limit checks (`fetchBookingsForLimitChecksBatched`), booking-count and duration-based limit enforcement, and team-level busy-time aggregation.
-- To **deliver aggregated multi-host availability**, we will validate the `getAggregatedAvailability` routine's intersection logic for fixed hosts, round-robin group semantics, and the `uniqueAndSortedDateRanges` / `filterRedundantDateRanges` utilities.
-- To **orchestrate the full availability query**, we will validate `UserAvailabilityService` in `getUserAvailability.ts`, ensuring it correctly composes schedule detection, holiday blocking, busy-time services, and date-range arithmetic (via `buildDateRanges`, `subtract`, `getWorkingHours`) into a complete availability response.
+- To **achieve 1:1 event type parity (ET-001)**, we will verify and harden the default event type booking flow in `packages/features/eventtypes/` where `schedulingType` is `null` (one-on-one implicit type), ensuring correct host assignment, attendee capture, and confirmation behavior aligned with Calendly's documented 1:1 flow.
+- To **achieve group event parity (ET-002)**, we will verify and align the `seatsPerTimeSlot` behavior in `packages/features/eventtypes/` and the booking engine, ensuring that multiple attendees can book the same slot up to the seat limit, and the (N+1)th attendee is correctly rejected.
+- To **achieve round-robin parity (ET-003)**, we will audit and align the `SchedulingType.ROUND_ROBIN` distribution logic in `packages/features/ee/round-robin/`, verifying equitable host assignment against Calendly's documented behavior, including weight/priority handling and the `isRRWeightsEnabled`/`rrSegmentQueryValue` configurations in the Prisma schema.
+- To **achieve collective scheduling parity (ET-004)**, we will verify that `SchedulingType.COLLECTIVE` in `packages/features/availability/lib/getAggregatedAvailability/` correctly computes the intersection of all fixed hosts' schedules and presents only mutually available slots.
+- To **achieve booking window alignment (ET-005)**, we will verify the `periodType`, `periodDays`, `periodStartDate`, `periodEndDate`, and `minimumBookingNotice` fields on the `EventType` Prisma model enforce date-range restrictions matching Calendly's three booking window options (days into future, date range, indefinitely).
+- To **achieve custom fields parity (ET-006)**, we will audit the `bookingFields` configuration and `customInputs` system in `packages/features/eventtypes/lib/types.ts` to ensure Cal.com supports all Calendly question types (text, radio, checkbox, phone, dropdown) and captures responses correctly.
+
 
 ## 0.2 Repository Scope Discovery
 
 ### 0.2.1 Comprehensive File Analysis
 
-The following exhaustive inventory catalogs every file and module within the availability and scheduling feature surface, organized by functional role.
+The following is an exhaustive catalog of all repository files and folders affected by Sprint 2: Event Types (F-002). Files are grouped by their role in the implementation.
 
-#### Core Availability Business Logic (`packages/features/availability/`)
+**Core Event Type Feature Files**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/availability/lib/getUserAvailability.ts` | MODIFY | Orchestration core — Zod request schemas, `UserAvailabilityService` class composing schedule detection, holiday blocking, busy-time services, date-range arithmetic, Redis caching, and OOO data |
-| `packages/features/availability/lib/detectEventTypeScheduleForUser.ts` | MODIFY | Schedule priority resolver — `DEFAULT_SCHEDULE_DATA`, event-type → host → user → fallback hierarchy with timezone propagation |
-| `packages/features/availability/lib/detectEventTypeScheduleForUser.test.ts` | MODIFY | Vitest behavioral spec covering priority hierarchy, timezone propagation, default flags |
-| `packages/features/availability/lib/findUsersForAvailabilityCheck.ts` | MODIFY | Async Prisma user enrichment helper with `availabilityUserSelect`, calendar normalization, delegation credential injection |
-| `packages/features/availability/lib/calculateHolidayBlockedDates.test.ts` | MODIFY | Vitest suite for holiday blocking matrix validation |
-| `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` | MODIFY | Deterministic aggregation for multi-host availability — fixed/round-robin intersection, group semantics, deduplication |
-| `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.test.ts` | MODIFY | Vitest regression suite for aggregation logic |
-| `packages/features/availability/lib/getAggregatedAvailability/date-range-utils/` | MODIFY | `filterRedundantDateRanges.ts`, `mergeOverlappingDateRanges.ts` and their test suites |
-| `packages/features/availability/components/SkeletonLoader.tsx` | MODIFY | Client-side skeleton UI for availability loading states |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/features/eventtypes/eventtypes.repository.interface.ts` | MODIFY | Central interface for `IEventTypesRepository` — may need additional method signatures for parity verification |
+| `packages/features/eventtypes/repositories/eventTypeRepository.ts` | MODIFY | Primary Prisma-backed persistence layer — verify query projections, authorization, and metadata validation for all 6 paradigms |
+| `packages/features/eventtypes/repositories/EventRepository.ts` | VERIFY | Static `getPublicEvent` wrapper — confirm correct behavior for all event type paradigms |
+| `packages/features/eventtypes/lib/getEventTypeById.ts` | MODIFY | Central server-side helper assembling event type data — verify enrichment for group/RR/collective types |
+| `packages/features/eventtypes/lib/getEventTypesByViewer.ts` | VERIFY | Viewer-scoped event type listing — ensure all paradigms represented correctly |
+| `packages/features/eventtypes/lib/getEventTypesPublic.ts` | VERIFY | Public event type resolution — verify public-facing behavior for all types |
+| `packages/features/eventtypes/lib/getPublicEvent.ts` | VERIFY | Public event resolution with slug/team handling — confirm parity flows |
+| `packages/features/eventtypes/lib/getTeamEventType.ts` | VERIFY | Team event type resolution — critical for RR and collective types |
+| `packages/features/eventtypes/lib/types.ts` | MODIFY | `FormValues`, `EventTypeUpdateInput`, and all TypeScript contracts — ensure all paradigm-specific fields are typed |
+| `packages/features/eventtypes/lib/schemas.ts` | MODIFY | Zod schemas for event type creation/duplication — verify validation rules |
+| `packages/features/eventtypes/lib/defaultEvents.ts` | VERIFY | Default event type templates — verify default configurations |
+| `packages/features/eventtypes/lib/bookingFieldsManager.ts` | MODIFY | Booking field normalization — extend for custom field parity (ET-006) |
+| `packages/features/eventtypes/lib/checkForEmptyAssignment.ts` | VERIFY | Host assignment validation — relevant for RR/collective |
+| `packages/features/eventtypes/lib/getDefinedBufferTimes.ts` | VERIFY | Buffer time retrieval — verify integration with booking windows |
+| `packages/features/eventtypes/lib/eventNaming.ts` | VERIFY | Event naming template engine — verify correct rendering for all paradigms |
 
-#### Core Scheduling Engine (`packages/features/schedules/`)
+**Event Type UI Components**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/schedules/lib/date-ranges.ts` | MODIFY | Timezone-aware date-range processing — `processWorkingHours`, `processDateOverride`, `processOOO`, DST normalization, travel overrides, `intersect`/`subtract`/`mergeOverlappingRanges` |
-| `packages/features/schedules/lib/date-ranges.test.ts` | MODIFY | Comprehensive Vitest battery for DST, travel, override, subtract, intersect edge cases |
-| `packages/features/schedules/lib/slots.ts` | MODIFY | Slot generator — `GetSlots`/`TimeFrame` types, `buildSlotsWithDateRanges`, interval snapping, optimized rounding, notice enforcement, OOO metadata merging |
-| `packages/features/schedules/lib/slots.test.ts` | MODIFY | Vitest suite covering 24-hour distributions, notice, timezone offsets, performance, metadata propagation |
-| `packages/features/schedules/repositories/ScheduleRepository.ts` | MODIFY | Prisma-backed schedule CRUD with permission enforcement, default schedule lifecycle, Atom-compatible payloads |
-| `packages/features/schedules/repositories/ScheduleRepository.test.ts` | MODIFY | Vitest regression suite with prismaMock for all repository methods |
-| `packages/features/schedules/services/ScheduleService.ts` | MODIFY | Zod input schema (`ZUpdateInputSchema`), ownership/permission enforcement, transactional schedule update with availability normalization |
-| `packages/features/schedules/hooks/useTimesForSchedule.ts` | MODIFY | Scheduling window hook — ISO window calculation tied to BookerStoreContext, layout-driven prefetch |
-| `packages/features/schedules/hooks/useTimesForSchedule.timezone.test.ts` | MODIFY | Timezone regression suite covering month/week/column/mobile layouts |
-| `packages/features/schedules/components/DateOverrideInputDialog.tsx` | MODIFY | Modal for date-specific override editing with locale-aware calendar |
-| `packages/features/schedules/components/DateOverrideList.tsx` | MODIFY | Sorted, localized override list with inline edit/delete |
-| `packages/features/schedules/components/ScheduleComponent.tsx` | MODIFY | Weekly availability grid — React Hook Form, `DayRanges`, `parseTimeString`, `CopyTimes` |
-| `packages/features/schedules/components/ScheduleListItem.tsx` | MODIFY | Schedule row for master list with localized summaries and dropdown actions |
-| `packages/features/schedules/components/parse-time-string.test.ts` | MODIFY | Vitest suite for `parseTimeString` across timezone scenarios |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/features/eventtypes/components/CreateEventTypeForm.tsx` | MODIFY | Event type creation form — verify all paradigm options available |
+| `packages/features/eventtypes/components/AssignAllTeamMembers.tsx` | VERIFY | Team member assignment toggle — relevant for RR/collective |
+| `packages/features/eventtypes/components/CheckedTeamSelect.tsx` | VERIFY | Team member multi-select — host selection for team events |
+| `packages/features/eventtypes/components/ChildrenEventTypeSelect.tsx` | VERIFY | Managed event type children — parent/child paradigm |
+| `packages/features/eventtypes/components/dialogs/HostEditDialogs.tsx` | VERIFY | Host editing modals — weight/priority for RR |
+| `packages/features/eventtypes/components/dialogs/ManagedEventDialog.tsx` | VERIFY | Managed event type dialog — admin template flows |
+| `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx` | MODIFY | Booking limits and windows — ET-005 alignment |
+| `packages/features/eventtypes/components/tabs/recurring/EventRecurringTab.tsx` | VERIFY | Recurring event configuration — verify parity |
+| `packages/features/eventtypes/components/WeightDescription.tsx` | VERIFY | RR weight description component — ET-003 |
 
-#### Shared Library Utilities (`packages/lib/`)
+**Round-Robin Enterprise Module**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/lib/availability.ts` | MODIFY | Canonical constants (`DEFAULT_SCHEDULE`, `defaultDayRange`), `getAvailabilityFromSchedule`, `getWorkingHours`, `availabilityAsString` |
-| `packages/lib/schedules/transformers/for-atom.ts` | MODIFY | Atom API adapters — `transformWorkingHoursForAtom`, `transformAvailabilityForAtom`, `transformDateOverridesForAtom` |
-| `packages/lib/schedules/transformers/index.ts` | MODIFY | Barrel exports for schedule transformers |
-| `packages/lib/schedules/transformers/getScheduleListItemData.ts` | MODIFY | Data transformer for schedule list item rendering |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/features/ee/round-robin/**/*.ts` | MODIFY | RR rescheduling, reassignment, booking manager, event manager, host priority/weight, slot validation, assignment reason recording — ET-003 |
 
-#### Busy Times Feature (`packages/features/busyTimes/`)
+**Availability Integration (Upstream Dependency)**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/busyTimes/services/getBusyTimes.ts` | MODIFY | `BusyTimesService` — buffer expansion, booking fetch, calendar busy-time aggregation, seat reference tracking |
-| `packages/features/busyTimes/services/getBusyTimes.test.ts` | MODIFY | Unit test suite for busy-time generation and limit checks |
-| `packages/features/busyTimes/services/getBusyTimes.integration-test.ts` | MODIFY | Prisma-backed integration test for batched limit checks |
-| `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` | MODIFY | Limit enforcement pipeline — booking-count, duration, team-level limits via `LimitManager` |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/features/availability/lib/getUserAvailability.ts` | VERIFY | Orchestrator for availability pipeline — verify correct integration with event types |
+| `packages/features/availability/lib/getAggregatedAvailability/*.ts` | VERIFY | Team availability aggregation — critical for ET-003 (RR) and ET-004 (Collective) |
+| `packages/features/schedules/lib/slots.ts` | VERIFY | Slot generation — verify correct slot production for all event type paradigms |
+| `packages/features/schedules/lib/date-ranges.ts` | VERIFY | Date range calculation with DST — upstream dependency |
+| `packages/features/busyTimes/services/getBusyTimes.ts` | VERIFY | Busy time aggregation — verify seated event handling for group events |
 
-#### Dependency Injection Wiring (`packages/features/di/`)
+**Prisma Schema and Database**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/features/di/containers/AvailableSlots.ts` | MODIFY | DI container bootstrapping for `AvailableSlotsService` with all repository and service modules |
-| `packages/features/di/containers/GetUserAvailability.ts` | MODIFY | DI container for `UserAvailabilityService` with Prisma, repositories, Redis |
-| `packages/features/di/containers/BusyTimes.ts` | MODIFY | DI container for `BusyTimesService` with Prisma and booking repository |
-| `packages/features/di/modules/AvailableSlots.ts` | MODIFY | Module binding for `AvailableSlotsService` with 15+ dependency tokens |
-| `packages/features/di/modules/GetUserAvailability.ts` | MODIFY | Module binding for `UserAvailabilityService` |
-| `packages/features/di/modules/SelectedSlots.ts` | MODIFY | Module binding for `PrismaSelectedSlotRepository` |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/prisma/schema.prisma` | MODIFY | `EventType` model, `SchedulingType` enum, `BookingSeat` model — potential schema additions for parity |
+| `packages/prisma/selects/event-types.ts` | VERIFY | `bookEventTypeSelect`, `availiblityPageEventTypeSelect` — verify projections cover all fields |
+| `packages/prisma/selects/booking.ts` | VERIFY | Booking select projections — verify group/seated booking fields |
+| `packages/prisma/selects/user.ts` | VERIFY | User select for availability — verify host data projections |
+| `packages/prisma/migrations/` | CREATE | New migration files for any schema changes (additive-only patterns) |
 
-#### tRPC Routers and Handlers (`packages/trpc/`)
+**API v2 (NestJS)**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/trpc/server/routers/viewer/availability/_router.tsx` | MODIFY | Viewer availability router — `list`, `user`, `listTeam`, `schedule`, `calendarOverlay` procedures |
-| `packages/trpc/server/routers/viewer/availability/schedule/_router.tsx` | MODIFY | Schedule sub-router — `get`, `create`, `delete`, `update`, `duplicate`, user/event slug lookups, bulk reset |
-| `packages/trpc/server/routers/viewer/availability/schedule/get.handler.ts` | MODIFY | GET handler delegating to `ScheduleRepository.findDetailedScheduleById` |
-| `packages/trpc/server/routers/viewer/availability/schedule/create.handler.ts` | MODIFY | CREATE handler — ownership check, normalized availability, default schedule backfill |
-| `packages/trpc/server/routers/viewer/availability/schedule/update.handler.ts` | MODIFY | UPDATE handler delegating to `ScheduleService.update` |
-| `packages/trpc/server/routers/viewer/availability/list.handler.ts` | MODIFY | LIST handler with default schedule resolution and backfill |
-| `packages/trpc/server/routers/viewer/slots/_router.tsx` | MODIFY | Viewer slots router — `getSchedule`, `reserveSlot`, `isAvailable`, `removeSelectedSlotMark` |
-| `packages/trpc/server/routers/viewer/slots/getSchedule.handler.ts` | MODIFY | Schedule handler delegating to `getAvailableSlotsService` |
-| `packages/trpc/server/routers/viewer/slots/types.ts` | MODIFY | Zod schemas for scheduling, reservation, availability inputs |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `apps/api/v2/src/ee/event-types/event-types_2024_06_14/**/*.ts` | MODIFY | Latest versioned EE event type CRUD — verify all paradigm support |
+| `apps/api/v2/src/ee/event-types/event-types_2024_04_15/**/*.ts` | VERIFY | Previous version — maintain backward compatibility |
+| `apps/api/v2/src/modules/teams/event-types/**/*.ts` | MODIFY | Team event type repository/service — verify RR/collective flows |
+| `apps/api/v2/src/modules/organizations/event-types/**/*.ts` | VERIFY | Organization-scoped event types — verify managed type propagation |
+| `apps/api/v2/src/modules/atoms/services/event-types-atom.service.ts` | VERIFY | Atoms event type orchestration — verify all paradigm support |
 
-#### Web Application Modules (`apps/web/`)
+**tRPC Routers**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `apps/web/modules/availability/availability-view.tsx` | MODIFY | `/availability` page — `AvailabilityList` and `AvailabilityCTA` with TRPC mutations |
-| `apps/web/modules/availability/[schedule]/schedule-view.tsx` | MODIFY | `/availability/[schedule]` page — schedule editing with cache invalidation |
-| `apps/web/modules/availability/troubleshoot/troubleshoot-view.tsx` | MODIFY | Client-only availability troubleshooting wrapper |
-| `apps/web/modules/schedules/components/NewScheduleButton.tsx` | MODIFY | FAB/Dialog for schedule creation with TRPC mutation |
-| `apps/web/modules/schedules/components/Schedule.tsx` | MODIFY | React Hook Form adapter for `ScheduleComponent` |
-| `apps/web/modules/schedules/hooks/useSchedule.ts` | MODIFY | Availability fetching between legacy TRPC and API v2 |
-| `apps/web/modules/schedules/hooks/useEvent.ts` | MODIFY | Booker context hooks for event/schedule queries |
-| `apps/web/modules/schedules/hooks/useNonEmptyScheduleDays.ts` | MODIFY | Memoized slot day filtering |
-| `apps/web/modules/schedules/hooks/useSlotsForDate.ts` | MODIFY | Per-date slot lookups with confirmation toggle |
-| `apps/web/modules/schedules/lib/types.ts` | MODIFY | TRPC-derived type aliases (`Slots`, `Slot`, `GetSchedule`) |
-| `apps/web/app/(use-page-wrapper)/availability/[schedule]/page.tsx` | MODIFY | Server component for schedule detail route |
-| `apps/web/app/(use-page-wrapper)/(main-nav)/availability/page.tsx` | MODIFY | Server component for availability listing route |
-| `apps/web/modules/event-types/components/tabs/availability/` | MODIFY | Event type availability tab components and wrapper |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/trpc/server/routers/viewer/eventTypes/**/*.ts` | MODIFY | Viewer-scoped event type tRPC routes — verify create/update/list for all paradigms |
 
-#### Prisma Schema and Types
+**Platform SDK**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `packages/prisma/schema.prisma` (models: `Schedule`, `Availability`, `SelectedSlots`) | MODIFY | Core data models for scheduling |
-| `packages/types/schedule.d.ts` | MODIFY | Shared TypeScript types — `TimeRange`, `Schedule`, `WorkingHours`, `TravelSchedule` |
-| `packages/platform/atoms/availability/types.ts` | MODIFY | Platform atom type contracts for availability forms |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/platform/libraries/event-types.ts` | VERIFY | Re-export surface — ensure new helpers are surfaced |
+| `packages/platform/atoms/event-types/**/*.ts` | VERIFY | Atom types and wrappers — verify paradigm coverage |
 
-#### API Surface
+**Webhook System (Backward Compatibility)**
 
-| File Path | Type | Purpose |
-|-----------|------|---------|
-| `apps/web/pages/api/trpc/availability/[trpc].ts` | MODIFY | Next.js API route for availability TRPC namespace |
-| `apps/api/v1/lib/validations/availability.ts` | MODIFY | Zod validation schemas for API v1 availability endpoints |
-| `apps/api/v1/lib/validations/schedule.ts` | MODIFY | Zod validation schemas for API v1 schedule endpoints |
-| `apps/api/v2/src/ee/schedules/schedules_2024_04_15/` | MODIFY | API v2 EE schedule module — repository, outputs, service |
-| `apps/api/v2/src/lib/services/available-slots.service.ts` | MODIFY | NestJS provider extending `BaseAvailableSlotsService` |
-| `apps/api/v2/src/lib/services/busy-times.service.ts` | MODIFY | NestJS provider extending `BaseBusyTimesService` |
-| `apps/api/v2/src/lib/modules/available-slots.module.ts` | MODIFY | NestJS module aggregating all availability DI providers |
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `packages/features/webhooks/lib/factory/versioned/v2021-10-20/**/*.ts` | VERIFY | Existing payload builders — ensure no changes to booking payloads |
+| `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts` | VERIFY | Factory routing — verify trigger mapping remains intact |
 
-### 0.2.2 Integration Point Discovery
+**Spec Workflow Artifacts**
 
-- **API Endpoints**: `/api/trpc/availability/*` (TRPC), `/api/availabilities` (REST v1), `/api/v2/ee/schedules/*` (REST v2)
-- **Database Models**: `Schedule`, `Availability`, `SelectedSlots`, `SelectedCalendar`, `Booking` (for busy-time queries)
-- **Service Classes**: `UserAvailabilityService`, `BusyTimesService`, `AvailableSlotsService`, `ScheduleService`, `ScheduleRepository`
-- **Controllers/Handlers**: Viewer availability/schedule TRPC router handlers, API v1 availability controllers, API v2 schedule controllers
-- **Middleware**: Authentication via `authedProcedure` (TRPC), `authMiddleware` (API routes), permission checks via `hasReadPermissionsForUserId` / `hasEditPermissionForUserID`
+| File/Pattern | Type | Purpose |
+|---|---|---|
+| `specs/event-types/design.md` | CREATE | Design spec documenting what to build and how |
+| `specs/event-types/implementation.md` | CREATE | Progress tracking for session continuity |
+| `specs/event-types/decisions.md` | CREATE | Architecture Decision Records for trade-offs |
+| `specs/event-types/CLAUDE.md` | CREATE | AI agent instructions for this feature |
+| `specs/event-types/AGENTS.md` | CREATE | Agent guidelines for this feature |
+| `specs/event-types/prompts.md` | CREATE | Reusable prompts for common tasks |
+| `specs/event-types/future-work.md` | CREATE | Deferred ideas and enhancements |
+| `specs/event-types/docs/README.md` | CREATE | Internal documentation |
+
+### 0.2.2 Web Search Research Conducted
+
+No external web search is required for this sprint. All behavioral targets are documented in the source-of-truth files within the repository:
+
+- Calendly behavioral benchmarks are captured in `docs/gap-report/event-types.mdx`
+- Acceptance criteria are defined in `docs/sprint-roadmap/validation-criteria.mdx` (ET-VAL-001 through ET-VAL-009)
+- Migration patterns are documented in `docs/migration/zero-downtime-strategy.mdx`
+- Webhook compatibility rules are in `docs/migration/webhook-compatibility.mdx`
 
 ### 0.2.3 New File Requirements
 
-No entirely new source files are required for this sprint. The availability and scheduling engine is an existing, mature codebase (`F-003` is marked as "Completed" in the feature catalog). This sprint focuses on **validating, hardening, and completing** the existing implementation to ensure all sub-systems produce correct results. Any new files would be limited to:
+**New spec files to create:**
+- `specs/event-types/design.md` — Comprehensive design spec for Sprint 2 event type parity closure
+- `specs/event-types/implementation.md` — Progress tracker for all 6 epics (ET-001 through ET-006)
+- `specs/event-types/decisions.md` — ADRs for any architectural trade-offs during parity work
+- `specs/event-types/CLAUDE.md` — AI agent instructions scoped to event types
+- `specs/event-types/AGENTS.md` — Agent guidelines scoped to event types
+- `specs/event-types/prompts.md` — Reusable prompts for event type tasks
+- `specs/event-types/future-work.md` — Deferred items (e.g., ET-001 Meeting Polls gap)
+- `specs/event-types/docs/README.md` — Internal documentation with screenshots
 
-- Additional test fixtures if specific edge cases are discovered during validation
-- Potential new Vitest test files for any untested integration paths between the sub-systems
+**New test files to create:**
+- `packages/features/eventtypes/lib/__tests__/eventTypeParity.test.ts` — Behavioral parity tests for all 6 scheduling paradigms
+- `packages/features/eventtypes/lib/__tests__/bookingWindowParity.test.ts` — Booking window alignment tests (ET-005)
+- `packages/features/eventtypes/lib/__tests__/customFieldsParity.test.ts` — Custom field type coverage tests (ET-006)
+- `packages/features/ee/round-robin/__tests__/distributionParity.test.ts` — Round-robin equitable distribution tests (ET-003)
+
+**New migration files (if schema changes needed):**
+- `packages/prisma/migrations/[timestamp]_event_type_parity_fields/migration.sql` — Additive-only columns for any missing parity fields
+
 
 ## 0.3 Dependency Inventory
 
 ### 0.3.1 Private and Public Packages
 
-The following table catalogs all key packages relevant to the availability and scheduling feature addition, with exact names and versions sourced from the repository's dependency manifests.
+The following table lists all key packages relevant to the Sprint 2 event type parity implementation. Versions are sourced from the repository's dependency manifests.
 
 | Registry | Package | Version | Purpose |
-|----------|---------|---------|---------|
-| workspace | `@calcom/features` | 1.0.0 | Main feature collocation package housing `availability/`, `schedules/`, `busyTimes/`, `selectedSlots/` |
-| workspace | `@calcom/lib` | workspace:* | Platform-wide utilities including `availability.ts`, `schedules/transformers/`, holiday helpers, timezone utilities |
-| workspace | `@calcom/dayjs` | workspace:* | Patched Day.js (1.11.4) wrapper with UTC, timezone, locale, and custom format plugins |
-| workspace | `@calcom/trpc` | workspace:* | Shared tRPC contract with viewer availability/schedule/slots routers |
-| workspace | `@calcom/ui` | workspace:* | React design system with `SkeletonText`, `Button`, `Dialog`, `Switch`, `Select` primitives |
-| workspace | `@calcom/prisma` | workspace:* | ORM tooling — Prisma 6.16.1 client, schema with `Schedule`/`Availability`/`SelectedSlots` models |
-| workspace | `@calcom/types` | workspace:* | Ambient type declarations — `TimeRange`, `Schedule`, `WorkingHours`, `TravelSchedule` |
-| workspace | `@calcom/atoms` | workspace:* | Platform Atoms UI components including `AvailabilitySettings`, `CreateSchedule`, `ListSchedules` |
-| workspace | `@calcom/testing` | workspace:* | Vitest fixtures, mocks, and test helpers |
-| workspace | `@calcom/platform-libraries` | workspace:* | Platform schedule/availability re-exports from features packages |
-| npm | `@evyweb/ioctopus` | 1.2.0 | Dependency injection container library used in `packages/features/di/` |
-| npm | `zustand` | 4.5.2 | State management for `BookerStoreContext` consumed by schedule hooks |
-| npm | `zod` | 3.25.76 | Runtime schema validation for all tRPC inputs, schedule schemas, availability validators |
-| npm | `react-hook-form` | 7.43.3 | Form management for `ScheduleComponent`, `DateOverrideInputDialog`, schedule CRUD forms |
-| npm | `date-fns-tz` | 3.2.0 | Timezone-aware date formatting used in `DateOverrideList` via `formatInTimeZone` |
-| npm | `framer-motion` | 10.12.8 | Animations for availability list transitions |
-| npm | `react-select` | 5.8.0 | Advanced select inputs for schedule/timezone pickers |
-| npm | `city-timezones` | 1.2.1 | City timezone lookup for `packages/features/cityTimezones/` |
-| npm | `vitest` | 4.0.16 | Test runner for all availability/schedules unit and integration tests |
-| npm | `prismock` | 1.35.3 | Prisma mock for repository test suites |
-| npm | `typescript` | 5.9.3 | Language compiler |
-| npm | `next` | >=14.0.0 (peer) | Web framework (actual: 16.1.5 in `apps/web`) |
-| npm | `react` | ^18.0.0 (peer) | UI library (actual: 18.2.0 in `apps/web`) |
+|---|---|---|---|
+| Workspace | `@calcom/features` | Workspace | Event type feature modules, availability, schedules, busy times, round-robin |
+| Workspace | `@calcom/prisma` | Workspace | Prisma ORM client, schema, migrations, selects, auto-migrations |
+| Workspace | `@calcom/trpc` | Workspace | tRPC server routers for event type CRUD operations |
+| Workspace | `@calcom/lib` | Workspace | Utility functions — slug generation, timezone, formatting |
+| Workspace | `@calcom/ui` | Workspace | Shared UI component library for event type forms and dialogs |
+| Workspace | `@calcom/dayjs` | Workspace | Day.js with plugins for scheduling (BusinessDays, UTC, timezone) |
+| Workspace | `@calcom/platform` | Workspace | Platform SDK — atoms, types, utils, constants, libraries |
+| Workspace | `@calcom/emails` | Workspace | Email templates for booking confirmations |
+| Workspace | `@calcom/types` | Workspace | Shared TypeScript type declarations |
+| Workspace | `@calcom/ee` | Workspace | Enterprise DI modules for round-robin, managed types |
+| Workspace | `@calcom/testing` | Workspace | Vitest fixtures, mocks, performance harnesses |
+| npm | `@prisma/client` | Per lockfile | Prisma ORM runtime client |
+| npm | `prisma` | Per lockfile | Prisma CLI for migrations and schema management |
+| npm | `zod` | Per lockfile | Schema validation for event type inputs, metadata, booking fields |
+| npm | `next` | Per lockfile | Next.js framework for web application |
+| npm | `react` | Per lockfile | UI rendering for event type components |
+| npm | `react-hook-form` | Per lockfile | Form state management for event type configuration UI |
+| npm | `@trpc/server` | next-beta 11 | tRPC server framework for typed API routes |
+| npm | `@trpc/react-query` | Per lockfile | React Query integration for tRPC client |
+| npm | `vitest` | Per lockfile | Test runner for unit and integration tests |
+| npm | `@nestjs/core` | Per lockfile | NestJS framework for API v2 event type modules |
+| npm | `superjson` | Per lockfile | JSON serialization for tRPC responses |
+| npm | `@evyweb/ioctopus` | Per lockfile | Dependency injection container |
+| npm | `handlebars` | Per lockfile | Webhook payload template rendering |
+| npm | `yarn` | 4.12.0 | Package manager (pinned via `.yarnrc.yml`) |
 
 ### 0.3.2 Dependency Updates
 
-#### Import Updates
+**Import Updates**
 
-Files requiring import verification across the availability surface (using wildcards):
+Files requiring import updates follow the event type feature's modular structure:
 
-- `packages/features/availability/**/*.ts` — Internal imports from `@calcom/lib`, `@calcom/prisma`, `@calcom/dayjs`, `@calcom/app-store`
-- `packages/features/schedules/**/*.ts` — Internal imports from `@calcom/lib`, `@calcom/prisma`, `@calcom/dayjs`, `@calcom/ui`
-- `packages/features/busyTimes/**/*.ts` — Internal imports from `@calcom/lib`, `@calcom/prisma`, `@calcom/features/schedules`
-- `packages/features/di/**/*.ts` — Token and module imports across the DI graph
-- `packages/trpc/server/routers/viewer/availability/**/*.ts` — Handler imports from `@calcom/features`, `@calcom/prisma`
-- `packages/trpc/server/routers/viewer/slots/**/*.ts` — Handler imports from `@calcom/features/di/containers`
-- `apps/web/modules/availability/**/*.tsx` — TRPC hooks, `@calcom/features`, `@calcom/ui` imports
-- `apps/web/modules/schedules/**/*.tsx` — TRPC hooks, component imports from `@calcom/features/schedules`
+- `packages/features/eventtypes/**/*.ts` — Internal imports for new parity test utilities, type extensions, and schema modifications
+- `packages/features/ee/round-robin/**/*.ts` — RR module imports for distribution alignment helpers
+- `specs/event-types/**/*.md` — New spec folder referencing existing design patterns from `specs/_templates/`
 
-#### External Reference Updates
+**Import Transformation Rules:**
 
-- `packages/features/package.json` — Verify all workspace dependency versions align
-- `packages/prisma/schema.prisma` — Ensure `Schedule`, `Availability`, `SelectedSlots` models are current
-- `packages/types/schedule.d.ts` — Verify type definitions match runtime implementations
-- `.env.example` — Confirm availability-related environment variables are documented (`NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`, `PUBLIC_QUERY_AVAILABLE_SLOTS_INTERVAL_SECONDS`, `calendar-cache` feature flag)
+- Existing: `from '@calcom/features/eventtypes/lib/types'` — No changes, preserve existing import paths
+- New tests: `from '@calcom/features/eventtypes/lib/types'` and `from '@calcom/testing'` for test fixtures
+- Spec references: Follow `specs/_templates/` patterns exactly
+
+**External Reference Updates:**
+
+- `docs/gap-report/event-types.mdx` — Update gap inventory status after parity closure
+- `docs/sprint-roadmap/epic-catalog.mdx` — Mark ET-001 through ET-006 completion status
+- `docs/sprint-roadmap/validation-criteria.mdx` — Record validation evidence for ET-VAL criteria
+- `README.md` — No changes expected unless new user-facing features are added
+
 
 ## 0.4 Integration Analysis
 
 ### 0.4.1 Existing Code Touchpoints
 
-#### Direct Modifications Required
+**Direct Modifications Required:**
 
-- **`packages/features/availability/lib/getUserAvailability.ts`**: The availability orchestration core. Validate that `UserAvailabilityService` correctly sequences: (1) schedule detection via `detectEventTypeScheduleForUser`, (2) holiday blocking via `calculateHolidayBlockedDates`, (3) busy-time fetching via `BusyTimesService`, (4) date-range arithmetic via `buildDateRanges`/`subtract`/`getWorkingHours`, and (5) Redis caching integration. Ensure Zod request schemas cover all edge cases and the service correctly reports seat counts, timezone delegation, and OOO data.
+- `packages/features/eventtypes/lib/getEventTypeById.ts` — Verify enrichment pipeline correctly handles all 6 scheduling paradigms (one-on-one, group, RR, collective, managed, dynamic); ensure metadata parsing, booking field assembly, and location configuration are correct for each type
+- `packages/features/eventtypes/lib/bookingFieldsManager.ts` — Extend booking field normalization to support all Calendly question types (text, radio, checkbox, phone, dropdown) for ET-006
+- `packages/features/eventtypes/lib/types.ts` — Verify `FormValues` covers all paradigm-specific properties; ensure `EventTypeUpdateInput` includes all necessary optional fields
+- `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx` — Align booking window UI controls with Calendly's three booking window options for ET-005
+- `packages/features/ee/round-robin/**/*.ts` — Audit and align distribution algorithm, weight handling, priority assignment, and fairness logic for ET-003
+- `packages/features/eventtypes/components/CreateEventTypeForm.tsx` — Verify paradigm selection options and form validation
 
-- **`packages/features/schedules/lib/slots.ts`**: The slot generation engine. Validate `buildSlotsWithDateRanges` for: interval alignment via `getCorrectedSlotStartTime`, five-/15-minute boundary snapping in optimized mode, `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL` environment override, notice window enforcement (`minimumBookingNotice`), event-length fit checks before range end, deduplication via ISO-keyed Map, and out-of-office metadata merging (user IDs, reasons, emoji, `showNotePublicly`).
+**Dependency Injections:**
 
-- **`packages/features/schedules/lib/date-ranges.ts`**: The timezone-aware date-range processor. Validate `processWorkingHours` for DST normalization, `getAdjustedTimezone` for travel schedule overrides, `processDateOverride` for one-off overrides, `processOOO` for zero-length OOO markers, and the `intersect`/`subtract`/`mergeOverlappingRanges` utilities for sorted, deterministic behavior.
+- `packages/features/di/` — Verify DI container registrations for event type services include all required repository and service bindings
+- `packages/features/ee/round-robin/` — Verify enterprise DI module wiring for round-robin booking manager, event manager, and assignment services
 
-- **`packages/features/busyTimes/services/getBusyTimes.ts`**: The busy-time aggregation service. Validate buffer expansion, booking fetch, calendar busy-time queries, seat reference tracking, and the batched limit check pipeline (`fetchBookingsForLimitChecksBatched`).
+**Availability Integration (Upstream):**
 
-- **`packages/features/busyTimes/lib/getBusyTimesFromLimits.ts`**: The limit enforcement layer. Validate `LimitManager`-based evaluation for booking-count, duration, and team-scoped constraints with `withReporting` instrumentation.
+- `packages/features/availability/lib/getUserAvailability.ts` — Verify the `UserAvailabilityService` orchestrator correctly feeds into event type booking flows for all paradigms
+- `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` — Critical for ET-003 (RR grouping) and ET-004 (collective intersection) — verify fixed-host intersection and round-robin grouping by `groupId`
+- `packages/features/schedules/lib/slots.ts` — Verify `buildSlotsWithDateRanges` correctly handles `seatsPerTimeSlot` for group events (ET-002)
+- `packages/features/busyTimes/services/getBusyTimes.ts` — Verify seated event handling and buffer application for group events
 
-- **`packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts`**: Multi-host aggregation. Validate fixed-host intersection, round-robin group semantics, OOO exclusion handling, and the `uniqueAndSortedDateRanges`/`filterRedundantDateRanges` pipeline.
+**Database/Schema Touchpoints:**
 
-#### Dependency Injection Touchpoints
-
-- **`packages/features/di/containers/AvailableSlots.ts`**: The DI container that bootstraps the `AvailableSlotsService`. Ensure all 15+ repository and service modules are correctly loaded in dependency order: Prisma → Redis → repositories (OOO, schedule, selected slots, team, user, booking, event type, routing form, features, membership, holiday) → services (booking limits, available slots, user availability, busy times, filter hosts, qualified hosts, no-slots notification).
-
-- **`packages/features/di/containers/GetUserAvailability.ts`**: The DI container for `UserAvailabilityService`. Validate module load order: Prisma → OOO repository → booking repository → event type repository → holiday repository → GetUserAvailability service → busy times service → Redis.
-
-- **`packages/features/di/modules/AvailableSlots.ts`**: Module binding with `satisfies Record<keyof IAvailableSlotsService, symbol>` compile-time guard. Verify all dependency tokens are current.
-
-#### Database/Schema Touchpoints
-
-- **`packages/prisma/schema.prisma`**: The `Schedule` model (fields: `id`, `userId`, `name`, `timeZone`, `availability[]`, `eventType[]`, `Host[]`) and `Availability` model (fields: `id`, `userId`, `eventTypeId`, `days[]`, `startTime`, `endTime`, `date`, `scheduleId`) must remain consistent with repository select projections.
-
-- **`packages/prisma/selects/`**: The `availabilityUserSelect` projection must include all fields required by `findUsersForAvailabilityCheck` — schedules with nested availability, selectedCalendars, and credential relations.
-
-- **`SelectedSlots` model** (fields: `id`, `eventTypeId`, `userId`, `slotUtcStartDate`, `slotUtcEndDate`, `uid`, `releaseAt`, `isSeat`): Used by the slot reservation system with unique constraint on `(userId, slotUtcStartDate, slotUtcEndDate, uid)`.
+- `packages/prisma/schema.prisma` — The `EventType` model contains all relevant fields: `schedulingType` (enum: ROUND_ROBIN, COLLECTIVE, MANAGED), `seatsPerTimeSlot`, `minimumBookingNotice`, `beforeEventBuffer`, `afterEventBuffer`, `periodType`, `periodDays`, `periodStartDate`, `periodEndDate`, `bookingLimits`, `durationLimits`, `isRRWeightsEnabled`, `rrSegmentQueryValue`, `assignAllTeamMembers`, `assignRRMembersUsingSegment`, `bookingFields`, `customInputs`, and related fields. Any new columns must follow additive-only migration patterns.
+- `packages/prisma/selects/event-types.ts` — Verify `bookEventTypeSelect` and `availiblityPageEventTypeSelect` include all fields needed by parity tests
+- `packages/prisma/migrations/` — New migration directory for any required schema additions
 
 ### 0.4.2 Cross-Feature Integration Map
 
 ```mermaid
-flowchart TB
-    subgraph AvailabilityEngine["Availability Engine (F-003)"]
-        UA[UserAvailabilityService]
-        SD[detectEventTypeScheduleForUser]
-        HB[calculateHolidayBlockedDates]
-        DR[date-ranges.ts<br/>buildDateRanges / subtract]
-        WH[getWorkingHours]
-        SG[slots.ts<br/>getSlots / buildSlotsWithDateRanges]
-        AGG[getAggregatedAvailability]
+flowchart TD
+    subgraph Sprint2["Sprint 2: Event Types (F-002)"]
+        ET001["ET-001: 1:1 Events"]
+        ET002["ET-002: Group Events"]
+        ET003["ET-003: Round-Robin"]
+        ET004["ET-004: Collective"]
+        ET005["ET-005: Booking Windows"]
+        ET006["ET-006: Custom Fields"]
     end
 
-    subgraph BusyTimes["Busy Times"]
-        BTS[BusyTimesService]
-        BTL[getBusyTimesFromLimits]
-        CC[Calendar Busy Times]
+    subgraph Upstream["Upstream Dependencies (Sprint 1)"]
+        AV["Availability Engine\ngetUserAvailability"]
+        SLOTS["Slot Generation\nbuildSlotsWithDateRanges"]
+        BUSY["Busy Time Aggregation\ngetBusyTimes"]
+        SCHED["Schedule Service\nScheduleRepository"]
     end
 
-    subgraph DataLayer["Data Layer"]
-        SR[ScheduleRepository]
-        SS[ScheduleService]
-        PR[Prisma Schema]
-        SEL[SelectedSlotRepository]
+    subgraph Downstream["Downstream Consumers"]
+        WH["Webhooks\nPayloadBuilderFactory"]
+        BOOK["Booking Engine\nBookingAccessService"]
+        API2["API v2\nEventTypes Controllers"]
+        TRPC["tRPC Routers\nviewer.eventTypes"]
+        SDK["Platform SDK\nlibraries/event-types.ts"]
+        WEB["Web App\napps/web/"]
     end
 
-    subgraph DILayer["DI Layer"]
-        DIA[AvailableSlots Container]
-        DIU[GetUserAvailability Container]
-        DIB[BusyTimes Container]
-    end
+    AV --> ET001
+    AV --> ET003
+    AV --> ET004
+    SLOTS --> ET001
+    SLOTS --> ET002
+    BUSY --> ET002
+    SCHED --> ET005
 
-    subgraph Consumers["Downstream Consumers"]
-        TRPC[tRPC Viewer Routers]
-        WEB[Web App Modules]
-        API1[API v1 Endpoints]
-        API2[API v2 Endpoints]
-        SDK[Platform SDK / Atoms]
-    end
-
-    UA --> SD
-    UA --> HB
-    UA --> BTS
-    UA --> DR
-    UA --> WH
-    SG --> DR
-    AGG --> DR
-    BTS --> BTL
-    BTS --> CC
-    BTL --> SR
-    UA --> SR
-    SS --> SR
-    DIA --> DIU
-    DIA --> DIB
-    TRPC --> DIA
-    WEB --> TRPC
-    API1 --> UA
-    API2 --> DIA
-    SDK --> DIA
+    ET001 --> WH
+    ET001 --> BOOK
+    ET001 --> API2
+    ET001 --> TRPC
+    ET001 --> SDK
+    ET001 --> WEB
+    ET002 --> BOOK
+    ET003 --> BOOK
+    ET004 --> BOOK
+    ET006 --> BOOK
 ```
 
-### 0.4.3 Platform SDK Integration
+### 0.4.3 API Surface Impact
 
-The `packages/platform/libraries/schedules.ts` file re-exports the following from the availability and schedules feature packages, establishing the public API contract for third-party consumers:
+**tRPC Routes (Viewer Scope):**
+- `viewer.eventTypes.create` — Verify creation supports all 6 paradigms with correct validation
+- `viewer.eventTypes.update` — Verify update handles paradigm-specific fields
+- `viewer.eventTypes.get` — Verify retrieval returns enriched data for all paradigms
+- `viewer.eventTypes.list` — Verify listing includes paradigm metadata
 
-- `ScheduleRepository` and `FindDetailedScheduleByIdReturnType` from `@calcom/features/schedules/repositories/ScheduleRepository`
-- `updateSchedule` and `UpdateScheduleResponse` from `@calcom/features/schedules/services/ScheduleService`
-- `UserAvailabilityService` from `@calcom/features/availability/lib/getUserAvailability`
-- TRPC handlers: `createScheduleHandler`, `getAvailabilityListHandler`, `duplicateScheduleHandler`, `getScheduleByEventSlugHandler`
-- Validation schemas: `CreateScheduleSchema` (from TRPC create schema)
+**API v2 (NestJS):**
+- `POST /v2/event-types` — Verify full paradigm support with correct DTOs
+- `PATCH /v2/event-types/:id` — Verify update preserves paradigm-specific configurations
+- `GET /v2/event-types` — Verify listing and filtering across paradigms
+- `DELETE /v2/event-types/:id` — Verify safe deletion with booking handling
 
-Any changes to the function signatures or return types of these exports would break the platform SDK contract and must be validated for backward compatibility.
+**Webhook Events Affected:**
+- `BOOKING_CREATED` — Must fire with correct payload for all event type paradigms
+- `BOOKING_RESCHEDULED` — Must include old/new booking details for all paradigms
+- `BOOKING_CANCELLED` — Must fire for all paradigm types
+- All `v2021-10-20` payloads must remain unchanged (additive-only extensions permitted)
+
 
 ## 0.5 Technical Implementation
 
 ### 0.5.1 File-by-File Execution Plan
 
-Every file listed below must be validated, hardened, or extended as part of this sprint. Files are grouped by execution priority to ensure foundational layers are solid before higher-level orchestration is addressed.
+Every file listed below MUST be created or modified as part of Sprint 2 execution. Files are grouped by implementation priority.
 
-#### Group 1 — Core Date/Time Foundation
+**Group 1 — Spec-First Design Artifacts (Pre-Implementation)**
 
-- **MODIFY: `packages/features/schedules/lib/date-ranges.ts`** — Validate `processWorkingHours` for all DST transition scenarios. Confirm `getAdjustedTimezone` correctly applies travel schedule overrides by comparing `travelSchedules` against the current date. Verify `processDateOverride` handles midnight-bounding overrides and `processOOO` emits zero-length markers. Ensure `intersect` uses sorted two-pointer traversal with numeric caching and `subtract` correctly subtracts exclusion ranges with metadata passthrough. Confirm `mergeOverlappingRanges` operates on non-Dayjs Date objects for deterministic merging.
+- CREATE: `specs/event-types/design.md` — Comprehensive design spec covering all 6 epics with technical approach, affected modules, and acceptance criteria drawn from `docs/sprint-roadmap/validation-criteria.mdx`
+- CREATE: `specs/event-types/implementation.md` — Progress tracker with status for ET-001 through ET-006 (Status, Completed, In Progress, Blocked, Next Steps, Session Notes)
+- CREATE: `specs/event-types/decisions.md` — ADR scaffold for architectural trade-offs (e.g., whether to add new schema columns vs. metadata-based approaches)
+- CREATE: `specs/event-types/CLAUDE.md` — Agent instructions referencing `design.md`, `implementation.md`, and relevant source directories
+- CREATE: `specs/event-types/AGENTS.md` — Agent guidelines with project context and preparatory checklist
+- CREATE: `specs/event-types/prompts.md` — Lifecycle prompts for sync, test generation, code review, and documentation
+- CREATE: `specs/event-types/future-work.md` — Deferred items including Meeting Polls (ET-001 gap from gap report) and RR fairness visualization (ET-002 gap)
+- CREATE: `specs/event-types/docs/README.md` — Internal documentation template with screenshot placeholders
 
-- **MODIFY: `packages/features/schedules/lib/date-ranges.test.ts`** — Extend the Vitest battery to cover any untested edge cases discovered during validation: travel timezone recalculations, zero-length span drops, midnight-bounding overrides, and multi-range timezone-mixed exclusions.
+**Group 2 — Core Event Type Parity (ET-001, ET-002)**
 
-- **MODIFY: `packages/lib/availability.ts`** — Validate `DEFAULT_SCHEDULE` (seven weekday buckets with 9-5 Mon-Fri), `getAvailabilityFromSchedule` (deduplication + day grouping), `getWorkingHours` (UTC offset calculation, overflow handling for cross-midnight and cross-day scenarios), and `availabilityAsString` (locale-aware formatting).
+- MODIFY: `packages/features/eventtypes/lib/getEventTypeById.ts` — Verify and harden enrichment pipeline for 1:1 and group event types; ensure correct host assignment, seat handling, and metadata parsing
+- MODIFY: `packages/features/eventtypes/lib/getPublicEvent.ts` — Verify public event resolution returns correct data for seated (group) events including remaining seat count
+- VERIFY: `packages/features/eventtypes/repositories/eventTypeRepository.ts` — Confirm `findForSlots` and `findByIdForUserAvailability` return correct projections for group events
+- VERIFY: `packages/features/schedules/lib/slots.ts` — Confirm `buildSlotsWithDateRanges` correctly handles `seatsPerTimeSlot` and out-of-office overlay for seated events
+- CREATE: `packages/features/eventtypes/lib/__tests__/eventTypeParity.test.ts` — Behavioral parity test suite covering ET-VAL-001 through ET-VAL-004
 
-- **MODIFY: `packages/types/schedule.d.ts`** — Confirm `TimeRange`, `Schedule`, `WorkingHours`, and `TravelSchedule` type definitions match their runtime implementations across the codebase.
+**Group 3 — Round-Robin Distribution Parity (ET-003)**
 
-#### Group 2 — Busy Time Aggregation
+- MODIFY: `packages/features/ee/round-robin/**/*.ts` — Audit distribution algorithm against Calendly's equitable round-robin behavior; verify weight/priority handling, segment-based filtering via `rrSegmentQueryValue`, and assignment reason recording
+- VERIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` — Confirm RR hosts grouped by `groupId` with at-least-one-available logic
+- VERIFY: `packages/features/eventtypes/components/dialogs/HostEditDialogs.tsx` — Confirm host weight/priority editing UI is correct
+- VERIFY: `packages/features/eventtypes/components/WeightDescription.tsx` — Confirm weight description text is accurate
+- CREATE: `packages/features/ee/round-robin/__tests__/distributionParity.test.ts` — Distribution fairness test suite verifying equitable assignment across hosts
 
-- **MODIFY: `packages/features/busyTimes/services/getBusyTimes.ts`** — Validate `BusyTimesService._getBusyTimes`: buffer expansion by `beforeEventBuffer`/`afterEventBuffer` minutes, booking fetch with Prisma, seat reference counting, calendar busy-time integration via `getBusyCalendarTimes` when credentials exist and `bypassBusyCalendarTimes` is false, and the `subtract`/`getDefinedBufferTimes` pipeline for calendar-based windows.
+**Group 4 — Collective Scheduling Parity (ET-004)**
 
-- **MODIFY: `packages/features/busyTimes/services/getBusyTimes.test.ts`** — Verify unit tests cover ordinary booking constraints, buffer extensions, seat-limited blocking, batch limit checks with 75/100/150 userIds, rescheduleUid exclusions, and null propagation.
+- VERIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` — Confirm fixed-host intersection correctly computes mutual availability for `SchedulingType.COLLECTIVE`
+- VERIFY: `packages/features/eventtypes/components/AssignAllTeamMembers.tsx` — Confirm collective host assignment toggle behavior
+- VERIFY: `packages/features/eventtypes/components/CheckedTeamSelect.tsx` — Confirm team member selection for collective events
 
-- **MODIFY: `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts`** — Validate `_getBusyTimesFromLimits` orchestration: `LimitManager` instantiation, booking-limit enforcement (descending interval keys, skip already-busy, yearly delegation to `getCheckBookingLimitsService`), duration-limit enforcement (sum overlapping minutes per unit), and team-level limit enforcement (team booking fetch, managed event inclusion).
+**Group 5 — Booking Window Alignment (ET-005)**
 
-#### Group 3 — Schedule Detection and Holiday Blocking
+- MODIFY: `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx` — Align booking window configuration with Calendly's three options (days into future with calendar/business day support, date range, indefinitely)
+- VERIFY: `packages/prisma/schema.prisma` — Confirm `periodType` enum (`UNLIMITED`, `RANGE`, `ROLLING`) covers all Calendly equivalents
+- CREATE: `packages/features/eventtypes/lib/__tests__/bookingWindowParity.test.ts` — Booking window behavioral tests covering ET-VAL-006
 
-- **MODIFY: `packages/features/availability/lib/detectEventTypeScheduleForUser.ts`** — Validate the priority hierarchy: (1) event-type schedule → (2) host override → (3) stored user schedule via `defaultScheduleId` → (4) `DEFAULT_SCHEDULE_DATA` fallback. Confirm timezone propagation (`eventType.timeZone` → `user.timeZone`), `isDefaultSchedule`/`isTimezoneSet` flags, and host assignment reuse.
+**Group 6 — Custom Fields/Questions Parity (ET-006)**
 
-- **MODIFY: `packages/features/availability/lib/detectEventTypeScheduleForUser.test.ts`** — Verify all branches of the resolver's decision tree are covered.
+- MODIFY: `packages/features/eventtypes/lib/bookingFieldsManager.ts` — Verify and extend field type support to cover all Calendly question types (text, radio, checkbox, phone, dropdown)
+- VERIFY: `packages/features/eventtypes/lib/types.ts` — Confirm `FormValues.bookingFields` schema supports all required field types
+- CREATE: `packages/features/eventtypes/lib/__tests__/customFieldsParity.test.ts` — Custom field type coverage test suite covering ET-VAL-005
 
-- **MODIFY: `packages/features/availability/lib/calculateHolidayBlockedDates.test.ts`** — Validate the holiday blocking matrix: missing settings, null country codes, normalized day boundaries, metadata merging, weekday filtering, multi-schedule coverage, disabled holiday IDs.
+**Group 7 — Validation Gate Preparation**
 
-- **MODIFY: `packages/features/availability/lib/findUsersForAvailabilityCheck.ts`** — Validate Prisma user enrichment with `availabilityUserSelect`, `selectedCalendars` relations, `withSelectedCalendars` normalization, and `enrichUserWithDelegationCredentialsIncludeServiceAccountKey`.
-
-#### Group 4 — Slot Generation
-
-- **MODIFY: `packages/features/schedules/lib/slots.ts`** — Validate `buildSlotsWithDateRanges`: sort DateRange inputs, determine working interval via `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`, snap to UTC now + notice window, deduplicate via ISO-keyed Map, convert to invitee timezone, apply offsets, enforce eventLength fit before range end, merge adjacent boundaries, and merge OOO metadata (user IDs, reasons, emoji, `showNotePublicly`).
-
-- **MODIFY: `packages/features/schedules/lib/slots.test.ts`** — Verify tests cover 24-hour distributions, booking notice, unordered overlaps, fractional durations, timezone offsets, optimized flag behavior, performance across thousands of ranges, environment-driven interval overrides, and cross-timezone OOO metadata.
-
-#### Group 5 — Availability Orchestration
-
-- **MODIFY: `packages/features/availability/lib/getUserAvailability.ts`** — Validate the `UserAvailabilityService` orchestration: Zod request schema validation, typed query interfaces, composition of `detectEventTypeScheduleForUser` → `calculateHolidayBlockedDates` → `BusyTimesService` → `buildDateRanges`/`subtract`/`getWorkingHours` → normalized response (busy slots, computed ranges, working hours, date overrides, seat summaries, OOO data). Verify Redis caching, timezone delegation helpers, and seat-count reporters.
-
-- **MODIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts`** — Validate: fixed-host filtering via metadata, collective semantics forcing all participants as fixed, round-robin grouping by `groupId` or `DEFAULT_GROUP_ID`, intersection enforcement (every group must contribute), and the `uniqueAndSortedDateRanges` → `filterRedundantDateRanges` pipeline.
-
-- **MODIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.test.ts`** — Verify regression coverage: overlapping exclusions, reversed timestamps, fixed-host merging, mixed fixed/round-robin with OOO, deduplication, grouped round-robin, empty-group edge cases, and group-contribution enforcement.
-
-#### Group 6 — Data Access and Services
-
-- **MODIFY: `packages/features/schedules/repositories/ScheduleRepository.ts`** — Validate `findDetailedScheduleById` (default schedule resolution, permission guard via `hasReadPermissionsForUserId`, ownership check, Atom transformation, timezone fallback), `getDefaultScheduleId`, `hasDefaultSchedule`, `setupDefaultSchedule`, and lightweight read methods.
-
-- **MODIFY: `packages/features/schedules/services/ScheduleService.ts`** — Validate `ZUpdateInputSchema` (Zod), ownership/edit permission enforcement, default schedule toggle delegation, name-less update short-circuit, transactional `prisma.schedule.update` (timezone, name, availability delete/recreate), and `transformScheduleToAvailabilityForAtom` conversion.
-
-#### Group 7 — UI Components and Hooks
-
-- **MODIFY: `packages/features/schedules/components/ScheduleComponent.tsx`** — Validate weekly grid: React Hook Form integration, `DayRanges` with `useFieldArray`, `parseTimeString` for 12/24-hour format normalization, `Switch` toggles restoring `DEFAULT_DAY_RANGE`, `CopyTimes` dropdown, and `LazySelect` time picker.
-
-- **MODIFY: `packages/features/schedules/hooks/useTimesForSchedule.ts`** — Validate ISO window calculation: `selectedDate`/`month`/`dayCount` resolution, `usePrefetch` layout heuristics, start/end time computation based on layout-driven prefetch, and integration with `BookerStoreContext`.
-
-- **MODIFY: `apps/web/modules/availability/availability-view.tsx`** — Validate TRPC mutation hooks (delete, update, bulk-update, duplicate), cache invalidation via `trpc.useUtils`, shared revalidation helpers, and toast feedback.
+- MODIFY: `docs/gap-report/event-types.mdx` — Update gap inventory status after parity closure; mark completed gaps
+- MODIFY: `docs/sprint-roadmap/epic-catalog.mdx` — Record completion status for ET-001 through ET-006
+- CREATE: `specs/event-types/docs/validation-report.md` — Gate 2 validation evidence report with pass/fail for all ET-VAL criteria
 
 ### 0.5.2 Implementation Approach per File
 
-- **Establish correctness foundation**: Start with `date-ranges.ts` and `availability.ts` since every higher-level component depends on timezone-aware interval arithmetic being deterministic.
-- **Validate busy-time aggregation**: Ensure `BusyTimesService` and `getBusyTimesFromLimits` correctly produce the exclusion set that feeds into availability subtraction.
-- **Confirm schedule detection chain**: Validate the `detectEventTypeScheduleForUser` resolver and holiday blocking before integrating with the orchestrator.
-- **Harden slot generation**: With correct date ranges and busy times confirmed, validate `slots.ts` for correct interval snapping, notice enforcement, and metadata propagation.
-- **Verify orchestration**: Validate `UserAvailabilityService` as the composition point for all sub-systems.
-- **Confirm UI fidelity**: Validate that all React components and hooks consume the availability data correctly and present deterministic results.
+The implementation follows a six-step progression aligned with the autonomous execution protocol defined in `docs/sprint-roadmap/overview.mdx`:
+
+- **Step 1 — Gap Analysis Review:** Read `docs/gap-report/event-types.mdx` and `docs/gap-report/availability-scheduling.mdx` to fully understand all identified gaps, their severity, and the current Cal.com implementation state for each event type paradigm
+- **Step 2 — Epic Selection:** Select all 6 epics (ET-001 through ET-006) from `docs/sprint-roadmap/epic-catalog.mdx`, respecting the internal dependency ordering (ET-001 → ET-002/ET-003/ET-004/ET-006, AV-005 → ET-005)
+- **Step 3 — Spec-First Design:** Create the `specs/event-types/` folder by cloning `specs/_templates/` and populate `design.md` with the technical approach for all 6 epics
+- **Step 4 — Implementation:** Execute implementation following design spec, adhering to Cal.com conventions (`@evyweb/ioctopus` DI, Prisma repositories, Zod validation, `@calcom/dayjs`, Vitest), with max 5–7 files per PR, max 500 lines per PR, and one focused change per PR
+- **Step 5 — Migration Safety:** Apply zero-downtime migration patterns for any schema changes: additive-only columns with defaults, nullable columns, feature flag gating. Follow `docs/migration/zero-downtime-strategy.mdx` patterns
+- **Step 6 — Validation:** Verify against all ET-VAL behavioral acceptance criteria from `docs/sprint-roadmap/validation-criteria.mdx`, then run regression tests, data preservation checks, webhook compatibility checks, and cross-domain integration tests
 
 ### 0.5.3 User Interface Design
 
-The availability and scheduling UI consists of the following key surfaces:
+The Sprint 2 event type parity work primarily involves verification and alignment of existing UI rather than new UI creation. Key UI considerations:
 
-- **Availability List Page** (`/availability`): Renders `AvailabilityList` with schedule rows (`ScheduleListItem`), each displaying localized availability summaries, timezone badges, and dropdown actions (set default, duplicate, delete). Uses `NewScheduleButton` FAB for creation.
-- **Schedule Editor** (`/availability/[schedule]`): Renders `AvailabilitySettings` with the weekly grid (`ScheduleComponent`), date override management (`DateOverrideInputDialog`/`DateOverrideList`), timezone selection, and a troubleshooting link.
-- **Event Type Availability Tab**: Renders `EventAvailabilityTab` with schedule/restriction selectors, team availability per host, and `SettingsToggle`-wrapped schedule controls.
-- **Booker Slot Display**: The `useSchedule` and `useSlotsForDate` hooks feed slot data to the Booker component for public-facing time slot selection.
-- **Skeleton Loading States**: `SkeletonLoader` (availability list) and `AvailabilityScheduleSkeleton` (schedule editor) provide consistent loading UX.
+- **Event Type Creation Flow:** The `CreateEventTypeForm.tsx` must present all 6 scheduling paradigm options correctly — one-on-one (default), group (via seats toggle), round-robin, collective, managed (for team admins), and dynamic
+- **Booking Window Configuration:** The `EventLimitsTab.tsx` must expose Calendly-equivalent booking window options — days into future (with calendar vs. business day distinction per AVL-GAP-001), date range picker, and indefinite option
+- **Custom Fields Builder:** The booking field configuration UI must support text, radio, checkbox, phone, and dropdown field types to match Calendly's question type taxonomy
+- **Round-Robin Host Configuration:** The host editing dialogs must expose weight and priority controls with clear descriptions of distribution impact
+- **Validation Feedback:** All event type forms must provide clear validation feedback through Zod schema-driven error messages
+
 
 ## 0.6 Scope Boundaries
 
 ### 0.6.1 Exhaustively In Scope
 
-#### Feature Source Files
+**All Event Type Feature Source Files:**
+- `packages/features/eventtypes/**/*.ts` — Core event type logic, types, schemas, repositories, and tests
+- `packages/features/eventtypes/**/*.tsx` — UI components for event type configuration and management
 
-- `packages/features/availability/**/*.ts` — All availability business logic, tests, and components
-- `packages/features/schedules/**/*.ts` — All scheduling engine logic, components, hooks, repositories, services, and tests
-- `packages/features/busyTimes/**/*.ts` — Busy time services and limit enforcement logic
-- `packages/features/selectedSlots/**/*.ts` — Selected slot repositories and DTOs
+**Round-Robin Enterprise Module:**
+- `packages/features/ee/round-robin/**/*.ts` — Distribution algorithm, rescheduling, reassignment, host priority/weight
 
-#### Shared Library Utilities
+**Availability Integration Points:**
+- `packages/features/availability/lib/getUserAvailability.ts` — Orchestrator verification
+- `packages/features/availability/lib/getAggregatedAvailability/**/*.ts` — Team availability aggregation (RR/collective)
+- `packages/features/schedules/lib/slots.ts` — Slot generation for seated events
+- `packages/features/busyTimes/services/getBusyTimes.ts` — Busy time handling for group events
 
-- `packages/lib/availability.ts` — Canonical schedule constants and working hours helpers
-- `packages/lib/schedules/transformers/**/*.ts` — Atom API transformers and schedule list data
-- `packages/types/schedule.d.ts` — Shared TypeScript type definitions
+**Database and Schema:**
+- `packages/prisma/schema.prisma` — `EventType` model, `SchedulingType` enum, `BookingSeat` model
+- `packages/prisma/selects/event-types.ts` — Event type select projections
+- `packages/prisma/selects/booking.ts` — Booking select projections
+- `packages/prisma/migrations/[timestamp]_*` — New additive-only migration files
 
-#### Dependency Injection
+**API Surfaces:**
+- `apps/api/v2/src/ee/event-types/**/*.ts` — NestJS event type CRUD modules
+- `apps/api/v2/src/modules/teams/event-types/**/*.ts` — Team event type management
+- `packages/trpc/server/routers/viewer/eventTypes/**/*.ts` — tRPC event type routes
 
-- `packages/features/di/containers/AvailableSlots.ts` — DI container for slot availability
-- `packages/features/di/containers/GetUserAvailability.ts` — DI container for user availability
-- `packages/features/di/containers/BusyTimes.ts` — DI container for busy times
-- `packages/features/di/modules/AvailableSlots.ts` — Module binding for `AvailableSlotsService`
-- `packages/features/di/modules/GetUserAvailability.ts` — Module binding for `UserAvailabilityService`
-- `packages/features/di/modules/SelectedSlots.ts` — Module binding for `PrismaSelectedSlotRepository`
-- `packages/features/di/modules/NoSlotsNotification.ts` — Module binding for `NoSlotsNotificationService`
+**Platform SDK:**
+- `packages/platform/libraries/event-types.ts` — Re-export surface verification
+- `packages/platform/atoms/event-types/**/*.ts` — Atom types verification
 
-#### tRPC Routers and Handlers
+**Webhook Compatibility Verification:**
+- `packages/features/webhooks/lib/factory/versioned/v2021-10-20/**/*.ts` — Payload preservation verification
+- `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts` — Factory routing verification
 
-- `packages/trpc/server/routers/viewer/availability/**/*.ts` — All availability router procedures and handlers
-- `packages/trpc/server/routers/viewer/slots/**/*.ts` — All slot router procedures, types, and handlers
+**Spec Workflow Artifacts:**
+- `specs/event-types/**/*` — All spec-first design documents
 
-#### Web Application
+**Test Files:**
+- `packages/features/eventtypes/**/*.test.ts` — Existing and new unit/integration tests
+- `packages/features/ee/round-robin/**/*.test.ts` — Round-robin distribution tests
+- `packages/features/eventtypes/repositories/__tests__/**/*.ts` — Repository tests
 
-- `apps/web/modules/availability/**/*.tsx` — Availability page views and actions
-- `apps/web/modules/schedules/**/*.tsx` — Schedule components, hooks, and types
-- `apps/web/app/(use-page-wrapper)/availability/**/*.tsx` — App Router pages, skeletons, actions
-- `apps/web/app/(use-page-wrapper)/(main-nav)/availability/**/*.tsx` — Navigation-scoped availability pages
-- `apps/web/modules/event-types/components/tabs/availability/**/*.tsx` — Event type availability tab
-- `apps/web/pages/api/trpc/availability/**/*.ts` — Next.js API route for availability TRPC
-- `apps/web/test/lib/getAvailabilityFromSchedule.test.ts` — Availability grouping test suite
+**Documentation Updates:**
+- `docs/gap-report/event-types.mdx` — Gap inventory status updates
+- `docs/sprint-roadmap/epic-catalog.mdx` — Epic completion status
+- `docs/sprint-roadmap/validation-criteria.mdx` — Validation evidence
 
-#### API Surface
-
-- `apps/api/v1/lib/validations/availability.ts` — API v1 availability validation schemas
-- `apps/api/v1/lib/validations/schedule.ts` — API v1 schedule validation schemas
-- `apps/api/v1/pages/api/availabilities/**/*.ts` — API v1 availability endpoints
-- `apps/api/v2/src/ee/schedules/**/*.ts` — API v2 EE schedule module
-- `apps/api/v2/src/lib/services/available-slots.service.ts` — API v2 available slots NestJS provider
-- `apps/api/v2/src/lib/services/busy-times.service.ts` — API v2 busy times NestJS provider
-- `apps/api/v2/src/lib/modules/available-slots.module.ts` — API v2 available slots NestJS module
-- `apps/api/v2/src/modules/slots/**/*.ts` — API v2 versioned slot modules
-
-#### Prisma and Database
-
-- `packages/prisma/schema.prisma` (models: `Schedule`, `Availability`, `SelectedSlots`, `SelectedCalendar`)
-- `packages/prisma/selects/` — `availabilityUserSelect` and related projections
-- `packages/prisma/migrations/` — Availability-related migrations (`20210630014738`, `20211115182559`, `20220305233635`)
-
-#### Platform SDK
-
-- `packages/platform/libraries/schedules.ts` — Platform re-exports of schedule/availability services
-- `packages/platform/atoms/availability/types.ts` — Atom availability type contracts
-- `packages/platform/atoms/hooks/schedules/types.ts` — Atom schedule hook types
-
-#### Configuration
-
-- `.env.example` — `NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL`, `PUBLIC_QUERY_AVAILABLE_SLOTS_INTERVAL_SECONDS`
-- `packages/features/package.json` — Feature package dependencies
+**Configuration Files:**
+- `.env.example` — If new environment variables are required
+- `packages/prisma/docker-compose.yml` — PostgreSQL 13 local development verification
 
 ### 0.6.2 Explicitly Out of Scope
 
-- **Booking Lifecycle Management (F-002)**: Booking creation, confirmation, rescheduling, and cancellation flows — except where they intersect with busy-time generation
-- **Event Type Management (F-001)**: Event type CRUD operations — except where event types reference schedules
-- **Calendar Integrations (F-004 App Store)**: Individual calendar provider implementations (Google Calendar, Outlook, Apple) — only the aggregated busy-time interface is in scope
-- **Enterprise Features**: Organization multi-tenancy (F-006), SSO (F-007), Directory Sync (F-008), Workflow Automation (F-009), Round-Robin Assignment (F-019) — except where they consume availability data
-- **Communication Stack (F-010)**: Email and SMS notification flows
-- **Performance Optimizations**: Redis caching strategies beyond functional correctness validation
-- **Embed Distribution (F-013)**: Embed widget rendering — except the shared hooks consumed by embeds
-- **Refactoring**: Any structural refactoring of existing code unrelated to availability correctness
-- **New Feature Development**: Features not specified in the sprint scope (e.g., restriction schedules, new API endpoints)
-- **Infrastructure**: CI/CD pipeline changes, Docker configuration, deployment scripts
+- **Sprint 1 (Availability & Scheduling) rework** — Sprint 1 must already be complete and Gate 1 passed. No availability engine modifications unless bugs are discovered during event type validation.
+- **Sprint 3+ feature domains** — Calendar Integrations (F-003), Webhooks (F-013), Routing Forms (F-015), Embed (F-008), Admin/Teams (F-009), and Notifications (F-018) are all out of scope for Sprint 2.
+- **Meeting Polls (ET-001 gap)** — The gap report identifies Meeting Polls as a Medium priority gap. This is explicitly deferred to `specs/event-types/future-work.md` as it represents net-new functionality rather than behavioral parity.
+- **RR Fairness Cap Visualization (ET-002 gap)** — Low priority UI enhancement for round-robin distribution analytics. Deferred to future work.
+- **Performance optimizations** — No performance tuning beyond what is required for correct parity behavior.
+- **Refactoring of existing code** — No structural refactoring unrelated to parity alignment.
+- **New webhook payload versions** — No new `PayloadBuilderFactory` versions. Only verify backward compatibility of existing `v2021-10-20` payloads.
+- **Email/SMS template changes** — Notification content is out of scope (Sprint 8).
+- **Embed behavior changes** — Embed rendering is out of scope (Sprint 6).
+- **Admin/team governance changes** — Role model and team routing changes are out of scope (Sprint 7).
+
 
 ## 0.7 Rules for Feature Addition
 
-### 0.7.1 Architecture and Pattern Compliance
+### 0.7.1 Spec-First Development Compliance
 
-- **Dependency Injection First**: All new services and repositories must be registered through the `@evyweb/ioctopus` DI container system. Directly instantiating services is prohibited. New modules must follow the token-based pattern established in `packages/features/di/modules/` with `satisfies Record<keyof Interface, symbol>` compile-time guards.
-- **Repository Pattern Enforcement**: All database access must go through repository abstractions. No direct Prisma calls from service or handler code. Repository interfaces must be defined separately from their Prisma implementations to preserve testability.
-- **tRPC Router Conventions**: New availability or scheduling procedures must be added to the existing viewer routers at `packages/trpc/server/routers/viewer/availability/` or `packages/trpc/server/routers/viewer/slots/`. Every handler must have a co-located Zod schema in a `*.schema.ts` file and a separate `*.handler.ts` file.
-- **Zod Validation at Boundaries**: All external inputs (tRPC inputs, API request bodies, configuration parsing) must be validated with Zod 3.25.76 schemas. Internal function signatures may use TypeScript types inferred from Zod schemas via `z.infer<>`.
+- Every implementation change MUST be preceded by a design spec in `specs/event-types/design.md` following the repository's spec-first workflow defined in `specs/README.md`
+- Progress MUST be tracked in `specs/event-types/implementation.md` for session continuity across Claude sessions
+- Architectural trade-offs MUST be documented as ADRs in `specs/event-types/decisions.md` with Context, Options Considered (with pros/cons), Decision rationale, and Consequences sections
 
-### 0.7.2 Timezone and Date-Time Handling
+### 0.7.2 PR Size and Focus Constraints
 
-- **dayjs as the Canonical Library**: All date-time manipulation must use `@calcom/dayjs` (the project's extended dayjs instance), never raw `Date` objects or alternative libraries. The `@calcom/dayjs` package includes timezone, UTC, and localization plugins.
-- **DST Normalization**: Every function that processes working hours or date ranges must call through `processWorkingHours` in `packages/features/schedules/lib/date-ranges.ts`, which handles DST boundary shifts. Never manually adjust UTC offsets.
-- **Timezone Storage Convention**: User schedules store an optional `timeZone` field on the `Schedule` model. When absent, the system falls back to the user's profile timezone. All slot calculations must normalize to UTC before comparison and convert to the requested display timezone for output.
-- **Date Range Arithmetic**: Use the `DateRange` class and its `intersect`, `subtract`, and `merge` utilities from `date-ranges.ts` for all interval math. Do not implement custom overlap logic.
+- Every PR MUST be reviewable in under 10 minutes
+- Max 5–7 files changed per PR (excluding test files)
+- Max 500 lines changed per PR
+- One focused change per PR — e.g., one epic per PR or one sub-task within an epic
+- If a change is larger, it MUST be split into multiple focused PRs
 
-### 0.7.3 Testing Requirements
+### 0.7.3 Zero-Downtime Migration Rules
 
-- **Test Framework**: All tests must use Vitest 4.0.16 as the test runner, consistent with the monorepo root configuration. Do not introduce Jest or Mocha.
-- **Co-located Tests**: Unit tests should be co-located alongside their source files using the `*.test.ts` naming convention (e.g., `date-ranges.test.ts` next to `date-ranges.ts`).
-- **Coverage Requirements**: Every new utility function, service method, and repository method must have corresponding unit tests. Edge cases for DST transitions, midnight boundaries, multi-day spans, and empty availability must be explicitly tested.
-- **Integration Tests**: tRPC handler changes must be validated with integration-style tests that exercise the handler through the router context, not by calling internal functions directly.
-- **Existing Test Preservation**: All existing tests must continue to pass. Modifications to existing test files must maintain backward compatibility with the assertions already in place.
+- All schema migrations MUST use backward-compatible patterns only: additive columns with defaults, nullable columns, feature flag gating
+- NEVER rename columns, change column types, add NOT NULL columns without defaults, or drop columns in the same deployment as code changes
+- NEVER rename or remove enum values from `SchedulingType` or any other Prisma enum
+- All migrations MUST include a rollback SQL script tested in staging
+- All migrations MUST follow the blue-green deployment approach: schema first, then application, then backfill
+- Migration SQL must be placed in `packages/prisma/migrations/[timestamp]_descriptive_name/migration.sql`
 
-### 0.7.4 Backward Compatibility
+### 0.7.4 Webhook Backward Compatibility Rules
 
-- **Platform SDK Contract**: The re-exports in `packages/platform/libraries/schedules.ts` define the public API surface for third-party platform consumers. Any change to function signatures, return types, or export names of `ScheduleRepository`, `updateSchedule`, or `UserAvailabilityService` constitutes a breaking change and must be avoided or handled via deprecation.
-- **tRPC Response Shape Stability**: Existing tRPC procedure response shapes consumed by the web app and embeds must not change. New fields may be added, but existing fields must not be renamed, removed, or have their types changed.
-- **Database Migration Safety**: New Prisma migrations must be additive only — new columns with defaults, new tables, new indexes. No column renames, type changes, or deletions on the `Schedule`, `Availability`, or `SelectedSlots` models without a two-phase migration strategy.
+- Existing `v2021-10-20` webhook payloads MUST NOT be modified — no field removals, renames, or type changes
+- The `V20211020BookingEventPayload` type with its legacy `assignmentReason` format MUST be preserved exactly
+- New optional fields MAY be added to payloads (Rule R-1 from webhook compatibility guide)
+- `DEFAULT_WEBHOOK_VERSION` MUST remain `V_2021_10_20`
+- `TRIGGER_TO_BUILDER_CATEGORY` mapping MUST remain exhaustive for all 20 `WebhookTriggerEvents`
 
-### 0.7.5 Performance Considerations
+### 0.7.5 Validation Gate Requirements
 
-- **Slot Generation Efficiency**: The slot generation algorithm in `slots.ts` uses optimized interval snapping and rounding. Any modifications must preserve O(n) complexity relative to the number of time slots in the requested range.
-- **Busy Time Aggregation**: `BusyTimesService` performs batch limit checks and buffer expansion. New busy-time sources must be added through the service interface, not by modifying the aggregation loop directly.
-- **Redis Cache Awareness**: `UserAvailabilityService` uses Redis caching for computed availability. Any change to the availability computation logic must invalidate or version the cache key to prevent stale data.
+- Sprint 2 completion requires passing Gate 2 across all five validation dimensions:
+  - **Behavioral Validation:** All ET-VAL-001 through ET-VAL-009 criteria met
+  - **Regression Testing:** Zero test failures across all affected packages — `packages/features/eventtypes/`, `packages/features/ee/round-robin/`, `packages/features/availability/`
+  - **Data Preservation:** Zero data loss — all existing event types, bookings, users, credentials, and schedules intact after any migrations
+  - **Webhook Compatibility:** All existing webhook consumers receive unchanged `v2021-10-20` payloads
+  - **Cross-Domain Integration:** Booking creation through all event type paradigms triggers correct webhooks and uses correct availability schedules
 
-### 0.7.6 Security Requirements
+### 0.7.6 Cal.com Architectural Conventions
 
-- **Permission Enforcement**: `ScheduleRepository` enforces ownership via `userId` checks on all CRUD operations. New repository methods must include equivalent permission guards. No schedule or availability data may be returned without verifying the requesting user's access.
-- **Input Sanitization**: All user-supplied timezone strings must be validated against the IANA timezone database before use. Invalid timezones must be rejected with descriptive error messages, not silently defaulted.
-- **Rate Limiting Awareness**: Public-facing slot availability endpoints are rate-limited. New endpoints that expose availability data must integrate with the existing rate-limiting middleware.
+- Use `@evyweb/ioctopus` for dependency injection — follow existing DI container patterns in `packages/features/di/`
+- Use Prisma repositories for all database access — never query Prisma directly from service or UI layers
+- Use Zod schemas for all input validation — validate at the API boundary and parse metadata with `EventTypeMetaDataSchema`
+- Use `@calcom/dayjs` for all date/time operations — never use native `Date` or raw `dayjs` imports
+- Use Vitest for all tests — follow existing test patterns with `vi.mock` for Prisma mocking
+- Use `useLocale()` / `ServerTrans` for all user-facing strings — maintain i18n compliance
+- Maintain backward compatibility with Platform SDK, API v1, API v2, and web consumers
+
+### 0.7.7 Calendly Behavioral Source of Truth
+
+- All behavioral targets MUST reference Calendly's API documentation at `developer.calendly.com` as the authoritative benchmark
+- Where Cal.com exceeds Calendly capabilities (managed types, dynamic links, 6 vs 4 paradigms), document the advantage and ensure backward compatibility
+- Use the gap severity classification consistently: Critical (blocks parity), High (significant behavioral gap), Medium (minor behavioral difference), Low (cosmetic or edge case)
+
 
 ## 0.8 References
 
-### 0.8.1 Repository Files and Folders Explored
+### 0.8.1 Source-of-Truth Documents Reviewed
 
-The following files and folders were systematically searched and analyzed to derive the conclusions in this Agent Action Plan:
+The following documents were read in full as directed by the user and form the basis of this Agent Action Plan:
 
-**Root Configuration**
-- `package.json` — Monorepo root, Yarn 4.12.0, workspaces, devDependencies (TypeScript 5.9.3, Vitest 4.0.16, Turbo 2.7.1, Biome 2.3.10, Playwright 1.57.0)
+**Sprint Roadmap:**
 
-**Core Availability Engine**
-- `packages/features/availability/lib/getUserAvailability.ts` — Orchestration core with Zod schemas and UserAvailabilityService composition
-- `packages/features/availability/lib/detectEventTypeScheduleForUser.ts` — Schedule resolution priority chain
-- `packages/features/availability/lib/findUsersForAvailabilityCheck.ts` — Multi-user lookup for team availability
-- `packages/features/availability/lib/calculateHolidayBlockedDates.test.ts` — Holiday blocking test suite
-- `packages/features/availability/lib/getAggregatedAvailability/` — Multi-host availability intersection (index.ts, types.ts, utils.ts, test file)
-- `packages/features/availability/components/SkeletonLoader.tsx` — Loading skeleton UI
+| Document | Path | Summary |
+|---|---|---|
+| Sprint Roadmap Overview | `docs/sprint-roadmap/overview.mdx` | Defines methodology, dependency-first sequencing strategy across 8 feature domains, autonomous execution protocol with 7 steps (gap review → epic selection → spec-first design → implementation → migration safety → validation → documentation update), validation gates between sprints, and risk management matrix |
+| Epic Catalog | `docs/sprint-roadmap/epic-catalog.mdx` | Comprehensive registry of 40 epics across 8 domains with stable IDs, priority (Critical/High/Medium/Low), complexity estimates (S/M/L/XL), dependency chains, and cross-domain DAG. Sprint 2 contains 6 epics: ET-001 through ET-006 |
+| Validation Criteria | `docs/sprint-roadmap/validation-criteria.mdx` | Defines 71 behavioral acceptance criteria across all domains. Event Types domain: ET-VAL-001 through ET-VAL-009 covering 1:1, group, RR, collective, custom fields, booking windows, locations, managed types, and dynamic links |
 
-**Scheduling Engine**
-- `packages/features/schedules/lib/date-ranges.ts` — DateRange class, processWorkingHours, DST normalization, travel overrides, intersect/subtract/merge
-- `packages/features/schedules/lib/date-ranges.test.ts` — Date range unit tests
-- `packages/features/schedules/lib/slots.ts` — Slot generator with interval snapping, notice enforcement, OOO metadata
-- `packages/features/schedules/lib/slots.test.ts` — Slot generation unit tests
-- `packages/features/schedules/repositories/ScheduleRepository.ts` — Prisma-backed repository with permission enforcement
-- `packages/features/schedules/repositories/ScheduleRepository.test.ts` — Repository unit tests
-- `packages/features/schedules/services/ScheduleService.ts` — Zod-validated schedule updates with ownership checks
-- `packages/features/schedules/components/` — DateOverrideInputDialog.tsx, DateOverrideList.tsx, ScheduleComponent.tsx, ScheduleListItem.tsx
-- `packages/features/schedules/hooks/useTimesForSchedule.ts` — Time options hook
+**Gap Analysis:**
 
-**Busy Times**
-- `packages/features/busyTimes/services/getBusyTimes.ts` — BusyTimesService with buffer expansion and batch limit checks
-- `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` — LimitManager-based enforcement
+| Document | Path | Summary |
+|---|---|---|
+| Gap Report Overview | `docs/gap-report/overview.mdx` | Executive summary showing Cal.com exceeds Calendly across 7 of 8 domains (Low severity); only Notifications has Medium severity gaps. Documents Cal.com advantages: 20 vs 3 webhooks, 11+ vs 3 calendars, 6 vs 4 scheduling paradigms |
+| Availability & Scheduling Gap Report | `docs/gap-report/availability-scheduling.mdx` | Detailed analysis of availability engine with 3 minor gaps (AVL-GAP-001 business-day windows, AVL-GAP-002 slot diagnostics, AVL-GAP-003 buffer-to-calendar sync) and 7 Cal.com advantages. All gaps rated Low severity |
+| Event Types Gap Report | `docs/gap-report/event-types.mdx` | Documents 2 gaps (ET-001 Meeting Polls at Medium, ET-002 RR Fairness Visualization at Low) and 8 Cal.com advantages (managed types, dynamic links, full API management, recurring events, booking limits, 6 paradigms, segment-based RR, cancel/reschedule controls). Feature comparison matrix shows full parity or Cal.com advantage across all 24 analyzed features |
 
-**Selected Slots**
-- `packages/features/selectedSlots/repositories/ISelectedSlotRepository.ts` — Repository interface
-- `packages/features/selectedSlots/repositories/PrismaSelectedSlotRepository.ts` — Prisma implementation
+**Migration Safety:**
 
-**Dependency Injection**
-- `packages/features/di/containers/AvailableSlots.ts` — 15+ module DI container
-- `packages/features/di/containers/GetUserAvailability.ts` — Availability DI container
-- `packages/features/di/containers/BusyTimes.ts` — Busy times DI container
-- `packages/features/di/modules/AvailableSlots.ts` — Module binding
-- `packages/features/di/modules/GetUserAvailability.ts` — Module binding
-- `packages/features/di/modules/SelectedSlots.ts` — Module binding
-- `packages/features/di/modules/NoSlotsNotification.ts` — Module binding
+| Document | Path | Summary |
+|---|---|---|
+| Zero-Downtime Migration Strategy | `docs/migration/zero-downtime-strategy.mdx` | Defines 7 backward-compatible schema change patterns proven across 584 Cal.com migrations, blue-green deployment approach, anti-patterns list, rollback procedures, and gap closure migration checklist |
+| Data Preservation | `docs/migration/data-preservation.mdx` | Documents complete user data inventory (bookings, event types, schedules, webhooks, credentials, users, teams, organizations, payments, workflows), encryption key handling (CALENDSO_ENCRYPTION_KEY for AES-256), migration safeguards pipeline, and formal preservation guarantees for each entity |
+| Webhook Backward Compatibility | `docs/migration/webhook-compatibility.mdx` | Defines `PayloadBuilderFactory` versioning architecture, `v2021-10-20` payload preservation guarantees, additive-only field rules (R-1 through R-6), consumer migration path, and rollback procedures |
 
-**tRPC Routers**
-- `packages/trpc/server/routers/viewer/availability/_router.tsx` — Availability router
-- `packages/trpc/server/routers/viewer/availability/schedule/_router.tsx` — Schedule sub-router
-- `packages/trpc/server/routers/viewer/availability/list.handler.ts` — List handler
-- `packages/trpc/server/routers/viewer/availability/schedule/get.handler.ts` — Schedule get handler
-- `packages/trpc/server/routers/viewer/availability/schedule/create.handler.ts` — Schedule create handler
-- `packages/trpc/server/routers/viewer/availability/schedule/update.handler.ts` — Schedule update handler
-- `packages/trpc/server/routers/viewer/slots/_router.tsx` — Slots router
+**Spec Workflow:**
 
-**Web Application**
-- `apps/web/modules/availability/availability-view.tsx` — Availability list page
-- `apps/web/modules/availability/[schedule]/schedule-view.tsx` — Schedule editor page
-- `apps/web/modules/availability/troubleshoot/` — Troubleshooting tools
-- `apps/web/modules/schedules/components/` — NewScheduleButton, Schedule, date-override-list.test
-- `apps/web/modules/schedules/hooks/` — useSchedule, useEvent, useNonEmptyScheduleDays, useSlotsForDate, useApiV2AvailableSlots
-- `apps/web/app/(use-page-wrapper)/availability/` — Server components and loading skeletons
+| Document | Path | Summary |
+|---|---|---|
+| Spec-First Development README | `specs/README.md` | Defines the spec-first workflow: template duplication, Claude review, implementation tracking, ADR logging, documentation with screenshots, and PR review constraints (5–7 files, ≤500 lines, one change per PR) |
 
-**API Surface**
-- `apps/api/v1/lib/validations/availability.ts` — v1 validation schemas
-- `apps/api/v1/lib/validations/schedule.ts` — v1 schedule schemas
-- `apps/api/v2/src/lib/services/available-slots.service.ts` — v2 NestJS provider
-- `apps/api/v2/src/lib/services/busy-times.service.ts` — v2 NestJS provider
-- `apps/api/v2/src/ee/schedules/` — v2 enterprise schedule module
+### 0.8.2 Repository Files and Folders Searched
 
-**Prisma and Database**
-- `packages/prisma/schema.prisma` — Schedule (line 961), Availability (line 976), SelectedSlots (line 1801), SelectedCalendar models
-- `packages/prisma/selects/` — Availability user selects
+The following repository paths were explored during context gathering to derive the conclusions in this Action Plan:
 
-**Platform SDK**
-- `packages/platform/libraries/schedules.ts` — Platform re-exports
-- `packages/features/package.json` — Feature workspace dependencies
+**Root-Level Files:**
+- `package.json` — Yarn 4.12.0 monorepo configuration, workspaces, engines
+- `turbo.json` — Turborepo pipeline configuration
+- `.yarnrc.yml` — Yarn configuration with node_modules linker
 
-**Shared Libraries**
-- `packages/lib/availability.ts` — Schedule constants and helpers
-- `packages/lib/schedules/transformers/` — for-atom.ts, getScheduleListItemData.ts, index.ts
+**Feature Packages:**
+- `packages/features/eventtypes/` — Complete event type feature module (interface, components, lib, repositories)
+- `packages/features/eventtypes/eventtypes.repository.interface.ts` — IEventTypesRepository contract
+- `packages/features/eventtypes/repositories/eventTypeRepository.ts` — Primary Prisma persistence layer
+- `packages/features/eventtypes/repositories/EventRepository.ts` — Static getPublicEvent wrapper
+- `packages/features/eventtypes/lib/types.ts` — FormValues, EventTypeUpdateInput contracts
+- `packages/features/eventtypes/lib/getEventTypeById.ts` — Central enrichment helper
+- `packages/features/eventtypes/lib/schemas.ts` — Zod validation schemas
+- `packages/features/eventtypes/components/**/*.tsx` — UI components for event type configuration
 
-### 0.8.2 Technical Specification Sections Referenced
+**Prisma:**
+- `packages/prisma/schema.prisma` — EventType model (lines 200–280), SchedulingType enum (lines 42–46)
+- `packages/prisma/selects/event-types.ts` — bookEventTypeSelect, availiblityPageEventTypeSelect
+- `packages/prisma/selects/booking.ts` — bookingMinimalSelect, bookingDetailsSelect
+- `packages/prisma/selects/user.ts` — availabilityUserSelect, userSelect
+- `packages/prisma/selects/credential.ts` — credentialForCalendarServiceSelect
 
-| Section | Title | Key Information Extracted |
-|---------|-------|--------------------------|
-| 2.1 | Feature Catalog | F-003 mapping, 20 features across 8 categories, module paths |
-| 2.2 | Functional Requirements | RQ-001 through RQ-008 for Availability & Schedule Management |
-| 3.2 | Frameworks & Libraries | Runtime versions (Next.js 16.1.5, React 18.2.0, Prisma 6.16.1, Zod 3.25.76) |
-| 4.1 | High-Level System Workflow | Entry points, Core Scheduling Engine pipeline, post-processing |
-| 6.2 | Database Design | 118 Prisma models, Schedule/Availability/SelectedSlots schemas, caching tiers |
+**API v2:**
+- `apps/api/v2/src/ee/event-types/` — Versioned event type CRUD modules
+- `apps/api/v2/src/modules/teams/event-types/` — Team event type repository/service
+- `apps/api/v2/src/modules/organizations/event-types/` — Organization event type service
+- `apps/api/v2/src/modules/atoms/services/event-types-atom.service.ts` — Atoms orchestration
+
+**Platform SDK:**
+- `packages/platform/libraries/event-types.ts` — Re-export aggregator
+- `packages/platform/atoms/event-types/types.ts` — AtomEventTypeListItem, AtomEventTypesResponse
+
+**Documentation:**
+- `docs/sprint-roadmap/overview.mdx` — Sprint sequencing methodology
+- `docs/sprint-roadmap/epic-catalog.mdx` — 40 epics across 8 domains
+- `docs/sprint-roadmap/validation-criteria.mdx` — 71 behavioral criteria
+- `docs/gap-report/overview.mdx` — Executive parity summary
+- `docs/gap-report/availability-scheduling.mdx` — Availability domain analysis
+- `docs/gap-report/event-types.mdx` — Event types domain analysis
+- `docs/migration/zero-downtime-strategy.mdx` — Migration patterns
+- `docs/migration/data-preservation.mdx` — Data preservation guarantees
+- `docs/migration/webhook-compatibility.mdx` — Webhook versioning strategy
+
+**Blitzy Sprint 1 Artifacts:**
+- `blitzy/documentation/Project Guide.md` — Sprint 1 deliverable dossier
+- `blitzy/documentation/Technical Specifications.md` — Sprint 1 agent action plan
+
+**Spec Templates:**
+- `specs/README.md` — Spec-first development workflow
+- `specs/_templates/` — Template folder for new feature specs
 
 ### 0.8.3 Attachments
 
 No attachments were provided for this project. No Figma URLs were specified.
+
 

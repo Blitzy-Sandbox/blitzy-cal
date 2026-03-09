@@ -125,6 +125,49 @@ export type EventManagerUser = {
 
 type createdEventSchema = z.infer<typeof createdEventSchema>;
 
+/**
+ * Optional context for buffer time event lifecycle management (CI-002 gap closure).
+ *
+ * When provided, EventManager will create/delete/update buffer time events in external
+ * calendars alongside the main booking calendar events. Buffer events appear as separate
+ * "Buffer: [Event Title]" entries in the organizer's external calendar for visual clarity.
+ *
+ * Buffer event operations are gated behind two controls:
+ * 1. The global `calendar-buffer-sync` feature flag must be enabled
+ * 2. The EventType must have `syncBuffersToCalendar` set to true
+ *
+ * This context is passed through from RegularBookingService which has access to
+ * the full booking and event type data needed for buffer event construction.
+ */
+export type BufferEventContext = {
+  /** The booking ID for tracking buffer event BookingReference entries */
+  bookingId: number;
+  /** The booking UID for logging context */
+  bookingUid: string;
+  /** The booking title used in buffer event naming ("Buffer: [title]") */
+  bookingTitle: string;
+  /** Booking start time (ISO string) for computing pre-event buffer windows */
+  bookingStartTime: string;
+  /** Booking end time (ISO string) for computing post-event buffer windows */
+  bookingEndTime: string;
+  /** Event type configuration — must include buffer time and sync toggle fields */
+  eventType: {
+    id: number;
+    slug: string;
+    syncBuffersToCalendar?: boolean | null;
+    beforeEventBuffer?: number;
+    afterEventBuffer?: number;
+  };
+  /** Organizer user info for constructing valid CalendarEvent objects for buffer events */
+  organizer: {
+    id: number;
+    name: string | null;
+    email: string;
+    username: string | null;
+    timeZone: string;
+  };
+};
+
 export type EventManagerInitParams = {
   user: EventManagerUser;
   eventTypeAppMetadata?: Record<string, any>;
@@ -286,9 +329,9 @@ export default class EventManager {
    */
   public async create(
     event: CalendarEvent,
-    options?: { skipCalendarEvent?: boolean }
+    options?: { skipCalendarEvent?: boolean; bufferContext?: BufferEventContext }
   ): Promise<CreateUpdateResult> {
-    const { skipCalendarEvent = false } = options ?? {};
+    const { skipCalendarEvent = false, bufferContext } = options ?? {};
     // TODO this method shouldn't be modifying the event object that's passed in
     const evt = processLocation(event);
 
@@ -370,6 +413,15 @@ export default class EventManager {
 
     if (evt.location === MSTeamsLocationType) {
       this.updateMSTeamsVideoCallData(evt, results);
+    }
+
+    // CI-002 gap closure: Create buffer time events in external calendars after the main
+    // calendar event is successfully created. Buffer events ("Buffer: [title]") appear as
+    // separate entries in the organizer's external calendar for visual clarity about when
+    // they are unavailable due to pre/post event buffer periods.
+    // This is gated behind: 1) 'calendar-buffer-sync' feature flag 2) EventType.syncBuffersToCalendar toggle
+    if (!skipCalendarEvent && bufferContext) {
+      await this.createBufferEventsForBooking(bufferContext, results);
     }
 
     // Since the result can be a new calendar event or video event, we have to create a type guard
@@ -619,7 +671,8 @@ export default class EventManager {
     changedOrganizer?: boolean,
     previousHostDestinationCalendar?: DestinationCalendar[] | null,
     isBookingRequestedReschedule?: boolean,
-    skipDeleteEventsAndMeetings?: boolean
+    skipDeleteEventsAndMeetings?: boolean,
+    bufferContext?: BufferEventContext
   ): Promise<CreateUpdateResult> {
     const originalEvt = processLocation(event);
     const evt = cloneDeep(originalEvt);
@@ -751,6 +804,18 @@ export default class EventManager {
         results.push(...(await this.updateAllCRMEvents(evt, booking)));
       }
     }
+    // CI-002 gap closure: On reschedule, delete old buffer events from the original booking
+    // and create new buffer events with the updated times for the new booking.
+    // Buffer events track buffer periods (before/after) as separate calendar entries for
+    // visual clarity. They are re-created with new time windows based on the rescheduled times.
+    if (bufferContext) {
+      // Delete old buffer events from the original booking
+      await this.deleteBufferEventsForBooking(booking.id);
+
+      // Create new buffer events with updated times for the rescheduled booking
+      await this.createBufferEventsForBooking(bufferContext, results);
+    }
+
     const bookingPayment = booking?.payment;
 
     // Updating all payment to new
@@ -780,12 +845,14 @@ export default class EventManager {
       BookingReference,
       "uid" | "type" | "externalCalendarId" | "credentialId" | "thirdPartyRecurringEventId"
     >[],
-    isBookingInRecurringSeries?: boolean
+    isBookingInRecurringSeries?: boolean,
+    bookingId?: number
   ) {
     await this.deleteEventsAndMeetings({
       event,
       bookingReferences,
       isBookingInRecurringSeries,
+      bookingId,
     });
   }
 
@@ -793,10 +860,13 @@ export default class EventManager {
     event,
     bookingReferences,
     isBookingInRecurringSeries,
+    bookingId,
   }: {
     event: CalendarEvent;
     bookingReferences: PartialReference[];
     isBookingInRecurringSeries?: boolean;
+    /** Optional booking ID for CI-002 gap closure: enables buffer event deletion on cancellation */
+    bookingId?: number;
   }) {
     const log = logger.getSubLogger({ prefix: [`[deleteEventsAndMeetings]: ${event?.uid}`] });
     const calendarReferences = [],
@@ -847,6 +917,13 @@ export default class EventManager {
 
     if (!allPromises.length) {
       log.warn("No calendar or video references found for booking - Couldn't delete events or meetings");
+    }
+
+    // CI-002 gap closure: Delete buffer time events associated with this booking.
+    // Buffer events are tracked via BookingReference entries with type prefix "buffer_time".
+    // Deletion is best-effort — errors are logged but do not disrupt the main cancellation flow.
+    if (bookingId) {
+      await this.deleteBufferEventsForBooking(bookingId);
     }
   }
 
@@ -1345,6 +1422,191 @@ export default class EventManager {
 
     if (credential.appId in this.appOptions)
       return this.appOptions[credential.appId as keyof typeof this.appOptions];
+  }
+
+  // ─── CI-002 Gap Closure: Buffer Time Event Lifecycle ────────────────────────
+  //
+  // These methods integrate BufferTimeEventService into the EventManager lifecycle
+  // to create, delete, and update buffer time calendar events alongside main booking
+  // events. Buffer events ("Buffer: [Event Title]") appear as separate entries in
+  // external calendars for visual clarity about pre/post event unavailability.
+  //
+  // Gating: Operations are no-ops when either control is disabled:
+  // 1. Global 'calendar-buffer-sync' feature flag (disabled by default)
+  // 2. Per-EventType 'syncBuffersToCalendar' toggle
+
+  /**
+   * Creates buffer time events in external calendars after the main booking calendar
+   * event has been successfully created.
+   *
+   * Extracts the calendar credential used for the main event from the results array,
+   * constructs a BookingForCalEventBuilder-compatible object from the BufferEventContext,
+   * and delegates to BufferTimeEventService.createBufferEvents().
+   *
+   * This method is best-effort — errors are logged but never thrown to prevent
+   * disrupting the main booking flow.
+   *
+   * @param context - Buffer event context with booking and event type data
+   * @param results - Results from the main calendar event creation, used to identify the credential
+   */
+  private async createBufferEventsForBooking(
+    context: BufferEventContext,
+    results: Array<EventResult<Exclude<Event, AdditionalInformation>>>
+  ): Promise<void> {
+    try {
+      // Dynamic import to avoid breaking tests that mock @calcom/app-store/utils
+      // without including ALL_APPS (transitive dependency via CalendarEventBuilder)
+      const { BufferTimeEventService } = await import(
+        "@calcom/features/calendars/lib/buffer-sync/BufferTimeEventService"
+      );
+      const bufferService = new BufferTimeEventService();
+
+      // Fast-path: check if buffer sync should happen for this event type
+      const shouldSync = await bufferService.shouldCreateBufferEvents({
+        syncBuffersToCalendar: context.eventType.syncBuffersToCalendar,
+      });
+      if (!shouldSync) return;
+
+      // Find the calendar credential used for the main event creation.
+      // Buffer events should be written to the same calendar as the main booking event.
+      const calendarResult = results.find(
+        (r) => r.type.includes("_calendar") && !r.type.includes("other_calendar") && r.success
+      );
+      if (!calendarResult) {
+        log.debug("No successful calendar result found, skipping buffer event creation", {
+          bookingUid: context.bookingUid,
+        });
+        return;
+      }
+
+      // Resolve the credential used for the successful calendar event
+      const credential = this.calendarCredentials.find(
+        (c) => c.id === calendarResult.credentialId || c.delegatedToId === calendarResult.delegatedToId
+      );
+      if (!credential) {
+        log.debug("Could not resolve credential for buffer event creation", {
+          bookingUid: context.bookingUid,
+          credentialId: calendarResult.credentialId,
+        });
+        return;
+      }
+
+      // Construct a BookingForCalEventBuilder-compatible object from the context.
+      // BufferTimeEventService.createBufferEvents() passes this to
+      // CalendarEventBuilder.buildBufferEvent() which needs: id, uid, title,
+      // startTime, endTime, user (organizer), and eventType (with buffer minutes).
+      const bookingForBuffer = {
+        id: context.bookingId,
+        uid: context.bookingUid,
+        title: context.bookingTitle,
+        startTime: new Date(context.bookingStartTime),
+        endTime: new Date(context.bookingEndTime),
+        user: {
+          id: context.organizer.id,
+          name: context.organizer.name,
+          email: context.organizer.email,
+          username: context.organizer.username,
+          timeZone: context.organizer.timeZone,
+        },
+        eventType: {
+          id: context.eventType.id,
+          slug: context.eventType.slug,
+          beforeEventBuffer: context.eventType.beforeEventBuffer ?? 0,
+          afterEventBuffer: context.eventType.afterEventBuffer ?? 0,
+        },
+      };
+
+      await bufferService.createBufferEvents({
+        booking: bookingForBuffer as any,
+        credential,
+        externalCalendarId: calendarResult.externalId ?? undefined,
+      });
+
+      log.info("Buffer events created for booking", { bookingUid: context.bookingUid });
+    } catch (error) {
+      // Best-effort — buffer event creation failure must never disrupt the main booking flow
+      log.error("Error creating buffer events for booking", {
+        bookingUid: context.bookingUid,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  /**
+   * Deletes all buffer time events associated with a booking from external calendars.
+   *
+   * Queries BookingReference entries matching the buffer type prefix ("buffer_time")
+   * and deletes the corresponding external calendar events. References are soft-deleted
+   * by setting `deleted: true`.
+   *
+   * This method is best-effort — errors are logged but never thrown to prevent
+   * disrupting the main cancellation/reschedule flow.
+   *
+   * @param bookingId - The booking ID whose buffer events should be cleaned up
+   */
+  private async deleteBufferEventsForBooking(bookingId: number): Promise<void> {
+    try {
+      // Dynamic import to avoid breaking tests that mock @calcom/app-store/utils
+      // without including ALL_APPS (transitive dependency via CalendarEventBuilder)
+      const { BufferTimeEventService } = await import(
+        "@calcom/features/calendars/lib/buffer-sync/BufferTimeEventService"
+      );
+      const bufferService = new BufferTimeEventService();
+
+      // Check if buffer sync feature is enabled at all before querying references
+      const isEnabled = await bufferService.isBufferSyncEnabled();
+      if (!isEnabled) return;
+
+      // Find all buffer references for this booking
+      const bufferReferences = await prisma.bookingReference.findMany({
+        where: {
+          bookingId,
+          type: { startsWith: "buffer_time" },
+          deleted: null,
+        },
+      });
+
+      if (bufferReferences.length === 0) return;
+
+      // For each buffer reference, find the credential and delete the external event
+      for (const ref of bufferReferences) {
+        try {
+          const credential = ref.credentialId
+            ? this.calendarCredentials.find((c) => c.id === ref.credentialId)
+            : this.calendarCredentials[0];
+
+          if (credential && ref.uid) {
+            await deleteEvent({
+              credential,
+              bookingRefUid: ref.uid,
+              event: {} as CalendarEvent,
+              externalCalendarId: ref.externalCalendarId,
+            });
+          }
+
+          await prisma.bookingReference.update({
+            where: { id: ref.id },
+            data: { deleted: true },
+          });
+
+          log.debug("Deleted buffer event", { bookingId, bufferRefUid: ref.uid, bufferType: ref.type });
+        } catch (refError) {
+          log.error("Error deleting individual buffer event", {
+            bookingId,
+            bufferRefId: ref.id,
+            error: refError instanceof Error ? refError.message : "Unknown error",
+          });
+        }
+      }
+
+      log.info("Buffer events deleted for booking", { bookingId, count: bufferReferences.length });
+    } catch (error) {
+      // Best-effort — buffer event deletion failure must never disrupt the main flow
+      log.error("Error deleting buffer events for booking", {
+        bookingId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   }
 }
 

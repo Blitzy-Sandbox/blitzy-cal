@@ -88,6 +88,9 @@ export async function getBookingToDelete(id: number | undefined, uid: string | u
           hideOrganizerEmail: true,
           schedulingType: true,
           customReplyToEmail: true,
+          syncBuffersToCalendar: true,
+          beforeEventBuffer: true,
+          afterEventBuffer: true,
           hosts: {
             select: {
               user: true,

@@ -647,7 +647,15 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
       bookingToDeleteEventTypeMetadata?.apps
     );
 
-    await eventManager.cancelEvent(evt, bookingToDelete.references, isBookingInRecurringSeries);
+    // CI-002 gap closure: Pass bookingId to cancelEvent so EventManager can also delete
+    // any buffer time events ("Buffer: [title]") written to external calendars.
+    // Buffer event references are tracked in BookingReference with type prefix "buffer_time".
+    await eventManager.cancelEvent(
+      evt,
+      bookingToDelete.references,
+      isBookingInRecurringSeries,
+      bookingToDelete.id
+    );
 
     await bookingReferenceRepository.updateManyByBookingId(bookingToDelete.id, { deleted: true });
   } catch (error) {

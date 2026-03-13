@@ -1,5 +1,5 @@
-import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import type { BookingForCalEventBuilder } from "@calcom/features/CalendarEventBuilder";
+import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import { createEvent, deleteEvent } from "@calcom/features/calendars/lib/CalendarManager";
 import type { FeatureId } from "@calcom/features/flags/config";
 import logger from "@calcom/lib/logger";
@@ -68,17 +68,14 @@ export class BufferTimeEventService {
       // IMPORTANT: The result MUST be `await`ed before returning — returning an un-awaited
       // rejected promise inside a try block bypasses the catch, causing unhandled rejections.
       if (this.deps?.featureRepository) {
-        const isEnabled = await this.deps.featureRepository.checkIfFeatureIsEnabledGlobally(
-          BUFFER_SYNC_FEATURE_SLUG
-        );
+        const isEnabled =
+          await this.deps.featureRepository.checkIfFeatureIsEnabledGlobally(BUFFER_SYNC_FEATURE_SLUG);
         return isEnabled;
       }
       // Fallback: lazy-load FeaturesRepository for standalone usage
       const { FeaturesRepository } = await import("@calcom/features/flags/features.repository");
       const featuresRepository = new FeaturesRepository(prisma);
-      const isEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally(
-        BUFFER_SYNC_FEATURE_SLUG
-      );
+      const isEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally(BUFFER_SYNC_FEATURE_SLUG);
       return isEnabled;
     } catch (error) {
       log.warn("Failed to check calendar-buffer-sync feature flag, defaulting to disabled", {
@@ -101,9 +98,7 @@ export class BufferTimeEventService {
    * @param eventType - Object containing the syncBuffersToCalendar toggle value
    * @returns `true` if both the EventType toggle and global feature flag are enabled
    */
-  async shouldCreateBufferEvents(eventType: {
-    syncBuffersToCalendar?: boolean | null;
-  }): Promise<boolean> {
+  async shouldCreateBufferEvents(eventType: { syncBuffersToCalendar?: boolean | null }): Promise<boolean> {
     // Fast-path: if per-EventType toggle is not explicitly true, skip the feature flag check
     if (!eventType.syncBuffersToCalendar) {
       return false;
@@ -154,17 +149,23 @@ export class BufferTimeEventService {
         results.push(result);
 
         if (result.success && result.createdEvent) {
+          // Store the external calendar event ID (result.createdEvent.id) — NOT
+          // Cal.com's internal UID (result.uid). The external ID is what the
+          // calendar provider (Google, Outlook, Apple) uses to locate and delete
+          // the buffer event when the booking is cancelled. Using result.uid would
+          // store Cal.com's internal reference which cannot be resolved by the
+          // external calendar's deleteEvent API.
           await this.storeBufferReference({
             bookingId: booking.id,
             bufferType,
-            uid: result.uid,
+            uid: result.createdEvent.id as string,
             type: `${BUFFER_REFERENCE_TYPE_PREFIX}_${bufferType}`,
             credentialId: credential.id,
             externalCalendarId: externalCalendarId ?? null,
           });
           log.info(`Created ${bufferType} buffer event`, {
             bookingUid: booking.uid,
-            bufferUid: result.uid,
+            bufferEventExternalId: result.createdEvent.id,
           });
         } else {
           log.warn(`Failed to create ${bufferType} buffer event`, {

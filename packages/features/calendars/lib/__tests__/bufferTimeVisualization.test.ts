@@ -17,10 +17,11 @@
  * @see BufferTimeEventService — ../buffer-sync/BufferTimeEventService.ts
  * @see CalendarEventBuilder.buildBufferEvent — @calcom/features/CalendarEventBuilder
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { CalendarEvent, NewCalendarEventType } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
 import type { EventResult } from "@calcom/types/EventManager";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Hoisted Mock Declarations ──────────────────────────────────────────────────
 // vi.hoisted() creates values in the hoisted scope, making them available when
@@ -171,9 +172,7 @@ function buildMockBooking(overrides: Record<string, unknown> = {}) {
  * Builds a successful EventResult<NewCalendarEventType> for createEvent mock returns.
  * Matches the shape returned by CalendarManager.createEvent on success.
  */
-function buildSuccessfulEventResult(
-  uid: string = "buffer-uid-123"
-): EventResult<NewCalendarEventType> {
+function buildSuccessfulEventResult(uid: string = "buffer-uid-123"): EventResult<NewCalendarEventType> {
   return {
     appName: "google-calendar",
     type: "google_calendar",
@@ -338,9 +337,7 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
 
     it("should create only before buffer event when after buffer returns null", async () => {
       mockBuildBufferEvent
-        .mockReturnValueOnce(
-          buildCalendarEvent({ title: "Buffer: Team Meeting" })
-        )
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Team Meeting" }))
         .mockReturnValueOnce(null); // No after buffer configured
 
       mockCreateEvent.mockResolvedValueOnce(buildSuccessfulEventResult("before-uid"));
@@ -396,13 +393,16 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
       });
 
       // Verify the first BookingReference create call (before buffer)
+      // IMPORTANT: uid must be the external calendar event ID (result.createdEvent.id)
+      // NOT Cal.com's internal UID (result.uid), so deleteEvent can locate the buffer
+      // event on the external calendar provider (Google, Outlook, Apple).
       expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(2);
 
       const firstCallArgs = mockPrismaBookingReference.create.mock.calls[0][0];
       expect(firstCallArgs.data).toMatchObject({
         bookingId: 123,
         type: "buffer_time_before",
-        uid: "before-uid",
+        uid: "event-before-uid",
         credentialId: 5,
         externalCalendarId: "cal-123",
       });
@@ -412,7 +412,7 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
       expect(secondCallArgs.data).toMatchObject({
         bookingId: 123,
         type: "buffer_time_after",
-        uid: "after-uid",
+        uid: "event-after-uid",
         credentialId: 5,
         externalCalendarId: "cal-123",
       });
@@ -420,12 +420,8 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
 
     it("should continue creating after buffer event even if before buffer event fails", async () => {
       mockBuildBufferEvent
-        .mockReturnValueOnce(
-          buildCalendarEvent({ title: "Buffer: Team Meeting" })
-        )
-        .mockReturnValueOnce(
-          buildCalendarEvent({ title: "Buffer: Team Meeting" })
-        );
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Team Meeting" }))
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Team Meeting" }));
 
       // First createEvent (before) rejects, second (after) succeeds
       mockCreateEvent
@@ -563,9 +559,7 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
       ]);
 
       // First deleteEvent fails, second succeeds
-      mockDeleteEvent
-        .mockRejectedValueOnce(new Error("API Error"))
-        .mockResolvedValueOnce(undefined);
+      mockDeleteEvent.mockRejectedValueOnce(new Error("API Error")).mockResolvedValueOnce(undefined);
 
       await service.deleteBufferEvents({
         bookingId: 123,
@@ -614,6 +608,418 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
       // No errors thrown, returns empty results
       expect(results).toHaveLength(0);
       expect(mockCreateEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Phase 7: Multi-Adapter Coverage (Google, Outlook, Apple) ──────────────
+  //
+  // The phases above use google_calendar fixtures exclusively. This phase
+  // verifies that buffer event creation and deletion work identically for all
+  // three primary calendar adapters, and that the correct external calendar
+  // event ID (result.createdEvent.id) is stored for each provider.
+
+  describe("Multi-Adapter Coverage — Google Calendar", () => {
+    it("should create buffer events and store external Google Calendar event IDs", async () => {
+      mockBuildBufferEvent
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Google Meeting" }))
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Google Meeting" }));
+
+      const googleBeforeResult = buildSuccessfulEventResult("gcal-before-uid");
+      const googleAfterResult = buildSuccessfulEventResult("gcal-after-uid");
+      mockCreateEvent.mockResolvedValueOnce(googleBeforeResult).mockResolvedValueOnce(googleAfterResult);
+
+      const googleCredential = buildCredential({ id: 10, type: "google_calendar" });
+
+      const results = await service.createBufferEvents({
+        booking: buildMockBooking() as any,
+        credential: googleCredential,
+        externalCalendarId: "primary",
+      });
+
+      // Both buffer events created successfully
+      expect(results).toHaveLength(2);
+      expect(results[0].success).toBe(true);
+      expect(results[1].success).toBe(true);
+
+      // Verify external calendar event ID (createdEvent.id) was stored, NOT Cal.com UID
+      expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(2);
+
+      const beforeRef = mockPrismaBookingReference.create.mock.calls[0][0];
+      expect(beforeRef.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_before",
+        uid: "event-gcal-before-uid", // External Google Calendar event ID
+        credentialId: 10,
+        externalCalendarId: "primary",
+      });
+
+      const afterRef = mockPrismaBookingReference.create.mock.calls[1][0];
+      expect(afterRef.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_after",
+        uid: "event-gcal-after-uid", // External Google Calendar event ID
+        credentialId: 10,
+        externalCalendarId: "primary",
+      });
+    });
+
+    it("should delete buffer events using stored external Google Calendar event IDs", async () => {
+      mockPrismaBookingReference.findMany.mockResolvedValue([
+        {
+          id: 101,
+          uid: "event-gcal-before-uid", // External ID as stored by createBufferEvents
+          type: "buffer_time_before",
+          externalCalendarId: "primary",
+          bookingId: 123,
+        },
+        {
+          id: 102,
+          uid: "event-gcal-after-uid",
+          type: "buffer_time_after",
+          externalCalendarId: "primary",
+          bookingId: 123,
+        },
+      ]);
+
+      mockDeleteEvent.mockResolvedValue(undefined);
+
+      const googleCredential = buildCredential({ id: 10, type: "google_calendar" });
+
+      await service.deleteBufferEvents({
+        bookingId: 123,
+        credential: googleCredential,
+        event: buildCalendarEvent(),
+      });
+
+      // deleteEvent called with the stored external event IDs
+      expect(mockDeleteEvent).toHaveBeenCalledTimes(2);
+      expect(mockDeleteEvent).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          bookingRefUid: "event-gcal-before-uid",
+          externalCalendarId: "primary",
+        })
+      );
+      expect(mockDeleteEvent).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          bookingRefUid: "event-gcal-after-uid",
+          externalCalendarId: "primary",
+        })
+      );
+
+      // Both soft-deleted
+      expect(mockPrismaBookingReference.update).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("Multi-Adapter Coverage — Outlook / Office 365", () => {
+    it("should create buffer events and store external Outlook event IDs", async () => {
+      mockBuildBufferEvent
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Outlook Meeting" }))
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Outlook Meeting" }));
+
+      // Outlook adapter returns event results with outlook-specific IDs
+      const outlookBeforeResult: EventResult<NewCalendarEventType> = {
+        appName: "office365-calendar",
+        type: "office365_calendar",
+        success: true,
+        uid: "outlook-internal-before",
+        iCalUID: "outlook-before@outlook.com",
+        createdEvent: {
+          uid: "outlook-internal-before",
+          id: "AAMkAG-outlook-before-event-id",
+          type: "office365_calendar",
+          password: "",
+          url: "",
+          additionalInfo: {},
+          iCalUID: "outlook-before@outlook.com",
+        },
+        originalEvent: {} as CalendarEvent,
+        calError: undefined,
+        calWarnings: [],
+        externalId: undefined,
+        credentialId: 20,
+      };
+      const outlookAfterResult: EventResult<NewCalendarEventType> = {
+        ...outlookBeforeResult,
+        uid: "outlook-internal-after",
+        iCalUID: "outlook-after@outlook.com",
+        createdEvent: {
+          ...outlookBeforeResult.createdEvent!,
+          uid: "outlook-internal-after",
+          id: "AAMkAG-outlook-after-event-id",
+          iCalUID: "outlook-after@outlook.com",
+        },
+      };
+      mockCreateEvent.mockResolvedValueOnce(outlookBeforeResult).mockResolvedValueOnce(outlookAfterResult);
+
+      const outlookCredential = buildCredential({ id: 20, type: "office365_calendar" });
+
+      const results = await service.createBufferEvents({
+        booking: buildMockBooking() as any,
+        credential: outlookCredential,
+        externalCalendarId: "outlook-calendar-id",
+      });
+
+      expect(results).toHaveLength(2);
+
+      // Verify external Outlook event IDs (AAMkAG-*) were stored, NOT internal UIDs
+      expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(2);
+
+      const beforeRef = mockPrismaBookingReference.create.mock.calls[0][0];
+      expect(beforeRef.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_before",
+        uid: "AAMkAG-outlook-before-event-id",
+        credentialId: 20,
+        externalCalendarId: "outlook-calendar-id",
+      });
+
+      const afterRef = mockPrismaBookingReference.create.mock.calls[1][0];
+      expect(afterRef.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_after",
+        uid: "AAMkAG-outlook-after-event-id",
+        credentialId: 20,
+        externalCalendarId: "outlook-calendar-id",
+      });
+    });
+
+    it("should delete buffer events using stored external Outlook event IDs", async () => {
+      mockPrismaBookingReference.findMany.mockResolvedValue([
+        {
+          id: 201,
+          uid: "AAMkAG-outlook-before-event-id",
+          type: "buffer_time_before",
+          externalCalendarId: "outlook-calendar-id",
+          bookingId: 456,
+        },
+        {
+          id: 202,
+          uid: "AAMkAG-outlook-after-event-id",
+          type: "buffer_time_after",
+          externalCalendarId: "outlook-calendar-id",
+          bookingId: 456,
+        },
+      ]);
+
+      mockDeleteEvent.mockResolvedValue(undefined);
+
+      const outlookCredential = buildCredential({ id: 20, type: "office365_calendar" });
+
+      await service.deleteBufferEvents({
+        bookingId: 456,
+        credential: outlookCredential,
+        event: buildCalendarEvent(),
+      });
+
+      expect(mockDeleteEvent).toHaveBeenCalledTimes(2);
+      expect(mockDeleteEvent).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          bookingRefUid: "AAMkAG-outlook-before-event-id",
+          externalCalendarId: "outlook-calendar-id",
+        })
+      );
+      expect(mockDeleteEvent).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          bookingRefUid: "AAMkAG-outlook-after-event-id",
+          externalCalendarId: "outlook-calendar-id",
+        })
+      );
+
+      expect(mockPrismaBookingReference.update).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("Multi-Adapter Coverage — Apple Calendar (CalDAV)", () => {
+    it("should create buffer events and store external Apple Calendar event IDs", async () => {
+      mockBuildBufferEvent
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: iCloud Meeting" }))
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: iCloud Meeting" }));
+
+      // Apple Calendar / CalDAV adapter returns event results with CalDAV-specific UIDs
+      const appleBeforeResult: EventResult<NewCalendarEventType> = {
+        appName: "apple-calendar",
+        type: "apple_calendar",
+        success: true,
+        uid: "apple-internal-before",
+        iCalUID: "apple-before@caldav.icloud.com",
+        createdEvent: {
+          uid: "apple-internal-before",
+          id: "caldav-event-uuid-before-12345",
+          type: "apple_calendar",
+          password: "",
+          url: "",
+          additionalInfo: {},
+          iCalUID: "apple-before@caldav.icloud.com",
+        },
+        originalEvent: {} as CalendarEvent,
+        calError: undefined,
+        calWarnings: [],
+        externalId: undefined,
+        credentialId: 30,
+      };
+      const appleAfterResult: EventResult<NewCalendarEventType> = {
+        ...appleBeforeResult,
+        uid: "apple-internal-after",
+        iCalUID: "apple-after@caldav.icloud.com",
+        createdEvent: {
+          ...appleBeforeResult.createdEvent!,
+          uid: "apple-internal-after",
+          id: "caldav-event-uuid-after-67890",
+          iCalUID: "apple-after@caldav.icloud.com",
+        },
+      };
+      mockCreateEvent.mockResolvedValueOnce(appleBeforeResult).mockResolvedValueOnce(appleAfterResult);
+
+      const appleCredential = buildCredential({ id: 30, type: "apple_calendar" });
+
+      const results = await service.createBufferEvents({
+        booking: buildMockBooking() as any,
+        credential: appleCredential,
+        externalCalendarId: "caldav-calendar-home",
+      });
+
+      expect(results).toHaveLength(2);
+
+      // Verify CalDAV external event IDs were stored, NOT internal UIDs
+      expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(2);
+
+      const beforeRef = mockPrismaBookingReference.create.mock.calls[0][0];
+      expect(beforeRef.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_before",
+        uid: "caldav-event-uuid-before-12345",
+        credentialId: 30,
+        externalCalendarId: "caldav-calendar-home",
+      });
+
+      const afterRef = mockPrismaBookingReference.create.mock.calls[1][0];
+      expect(afterRef.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_after",
+        uid: "caldav-event-uuid-after-67890",
+        credentialId: 30,
+        externalCalendarId: "caldav-calendar-home",
+      });
+    });
+
+    it("should delete buffer events using stored external Apple Calendar event IDs", async () => {
+      mockPrismaBookingReference.findMany.mockResolvedValue([
+        {
+          id: 301,
+          uid: "caldav-event-uuid-before-12345",
+          type: "buffer_time_before",
+          externalCalendarId: "caldav-calendar-home",
+          bookingId: 789,
+        },
+        {
+          id: 302,
+          uid: "caldav-event-uuid-after-67890",
+          type: "buffer_time_after",
+          externalCalendarId: "caldav-calendar-home",
+          bookingId: 789,
+        },
+      ]);
+
+      mockDeleteEvent.mockResolvedValue(undefined);
+
+      const appleCredential = buildCredential({ id: 30, type: "apple_calendar" });
+
+      await service.deleteBufferEvents({
+        bookingId: 789,
+        credential: appleCredential,
+        event: buildCalendarEvent(),
+      });
+
+      expect(mockDeleteEvent).toHaveBeenCalledTimes(2);
+      expect(mockDeleteEvent).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          bookingRefUid: "caldav-event-uuid-before-12345",
+          externalCalendarId: "caldav-calendar-home",
+        })
+      );
+      expect(mockDeleteEvent).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          bookingRefUid: "caldav-event-uuid-after-67890",
+          externalCalendarId: "caldav-calendar-home",
+        })
+      );
+
+      expect(mockPrismaBookingReference.update).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── Phase 8: Cross-Adapter Consistency Verification ───────────────────────
+  //
+  // Verifies that the external ID storage pattern (result.createdEvent.id)
+  // works consistently across provider-specific ID formats.
+
+  describe("Cross-Adapter External ID Consistency", () => {
+    it("should consistently store createdEvent.id (not result.uid) regardless of adapter", async () => {
+      // Adapter-specific ID patterns:
+      // - Google: short alphanumeric (e.g., "event-gcal-before-uid")
+      // - Outlook: long AAMkAG-prefixed (e.g., "AAMkAG-outlook-id")
+      // - Apple: CalDAV UUID (e.g., "caldav-uuid-12345")
+      //
+      // All three should store createdEvent.id, never result.uid.
+
+      const adapterConfigs = [
+        { type: "google_calendar", externalId: "gcal-ext-id-1234", internalUid: "gcal-internal-uid" },
+        { type: "office365_calendar", externalId: "AAMkAG-ext-id-5678", internalUid: "o365-internal-uid" },
+        { type: "apple_calendar", externalId: "caldav-ext-uuid-9012", internalUid: "apple-internal-uid" },
+      ];
+
+      for (const config of adapterConfigs) {
+        // Reset mocks between adapter iterations
+        mockBuildBufferEvent.mockReset();
+        mockCreateEvent.mockReset();
+        mockPrismaBookingReference.create.mockReset();
+
+        // Only test "before" buffer to keep it focused
+        mockBuildBufferEvent
+          .mockReturnValueOnce(buildCalendarEvent({ title: `Buffer: ${config.type}` }))
+          .mockReturnValueOnce(null); // no after buffer
+
+        mockCreateEvent.mockResolvedValueOnce({
+          appName: config.type,
+          type: config.type,
+          success: true,
+          uid: config.internalUid, // Cal.com internal UID — should NOT be stored
+          iCalUID: `${config.internalUid}@cal.com`,
+          createdEvent: {
+            uid: config.internalUid,
+            id: config.externalId, // External calendar event ID — SHOULD be stored
+            type: config.type,
+            password: "",
+            url: "",
+            additionalInfo: {},
+            iCalUID: `${config.internalUid}@cal.com`,
+          },
+          originalEvent: {} as CalendarEvent,
+          calError: undefined,
+          calWarnings: [],
+          externalId: undefined,
+          credentialId: 1,
+        });
+
+        const credential = buildCredential({ type: config.type });
+
+        await service.createBufferEvents({
+          booking: buildMockBooking() as any,
+          credential,
+        });
+
+        // Verify the stored uid is the EXTERNAL ID, not the internal uid
+        const storedRef = mockPrismaBookingReference.create.mock.calls[0]?.[0];
+        expect(storedRef?.data?.uid).toBe(config.externalId);
+        expect(storedRef?.data?.uid).not.toBe(config.internalUid);
+      }
     });
   });
 });

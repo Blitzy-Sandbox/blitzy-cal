@@ -193,6 +193,7 @@ export type FormValues = {
   useBookerTimezone: boolean;
   restrictionScheduleName: string | null;
   calVideoSettings?: CalVideoSettings;
+  syncBuffersToCalendar: boolean;
   maxActiveBookingPerBookerOfferReschedule: boolean;
   enablePerHostLocations: boolean;
 };
@@ -383,6 +384,7 @@ export type EventTypeUpdateInput = {
   minimumBookingNotice?: number;
   beforeEventBuffer?: number;
   afterEventBuffer?: number;
+  syncBuffersToCalendar?: boolean | null;
   seatsPerTimeSlot?: number | null;
   onlyShowFirstAvailableSlot?: boolean;
   showOptimizedSlots?: boolean | null;

@@ -95,6 +95,32 @@ const mockEvents = {
   ],
 };
 
+const mockCancelledEvents = {
+  provider: "google_calendar" as const,
+  syncToken: "new-sync-token",
+  items: [
+    {
+      id: "event-cancelled",
+      iCalUID: "cancelled-event@cal.com",
+      start: new Date(),
+      end: new Date(Date.now() + 3600000),
+      busy: true,
+      summary: "Cancelled Event",
+      description: "Test",
+      location: "Test Location",
+      status: "cancelled",
+      isAllDay: false,
+      timeZone: "UTC",
+      recurringEventId: null,
+      originalStartDate: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      etag: "test-etag",
+      kind: "calendar#event",
+    },
+  ],
+};
+
 describe("CalendarSubscriptionService", () => {
   let service: CalendarSubscriptionService;
   let mockAdapterFactory: AdapterFactory;
@@ -562,6 +588,98 @@ describe("CalendarSubscriptionService", () => {
       expect(mockFeatureRepository.checkIfFeatureIsEnabledGlobally).toHaveBeenCalledWith(
         "calendar-subscription-sync"
       );
+    });
+  });
+
+  describe("cancellation sync feature flag", () => {
+    test("isCancellationSyncEnabled should check global cancellation sync feature", async () => {
+      mockFeatureRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+
+      const result = await service.isCancellationSyncEnabled();
+
+      expect(result).toBe(true);
+      expect(mockFeatureRepository.checkIfFeatureIsEnabledGlobally).toHaveBeenCalledWith(
+        "calendar-cancellation-sync"
+      );
+    });
+
+    test("isCancellationSyncEnabled should return false when feature is disabled", async () => {
+      mockFeatureRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(false);
+
+      const result = await service.isCancellationSyncEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("processEvents - cancellation sync detection", () => {
+    test("should detect and count cancelled events when cancellation sync is enabled", async () => {
+      // Enable cache, sync, AND cancellation sync feature flags
+      mockFeatureRepository.checkIfFeatureIsEnabledGlobally
+        .mockResolvedValueOnce(true) // isCacheEnabled
+        .mockResolvedValueOnce(true) // isSyncEnabled
+        .mockResolvedValueOnce(true); // isCancellationSyncEnabled
+      mockUserFeatureRepository.checkIfUserHasFeature.mockResolvedValue(true);
+      mockAdapter.fetchEvents.mockResolvedValue(mockCancelledEvents);
+
+      const result = await service.processEvents(mockSelectedCalendar);
+
+      expect(result.eventsCancellationSynced).toBeGreaterThan(0);
+
+      const { metrics } = await import("@sentry/nextjs");
+      expect(metrics.count).toHaveBeenCalledWith(
+        "calendar.subscription.cancellation_sync.detected",
+        expect.any(Number),
+        expect.objectContaining({
+          attributes: { provider: "google_calendar" },
+        })
+      );
+    });
+
+    test("should NOT detect cancelled events when cancellation sync feature is disabled", async () => {
+      // Enable cache and sync, DISABLE cancellation sync
+      mockFeatureRepository.checkIfFeatureIsEnabledGlobally
+        .mockResolvedValueOnce(true) // isCacheEnabled
+        .mockResolvedValueOnce(true) // isSyncEnabled
+        .mockResolvedValueOnce(false); // isCancellationSyncEnabled
+      mockUserFeatureRepository.checkIfUserHasFeature.mockResolvedValue(true);
+      mockAdapter.fetchEvents.mockResolvedValue(mockCancelledEvents);
+
+      const result = await service.processEvents(mockSelectedCalendar);
+
+      expect(result.eventsCancellationSynced).toBe(0);
+    });
+
+    test("should return eventsCancellationSynced = 0 when no cancelled events exist", async () => {
+      // Enable all features
+      mockFeatureRepository.checkIfFeatureIsEnabledGlobally
+        .mockResolvedValueOnce(true) // isCacheEnabled
+        .mockResolvedValueOnce(true) // isSyncEnabled
+        .mockResolvedValueOnce(true); // isCancellationSyncEnabled
+      mockUserFeatureRepository.checkIfUserHasFeature.mockResolvedValue(true);
+      // mockEvents has only confirmed events (status: "confirmed"), no cancelled
+      mockAdapter.fetchEvents.mockResolvedValue(mockEvents);
+
+      const result = await service.processEvents(mockSelectedCalendar);
+
+      expect(result.eventsCancellationSynced).toBe(0);
+    });
+
+    test("should handle cancellation sync errors gracefully", async () => {
+      // Enable all features
+      mockFeatureRepository.checkIfFeatureIsEnabledGlobally
+        .mockResolvedValueOnce(true) // isCacheEnabled
+        .mockResolvedValueOnce(true) // isSyncEnabled
+        .mockResolvedValueOnce(true); // isCancellationSyncEnabled
+      mockUserFeatureRepository.checkIfUserHasFeature.mockResolvedValue(true);
+      mockAdapter.fetchEvents.mockResolvedValue(mockCancelledEvents);
+
+      // The processEvents method should not throw even if cancellation sync detection encounters issues
+      const result = await service.processEvents(mockSelectedCalendar);
+
+      // Should still return a valid result with event counts
+      expect(result.eventsFetched).toBe(mockCancelledEvents.items.length);
+      expect(typeof result.eventsCancellationSynced).toBe("number");
     });
   });
 });

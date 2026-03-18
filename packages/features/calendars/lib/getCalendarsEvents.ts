@@ -20,7 +20,8 @@ export const getCalendarsEventsWithTimezones = async (
   withCredentials: CredentialForCalendarService[],
   dateFrom: string,
   dateTo: string,
-  selectedCalendars: SelectedCalendar[]
+  selectedCalendars: SelectedCalendar[],
+  statusFilter?: string[]
 ): Promise<(EventBusyDate & { timeZone: string })[][]> => {
   const calendarCredentials = withCredentials
     .filter((credential) => credential.type === "google_calendar")
@@ -77,6 +78,7 @@ export const getCalendarsEventsWithTimezones = async (
         selectedCalendars: passedSelectedCalendars,
         mode: "slots",
         fallbackToPrimary: allowFallbackToPrimary,
+        statusFilter,
       })) || [];
 
     return eventBusyDates.map((event) => ({
@@ -93,7 +95,8 @@ const getCalendarsEvents = async (
   dateFrom: string,
   dateTo: string,
   selectedCalendars: SelectedCalendar[],
-  mode: CalendarFetchMode
+  mode: CalendarFetchMode,
+  statusFilter?: string[]
 ): Promise<EventBusyDate[][]> => {
   const calendarCredentials = withCredentials
     .filter((credential) => credential.type.endsWith("_calendar"))
@@ -187,6 +190,7 @@ const getCalendarsEvents = async (
       selectedCalendars: passedSelectedCalendars,
       mode,
       fallbackToPrimary: allowFallbackToPrimary,
+      statusFilter,
     });
     performance.mark("eventBusyDatesEnd");
     performance.measure(

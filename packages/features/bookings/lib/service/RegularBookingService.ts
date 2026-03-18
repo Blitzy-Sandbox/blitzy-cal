@@ -28,6 +28,7 @@ import type {
   CreateRegularBookingData,
 } from "@calcom/features/bookings/lib/dto/types";
 import EventManager, { placeholderCreatedEvent } from "@calcom/features/bookings/lib/EventManager";
+import type { BufferEventContext } from "@calcom/features/bookings/lib/EventManager";
 import { getAssignmentReasonCategory } from "@calcom/features/bookings/lib/getAssignmentReasonCategory";
 import type { CheckBookingAndDurationLimitsService } from "@calcom/features/bookings/lib/handleNewBooking/checkBookingAndDurationLimits";
 import { handlePayment } from "@calcom/features/bookings/lib/handlePayment";
@@ -2159,6 +2160,33 @@ async function handler(
     // to the default description when we are sending the emails.
     evt.description = eventType.description;
 
+    // CI-002 gap closure: Build buffer event context for reschedule.
+    // On reschedule, EventManager deletes old buffer events and creates new ones with updated times.
+    const rescheduleBufferCtx: BufferEventContext | undefined =
+      booking && eventType.syncBuffersToCalendar
+        ? {
+            bookingId: booking.id,
+            bookingUid: booking.uid,
+            bookingTitle: evt.title,
+            bookingStartTime: evt.startTime,
+            bookingEndTime: evt.endTime,
+            eventType: {
+              id: eventType.id,
+              slug: eventType.slug,
+              syncBuffersToCalendar: eventType.syncBuffersToCalendar,
+              beforeEventBuffer: eventType.beforeEventBuffer,
+              afterEventBuffer: eventType.afterEventBuffer,
+            },
+            organizer: {
+              id: organizerUser.id,
+              name: organizerUser.name,
+              email: organizerUser.email,
+              username: organizerUser.username,
+              timeZone: organizerUser.timeZone,
+            },
+          }
+        : undefined;
+
     const updateManager = !skipCalendarSyncTaskCreation
       ? await eventManager.reschedule(
           evt,
@@ -2167,7 +2195,8 @@ async function handler(
           changedOrganizer,
           previousHostDestinationCalendar,
           isBookingRequestedReschedule,
-          skipDeleteEventsAndMeetings
+          skipDeleteEventsAndMeetings,
+          rescheduleBufferCtx
         )
       : placeholderCreatedEvent;
 
@@ -2303,7 +2332,40 @@ async function handler(
     // Create a booking
   } else if (isConfirmedByDefault) {
     const shouldSkipCalendarEvents = !areCalendarEventsEnabled || skipCalendarSyncTaskCreation;
-    const createManager = await eventManager.create(evt, { skipCalendarEvent: shouldSkipCalendarEvents });
+
+    // CI-002 gap closure: Build buffer event context for BufferTimeEventService integration.
+    // When the EventType has syncBuffersToCalendar enabled and the global 'calendar-buffer-sync'
+    // feature flag is active, EventManager will create "Buffer: [title]" entries in the
+    // organizer's external calendar alongside the main booking event.
+    const bufferCtx: BufferEventContext | undefined =
+      booking && eventType.syncBuffersToCalendar
+        ? {
+            bookingId: booking.id,
+            bookingUid: booking.uid,
+            bookingTitle: evt.title,
+            bookingStartTime: evt.startTime,
+            bookingEndTime: evt.endTime,
+            eventType: {
+              id: eventType.id,
+              slug: eventType.slug,
+              syncBuffersToCalendar: eventType.syncBuffersToCalendar,
+              beforeEventBuffer: eventType.beforeEventBuffer,
+              afterEventBuffer: eventType.afterEventBuffer,
+            },
+            organizer: {
+              id: organizerUser.id,
+              name: organizerUser.name,
+              email: organizerUser.email,
+              username: organizerUser.username,
+              timeZone: organizerUser.timeZone,
+            },
+          }
+        : undefined;
+
+    const createManager = await eventManager.create(evt, {
+      skipCalendarEvent: shouldSkipCalendarEvents,
+      bufferContext: bufferCtx,
+    });
     if (evt.location) {
       booking.location = evt.location;
     }

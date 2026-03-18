@@ -28,6 +28,9 @@ export class GoogleCalendarSubscriptionAdapter implements ICalendarSubscriptionP
   private GOOGLE_WEBHOOK_URL = `${
     process.env.GOOGLE_WEBHOOK_URL || process.env.NEXT_PUBLIC_WEBAPP_URL
   }/api/webhooks/calendar-subscription/google_calendar`;
+  private GOOGLE_CANCELLATION_SYNC_WEBHOOK_URL = `${
+    process.env.GOOGLE_WEBHOOK_URL || process.env.NEXT_PUBLIC_WEBAPP_URL
+  }/api/webhooks/calendar-subscription/google_calendar/cancellation-sync`;
 
   async validate(request: Request): Promise<boolean> {
     const token = request?.headers?.get("X-Goog-Channel-Token");
@@ -84,6 +87,51 @@ export class GoogleCalendarSubscriptionAdapter implements ICalendarSubscriptionP
       expiration,
     };
   }
+
+  /**
+   * Subscribe to a calendar specifically for cancellation-sync push notifications.
+   * Creates a channel using a dedicated cancellation-sync webhook URL to allow
+   * independent lifecycle management from regular subscription channels.
+   *
+   * Gated behind the 'calendar-cancellation-sync' feature flag.
+   * @see packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts
+   */
+  async subscribeCancellationSync(
+    selectedCalendar: SelectedCalendar,
+    credential: CalendarCredential
+  ): Promise<CalendarSubscriptionResult> {
+    log.debug("Attempt to subscribe to Google Calendar for cancellation sync", {
+      externalId: selectedCalendar.externalId,
+    });
+
+    const MONTH_IN_SECONDS = 60 * 60 * 24 * 30;
+
+    const client = await this.getClient(credential);
+    const result = await client.events.watch({
+      calendarId: selectedCalendar.externalId,
+      requestBody: {
+        id: uuid(),
+        type: "web_hook",
+        address: this.GOOGLE_CANCELLATION_SYNC_WEBHOOK_URL,
+        token: this.GOOGLE_WEBHOOK_TOKEN,
+        params: {
+          ttl: MONTH_IN_SECONDS.toFixed(0),
+        },
+      },
+    });
+
+    const e = result.data?.expiration;
+    const expiration = e ? new Date(/^\d+$/.test(e) ? +e : e) : null;
+
+    return {
+      provider: "google_calendar",
+      id: result.data.id,
+      resourceId: result.data.resourceId,
+      resourceUri: result.data.resourceUri,
+      expiration,
+    };
+  }
+
   async unsubscribe(selectedCalendar: SelectedCalendar, credential: CalendarCredential): Promise<void> {
     log.debug("Attempt to unsubscribe from Google Calendar", { externalId: selectedCalendar.externalId });
 
@@ -207,6 +255,20 @@ export class GoogleCalendarSubscriptionAdapter implements ICalendarSubscriptionP
           updatedAt: event.updated ? new Date(event.updated) : null,
         };
       });
+  }
+
+  /**
+   * Extracts cancelled or deleted event IDs from a fetch result.
+   * Used by CalendarCancellationSyncService to detect external cancellations
+   * that need to be propagated back to Cal.com bookings.
+   *
+   * @param events - The fetched events from Google Calendar
+   * @returns Array of event IDs that have been cancelled or deleted
+   */
+  getCancelledEventIds(events: CalendarSubscriptionEventItem[]): string[] {
+    return events
+      .filter((event) => event.status === "cancelled")
+      .map((event) => event.id);
   }
 
   private async getClient(credential: CalendarCredential) {

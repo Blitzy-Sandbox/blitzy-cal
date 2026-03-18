@@ -14,12 +14,17 @@
  */
 import { prisma } from "@calcom/prisma/__mocks__/prisma";
 import dayjs from "@calcom/dayjs";
+import { getBusyCalendarTimes } from "@calcom/features/calendars/lib/CalendarManager";
 import { getBusyTimesService } from "@calcom/features/di/containers/BusyTimes";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@calcom/prisma", () => ({
   default: prisma,
   prisma,
+}));
+
+vi.mock("@calcom/features/calendars/lib/CalendarManager", () => ({
+  getBusyCalendarTimes: vi.fn().mockResolvedValue({ success: true, data: [] }),
 }));
 
 const startOfTomorrow = dayjs().add(1, "day").startOf("day");
@@ -407,5 +412,124 @@ describe("getBusyTimesForLimitChecks", () => {
 
     expect(busyTimes).toHaveLength(1);
     expect(busyTimes[0].userId).toBeNull();
+  });
+});
+
+/**
+ * CI-004: Tests for configurable status-based conflict detection.
+ *
+ * Verifies that the `statusFilter` parameter is correctly threaded from
+ * `BusyTimesService.getBusyTimes()` through to `getBusyCalendarTimes()` as
+ * the 7th argument. This enables per-user configuration of which calendar
+ * event statuses (Busy, Tentative, Away, WorkingElsewhere, Oof) are treated
+ * as unavailable — matching Calendly's "What's considered unavailable?" behavior.
+ *
+ * Call signature under test (getBusyCalendarTimes):
+ *   arg[0] = credentials          (CredentialForCalendarService[])
+ *   arg[1] = startTime            (string)
+ *   arg[2] = endTime              (string)
+ *   arg[3] = selectedCalendars    (SelectedCalendar[])
+ *   arg[4] = mode                 (CalendarFetchMode | undefined)
+ *   arg[5] = includeTimeZone      (undefined — not used in this path)
+ *   arg[6] = statusFilter         (string[] | undefined)
+ */
+describe("getBusyTimes - statusFilter (CI-004)", () => {
+  /**
+   * Minimal mock credential satisfying the `credentials?.length > 0` guard
+   * in _getBusyTimes (line 250) that gates the `getBusyCalendarTimes` call.
+   * Typed as `any` to avoid importing the full CredentialForCalendarService shape.
+   */
+  const mockCredential = {
+    id: 1,
+    type: "google_calendar",
+    userId: 1,
+    teamId: null,
+    key: {},
+    appId: "google-calendar",
+    invalid: false,
+    delegatedToId: null,
+  } as any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should pass statusFilter to getBusyCalendarTimes when provided", async () => {
+    const busyTimesService = getBusyTimesService();
+    await busyTimesService.getBusyTimes({
+      credentials: [mockCredential],
+      userId: 1,
+      userEmail: "testuser@example.com",
+      username: "testuser",
+      bypassBusyCalendarTimes: false,
+      selectedCalendars: [],
+      startTime: startOfTomorrow.format(),
+      endTime: startOfTomorrow.endOf("day").format(),
+      currentBookings: [],
+      statusFilter: ["Busy", "Tentative", "Away"],
+    });
+
+    expect(getBusyCalendarTimes).toHaveBeenCalledTimes(1);
+
+    const callArgs = vi.mocked(getBusyCalendarTimes).mock.calls[0];
+    // arg[0]: credentials array containing our mock credential
+    expect(callArgs[0]).toEqual([mockCredential]);
+    // arg[1]: startTime
+    expect(callArgs[1]).toBe(startOfTomorrow.format());
+    // arg[2]: endTime
+    expect(callArgs[2]).toBe(startOfTomorrow.endOf("day").format());
+    // arg[3]: selectedCalendars
+    expect(callArgs[3]).toEqual([]);
+    // arg[5]: includeTimeZone — undefined in this code path
+    expect(callArgs[5]).toBeUndefined();
+    // arg[6]: statusFilter — the CI-004 parameter under test
+    expect(callArgs[6]).toEqual(["Busy", "Tentative", "Away"]);
+  });
+
+  it("should use default behavior when statusFilter is undefined", async () => {
+    const busyTimesService = getBusyTimesService();
+    await busyTimesService.getBusyTimes({
+      credentials: [mockCredential],
+      userId: 1,
+      userEmail: "testuser@example.com",
+      username: "testuser",
+      bypassBusyCalendarTimes: false,
+      selectedCalendars: [],
+      startTime: startOfTomorrow.format(),
+      endTime: startOfTomorrow.endOf("day").format(),
+      currentBookings: [],
+    });
+
+    expect(getBusyCalendarTimes).toHaveBeenCalledTimes(1);
+
+    const callArgs = vi.mocked(getBusyCalendarTimes).mock.calls[0];
+    // arg[0]: credentials array
+    expect(callArgs[0]).toEqual([mockCredential]);
+    // arg[6]: statusFilter — should be undefined when not provided
+    expect(callArgs[6]).toBeUndefined();
+  });
+
+  it("should forward multiple status values correctly", async () => {
+    const allStatuses = ["Busy", "Tentative", "Away", "WorkingElsewhere", "Oof"];
+
+    const busyTimesService = getBusyTimesService();
+    await busyTimesService.getBusyTimes({
+      credentials: [mockCredential],
+      userId: 1,
+      userEmail: "testuser@example.com",
+      username: "testuser",
+      bypassBusyCalendarTimes: false,
+      selectedCalendars: [],
+      startTime: startOfTomorrow.format(),
+      endTime: startOfTomorrow.endOf("day").format(),
+      currentBookings: [],
+      statusFilter: allStatuses,
+    });
+
+    expect(getBusyCalendarTimes).toHaveBeenCalledTimes(1);
+
+    const callArgs = vi.mocked(getBusyCalendarTimes).mock.calls[0];
+    // arg[6]: all five status values must be forwarded exactly
+    expect(callArgs[6]).toEqual(["Busy", "Tentative", "Away", "WorkingElsewhere", "Oof"]);
   });
 });

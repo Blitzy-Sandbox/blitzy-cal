@@ -147,6 +147,56 @@ export class Office365CalendarSubscriptionAdapter implements ICalendarSubscripti
     };
   }
 
+  /**
+   * Subscribe to a calendar specifically for cancellation-sync change notifications.
+   * Uses the same Graph subscription mechanism but with a dedicated notification URL
+   * for independent lifecycle management from regular subscriptions.
+   *
+   * Only listens for "updated" (event declined) and "deleted" (event removed) change types,
+   * excluding "created" since cancellation-sync does not need new event notifications.
+   *
+   * Gated behind the 'calendar-cancellation-sync' feature flag.
+   * @see packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts
+   *
+   * @param selectedCalendar - The calendar to subscribe to for cancellation notifications
+   * @param credential - The OAuth2 credential for Microsoft Graph API access
+   * @returns Subscription result with provider, ID, resource, URI, and expiration
+   * @throws Error if webhook configuration is missing (MICROSOFT_WEBHOOK_URL/TOKEN)
+   */
+  async subscribeCancellationSync(
+    selectedCalendar: SelectedCalendar,
+    credential: CalendarCredential
+  ): Promise<CalendarSubscriptionResult> {
+    const cancellationSyncWebhookUrl = this.webhookUrl
+      ? `${this.webhookUrl}/cancellation-sync`
+      : null;
+
+    if (!cancellationSyncWebhookUrl || !this.webhookToken) {
+      throw new Error("Webhook config missing for cancellation sync (MICROSOFT_WEBHOOK_URL/TOKEN)");
+    }
+
+    const expirationDateTime = new Date(Date.now() + this.subscriptionTtlMs).toISOString();
+
+    const body: MicrosoftGraphSubscriptionReq = {
+      resource: `me/calendars/${selectedCalendar.externalId}/events`,
+      changeType: "updated,deleted",
+      notificationUrl: cancellationSyncWebhookUrl,
+      expirationDateTime,
+      clientState: this.webhookToken,
+    };
+
+    const client = await this.getGraphClient(credential);
+    const res = await this.request<MicrosoftGraphSubscriptionRes>(client, "POST", "/subscriptions", body);
+
+    return {
+      provider: "office365_calendar",
+      id: res.id,
+      resourceId: res.resource,
+      resourceUri: `${this.baseUrl}/${res.resource}`,
+      expiration: new Date(res.expirationDateTime),
+    };
+  }
+
   async unsubscribe(selectedCalendar: SelectedCalendar, credential: CalendarCredential): Promise<void> {
     const subId = selectedCalendar.channelResourceId;
     if (!subId) return;
@@ -218,6 +268,24 @@ export class Office365CalendarSubscriptionAdapter implements ICalendarSubscripti
         };
       })
       .filter(({ id }) => !!id);
+  }
+
+  /**
+   * Extracts cancelled or deleted event IDs from a fetch result.
+   * Used by CalendarCancellationSyncService to detect external cancellations
+   * or declines that need to be propagated back to Cal.com bookings.
+   *
+   * For Microsoft Graph, cancelled events have `isCancelled: true` which is
+   * mapped to `status: "cancelled"` by the `parseEvents` method. This includes
+   * events that were explicitly deleted or declined by the organizer/attendee.
+   *
+   * @param events - The normalized CalendarSubscriptionEventItem array from fetchEvents
+   * @returns Array of event IDs that have been cancelled or declined
+   */
+  getCancelledEventIds(events: CalendarSubscriptionEventItem[]): string[] {
+    return events
+      .filter((event) => event.status === "cancelled")
+      .map((event) => event.id);
   }
 
   private async getGraphClient(credential: CalendarCredential): Promise<GraphClient> {

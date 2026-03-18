@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 
 import { ALL_APPS } from "@calcom/app-store/utils";
+import dayjs from "@calcom/dayjs";
 import { getAssignmentReasonCategory } from "@calcom/features/bookings/lib/getAssignmentReasonCategory";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
@@ -272,6 +273,99 @@ export class CalendarEventBuilder {
     }
 
     return builder;
+  }
+
+  /**
+   * Builds a CalendarEvent representing a buffer time period (before or after
+   * a booking) that can be written to external calendars as a separate event
+   * for visual clarity. Buffer events are given a distinctive title pattern
+   * ("Buffer: [Event Title]") and are marked as busy time.
+   *
+   * @param booking - The booking to derive buffer time from
+   * @param bufferType - Whether to build a "before" (pre-event) or "after" (post-event) buffer
+   * @returns A CalendarEvent for the buffer period, or null if no buffer is configured
+   */
+  static buildBufferEvent(
+    booking: BookingForCalEventBuilder,
+    bufferType: "before" | "after"
+  ): CalendarEvent | null {
+    const eventType = booking.eventType;
+    if (!eventType) return null;
+
+    // The booking must have an organizer (user) to construct a valid CalendarEvent
+    // that survives the processEvent → getRichDescription pipeline in CalendarManager,
+    // which accesses calEvent.organizer.language.translate.
+    const user = booking.user;
+    if (!user) return null;
+
+    // Access buffer minutes from the eventType — these are integer fields representing minutes.
+    // The fields may not be present in every BookingForCalEventBuilder select projection,
+    // so we safely cast and default to 0.
+    const eventTypeWithBuffers = eventType as typeof eventType & {
+      beforeEventBuffer?: number;
+      afterEventBuffer?: number;
+    };
+
+    const bufferMinutes =
+      bufferType === "before"
+        ? eventTypeWithBuffers.beforeEventBuffer
+        : eventTypeWithBuffers.afterEventBuffer;
+
+    // No buffer configured or zero-minute buffer — nothing to create
+    if (!bufferMinutes || bufferMinutes <= 0) return null;
+
+    let bufferStart: ReturnType<typeof dayjs>;
+    let bufferEnd: ReturnType<typeof dayjs>;
+
+    if (bufferType === "before") {
+      // Pre-event buffer ends when the booking starts
+      bufferEnd = dayjs(booking.startTime);
+      bufferStart = bufferEnd.subtract(bufferMinutes, "minutes");
+    } else {
+      // Post-event buffer starts when the booking ends
+      bufferStart = dayjs(booking.endTime);
+      bufferEnd = bufferStart.add(bufferMinutes, "minutes");
+    }
+
+    // bookerUrl is required by build() validation — use a non-empty placeholder
+    // since buffer events are auxiliary calendar entries, not bookable links.
+    const builder = new CalendarEventBuilder()
+      .withBasicDetails({
+        bookerUrl: "buffer",
+        title: `Buffer: ${booking.title}`,
+        startTime: bufferStart.toISOString(),
+        endTime: bufferEnd.toISOString(),
+      })
+      .withEventType({
+        slug: eventType.slug,
+        id: eventType.id,
+        description: `Buffer time for ${booking.title}`,
+      });
+
+    // Buffer events require organizer and attendees to survive the CalendarManager
+    // processEvent → getRichDescription pipeline which accesses
+    // calEvent.organizer.language.translate. Without these fields, buffer event
+    // creation crashes with a TypeError at runtime.
+    // We construct a minimal organizer from the booking's user/host data and set
+    // attendees to an empty array since buffer events have no attendees.
+    builder.withOrganizer({
+      id: user.id,
+      name: user.name || "Nameless",
+      email: user.email,
+      username: user.username || undefined,
+      timeZone: user.timeZone,
+      language: {
+        // Use a passthrough translate function for buffer events — buffer event
+        // descriptions are static strings that do not require translation.
+        // The CalendarManager pipeline calls getRichDescription which accesses
+        // organizer.language.translate, so this must be a callable function.
+        translate: ((key: string) => key) as unknown as TFunction,
+        locale: user.locale ?? "en",
+      },
+    });
+    builder.withAttendees([]);
+
+    return builder.build();
   }
 
   withBasicDetails({

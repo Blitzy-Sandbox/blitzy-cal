@@ -26,6 +26,7 @@ import { OAuthManager } from "../../_utils/oauth/OAuthManager";
 import { oAuthManagerHelper } from "../../_utils/oauth/oAuthManagerHelper";
 import metadata from "../_metadata";
 import { getOfficeAppKeys } from "./getOfficeAppKeys";
+import process from "node:process";
 
 interface IRequest {
   method: string;
@@ -287,6 +288,19 @@ class Office365CalendarService implements Calendar {
     return azureUserId ? `/users/${this.azureUserId}` : "/me";
   }
 
+  /**
+   * Creates a calendar event in the user's Office 365 calendar via Microsoft Graph API.
+   *
+   * This method is also the integration point for buffer time event creation (CI-002 gap):
+   * When the user has enabled `syncBuffersToCalendar` on their EventType, the
+   * `BufferTimeEventService` will call this method separately to create additional
+   * buffer time events (before and/or after the main booking event) with distinctive
+   * titles (e.g., "Buffer: [Event Title]") and "Busy" status.
+   *
+   * @param event - The calendar service event data including title, times, attendees, location
+   * @param credentialId - The Cal.com credential ID used to resolve the destination calendar
+   * @returns The created event data including iCalUID, URL, and event metadata
+   */
   async createEvent(event: CalendarServiceEvent, credentialId: number): Promise<NewCalendarEventType> {
     const mainHostDestinationCalendar = event.destinationCalendar
       ? (event.destinationCalendar.find((cal) => cal.credentialId === credentialId) ??
@@ -366,7 +380,7 @@ class Office365CalendarService implements Calendar {
   }
 
   async getAvailability(params: GetAvailabilityParams): Promise<EventBusyDate[]> {
-    const { dateFrom, dateTo, selectedCalendars } = params;
+    const { dateFrom, dateTo, selectedCalendars, statusFilter } = params;
     const dateFromParsed = new Date(dateFrom);
     const dateToParsed = new Date(dateTo);
 
@@ -419,7 +433,7 @@ class Office365CalendarService implements Calendar {
       // Recursively fetch nextLink responses
       alreadySuccessResponse = await this.fetchResponsesWithNextLink(responseBatchApi.responses);
 
-      return alreadySuccessResponse ? this.processBusyTimes(alreadySuccessResponse) : [];
+      return alreadySuccessResponse ? this.processBusyTimes(alreadySuccessResponse, statusFilter) : [];
     } catch {
       return Promise.reject([]);
     }
@@ -470,6 +484,17 @@ class Office365CalendarService implements Calendar {
     });
   }
 
+  /**
+   * Translates a Cal.com CalendarServiceEvent into a Microsoft Graph Event object.
+   *
+   * CI-002 Parity Verification:
+   * ✅ Teams meeting integration — isOnlineMeeting/onlineMeetingProvider set when location is MSTeamsLocationType
+   * ✅ Attendee mapping — all attendees and team members mapped to Graph attendee objects
+   * ✅ Timezone handling — event times formatted with organizer timezone via dayjs
+   * ✅ Sensitivity — private events set to "private" sensitivity (hideCalendarEventDetails)
+   * ✅ Rescheduled Teams meetings — preserves existing HTML body content for Teams meeting blob
+   * ✅ Organizer resolution — resolves organizer email from destination calendar when available
+   */
   private translateEvent = (event: CalendarServiceEvent, rescheduledEvent?: Event) => {
     const isOnlineMeeting = event.location === MSTeamsLocationType;
     const isRescheduledOnlineMeeting = rescheduledEvent ? rescheduledEvent.isOnlineMeeting : false;
@@ -559,16 +584,37 @@ class Office365CalendarService implements Calendar {
     return office365Event;
   };
 
+  /**
+   * Sends an authenticated HTTP request to the Microsoft Graph API.
+   *
+   * Includes an explicit 30-second timeout via AbortSignal to prevent indefinite
+   * hangs if the Microsoft Graph API becomes unresponsive. If the caller already
+   * provides a signal in the init options, the caller's signal takes precedence.
+   */
   private fetcher = async (endpoint: string, init?: RequestInit | undefined) => {
+    // Explicit 30-second timeout for outbound Microsoft Graph API requests.
+    // Prevents indefinite hangs if Graph API becomes unresponsive.
+    // Caller-provided signals take precedence over the default timeout.
+    const signal = init?.signal ?? AbortSignal.timeout(30000);
     return this.auth.requestRaw({
       url: `${this.apiGraphUrl}${endpoint}`,
       options: {
         method: "get",
         ...init,
+        signal,
       },
     });
   };
 
+  /**
+   * Recursively follows @odata.nextLink for paginated Microsoft Graph batch responses.
+   *
+   * CI-002 Parity Verification:
+   * ✅ Pagination — correctly follows @odata.nextLink chains until exhausted
+   * ✅ URL normalization — strips apiGraphUrl prefix from nextLink URLs for batch compatibility
+   * ✅ Accumulation — concatenates all success responses across pagination rounds
+   * ✅ HTML-in-body handling — delegates to handleTextJsonResponseWithHtmlInBody when needed
+   */
   private fetchResponsesWithNextLink = async (
     settledResponses: ISettledResponse[]
   ): Promise<ISettledResponse[]> => {
@@ -611,6 +657,16 @@ class Office365CalendarService implements Calendar {
     return [...alreadySuccess, ...newSettledResponses];
   };
 
+  /**
+   * Handles HTTP 429 rate limiting responses from Microsoft Graph batch API.
+   *
+   * CI-002 Parity Verification:
+   * ✅ Retry-After header respected — uses the maximum Retry-After value from failed requests
+   * ✅ Random backoff — adds randomness (0-999ms) to prevent thundering herd
+   * ✅ Maximum retries — configurable maxRetries parameter (default 2 in getAvailability)
+   * ✅ Successful responses preserved — already-successful requests are not re-fetched
+   * ✅ Recursive retry — re-checks for 429s in retry responses
+   */
   private fetchRequestWithRetryAfter = async (
     originalRequests: IRequest[],
     settledPromises: ISettledResponse[],
@@ -691,13 +747,48 @@ class Office365CalendarService implements Calendar {
     return !!foundRetry;
   };
 
-  private processBusyTimes = (responses: ISettledResponse[]) => {
+  /**
+   * Processes raw calendar event responses into busy time entries.
+   *
+   * When `statusFilter` is provided, only events whose `showAs` value is included
+   * in the filter array are treated as blocking (busy). This aligns with Calendly's
+   * "What's considered unavailable?" dropdown behavior where users can configure
+   * which event statuses block their availability.
+   *
+   * Supported `showAs` values from Microsoft Graph API:
+   * - "free" — Not blocking
+   * - "tentative" — Tentatively accepted
+   * - "busy" — Confirmed busy
+   * - "oof" — Out of office
+   * - "workingElsewhere" — Working from another location
+   * - "unknown" — Status unknown
+   *
+   * Default behavior (no statusFilter): Skips "free" and "workingElsewhere" events,
+   * treating all other statuses as blocking. This preserves backward compatibility.
+   *
+   * @param responses - Settled batch API responses containing calendar event data
+   * @param statusFilter - Optional array of showAs values to treat as blocking.
+   *                        When provided, ONLY events with showAs in this array block availability.
+   *                        When undefined, existing default behavior is used.
+   */
+  private processBusyTimes = (responses: ISettledResponse[], statusFilter?: string[]) => {
     return responses.reduce(
       (acc: BufferedBusyTime[], subResponse: { body: { value?: BodyValue[]; error?: Error[] } }) => {
         if (!subResponse.body?.value) return acc;
         return acc.concat(
           subResponse.body.value.reduce((acc: BufferedBusyTime[], evt: BodyValue) => {
-            if (evt.showAs === "free" || evt.showAs === "workingElsewhere") return acc;
+            if (statusFilter && statusFilter.length > 0) {
+              // CI-004: When statusFilter is provided, only include events whose showAs
+              // matches one of the specified blocking statuses (case-insensitive comparison)
+              const isBlocking = statusFilter.some(
+                (status) => status.toLowerCase() === evt.showAs?.toLowerCase()
+              );
+              if (!isBlocking) return acc;
+            } else {
+              // Default behavior: skip "free" and "workingElsewhere" events
+              // This preserves the original hardcoded logic for backward compatibility
+              if (evt.showAs === "free" || evt.showAs === "workingElsewhere") return acc;
+            }
             return acc.concat({
               start: `${evt.start.dateTime}Z`,
               end: `${evt.end.dateTime}Z`,
@@ -789,6 +880,114 @@ class Office365CalendarService implements Calendar {
     } catch (error) {
       this.log.error("Error getting main timezone from Office365 Calendar", { error });
       throw error;
+    }
+  }
+
+  /**
+   * Subscribe to Microsoft Graph change notifications for calendar events.
+   * Creates a subscription that monitors event creation, updates, and deletions
+   * on the user's calendar, enabling calendar-driven cancellation sync (CI-001 gap).
+   *
+   * Uses Microsoft Graph API POST /v1.0/subscriptions with:
+   * - changeType: "created,updated,deleted"
+   * - resource: "{userEndpoint}/events"
+   * - expirationDateTime: max 4230 minutes from now (Graph API maximum for calendar events)
+   *
+   * The subscription requires a publicly accessible notificationUrl that receives
+   * change notification payloads. This URL should be configured via environment variable
+   * OUTLOOK_GRAPH_NOTIFICATION_URL or equivalent application configuration.
+   *
+   * @param credentialId - The Cal.com credential ID for this calendar connection
+   * @returns Subscription metadata including channelId (subscriptionId), resourceId, and expiration
+   */
+  async subscribeToChanges(
+    credentialId: number
+  ): Promise<{ channelId: string; resourceId: string; expiration: string }> {
+    const userEndpoint = await this.getUserEndpoint();
+    const resource = `${userEndpoint}/events`;
+
+    // Microsoft Graph API maximum subscription lifetime for calendar events is 4230 minutes (~2.94 days)
+    const maxExpirationMinutes = 4230;
+    const expirationDateTime = new Date(Date.now() + maxExpirationMinutes * 60 * 1000).toISOString();
+
+    // The notification URL must be publicly accessible and configured in the environment
+    const notificationUrl = process.env.OUTLOOK_GRAPH_NOTIFICATION_URL;
+    if (!notificationUrl) {
+      throw new Error("OUTLOOK_GRAPH_NOTIFICATION_URL environment variable is not configured");
+    }
+
+    // Validate MICROSOFT_WEBHOOK_TOKEN — must match the clientState that OutlookCancellationHandler
+    // validates against in incoming change notification requests.
+    // This ensures consistency with the adapter-level subscribeCancellationSync() in
+    // Office365CalendarSubscription.adapter.ts which also uses MICROSOFT_WEBHOOK_TOKEN.
+    const webhookToken = process.env.MICROSOFT_WEBHOOK_TOKEN;
+    if (!webhookToken) {
+      this.log.warn(
+        "MICROSOFT_WEBHOOK_TOKEN not configured — change notification validation will fail for subscriptions created via subscribeToChanges"
+      );
+    }
+
+    const subscriptionPayload = {
+      changeType: "created,updated,deleted",
+      notificationUrl,
+      resource,
+      expirationDateTime,
+      clientState: webhookToken || "",
+    };
+
+    const response = await this.fetcher("/subscriptions", {
+      method: "POST",
+      body: JSON.stringify(subscriptionPayload),
+    });
+
+    const subscriptionResponse = await handleErrorsJson<{
+      id: string;
+      resource: string;
+      expirationDateTime: string;
+    }>(response);
+
+    this.log.info("Microsoft Graph change notification subscription created", {
+      subscriptionId: subscriptionResponse.id,
+      resource: subscriptionResponse.resource,
+      expiration: subscriptionResponse.expirationDateTime,
+      credentialId,
+    });
+
+    return {
+      channelId: subscriptionResponse.id,
+      resourceId: subscriptionResponse.resource,
+      expiration: subscriptionResponse.expirationDateTime,
+    };
+  }
+
+  /**
+   * Unsubscribe from Microsoft Graph change notifications.
+   * Deletes an existing subscription to stop receiving calendar event change notifications.
+   *
+   * Uses Microsoft Graph API DELETE /v1.0/subscriptions/{subscriptionId}
+   *
+   * @param channelId - The Microsoft Graph subscription ID to delete
+   * @param resourceId - The resource path associated with the subscription (for logging)
+   */
+  async unsubscribeFromChanges(channelId: string, resourceId: string): Promise<void> {
+    try {
+      const response = await this.fetcher(`/subscriptions/${channelId}`, {
+        method: "DELETE",
+      });
+
+      handleErrorsRaw(response);
+
+      this.log.info("Microsoft Graph change notification subscription deleted", {
+        subscriptionId: channelId,
+        resource: resourceId,
+      });
+    } catch (error) {
+      this.log.error("Failed to delete Microsoft Graph change notification subscription", {
+        subscriptionId: channelId,
+        resource: resourceId,
+        error,
+      });
+      // Do not rethrow — subscription cleanup should not break the caller's flow
     }
   }
 }

@@ -26,6 +26,9 @@ import type { CredentialForCalendarService, CredentialPayload } from "@calcom/ty
 import type { EventResult } from "@calcom/types/EventManager";
 import { sortBy } from "lodash";
 
+// Calendar-driven cancellation sync (CI-001 gap) is handled by:
+// packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts
+
 const log = logger.getSubLogger({ prefix: ["CalendarManager"] });
 
 /**
@@ -82,6 +85,14 @@ export const cleanIntegrationKeys = (appIntegration: IntegrationWithCredentials)
   return rest;
 };
 
+/**
+ * Get calendar credentials for the given credentials.
+ * Each credential is paired with its integration metadata and a lazy calendar factory.
+ *
+ * Note: For cancellation-sync (CI-001 gap), credentials with `externalCancellationSyncEnabled`
+ * may require additional subscription lifecycle management. The CalendarCancellationSyncService
+ * handles this separately.
+ */
 export const getCalendarCredentials = (credentials: Array<CredentialForCalendarService>) => {
   const calendarCredentials = getApps(credentials, true)
     .filter((app) => app.type.endsWith("_calendar"))
@@ -307,7 +318,8 @@ export const getBusyCalendarTimes = async (
   dateTo: string,
   selectedCalendars: SelectedCalendar[],
   mode?: CalendarFetchMode,
-  includeTimeZone?: boolean
+  includeTimeZone?: boolean,
+  statusFilter?: string[] // CI-004: configurable status-based conflict detection
 ) => {
   let results: (EventBusyDate & { timeZone?: string })[][] = [];
 
@@ -325,6 +337,10 @@ export const getBusyCalendarTimes = async (
     );
   }
 
+  if (statusFilter?.length) {
+    log.info("Applying status filter for conflict detection", { statusFilter });
+  }
+
   // const months = getMonths(dateFrom, dateTo);
   // Subtract 11 hours from the start date to avoid problems in UTC- time zones.
   const startDate = dayjs(dateFrom).subtract(11, "hours").format();
@@ -336,7 +352,8 @@ export const getBusyCalendarTimes = async (
         deduplicatedCredentials,
         startDate,
         endDate,
-        selectedCalendars
+        selectedCalendars,
+        statusFilter
       );
     } else {
       results = await getCalendarsEvents(
@@ -344,7 +361,8 @@ export const getBusyCalendarTimes = async (
         startDate,
         endDate,
         selectedCalendars,
-        mode ?? "slots"
+        mode ?? "slots",
+        statusFilter
       );
     }
   } catch (e) {
@@ -357,6 +375,15 @@ export const getBusyCalendarTimes = async (
   return { success: true, data: results.reduce((acc, availability) => acc.concat(availability), []) };
 };
 
+/**
+ * Creates a calendar event via the appropriate adapter.
+ *
+ * Note: Buffer time events (CI-002 gap) are created separately by BufferTimeEventService
+ * after the main event creation succeeds. BufferTimeEventService calls this same createEvent
+ * function for each buffer event (before/after), gated behind the 'calendar-buffer-sync'
+ * feature flag and the EventType's syncBuffersToCalendar toggle.
+ * See: packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts
+ */
 export const createEvent = async (
   credential: CredentialForCalendarService,
   originalEvent: CalendarEvent,

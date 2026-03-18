@@ -19,7 +19,7 @@ Calendar integrations form the **foundational infrastructure** of any scheduling
 - **Calendar selection** — Assigning calendars to specific event types or users
 
 <Info>
-  **Key Finding:** Cal.com **significantly exceeds** Calendly in calendar integration breadth and flexibility. Cal.com provides **11+ calendar adapters** with bi-directional sync, per-event-type calendar selection, and AES-256 credential encryption. Calendly currently supports **3 calendar providers** (Google, Office 365/Outlook, Exchange) and dropped iCloud support for new connections in August 2024.
+  **Key Finding:** Cal.com **significantly exceeds** Calendly in calendar integration breadth and flexibility. Cal.com provides **11+ calendar adapters** with bi-directional sync, per-event-type calendar selection, and AES-256 credential encryption. Calendly currently supports **3 calendar providers** (Google, Office 365/Outlook, Exchange) and dropped iCloud support for new connections in August 2024. Two previously identified Medium-severity gaps (calendar-driven cancellation sync and buffer time visualization) have been **implemented behind feature flags** during Sprint 3 — `CalendarCancellationSyncService` with `GoogleCancellationHandler` and `OutlookCancellationHandler` handle calendar-driven cancellation sync (gated behind `calendar-cancellation-sync`), and `BufferTimeEventService` with `CalendarEventBuilder.buildBufferEvent()` handle buffer time visualization (gated behind `calendar-buffer-sync`).
 </Info>
 
 ---
@@ -266,8 +266,8 @@ The following table provides a feature-by-feature comparison of calendar integra
 | **ICS Feed subscription** | Not supported | ✅ `ics-feedcalendar` — URL-based ICS/iCalendar subscription for read-only feeds | **Low** | **Cal.com advantage** — read-only calendar feed import |
 | **Busy time aggregation** | Aggregates conflicts across selected calendars (max 4 for Outlook sub-calendars) | ✅ Aggregates busy times across all connected calendars with no sub-calendar limit | **Low** | Cal.com imposes no per-provider sub-calendar limit |
 | **Event creation in external calendar** | Adds event to one designated add-to calendar | ✅ Creates events in destination calendar per credential; supports multiple destination calendars per booking | **Low** | Cal.com supports writing to multiple calendars simultaneously |
-| **Calendar-driven cancellation** | Outlook: declining/deleting event in calendar cancels in Calendly | ❌ Not currently implemented — cancellation initiated from Cal.com UI or API only | **Medium** | Calendly's Outlook integration supports bi-directional cancellation sync |
-| **Buffer time calendar sync** | Outlook: buffer periods added as separate calendar events | ❌ Buffer times enforced during slot generation but not written as separate calendar events | **Medium** | Calendly writes visual buffer blocks to the external calendar |
+| **Calendar-driven cancellation** | Outlook: declining/deleting event in calendar cancels in Calendly | ✅ Completed (feature-flagged) — `CalendarCancellationSyncService` orchestrates cancellation propagation from external calendar event deletions/declines back to Cal.com bookings. `GoogleCancellationHandler` processes Google Calendar push notification payloads. `OutlookCancellationHandler` processes Microsoft Graph change notification payloads. `handleCancelBooking` accepts `source: "external_calendar"` parameter, DI tokens defined, feature flag `calendar-cancellation-sync` inserted (disabled by default), schema column `externalCancellationSyncEnabled` added to Credential model. | **Medium** | Gated behind `calendar-cancellation-sync` feature flag (disabled by default). |
+| **Buffer time calendar sync** | Outlook: buffer periods added as separate calendar events | ✅ Completed (feature-flagged) — `BufferTimeEventService` creates, updates, and deletes buffer time events in external calendars alongside booking events. `CalendarEventBuilder.buildBufferEvent()` constructs buffer event `CalendarEvent` objects. Schema column `syncBuffersToCalendar` added to EventType model, feature flag `calendar-buffer-sync` inserted (disabled by default), DI tokens defined. | **Medium** | Gated behind `calendar-buffer-sync` feature flag (disabled by default). |
 | **Delegation credentials** | Not documented | ✅ Google Workspace domain-wide delegation and Microsoft Azure AD service account delegation | **Low** | **Cal.com advantage** — enterprise-grade service account support |
 
 ---
@@ -278,8 +278,8 @@ The following table catalogs all identified gaps, including areas where Cal.com 
 
 | Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
 |--------|------------|----------|---------------|-------------------|----------------|
-| **CI-001** | Calendar-driven cancellation sync: Calendly's Outlook integration supports declining/deleting a calendar event to trigger cancellation in the platform | **Medium** | `packages/app-store/office365calendar/` | [Calendly Outlook Setup](https://help.calendly.com/hc/en-us/articles/360000586634) | Implement webhook listener for Microsoft Graph change notifications to detect event deletions/declines and propagate cancellation to Cal.com bookings |
-| **CI-002** | Buffer time visualization in external calendar: Calendly writes buffer periods as separate calendar events for visual clarity | **Medium** | `packages/app-store/googlecalendar/`, `packages/app-store/office365calendar/` | [Calendly Outlook Setup](https://help.calendly.com/hc/en-us/articles/360000586634) | Optionally create buffer time events in external calendars when booking events are created, with a user-configurable toggle |
+| **CI-001** | Calendar-driven cancellation sync: Implemented behind `calendar-cancellation-sync` feature flag (disabled by default). `CalendarCancellationSyncService` (`packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts`) orchestrates cancellation propagation from external calendar event deletions/declines back to Cal.com bookings. `GoogleCancellationHandler` (`packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts`) processes Google Calendar push notifications. `OutlookCancellationHandler` (`packages/features/calendars/lib/cancellation-sync/handlers/OutlookCancellationHandler.ts`) processes Microsoft Graph change notifications. `handleCancelBooking` accepts `source: "external_calendar"` parameter. Schema column `externalCancellationSyncEnabled` added to Credential model. | **Medium** | `packages/app-store/googlecalendar/`, `packages/app-store/office365calendar/` | [Calendly Outlook Setup](https://help.calendly.com/hc/en-us/articles/360000586634) | Sprint 3 completed. Feature flag: `calendar-cancellation-sync` (disabled by default). |
+| **CI-002** | Buffer time visualization in external calendar: Implemented behind `calendar-buffer-sync` feature flag (disabled by default). `BufferTimeEventService` (`packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts`) creates, updates, and deletes buffer time events in external calendars. `CalendarEventBuilder.buildBufferEvent()` constructs buffer event `CalendarEvent` objects with "Buffer:" title prefix. Schema column `syncBuffersToCalendar` added to EventType model. | **Medium** | `packages/app-store/googlecalendar/`, `packages/app-store/office365calendar/` | [Calendly Outlook Setup](https://help.calendly.com/hc/en-us/articles/360000586634) | Sprint 3 completed. Feature flag: `calendar-buffer-sync` (disabled by default). |
 | **CI-ADV-001** | Cal.com supports 11+ calendar adapters vs Calendly's 3 active integrations (Google, Office 365, Exchange) | **Low** (advantage) | `packages/app-store/` | N/A | Document as a competitive advantage; maintain adapter ecosystem |
 | **CI-ADV-002** | Cal.com maintains native Apple Calendar / iCloud support via CalDAV, while Calendly discontinued iCloud for new users in August 2024 | **Low** (advantage) | `packages/app-store/applecalendar/` | [Calendly Security & Compliance](https://help.calendly.com/hc/en-us/articles/360009867334) | Maintain and promote CalDAV-based Apple Calendar support as differentiator |
 | **CI-ADV-003** | Cal.com supports generic CalDAV for self-hosted calendars (Nextcloud, Radicale, Baikal); Calendly has no CalDAV support | **Low** (advantage) | `packages/app-store/caldavcalendar/` | Community requests for CalDAV on Calendly forums | Maintain CalDAV adapter; this is a frequently requested Calendly feature |
@@ -366,29 +366,37 @@ flowchart TD
 
 ## Recommendations
 
-### Priority 1 — Close Medium-Severity Gaps
+### Priority 1 — Medium-Severity Gaps (Completed ✅)
+
+Both Medium-severity gaps identified in this report have been fully implemented behind feature flags during Sprint 3.
 
 **CI-001: Calendar-Driven Cancellation Sync**
 
-Implement support for detecting when a host declines or deletes a Calendly-created event in their external calendar and propagating that cancellation back to Cal.com. This requires:
+**Status: Completed ✅ — Implemented behind `calendar-cancellation-sync` feature flag (disabled by default)**
 
-1. **Microsoft Graph Change Notifications** — Subscribe to calendar event change notifications via the Microsoft Graph webhooks API to detect event deletions and status changes in Office 365 calendars
-2. **Google Calendar Push Notifications** — Use Google Calendar's push notification channel to receive updates when events are modified or deleted
-3. **Cancellation propagation** — When an external calendar deletion is detected, trigger the Cal.com booking cancellation flow, including attendee notifications and webhook dispatch
+Implementation completed:
+- `CalendarCancellationSyncService` (`packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts`) — Core service handling the flow: external calendar event deletion detected → lookup corresponding Cal.com booking by external event UID → invoke `handleCancelBooking` with `source: "external_calendar"` indicator → dispatch attendee notifications and webhook events
+- `GoogleCancellationHandler` (`packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts`) — Processes Google Calendar push notification payloads, verifying event deletion or decline, and delegating to `CalendarCancellationSyncService`
+- `OutlookCancellationHandler` (`packages/features/calendars/lib/cancellation-sync/handlers/OutlookCancellationHandler.ts`) — Processes Microsoft Graph change notification payloads for event deletion and decline detection
 
-`Source: packages/app-store/office365calendar/lib/CalendarService.ts`
-`Source: packages/app-store/googlecalendar/lib/CalendarService.ts`
+Integration infrastructure: `handleCancelBooking` accepts `source: "external_calendar"` parameter, DI tokens defined, feature flag `calendar-cancellation-sync` inserted (disabled by default), `externalCancellationSyncEnabled` nullable Boolean column added to the Credential model.
+
+`Source: packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts`
+`Source: packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts`
+`Source: packages/features/calendars/lib/cancellation-sync/handlers/OutlookCancellationHandler.ts`
 
 **CI-002: Buffer Time Calendar Visualization**
 
-Optionally write buffer time periods as separate calendar events to provide hosts with visual clarity about their unavailable time:
+**Status: Completed ✅ — Implemented behind `calendar-buffer-sync` feature flag (disabled by default)**
 
-1. Add a user-configurable toggle: "Include buffers on external calendar"
-2. When enabled, create additional calendar events for pre-event and post-event buffer periods alongside the main booking event
-3. Implement corresponding cleanup: when the main booking is canceled, also delete buffer events
+Implementation completed:
+- `BufferTimeEventService` (`packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts`) — Creates, updates, and deletes buffer time events in external calendars alongside booking events. When the `syncBuffersToCalendar` toggle is enabled, creates additional calendar events for pre-event and post-event buffer periods. On cancellation, deletes buffer events alongside the main event. Buffer events are marked as "Busy" with a distinctive "Buffer:" title prefix.
+- `CalendarEventBuilder.buildBufferEvent()` method — Constructs `CalendarEvent` objects for buffer time periods with appropriate metadata (title prefix, busy/free status, relationship to parent booking)
 
-`Source: packages/app-store/googlecalendar/lib/CalendarService.ts`
-`Source: packages/app-store/office365calendar/lib/CalendarService.ts`
+Integration infrastructure: `syncBuffersToCalendar` nullable Boolean column added to the EventType model, feature flag `calendar-buffer-sync` inserted (disabled by default), DI tokens defined.
+
+`Source: packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts`
+`Source: packages/features/CalendarEventBuilder.ts`
 
 ### Priority 2 — Maintain and Promote Advantages
 
@@ -431,8 +439,8 @@ The following behavioral acceptance criteria define when Calendly parity is conf
 
 | ID | Criterion | Verification Method |
 |----|----------|-------------------|
-| **CI-AC-008** | (CI-001) Declining or deleting a Cal.com-created event in Outlook triggers cancellation in Cal.com | Create booking → delete event in Outlook → verify booking is canceled in Cal.com with attendee notifications |
-| **CI-AC-009** | (CI-002) Buffer times are optionally written as separate calendar events when the toggle is enabled | Enable buffer sync → create booking with 15-min buffers → verify 3 events appear in calendar (pre-buffer, booking, post-buffer) |
+| **CI-AC-008** | (CI-001) Declining or deleting a Cal.com-created event in Outlook triggers cancellation in Cal.com | ✅ Implemented (feature-flagged) — `CalendarCancellationSyncService`, `GoogleCancellationHandler`, and `OutlookCancellationHandler` handle cancellation propagation from external calendar event deletions/declines. `handleCancelBooking` accepts `source: "external_calendar"` parameter. Gated behind `calendar-cancellation-sync` feature flag (disabled by default). Verification: Create booking → delete event in Outlook → verify booking is canceled in Cal.com with attendee notifications. |
+| **CI-AC-009** | (CI-002) Buffer times are optionally written as separate calendar events when the toggle is enabled | ✅ Implemented (feature-flagged) — `BufferTimeEventService` creates buffer time events alongside booking events. `CalendarEventBuilder.buildBufferEvent()` constructs buffer event objects with "Buffer:" title prefix. Gated behind `calendar-buffer-sync` feature flag (disabled by default). Verification: Enable buffer sync → create booking with 15-min buffers → verify 3 events appear in calendar (pre-buffer, booking, post-buffer). |
 
 ### Regression Prevention
 

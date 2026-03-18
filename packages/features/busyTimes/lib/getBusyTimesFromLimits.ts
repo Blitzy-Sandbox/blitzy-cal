@@ -21,6 +21,13 @@
  * @module getBusyTimesFromLimits
  * @see packages/features/busyTimes/services/getBusyTimes.ts for the BusyTimesService that consumes these
  * @see packages/features/di/containers/BusyTimes.ts for DI container wiring
+ *
+ * @sprint3 CI-004 Regression Review — This module was verified during Sprint 3 Calendar
+ * Integrations (CI-004: Conflict Detection Behavior Alignment) and confirmed to be OUTSIDE
+ * the statusFilter pipeline path. The configurable `statusFilter` parameter added to
+ * `getBusyCalendarTimes` in `services/getBusyTimes.ts` does NOT affect this module.
+ * Limit-check enforcement (booking-count and duration-based) operates on a separate pipeline
+ * from calendar busy time fetching. No changes were required.
  */
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";

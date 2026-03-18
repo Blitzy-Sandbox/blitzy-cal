@@ -146,16 +146,18 @@ Cal.com implements a pluggable calendar adapter architecture through `packages/a
 `Source: packages/app-store/office365calendar/lib/CalendarService.ts`
 `Source: packages/app-store/applecalendar/lib/CalendarService.ts`
 
-| Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package |
-|---------|-------|----------|------------|-------------|----------------|
-| **CI-001** | Google Calendar sync behavioral parity | Medium | M | AV-001 | `packages/app-store/googlecalendar/` |
-| **CI-002** | Outlook/Office 365 sync behavioral parity | Medium | M | AV-001 | `packages/app-store/office365calendar/` |
-| **CI-003** | iCloud/Apple Calendar sync parity | Medium | M | AV-001 | `packages/app-store/applecalendar/` |
-| **CI-004** | Conflict detection behavior alignment | High | L | CI-001, CI-002, CI-003 | `packages/features/calendars/` |
-| **CI-005** | Bi-directional sync verification | High | L | CI-001, CI-002 | `packages/features/calendars/` |
+| Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
+|---------|-------|----------|------------|-------------|----------------|--------|
+| **CI-001** | Google Calendar sync behavioral parity | Medium | M | AV-001 | `packages/app-store/googlecalendar/` | ✅ Completed |
+| **CI-002** | Outlook/Office 365 sync behavioral parity | Medium | M | AV-001 | `packages/app-store/office365calendar/` | ✅ Completed |
+| **CI-003** | iCloud/Apple Calendar sync parity | Medium | M | AV-001 | `packages/app-store/applecalendar/` | ✅ Completed |
+| **CI-004** | Conflict detection behavior alignment | High | L | CI-001, CI-002, CI-003 | `packages/features/calendars/` | ✅ Completed |
+| **CI-005** | Bi-directional sync verification | High | L | CI-001, CI-002 | `packages/features/calendars/` | ✅ Completed |
 
 <Info>
   **Cal.com Advantages:** Cal.com provides **11+ calendar adapters** vs. Calendly's **3 native integrations** (Google, Outlook, iCloud). Additional adapters include CalDAV, Exchange 2013/2016, Lark, Feishu, Zoho, and ICS Feed. Cal.com also provides **AES-256 credential encryption** for all stored OAuth tokens and calendar credentials, per-event-type calendar selection, and multi-calendar busy time aggregation.
+
+  All Calendar Integration epics CI-001 through CI-005 have been completed in Sprint 3. CI-005 (Bi-directional sync verification) is verified via `packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts` (844 lines) covering create, reschedule, and cancel flows for Google and Outlook adapters. Two additional gap closures have been implemented behind feature flags: calendar-driven cancellation sync (`CalendarCancellationSyncService`, `GoogleCancellationHandler`, `OutlookCancellationHandler` — gated behind `calendar-cancellation-sync`) and buffer time visualization (`BufferTimeEventService`, `CalendarEventBuilder.buildBufferEvent()` — gated behind `calendar-buffer-sync`). Gate 3 validation is complete.
 </Info>
 
 </Accordion>
@@ -435,6 +437,10 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 | Notifications | 5 | 0 | 3 | 2 | 0 |
 | **Total** | **40** | **0** | **11** | **24** | **5** |
 
+<Note>
+  **Sprint 3 Complete:** All Calendar Integration epics CI-001 through CI-005 have been completed. CI-005 (Bi-directional Sync) is verified via `bidirectionalSync.integration.test.ts` (844 lines). Two gap closures (calendar-driven cancellation sync and buffer time visualization) are implemented behind feature flags. Gate 3 validation is complete — all five validation dimensions passed.
+</Note>
+
 ### Priority Distribution
 
 - **Critical (0 epics):** No blocking gaps exist — Cal.com does not completely lack any core Calendly capability.
@@ -449,6 +455,10 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 ---
 
 ## Next Steps
+
+<Info>
+  **Sprint 3 Status:** All Calendar Integration epics CI-001 through CI-005 are complete. Gap closure services (calendar-driven cancellation sync and buffer time visualization) are implemented behind feature flags. Gate 3 validation is complete — all five validation dimensions have been verified. Sprint 4 (Webhooks & Events) is unblocked.
+</Info>
 
 1. **Sprint Planning**: Use the [Sprint Roadmap Overview](/sprint-roadmap/overview) to understand how these epics are sequenced into sprints based on their dependency relationships and priority classifications.
 2. **Validation**: Refer to the [Validation Criteria](/sprint-roadmap/validation-criteria) for the behavioral acceptance criteria that each epic must satisfy before its sprint gate can be cleared.

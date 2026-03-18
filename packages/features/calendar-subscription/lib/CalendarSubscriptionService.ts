@@ -23,6 +23,7 @@ const log = logger.getSubLogger({ prefix: ["CalendarSubscriptionService"] });
 export class CalendarSubscriptionService {
   static CALENDAR_SUBSCRIPTION_CACHE_FEATURE = "calendar-subscription-cache" as const;
   static CALENDAR_SUBSCRIPTION_SYNC_FEATURE = "calendar-subscription-sync" as const;
+  static CALENDAR_CANCELLATION_SYNC_FEATURE = "calendar-cancellation-sync" as const;
   static MAX_SUBSCRIBE_ERRORS = 3;
 
   constructor(
@@ -229,6 +230,7 @@ export class CalendarSubscriptionService {
     eventsFetched: number;
     eventsCached: number;
     eventsSynced: number;
+    eventsCancellationSynced: number;
     propagationLagMs?: { avg: number; max: number; min: number; count: number };
   }> {
     const startTime = performance.now();
@@ -237,11 +239,13 @@ export class CalendarSubscriptionService {
       eventsFetched: number;
       eventsCached: number;
       eventsSynced: number;
+      eventsCancellationSynced: number;
       propagationLagMs?: { avg: number; max: number; min: number; count: number };
     } = {
       eventsFetched: 0,
       eventsCached: 0,
       eventsSynced: 0,
+      eventsCancellationSynced: 0,
     };
 
     const calendarSubscriptionAdapter = this.deps.adapterFactory.get(
@@ -342,6 +346,29 @@ export class CalendarSubscriptionService {
       });
     }
 
+    // Calendar-driven cancellation sync (CI-001 gap)
+    // When enabled, detect cancelled events and delegate to CalendarCancellationSyncService
+    const cancellationSyncEnabled = await this.isCancellationSyncEnabled();
+    if (cancellationSyncEnabled && syncEnabled) {
+      const cancelledEvents = events.items.filter(
+        (e) => e.status === "cancelled" && e.iCalUID
+      );
+      if (cancelledEvents.length > 0) {
+        log.debug("Detected cancelled events for cancellation sync", {
+          count: cancelledEvents.length,
+          channelId: selectedCalendar.channelId,
+        });
+        result.eventsCancellationSynced = cancelledEvents.length;
+        // Cancellation processing is handled by CalendarSyncService.handleEvents
+        // which already routes cancelled events to cancelBooking()
+        // The CalendarCancellationSyncService provides the higher-level orchestration
+        // for notification-driven cancellations (see packages/features/calendars/lib/cancellation-sync/)
+        metrics.count("calendar.subscription.cancellation_sync.detected", cancelledEvents.length, {
+          attributes: { provider: selectedCalendar.integration },
+        });
+      }
+    }
+
     metrics.distribution("calendar.subscription.processEvents.duration_ms", performance.now() - startTime, {
       attributes: {
         provider: selectedCalendar.integration,
@@ -437,6 +464,16 @@ export class CalendarSubscriptionService {
   async isSyncEnabled(): Promise<boolean> {
     return this.deps.featureRepository.checkIfFeatureIsEnabledGlobally(
       CalendarSubscriptionService.CALENDAR_SUBSCRIPTION_SYNC_FEATURE
+    );
+  }
+
+  /**
+   * Check if calendar-driven cancellation sync is enabled
+   * @returns true if cancellation sync feature is enabled globally
+   */
+  async isCancellationSyncEnabled(): Promise<boolean> {
+    return this.deps.featureRepository.checkIfFeatureIsEnabledGlobally(
+      CalendarSubscriptionService.CALENDAR_CANCELLATION_SYNC_FEATURE
     );
   }
 

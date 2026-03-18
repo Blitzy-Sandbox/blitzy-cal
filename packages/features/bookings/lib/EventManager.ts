@@ -1571,9 +1571,26 @@ export default class EventManager {
       // For each buffer reference, find the credential and delete the external event
       for (const ref of bufferReferences) {
         try {
-          const credential = ref.credentialId
+          // Look up the credential from the in-memory list first. During reschedule
+          // the credential may not be present in this.calendarCredentials (e.g. when
+          // the organizer's connected calendars changed), so fall back to a direct DB
+          // lookup to avoid silently orphaning the external calendar event while still
+          // marking the BookingReference as deleted.
+          let credential: CredentialForCalendarService | null | undefined = ref.credentialId
             ? this.calendarCredentials.find((c) => c.id === ref.credentialId)
             : this.calendarCredentials[0];
+
+          if (!credential && ref.credentialId) {
+            credential = await CredentialRepository.findCredentialForCalendarServiceById({
+              id: ref.credentialId,
+            });
+            if (credential) {
+              log.debug("Credential not in memory, fetched from DB for buffer event deletion", {
+                bookingId,
+                credentialId: ref.credentialId,
+              });
+            }
+          }
 
           if (credential && ref.uid) {
             await deleteEvent({
@@ -1581,6 +1598,12 @@ export default class EventManager {
               bookingRefUid: ref.uid,
               event: {} as CalendarEvent,
               externalCalendarId: ref.externalCalendarId,
+            });
+          } else if (!credential && ref.credentialId) {
+            log.warn("Could not resolve credential for buffer event deletion — external event may be orphaned", {
+              bookingId,
+              credentialId: ref.credentialId,
+              bufferRefUid: ref.uid,
             });
           }
 

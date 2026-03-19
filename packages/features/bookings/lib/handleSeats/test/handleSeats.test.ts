@@ -3317,6 +3317,12 @@ describe("handleSeats", () => {
           email: "organizer@example.com",
           id: 101,
           schedules: [TestData.schedules.IstWorkHours],
+          credentials: [getGoogleCalendarCredential()],
+          selectedCalendars: [TestData.selectedCalendars.google],
+          destinationCalendar: {
+            integration: TestData.apps["google-calendar"].type,
+            externalId: "organizer@google-calendar.com",
+          },
         });
 
         const firstBookingId = 1;
@@ -3471,63 +3477,321 @@ describe("handleSeats", () => {
           },
         });
 
-        const mockBookingData = getMockRequestDataForBooking({
-          data: {
-            eventTypeId: 1,
-            responses: {
-              email: booker.email,
-              name: booker.name,
-              location: { optionValue: "", value: BookingLocations.CalVideo },
-            },
-            rescheduleUid: firstBookingUid,
-            start: secondBookingStartTime,
-            end: secondBookingEndTime,
-            user: "seatedAttendee",
-          },
-        });
-
-        const rescheduledBooking = await handleNewBooking({
-          bookingData: mockBookingData,
-          userId: organizer.id,
-        });
-
-        // Verify the source booking has been cancelled (merge completed)
-        const originalBooking = await prismaMock.booking.findFirst({
-          where: {
-            id: firstBookingId,
-          },
-          select: {
-            status: true,
-          },
-        });
-        expect(originalBooking?.status).toEqual(BookingStatus.CANCELLED);
-
-        // Verify the merge succeeded — attendees were moved to target booking
-        expect(rescheduledBooking?.startTime).toEqual(new Date(secondBookingStartTime));
-        const attendees = await prismaMock.attendee.findMany({
-          where: {
-            bookingId: rescheduledBooking?.id,
-          },
-        });
-        expect(attendees).toHaveLength(4);
-
-        // CI-002 verification: After the merge, deleteBufferEventsForCancelledBooking is invoked
-        // for the source booking (firstBookingId). The function performs best-effort cleanup of
-        // buffer_time_before and buffer_time_after references from the external calendar.
-        // We verify the source booking's buffer references exist in the scenario data,
-        // confirming the code path is exercised. Full buffer deletion verification depends on
-        // the calendar-buffer-sync feature flag being enabled at runtime — the buffer service
-        // gates on isBufferSyncEnabled() before proceeding with calendar API calls.
-        const sourceBookingRefs = await prismaMock.bookingReference.findMany({
-          where: {
-            bookingId: firstBookingId,
-          },
-        });
-        // Source booking should have had buffer references in its scenario data
-        const bufferRefs = sourceBookingRefs.filter((ref: { type: string }) =>
-          ref.type.startsWith("buffer_time")
+        // CI-002: Spy on BufferTimeEventService.isBufferSyncEnabled to return true,
+        // enabling the deleteBufferEventsForCancelledBooking code path during merge.
+        // Without this, the feature flag check returns false in the test environment
+        // (no feature flag record in prismock), causing the cleanup to short-circuit.
+        const { BufferTimeEventService } = await import(
+          "@calcom/features/calendars/lib/buffer-sync/BufferTimeEventService"
         );
-        expect(bufferRefs.length).toBeGreaterThanOrEqual(0);
+        const isBufferSyncEnabledSpy = vi
+          .spyOn(BufferTimeEventService.prototype, "isBufferSyncEnabled")
+          .mockResolvedValue(true);
+
+        const calendarMock = await mockCalendarToHaveNoBusySlots("googlecalendar", {
+          create: {
+            id: "GOOGLE_CALENDAR_EVENT_ID",
+            iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+          },
+        });
+
+        try {
+          const mockBookingData = getMockRequestDataForBooking({
+            data: {
+              eventTypeId: 1,
+              responses: {
+                email: booker.email,
+                name: booker.name,
+                location: { optionValue: "", value: BookingLocations.CalVideo },
+              },
+              rescheduleUid: firstBookingUid,
+              start: secondBookingStartTime,
+              end: secondBookingEndTime,
+              user: "seatedAttendee",
+            },
+          });
+
+          const rescheduledBooking = await handleNewBooking({
+            bookingData: mockBookingData,
+            userId: organizer.id,
+          });
+
+          // Verify the source booking has been cancelled (merge completed)
+          const originalBooking = await prismaMock.booking.findFirst({
+            where: {
+              id: firstBookingId,
+            },
+            select: {
+              status: true,
+            },
+          });
+          expect(originalBooking?.status).toEqual(BookingStatus.CANCELLED);
+
+          // Verify the merge succeeded — attendees were moved to target booking
+          expect(rescheduledBooking?.startTime).toEqual(new Date(secondBookingStartTime));
+          const attendees = await prismaMock.attendee.findMany({
+            where: {
+              bookingId: rescheduledBooking?.id,
+            },
+          });
+          expect(attendees).toHaveLength(4);
+
+          // CI-002 verification: After the merge, deleteBufferEventsForCancelledBooking is invoked
+          // for the source booking (firstBookingId). With isBufferSyncEnabled() returning true,
+          // the function queries buffer_time_* references and deletes them from the external
+          // calendar via the calendar adapter. We verify via the mock calendar's deleteEventCalls.
+          // Note: Multiple cleanup paths may process the same buffer references (the deletion is
+          // idempotent), so we assert on UID presence rather than exact call count.
+          const bufferDeleteCalls = calendarMock.deleteEventCalls.filter(
+            (call: { args: { uid: string } }) =>
+              call.args.uid === "buffer-before-uid" || call.args.uid === "buffer-after-uid"
+          );
+          // At minimum 2 delete calls must occur (one per buffer reference)
+          expect(bufferDeleteCalls.length).toBeGreaterThanOrEqual(2);
+          // Both buffer_time_before and buffer_time_after must be cleaned up
+          expect(bufferDeleteCalls.some((c: { args: { uid: string } }) => c.args.uid === "buffer-before-uid")).toBe(
+            true
+          );
+          expect(bufferDeleteCalls.some((c: { args: { uid: string } }) => c.args.uid === "buffer-after-uid")).toBe(
+            true
+          );
+        } finally {
+          isBufferSyncEnabledSpy.mockRestore();
+        }
+      });
+
+      test("skips buffer cleanup when calendar-buffer-sync flag is disabled", async () => {
+        const handleNewBooking = getNewBookingHandler();
+
+        // CI-002: Verify that deleteBufferEventsForCancelledBooking is a no-op when the
+        // global calendar-buffer-sync feature flag is disabled. The function calls
+        // isBufferSyncEnabled() and returns early if false, skipping all calendar API calls.
+        const { BufferTimeEventService } = await import(
+          "@calcom/features/calendars/lib/buffer-sync/BufferTimeEventService"
+        );
+        const isBufferSyncEnabledSpy = vi
+          .spyOn(BufferTimeEventService.prototype, "isBufferSyncEnabled")
+          .mockResolvedValue(false);
+
+        try {
+          const booker = getBooker({
+            email: "booker@example.com",
+            name: "Booker",
+          });
+
+          const organizer = getOrganizer({
+            name: "Organizer",
+            email: "organizer@example.com",
+            id: 101,
+            schedules: [TestData.schedules.IstWorkHours],
+            credentials: [getGoogleCalendarCredential()],
+            selectedCalendars: [TestData.selectedCalendars.google],
+            destinationCalendar: {
+              integration: TestData.apps["google-calendar"].type,
+              externalId: "organizer@google-calendar.com",
+            },
+          });
+
+          const firstBookingId = 1;
+          const firstBookingUid = "abc123";
+          const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
+          const firstBookingStartTime = `${plus1DateString}T04:00:00Z`;
+          const firstBookingEndTime = `${plus1DateString}T04:30:00Z`;
+
+          const secondBookingId = 2;
+          const secondBookingUid = "def456";
+          const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
+          const secondBookingStartTime = `${plus2DateString}T04:00:00Z`;
+          const secondBookingEndTime = `${plus2DateString}T04:30:00Z`;
+
+          await createBookingScenario(
+            getScenarioData({
+              eventTypes: [
+                {
+                  id: 1,
+                  slug: "seated-event",
+                  slotInterval: 30,
+                  length: 30,
+                  users: [
+                    {
+                      id: 101,
+                    },
+                  ],
+                  seatsPerTimeSlot: 4,
+                  seatsShowAttendees: false,
+                  syncBuffersToCalendar: true,
+                  beforeEventBuffer: 15,
+                  afterEventBuffer: 15,
+                },
+              ],
+              bookings: [
+                {
+                  id: firstBookingId,
+                  uid: firstBookingUid,
+                  eventTypeId: 1,
+                  userId: organizer.id,
+                  status: BookingStatus.ACCEPTED,
+                  startTime: firstBookingStartTime,
+                  endTime: firstBookingEndTime,
+                  metadata: {
+                    videoCallUrl: "https://existing-daily-video-call-url.example.com",
+                  },
+                  references: [
+                    {
+                      type: appStoreMetadata.dailyvideo.type,
+                      uid: "MOCK_ID",
+                      meetingId: "MOCK_ID",
+                      meetingPassword: "MOCK_PASS",
+                      meetingUrl: "http://mock-dailyvideo.example.com",
+                      credentialId: null,
+                    },
+                    {
+                      type: "buffer_time_before",
+                      uid: "buffer-before-uid",
+                      credentialId: 1,
+                      externalCalendarId: "organizer@google-calendar.com",
+                    },
+                    {
+                      type: "buffer_time_after",
+                      uid: "buffer-after-uid",
+                      credentialId: 1,
+                      externalCalendarId: "organizer@google-calendar.com",
+                    },
+                  ],
+                  attendees: [
+                    getMockBookingAttendee({
+                      id: 1,
+                      name: "Seat 1",
+                      email: "seat1@test.com",
+                      locale: "en",
+                      timeZone: "America/Toronto",
+                      bookingSeat: {
+                        referenceUid: "booking-seat-1",
+                        data: {},
+                      },
+                    }),
+                    getMockBookingAttendee({
+                      id: 2,
+                      name: "Seat 2",
+                      email: "seat2@test.com",
+                      locale: "en",
+                      timeZone: "America/Toronto",
+                      bookingSeat: {
+                        referenceUid: "booking-seat-2",
+                        data: {},
+                      },
+                    }),
+                  ],
+                },
+                {
+                  id: secondBookingId,
+                  uid: secondBookingUid,
+                  eventTypeId: 1,
+                  status: BookingStatus.ACCEPTED,
+                  startTime: secondBookingStartTime,
+                  endTime: secondBookingEndTime,
+                  metadata: {
+                    videoCallUrl: "https://existing-daily-video-call-url.example.com",
+                  },
+                  references: [
+                    {
+                      type: appStoreMetadata.dailyvideo.type,
+                      uid: "MOCK_ID",
+                      meetingId: "MOCK_ID",
+                      meetingPassword: "MOCK_PASS",
+                      meetingUrl: "http://mock-dailyvideo.example.com",
+                      credentialId: null,
+                    },
+                  ],
+                  attendees: [
+                    getMockBookingAttendee({
+                      id: 3,
+                      name: "Seat 3",
+                      email: "seat3@test.com",
+                      locale: "en",
+                      timeZone: "America/Toronto",
+                      bookingSeat: {
+                        referenceUid: "booking-seat-3",
+                        data: {},
+                      },
+                    }),
+                    getMockBookingAttendee({
+                      id: 4,
+                      name: "Seat 4",
+                      email: "seat4@test.com",
+                      locale: "en",
+                      timeZone: "America/Toronto",
+                      bookingSeat: {
+                        referenceUid: "booking-seat-4",
+                        data: {},
+                      },
+                    }),
+                  ],
+                },
+              ],
+              organizer,
+            })
+          );
+
+          mockSuccessfulVideoMeetingCreation({
+            metadataLookupKey: "dailyvideo",
+            videoMeetingData: {
+              id: "MOCK_ID",
+              password: "MOCK_PASS",
+              url: `http://mock-dailyvideo.example.com/meeting-1`,
+            },
+          });
+
+          const calendarMock = await mockCalendarToHaveNoBusySlots("googlecalendar", {
+            create: {
+              id: "GOOGLE_CALENDAR_EVENT_ID",
+              iCalUID: "MOCKED_GOOGLE_CALENDAR_ICS_ID",
+            },
+          });
+
+          const mockBookingData = getMockRequestDataForBooking({
+            data: {
+              eventTypeId: 1,
+              responses: {
+                email: booker.email,
+                name: booker.name,
+                location: { optionValue: "", value: BookingLocations.CalVideo },
+              },
+              rescheduleUid: firstBookingUid,
+              start: secondBookingStartTime,
+              end: secondBookingEndTime,
+              user: "seatedAttendee",
+            },
+          });
+
+          await handleNewBooking({
+            bookingData: mockBookingData,
+            userId: organizer.id,
+          });
+
+          // Verify the merge still completes successfully
+          const originalBooking = await prismaMock.booking.findFirst({
+            where: {
+              id: firstBookingId,
+            },
+            select: {
+              status: true,
+            },
+          });
+          expect(originalBooking?.status).toEqual(BookingStatus.CANCELLED);
+
+          // CI-002 verification: With isBufferSyncEnabled() returning false (feature flag disabled),
+          // deleteBufferEventsForCancelledBooking should return early without making any calendar
+          // API calls for buffer event deletion. The merge itself still succeeds — only buffer
+          // cleanup is skipped.
+          const bufferDeleteCalls = calendarMock.deleteEventCalls.filter(
+            (call: { args: { uid: string } }) =>
+              call.args.uid === "buffer-before-uid" || call.args.uid === "buffer-after-uid"
+          );
+          expect(bufferDeleteCalls).toHaveLength(0);
+        } finally {
+          isBufferSyncEnabledSpy.mockRestore();
+        }
       });
 
       test("does not create duplicate buffer events on target booking", async () => {
@@ -3877,12 +4141,24 @@ describe("handleSeats", () => {
 
         // CI-002 verification: The fix in lastAttendeeDeleteBooking adds a condition
         // for reference.type.startsWith("buffer_time"), calling calendar.deleteEvent()
-        // for each buffer reference. We verify via the mock calendar's deleteEventCalls.
+        // for each buffer reference. Both buffer_time_before and buffer_time_after must be
+        // cleaned up. Note: attendeeRescheduleSeatedBooking calls lastAttendeeDeleteBooking
+        // at two points in the flow (lines 35 and 117), so buffer references may be
+        // processed more than once — the deletion is idempotent in the external calendar.
+        // We assert on UID presence to verify both buffer references are targeted.
         const bufferDeleteCalls = calendarMock.deleteEventCalls.filter(
           (call: { args: { uid: string } }) =>
             call.args.uid === "buffer-before-uid" || call.args.uid === "buffer-after-uid"
         );
-        expect(bufferDeleteCalls.length).toBeGreaterThanOrEqual(1);
+        // At minimum 2 delete calls must occur (one per buffer reference)
+        expect(bufferDeleteCalls.length).toBeGreaterThanOrEqual(2);
+        // Both buffer_time_before and buffer_time_after must be cleaned up
+        expect(
+          bufferDeleteCalls.some((c: { args: { uid: string } }) => c.args.uid === "buffer-before-uid")
+        ).toBe(true);
+        expect(
+          bufferDeleteCalls.some((c: { args: { uid: string } }) => c.args.uid === "buffer-after-uid")
+        ).toBe(true);
       });
 
       test("skips buffer cleanup when no buffer references exist", async () => {

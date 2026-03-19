@@ -2,6 +2,7 @@ import { cloneDeep } from "lodash";
 
 import { sendRescheduledEmailsAndSMS } from "@calcom/emails/email-manager";
 import type EventManager from "@calcom/features/bookings/lib/EventManager";
+import type { BufferEventContext } from "@calcom/features/bookings/lib/EventManager";
 import prisma from "@calcom/prisma";
 import type { AdditionalInformation, AppsStatus } from "@calcom/types/Calendar";
 
@@ -71,7 +72,43 @@ const moveSeatedBookingToNewTimeSlot = async (
 
   const copyEvent = cloneDeep(evt);
 
-  const updateManager = await eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id);
+  // CI-002 gap closure: Build buffer event context for seated booking reschedule.
+  // When syncBuffersToCalendar is enabled, EventManager.reschedule() deletes old buffer events
+  // and creates new ones at the rescheduled time.
+  const bufferCtx: BufferEventContext | undefined = eventType.syncBuffersToCalendar
+    ? {
+        bookingId: newBooking.id,
+        bookingUid: newBooking.uid ?? rescheduleUid,
+        bookingTitle: evt.title,
+        bookingStartTime: evt.startTime,
+        bookingEndTime: evt.endTime,
+        eventType: {
+          id: eventType.id,
+          slug: eventType.slug,
+          syncBuffersToCalendar: eventType.syncBuffersToCalendar,
+          beforeEventBuffer: eventType.beforeEventBuffer,
+          afterEventBuffer: eventType.afterEventBuffer,
+        },
+        organizer: {
+          id: organizerUser.id,
+          name: organizerUser.name,
+          email: organizerUser.email,
+          username: organizerUser.username,
+          timeZone: organizerUser.timeZone,
+        },
+      }
+    : undefined;
+
+  const updateManager = await eventManager.reschedule(
+    copyEvent,
+    rescheduleUid,
+    newBooking.id,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    bufferCtx
+  );
 
   // @NOTE: This code is duplicated and should be moved to a function
   // This gets overridden when updating the event - to check if notes have been hidden or not. We just reset this back

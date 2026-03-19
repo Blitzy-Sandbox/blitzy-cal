@@ -1,70 +1,61 @@
-# Blitzy Project Guide — Sprint 3: Calendar Integrations (F-003)
-
----
+# Blitzy Project Guide
 
 ## 1. Executive Summary
 
 ### 1.1 Project Overview
 
-Sprint 3: Calendar Integrations (F-003) completes the Calendly gap closure initiative for Cal.com's calendar integration subsystem. The sprint achieves behavioral parity across Google Calendar (CI-001), Outlook/Office 365 (CI-002), and Apple Calendar/iCloud (CI-003) adapters, aligns conflict detection with Calendly's configurable status filtering model (CI-004), verifies bi-directional sync across the booking lifecycle (CI-005), and closes two Medium-severity gaps — calendar-driven cancellation sync and buffer time visualization in external calendars — behind disabled-by-default feature flags. The target users are Cal.com hosts and organizations who connect external calendars for scheduling.
+This project resolves three logic omission bugs in the Cal.com seated booking subsystem where buffer time events — created by the Sprint 3 CI-002 gap closure for calendar buffer visualization — were not properly managed during seated booking lifecycle operations. The bugs caused orphaned buffer events to persist in external calendars (Google, Outlook, Apple) when seated bookings underwent owner reschedule (move to new time slot), owner reschedule (merge two bookings), or last-attendee-departure flows. The fixes integrate the existing `BufferTimeEventService` and `EventManager` buffer lifecycle into three files within `packages/features/bookings/lib/handleSeats/`, accompanied by 7 comprehensive test cases validating all positive and negative paths.
 
 ### 1.2 Completion Status
 
 ```mermaid
 pie title Project Completion
-    "Completed (AI)" : 127
-    "Remaining" : 21
+    "Completed (23h)" : 23
+    "Remaining (7h)" : 7
 ```
 
 | Metric | Value |
 |--------|-------|
-| **Total Project Hours** | 148 |
-| **Completed Hours (AI)** | 127 |
-| **Remaining Hours** | 21 |
-| **Completion Percentage** | 85.8% |
+| **Total Project Hours** | 30 |
+| **Completed Hours (AI)** | 23 |
+| **Remaining Hours (Human)** | 7 |
+| **Completion Percentage** | 76.7% |
 
-**Calculation:** 127 completed hours / (127 + 21 remaining hours) = 127 / 148 = 85.8%
+**Calculation:** 23 completed hours / (23 + 7) total hours = 76.7% complete.
 
 ### 1.3 Key Accomplishments
 
-- ✅ All 5 Calendar Integration epics (CI-001 through CI-005) implemented and verified with comprehensive test suites
-- ✅ Google Calendar adapter enhanced with push notification subscription methods (`subscribeToChanges`, `unsubscribeFromChanges`) and FreeBusy API parity verification
-- ✅ Outlook/Office 365 adapter enhanced with configurable `showAs` status filtering, Microsoft Graph change notification types, and batch API pagination verification
-- ✅ Apple Calendar adapter verified for CalDAV event CRUD and availability queries with 28 dedicated unit tests
-- ✅ Conflict detection `statusFilter` parameter threaded through the full pipeline: `getBusyTimes` → `CalendarManager` → individual adapter `getAvailability` calls
-- ✅ Bi-directional sync verified via 844-line integration test suite covering create, reschedule, and cancel flows for Google and Outlook adapters
-- ✅ Calendar-driven cancellation sync implemented: `CalendarCancellationSyncService`, `GoogleCancellationHandler`, `OutlookCancellationHandler`, webhook intake routes, DI bindings (feature-flagged)
-- ✅ Buffer time visualization implemented: `BufferTimeEventService`, `CalendarEventBuilder.buildBufferEvent()`, `EventManager` integration with create/delete lifecycle (feature-flagged)
-- ✅ Zero-downtime database migration with 2 nullable columns and 2 feature flag rows
-- ✅ 673 tests across 29 test files — 100% pass rate
-- ✅ Spec-first artifacts created in `specs/calendar-integrations/` (design.md, decisions.md, implementation.md, CLAUDE.md, prompts.md, future-work.md, docs/)
-- ✅ Documentation updated: gap report, epic catalog, validation criteria with Gate 3 evidence
-- ✅ EventManager bug fix: buffer events not deleted from external calendar on reschedule (DB credential fallback)
+- ✅ **Bug Fix 1 Complete:** `moveSeatedBookingToNewTimeSlot.ts` now builds and passes `BufferEventContext` as 8th argument to `eventManager.reschedule()`, enabling old buffer event deletion and new buffer event creation on seated booking reschedule
+- ✅ **Bug Fix 2 Complete:** `combineTwoSeatedBookings.ts` now includes a `deleteBufferEventsForCancelledBooking()` helper that cleans up buffer events from the cancelled source booking after merge, using dynamic import of `BufferTimeEventService` with best-effort error handling
+- ✅ **Bug Fix 3 Complete:** `lastAttendeeDeleteBooking.ts` now handles `buffer_time_before` and `buffer_time_after` reference types in its cleanup loop, deleting buffer events from external calendars when the last attendee leaves
+- ✅ **7 New Test Cases:** Comprehensive test coverage for all three bug fixes including positive (feature enabled) and negative (feature disabled/no buffer refs) scenarios
+- ✅ **749 Tests Passing:** Full regression suite (seated bookings 27/27, buffer visualization 27/27, calendar integration 80/80, full bookings 621/621) passes with zero failures
+- ✅ **Zero New Lint/Compilation Errors:** All changes comply with TypeScript strict mode and Biome linting rules
+- ✅ **Feature Flag Safety Verified:** All fixes are inert when `calendar-buffer-sync` flag is disabled or `syncBuffersToCalendar` is falsy
 
 ### 1.4 Critical Unresolved Issues
 
 | Issue | Impact | Owner | ETA |
 |-------|--------|-------|-----|
-| Feature flags `calendar-cancellation-sync` and `calendar-buffer-sync` are disabled by default | Gap closure features not active in production until flags enabled | DevOps / Product | 2 hours after staging validation |
-| Webhook endpoint environment variables not configured | Push notification and change notification intake routes non-functional without `GOOGLE_WEBHOOK_TOKEN`, `MICROSOFT_WEBHOOK_TOKEN`, `GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL`, `OUTLOOK_GRAPH_NOTIFICATION_URL` | DevOps | 1 hour |
-| Database migration not applied to staging/production | New schema columns and feature flag rows pending deployment | DevOps | 1 hour |
-| No end-to-end testing with real API credentials | All tests use mocked APIs — real Google/Outlook credentials needed for production validation | QA | 8 hours |
+| No E2E testing with real calendar providers | Buffer deletion not verified against live Google/Outlook/Apple APIs | Human Developer | 3h |
+| Code review pending | Changes not yet reviewed by senior developer | Human Developer | 1.5h |
+| 114 pre-existing TypeScript errors in monorepo | Could mask compilation issues in CI pipeline (none in in-scope files) | Platform Team | Backlog |
 
 ### 1.5 Access Issues
 
 | System/Resource | Type of Access | Issue Description | Resolution Status | Owner |
 |-----------------|---------------|-------------------|-------------------|-------|
-| Google Calendar API | OAuth2 Credentials | Production Google API project with push notification webhook domain verification required | Pending | DevOps |
-| Microsoft Graph API | App Registration | Production Azure AD app registration with change notification permissions (`Calendars.Read`) required | Pending | DevOps |
-| Staging Database | Migration Access | Migration `20260305000000_calendar_integration_gap_closure` needs to be applied via Prisma migrate | Pending | DevOps |
+| Google Calendar API (test account) | OAuth Credentials | E2E testing requires real Google OAuth credentials for buffer event verification | Pending | Human Developer |
+| Outlook Calendar API (test account) | OAuth Credentials | E2E testing requires real Outlook OAuth credentials for buffer event verification | Pending | Human Developer |
+| Staging Environment | Deployment Access | Feature flag `calendar-buffer-sync` must be enabled in staging for smoke testing | Pending | DevOps |
 
 ### 1.6 Recommended Next Steps
 
-1. **[High]** Apply database migration `20260305000000_calendar_integration_gap_closure` to staging environment and verify schema changes
-2. **[High]** Configure webhook environment variables (`GOOGLE_WEBHOOK_TOKEN`, `MICROSOFT_WEBHOOK_TOKEN`, `GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL`, `OUTLOOK_GRAPH_NOTIFICATION_URL`) in staging
-3. **[High]** Run end-to-end validation with real Google Calendar and Outlook API credentials in staging
-4. **[Medium]** Enable feature flags (`calendar-cancellation-sync`, `calendar-buffer-sync`) in staging after validation passes
-5. **[Medium]** Verify webhook intake routes (`/api/webhooks/google-calendar`, `/api/webhooks/microsoft-graph`) receive and process real notifications
+1. **[High]** Complete code review of all 3 bug fixes and 7 test cases by a senior developer familiar with the EventManager and BufferTimeEventService patterns
+2. **[High]** Perform manual E2E testing with real calendar providers (Google Calendar, Outlook, Apple Calendar) to verify buffer event deletion against live APIs
+3. **[Medium]** Deploy to staging environment with `calendar-buffer-sync` feature flag enabled and run smoke tests across all seated booking flows
+4. **[Medium]** Deploy to production with progressive rollout monitoring buffer event creation/deletion metrics
+5. **[Low]** Address 114 pre-existing TypeScript compilation errors in monorepo to improve CI signal quality
 
 ---
 
@@ -74,101 +65,101 @@ pie title Project Completion
 
 | Component | Hours | Description |
 |-----------|-------|-------------|
-| Spec-First Design Artifacts | 6 | Created `specs/calendar-integrations/` with design.md (327 lines), decisions.md (247 lines), implementation.md, CLAUDE.md, prompts.md, future-work.md, docs/README.md — 842 total lines of design documentation |
-| Database Migration (Zero-Downtime) | 4 | Created `migration.sql` with 2 nullable columns (`syncBuffersToCalendar` on EventType, `externalCancellationSyncEnabled` on Credential) and 2 feature flag rows; updated `schema.prisma` |
-| Google Calendar Parity (CI-001) | 16 | Enhanced `CalendarService.ts` (+203 lines) with push notification methods, parity JSDoc annotations; verified FreeBusy API chunking, recurring events, Meet integration; created parity test suite (1,317 lines, 41 tests); extended existing tests (+467 lines); extended E2E tests (+300 lines) |
-| Outlook/O365 Parity (CI-002) | 18 | Enhanced `CalendarService.ts` (+203 lines) with configurable `showAs` status filtering, Graph change notification types; created comprehensive unit tests (2,422 lines, 66 tests); created parity test suite (1,400 lines, 29 tests) |
-| Apple Calendar Parity (CI-003) | 8 | Verified CalDAV event CRUD and availability operations; added JSDoc annotations; created comprehensive unit test suite (939 lines, 28 tests) |
-| Conflict Detection Alignment (CI-004) | 12 | Extended `Calendar.d.ts` with `statusFilter` parameter; modified `getBusyTimes.ts` to thread status filter; modified `CalendarManager.ts` for status filter piping; modified `getUserAvailability.ts`; modified Outlook adapter for configurable `showAs` filtering; created conflict detection test suite (586 lines, 12 tests); extended getBusyTimes tests |
-| Bi-Directional Sync Verification (CI-005) | 10 | Created integration test suite (844 lines, 41 tests) covering create/reschedule/cancel flows for Google and Outlook; extended CalendarManager tests (+360 lines); extended CalendarEventBuilder tests (+329 lines) |
-| Calendar-Driven Cancellation Sync (CI-001 Gap) | 18 | Created `CalendarCancellationSyncService` (260 lines), `GoogleCancellationHandler` (327 lines), `OutlookCancellationHandler` (538 lines); created webhook intake routes (128 + 157 lines); modified `handleCancelBooking.ts` for `source` parameter; created CalendarSubscription adapter extensions; DI token registration; created 5 test files (2,291 total test lines) |
-| Buffer Time Visualization (CI-002 Gap) | 14 | Created `BufferTimeEventService` (302 lines); extended `CalendarEventBuilder.ts` with `buildBufferEvent()`; integrated into `EventManager.ts` (+289 lines) for booking lifecycle; created test suite (1,025 lines, 27 tests); UI toggle in Event Type limits tab |
-| API v2 Verification & JSDoc | 5 | Added parity verification JSDoc annotations to calendars controller, processor, services (gcal, outlook, apple-calendar, calendars); extended E2E test spec |
-| DI Module & Feature Flag Registration | 4 | Extended `tokens.ts` with 2 new DI symbols; updated `CalendarsTaskService.module.ts`, `CalendarsSyncTasker.module.ts`, `CalendarsTriggerTasker.module.ts` with cancellation sync bindings; registered feature flags in `flags/config.ts` |
-| Documentation Updates | 4 | Updated `docs/gap-report/calendar-integrations.mdx` with closed gap statuses; updated `docs/sprint-roadmap/epic-catalog.mdx` with completion markers; updated `docs/sprint-roadmap/validation-criteria.mdx` with Gate 3 evidence |
-| Bug Fix: Buffer Event Reschedule Deletion | 3 | Fixed `EventManager.ts` buffer event credential lookup fallback — added DB credential fallback when `this.calendarCredentials.find()` returns undefined during reschedule |
-| QA Fixes & Code Review Remediations | 5 | Resolved 20+ code review findings, 6 doc QA findings, stale documentation cleanup, env var alignment, token/clientState consistency fixes |
-| **Total Completed** | **127** | |
+| Root Cause Analysis & Diagnostic Verification | 2 | Validated 3 root causes across seated booking subsystem; traced execution flow through EventManager, BufferTimeEventService, and all 3 affected files; confirmed fix strategy |
+| Fix 1 — moveSeatedBookingToNewTimeSlot.ts | 3 | Added `BufferEventContext` type import; built conditional buffer context from `eventType` and `organizerUser`; modified `eventManager.reschedule()` call to pass buffer context as 8th positional argument (+38 lines) |
+| Fix 2 — combineTwoSeatedBookings.ts | 5 | Implemented `deleteBufferEventsForCancelledBooking()` helper with dynamic import of BufferTimeEventService, CredentialRepository-based credential resolution, best-effort error handling, and reference soft-delete; integrated after booking cancellation (+73 lines) |
+| Fix 3 — lastAttendeeDeleteBooking.ts | 1.5 | Added `buffer_time` reference type handling using `reference.type.startsWith("buffer_time")` with `getCalendar`/`deleteEvent` pattern matching existing `_calendar` block (+10 lines) |
+| Test Development — 7 New Test Cases | 9 | Created 7 comprehensive Vitest test cases in `handleSeats.test.ts` covering owner reschedule buffer creation (positive/negative), merge buffer cleanup (positive, feature-flag-disabled, no-duplicates), and last-attendee-delete buffer cleanup (positive, no-op); 1,322 lines added |
+| Compilation & Lint Verification | 0.5 | Verified all 4 in-scope files compile without TypeScript errors; confirmed zero new Biome lint errors/warnings |
+| Full Test Suite Execution & Regression Check | 1 | Executed 749 tests across 4 test suites: seated bookings (27/27), buffer visualization (27/27), calendar integration (80/80), full bookings (621/621); confirmed zero regressions |
+| Iterative Debugging & Fix Refinement | 1 | Addressed code review findings in combineTwoSeatedBookings buffer cleanup; strengthened test assertions for CI-002 gap closure (per 6-commit history) |
+| **Total** | **23** | |
 
 ### 2.2 Remaining Work Detail
 
 | Category | Hours | Priority |
 |----------|-------|----------|
-| Environment variable configuration (webhook tokens, notification URLs) | 1.5 | High |
-| Database migration deployment to staging/production | 1.5 | High |
-| End-to-end testing with real Google Calendar API credentials | 4 | High |
-| End-to-end testing with real Outlook/Microsoft Graph API credentials | 4 | High |
-| Feature flag enablement and production validation | 2 | Medium |
-| Webhook intake route DNS/domain verification for push notifications | 2 | Medium |
-| Google push notification channel renewal automation (cron/scheduled task) | 3 | Medium |
-| Outlook Graph notification subscription renewal automation | 3 | Medium |
-| **Total Remaining** | **21** | |
+| Code review by senior developer | 1.5 | High |
+| Manual E2E testing with real calendar providers (Google, Outlook, Apple) | 3 | High |
+| Staging deployment and smoke testing | 1.5 | Medium |
+| Production deployment and post-deploy monitoring | 1 | Medium |
+| **Total** | **7** | |
 
 ---
 
 ## 3. Test Results
 
 | Test Category | Framework | Total Tests | Passed | Failed | Coverage % | Notes |
-|--------------|-----------|-------------|--------|--------|------------|-------|
-| Unit — Google Calendar Adapter | Vitest 4.0.16 | 80 | 80 | 0 | N/A | 3 test files: CalendarService.test.ts (30), CalendarService.parity.test.ts (41), CalendarService.auth.test.ts (9) |
-| Unit — Outlook/O365 Adapter | Vitest 4.0.16 | 95 | 95 | 0 | N/A | 2 test files: CalendarService.test.ts (66), CalendarService.parity.test.ts (29) |
-| Unit — Apple Calendar Adapter | Vitest 4.0.16 | 28 | 28 | 0 | N/A | 1 test file: CalendarService.test.ts (28) |
-| Unit — Calendar Features | Vitest 4.0.16 | 240 | 240 | 0 | N/A | 12 test files: CalendarManager (26), getCalendarsEvents (21), bidirectionalSync (41), bufferTimeVisualization (27), conflictDetection (12), DatePicker (6), NoAvailability (5), timezone (22), overlap (21), getAvailableDates (5), CalendarCancellationHandler-Google (23), CalendarCancellationHandler-Outlook (31) |
-| Unit — BusyTimes Service | Vitest 4.0.16 | 18 | 18 | 0 | N/A | getBusyTimes.test.ts with CI-004 statusFilter tests |
-| Unit — CalendarEventBuilder | Vitest 4.0.16 | 45 | 45 | 0 | N/A | Extended with buildBufferEvent tests |
-| Unit — Calendar Subscription | Vitest 4.0.16 | 136 | 136 | 0 | N/A | 8 test files: GoogleCalendarSubscription (25), Office365CalendarSubscription (27), AdaptersFactory (6), CalendarSubscriptionService (32), CalendarCancellationSync (10), CalendarCacheWrapper (15), CalendarCacheEventService (11), CalendarCacheEventRepository (10) |
-| Unit — SelectedCalendar | Vitest 4.0.16 | 31 | 31 | 0 | N/A | SelectedCalendarRepository.test.ts |
-| **Total** | **Vitest 4.0.16** | **673** | **673** | **0** | **N/A** | **100% pass rate across 29 test files** |
+|---------------|-----------|-------------|--------|--------|------------|-------|
+| Unit — Seated Bookings (handleSeats) | Vitest 4.0.16 | 27 | 27 | 0 | N/A | 20 existing + 7 new buffer event tests |
+| Unit — Buffer Time Visualization | Vitest 4.0.16 | 27 | 27 | 0 | N/A | Regression check — all pre-existing tests pass |
+| Integration — Calendar Suite | Vitest 4.0.16 | 80 | 80 | 0 | N/A | Includes bidirectional sync, cancellation sync, buffer visualization |
+| Unit/Integration — Full Bookings | Vitest 4.0.16 | 621 | 621 | 0 | N/A | 1 pre-existing skip, 5 pre-existing TODOs; zero failures |
+| **Total** | | **755** | **749** | **0** | | 1 skipped (pre-existing), 5 todo (pre-existing) |
+
+**New Test Cases Added (7):**
+
+| # | Test Name | Describe Block | Status |
+|---|-----------|---------------|--------|
+| 1 | creates buffer events when syncBuffersToCalendar is true | Owner reschedule to new time slot | ✅ Pass |
+| 2 | skips buffer events when syncBuffersToCalendar is false | Owner reschedule to new time slot | ✅ Pass |
+| 3 | deletes source booking buffer events | Owner reschedule merge (combineTwoSeatedBookings) | ✅ Pass |
+| 4 | skips buffer cleanup when calendar-buffer-sync flag is disabled | Owner reschedule merge (combineTwoSeatedBookings) | ✅ Pass |
+| 5 | does not create duplicate buffer events on target booking | Owner reschedule merge (combineTwoSeatedBookings) | ✅ Pass |
+| 6 | cleans up buffer events from external calendar | Last attendee delete | ✅ Pass |
+| 7 | skips buffer cleanup when no buffer references exist | Last attendee delete | ✅ Pass |
 
 ---
 
 ## 4. Runtime Validation & UI Verification
 
-### Runtime Health
+### Compilation Status
+- ✅ `moveSeatedBookingToNewTimeSlot.ts` — Compiles without errors
+- ✅ `combineTwoSeatedBookings.ts` — Compiles without errors
+- ✅ `lastAttendeeDeleteBooking.ts` — Compiles without errors
+- ✅ `handleSeats.test.ts` — Compiles without errors
+- ⚠ 114 pre-existing TypeScript errors across monorepo (dayjs plugins, OAuth callbacks, DI modules) — none in in-scope files, none introduced by these changes
 
-- ✅ All 673 tests execute successfully with `TZ=UTC CI=true npx vitest run --no-isolate`
-- ✅ TypeScript compilation: 0 errors from `npx tsc --noEmit` on root tsconfig
-- ✅ Prisma client generated successfully at `node_modules/.prisma/client/index.js`
-- ✅ Migration SQL file validates with correct zero-downtime patterns (nullable columns, ON CONFLICT DO NOTHING)
-- ✅ `EventManager.ts` transpiles successfully after bug fix with zero compilation errors
-- ✅ Biome lint: 0 new violations introduced (17 warnings, 66 infos — all pre-existing)
+### Lint Status
+- ✅ Zero new Biome lint errors/warnings from modified code
+- ⚠ 2 pre-existing lint warnings in `handleSeats.test.ts` (unused variables at lines 192, 1691) — in original source code, not from new test code
 
-### API Verification
+### Feature Flag Safety
+- ✅ `calendar-buffer-sync` flag disabled → All buffer operations are no-ops; zero behavioral change
+- ✅ `syncBuffersToCalendar = false` on EventType → Buffer context evaluates to `undefined`; reschedule skips buffer block
+- ✅ `syncBuffersToCalendar = null` (never set) → Treated as falsy; buffer operations skipped
+- ✅ Both controls enabled → Full buffer event lifecycle (delete old + create new) executes correctly
 
-- ✅ API v2 calendar controller endpoints verified via JSDoc annotations and E2E test extensions
-- ✅ Webhook backward compatibility: `v2021-10-20` payload structure preserved for `BOOKING_CREATED`, `BOOKING_CANCELLED`, `BOOKING_RESCHEDULED`
-- ✅ Calendar-driven cancellation fires same `BOOKING_CANCELLED` webhook with unchanged payload structure
-
-### UI Verification
-
-- ✅ `syncBuffersToCalendar` toggle added to Event Type Limits tab (`EventLimitsTab.tsx`)
-- ✅ Feature flag config entries registered in `packages/features/flags/config.ts`
-- ✅ i18n key added to `apps/web/public/static/locales/en/common.json`
-- ⚠️ UI toggle visual verification pending — requires running application with configured database
-
-### Integration Points
-
-- ✅ `statusFilter` parameter flows through full pipeline: `getUserAvailability` → `getBusyTimes` → `CalendarManager.getBusyCalendarTimes` → adapter `getAvailability`
-- ✅ Buffer event lifecycle integrated into `EventManager`: creation on booking, deletion on cancel, re-creation on reschedule
-- ✅ Cancellation sync DI bindings registered in `CalendarsTaskService`, `CalendarsSyncTasker`, `CalendarsTriggerTasker` modules
-- ⚠️ Webhook intake routes (`/api/webhooks/google-calendar`, `/api/webhooks/microsoft-graph`) created but not tested with real notifications
+### API / Integration Validation
+- ⚠ No live calendar API testing performed — all tests use mocked calendar adapters
+- ✅ Mock-based validation confirms correct method calls: `calendar.deleteEvent()` called with correct `uid`, `externalCalendarId`, and `CalendarEvent` parameters
+- ✅ `CredentialRepository.findCredentialForCalendarServiceById()` pattern verified in `combineTwoSeatedBookings.ts`
 
 ---
 
 ## 5. Compliance & Quality Review
 
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| Spec-first development workflow | ✅ Pass | `specs/calendar-integrations/` created with 7 artifacts (design.md, decisions.md, implementation.md, CLAUDE.md, prompts.md, future-work.md, docs/README.md) before code changes |
-| Zero-downtime migration compliance | ✅ Pass | Migration uses Pattern 2 (nullable columns) and Pattern 5 (feature flags with ON CONFLICT DO NOTHING). No column renames, type changes, or NOT NULL without defaults |
-| Data preservation guarantees | ✅ Pass | All existing `Credential`, `SelectedCalendar`, `DestinationCalendar`, `Booking` records remain intact. New columns are nullable — no existing data modified |
-| Webhook backward compatibility | ✅ Pass | `v2021-10-20` webhook payloads unchanged. `PayloadBuilderFactory` versioning not modified. Calendar-driven cancellation fires standard `BOOKING_CANCELLED` event |
-| Feature flag gating | ✅ Pass | `calendar-cancellation-sync` and `calendar-buffer-sync` flags inserted disabled by default. Both gap closure features check flag before any processing |
-| AES-256 credential encryption | ✅ Pass | No modifications to encryption algorithm, key derivation, or storage format. `CALENDSO_ENCRYPTION_KEY` handling unchanged |
-| PR size constraints | ⚠️ Partial | Implementation exceeds 5-7 files per PR — entire sprint delivered as single branch with 96 files. Recommend post-merge PR decomposition for review |
-| Validation gate (Gate 3) | ✅ Pass | All 5 dimensions verified: behavioral (CI-VAL-001 through CI-VAL-008), regression (100% pass), data preservation, webhook compatibility, cross-domain integration |
-| TypeScript strict mode | ✅ Pass | 0 TypeScript compilation errors from `npx tsc --noEmit` |
-| Test coverage | ✅ Pass | 673 tests, 29 test files, 100% pass rate. All 5 epics and 2 gap closures have dedicated test suites |
+| AAP Requirement | Deliverable | Status | Evidence |
+|-----------------|------------|--------|----------|
+| Fix 1: Add `BufferEventContext` import to moveSeatedBookingToNewTimeSlot | Import statement at line 5 | ✅ Pass | `import type { BufferEventContext } from "@calcom/features/bookings/lib/EventManager"` |
+| Fix 1: Build buffer context from eventType/organizerUser | Conditional construction at lines 78–100 | ✅ Pass | Uses `eventType.syncBuffersToCalendar` ternary; includes all required fields |
+| Fix 1: Pass bufferCtx as 8th arg to `eventManager.reschedule()` | Modified call at lines 102–111 | ✅ Pass | 8 positional args with `undefined` for params 4–7 |
+| Fix 1: Add CI-002 motive comment | Comment at lines 75–77 | ✅ Pass | References CI-002 gap closure context |
+| Fix 2: Add dynamic import of BufferTimeEventService | Dynamic import at lines 27–29 | ✅ Pass | Matches `EventManager.ts:1452` pattern |
+| Fix 2: Buffer event deletion for cancelled source booking | `deleteBufferEventsForCancelledBooking()` helper at lines 22–82 | ✅ Pass | Best-effort with try/catch; soft-deletes references |
+| Fix 2: Invocation after old booking cancellation | Call at line 229 after `prisma.booking.update` | ✅ Pass | Correctly placed after booking status set to `CANCELLED` |
+| Fix 2: DO NOT modify reschedule call (no bufferContext) | Line 193 unchanged | ✅ Pass | `eventManager.reschedule(copyEvent, rescheduleUid, newTimeSlotBooking.id)` — 3 args only |
+| Fix 2: Add CI-002 motive comment | Comment at lines 226–228 | ✅ Pass | Explains target booking retains its own buffer events |
+| Fix 3: Add buffer_time reference handling | Conditional block at lines 54–61 | ✅ Pass | `reference.type.startsWith("buffer_time")` with `getCalendar`/`deleteEvent` |
+| Fix 3: Add CI-002 motive comment | Comment at lines 52–53 | ✅ Pass | References buffer_time_before and buffer_time_after types |
+| Tests: 6+ buffer event test cases | 7 tests in handleSeats.test.ts | ✅ Pass | All 7 pass; covers positive, negative, and edge cases |
+| Verification: All existing tests pass | 749/749 tests pass | ✅ Pass | Zero regressions across 4 test suites |
+| Verification: TypeScript compilation | All 4 files compile | ✅ Pass | `npx tsc --noEmit` succeeds for in-scope files |
+| Verification: Biome lint | Zero new errors | ✅ Pass | All findings are pre-existing |
+| No files created or deleted | Only 4 files modified | ✅ Pass | `git diff --name-status` confirms M (modified) only |
+| No changes outside scope | Only handleSeats subsystem modified | ✅ Pass | No changes to EventManager, BufferTimeEventService, RegularBookingService, etc. |
+
+**Compliance Score: 17/17 AAP requirements met (100%)**
 
 ---
 
@@ -176,14 +167,12 @@ pie title Project Completion
 
 | Risk | Category | Severity | Probability | Mitigation | Status |
 |------|----------|----------|-------------|------------|--------|
-| Push notification webhook endpoints not publicly accessible | Integration | High | High | Configure `GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL` and `OUTLOOK_GRAPH_NOTIFICATION_URL` with publicly routable, HTTPS-secured URLs | Open |
-| Google push notification channel expiry without renewal | Operational | Medium | Medium | Implement scheduled cron job for channel renewal before TTL expiry; add monitoring for channel health | Open |
-| Microsoft Graph notification subscription renewal (max 3-day TTL) | Operational | Medium | Medium | Implement subscription renewal task in `CalendarsTriggerTasker`; add retry with exponential backoff | Open |
-| Real API credential testing not performed | Technical | High | High | Run E2E tests with production-equivalent Google/Outlook OAuth2 credentials in staging environment | Open |
-| Feature flag race condition during toggle | Technical | Low | Low | Feature flag checked once at service initialization, not per-operation; behavior is consistent within a request | Mitigated |
-| Buffer event orphaning on partial failure | Technical | Low | Medium | Buffer events reference parent booking via `BookingReference.bookingId`; cleanup query uses `startsWith("buffer_time")` filter | Mitigated |
-| Concurrent cancellation from Cal.com UI and external calendar | Technical | Low | Low | `handleCancelBooking` checks `BookingStatus.CANCELLED` before processing; double-cancel is idempotent | Mitigated |
-| 114 pre-existing TypeScript errors in out-of-scope files | Technical | Low | N/A | All errors in non-calendar files (28 files); no Sprint 3 regressions introduced; pre-existing from upstream | Accepted |
+| Buffer event deletion not verified against live calendar APIs | Integration | Medium | Medium | Perform E2E testing with real Google/Outlook/Apple credentials before production deployment | Open |
+| Credential resolution edge case in `combineTwoSeatedBookings` — delegation credentials may not resolve via `CredentialRepository` | Technical | Low | Low | Existing DB fallback in `EventManager.ts:1583–1592` handles this; best-effort error handling prevents propagation | Mitigated |
+| 114 pre-existing TypeScript errors could mask CI failures | Technical | Low | Low | All in-scope files compile cleanly; pre-existing errors are in unrelated modules | Accepted |
+| Feature flag `calendar-buffer-sync` not enabled in staging/production | Operational | Medium | Medium | Verify flag status in staging before deployment; fixes are no-ops when disabled | Open |
+| Buffer event soft-delete in `combineTwoSeatedBookings` uses `deleted: true` — hard-delete might be needed for GDPR | Security | Low | Low | Follows established pattern in `EventManager.ts:1610–1614`; consistent with existing data retention policy | Accepted |
+| External calendar API rate limiting during bulk buffer event deletion | Operational | Low | Low | Best-effort pattern with per-reference try/catch prevents cascade failures; sequential deletion limits concurrent API calls | Mitigated |
 
 ---
 
@@ -191,37 +180,42 @@ pie title Project Completion
 
 ```mermaid
 pie title Project Hours Breakdown
-    "Completed Work" : 127
-    "Remaining Work" : 21
+    "Completed Work" : 23
+    "Remaining Work" : 7
 ```
 
-### Remaining Work by Category
+**Completed vs Remaining by Category:**
 
-| Category | Hours | Priority |
-|----------|-------|----------|
-| Environment Configuration | 1.5 | High |
-| Database Migration Deployment | 1.5 | High |
-| E2E Testing — Google API | 4 | High |
-| E2E Testing — Outlook API | 4 | High |
-| Feature Flag Enablement | 2 | Medium |
-| Webhook DNS/Domain Verification | 2 | Medium |
-| Google Channel Renewal Automation | 3 | Medium |
-| Outlook Subscription Renewal Automation | 3 | Medium |
-| **Total** | **21** | |
+| Category | Completed | Remaining |
+|----------|-----------|-----------|
+| Bug Fixes (3 fixes) | 9.5h | 0h |
+| Test Development | 9h | 0h |
+| Analysis & Verification | 4.5h | 0h |
+| Code Review | 0h | 1.5h |
+| E2E Testing (Live APIs) | 0h | 3h |
+| Deployment & Monitoring | 0h | 2.5h |
 
 ---
 
 ## 8. Summary & Recommendations
 
-Sprint 3: Calendar Integrations is **85.8% complete** (127 of 148 total hours). All five core epics (CI-001 through CI-005) have been fully implemented, tested, and validated with a 100% test pass rate across 673 tests in 29 test files. The two Medium-severity gap closures — calendar-driven cancellation sync and buffer time visualization — are fully implemented behind disabled-by-default feature flags with comprehensive test coverage.
+### Achievement Summary
 
-The autonomous work delivered 19,536 lines of code across 96 files, including 13,450 lines of test code (22 test files). A critical bug fix was applied to `EventManager.ts` during validation — buffer events were not properly deleted from external calendars on reschedule due to a credential lookup failure, resolved with a DB credential fallback.
+The project successfully resolved all three buffer event lifecycle bugs in the seated booking subsystem, achieving **76.7% completion** (23 of 30 total hours). All AAP-specified code changes are implemented, compiled, and validated. Seven new test cases pass alongside the full regression suite of 749 tests with zero failures. The fixes follow the exact patterns established by `RegularBookingService.ts` and `EventManager.ts`, ensuring architectural consistency.
 
-**Remaining 21 hours** of work are exclusively path-to-production tasks: environment configuration (3h), real API credential testing (8h), feature flag enablement (2h), webhook infrastructure setup (2h), and notification subscription renewal automation (6h). No additional source code changes are required for the core functionality.
+### Remaining Gaps
 
-**Production Readiness Assessment:** The codebase is production-ready for the core calendar parity features (CI-001 through CI-005). Gap closure features require environment setup and testing with real API credentials before feature flag enablement.
+The 7 remaining hours consist entirely of path-to-production activities that require human intervention: code review (1.5h), manual E2E testing with real calendar providers (3h), staging deployment and smoke testing (1.5h), and production deployment with monitoring (1h). No AAP-specified code or test deliverables remain incomplete.
 
-**Recommendation:** Prioritize staging deployment with database migration, configure webhook environment variables, and run E2E validation with real Google/Outlook API credentials before enabling feature flags in production.
+### Critical Path to Production
+
+1. **Code Review** (1.5h) — A senior developer familiar with `EventManager` and `BufferTimeEventService` should review the `deleteBufferEventsForCancelledBooking` helper in `combineTwoSeatedBookings.ts` to validate the credential resolution and soft-delete patterns.
+2. **E2E Testing** (3h) — Test all three fix paths with real Google, Outlook, and Apple Calendar credentials. Verify buffer events are deleted from external calendars after reschedule and last-attendee-departure.
+3. **Deployment** (2.5h) — Deploy to staging with `calendar-buffer-sync` flag enabled, run smoke tests, then deploy to production.
+
+### Production Readiness Assessment
+
+The codebase is production-ready from a code quality and test coverage perspective. All fixes are gated behind the existing `calendar-buffer-sync` feature flag and `syncBuffersToCalendar` toggle, providing safe rollout control. The best-effort error handling pattern ensures buffer cleanup failures never block primary booking operations.
 
 ---
 
@@ -231,143 +225,78 @@ The autonomous work delivered 19,536 lines of code across 96 files, including 13
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| Node.js | v20.20.1 | Runtime (required: ≥18) |
-| Yarn | 4.12.0 | Package manager (Yarn Berry with PnP) |
-| PostgreSQL | 15+ | Database (via `DATABASE_URL`) |
+| Node.js | v20.20.1 | JavaScript runtime |
+| Yarn | 4.12.0 | Package manager (Berry) |
 | TypeScript | 5.9.3 | Type checking |
-| Prisma | 6.16.1 | ORM and schema management |
+| Vitest | 4.0.16 | Test runner |
 
 ### Environment Setup
 
 ```bash
-# 1. Clone the repository and checkout the branch
-git clone <repository-url>
-cd cal.com
-git checkout blitzy-5755aac2-6bb5-4676-bf93-08909a56da15
+# Clone and navigate to repository
+cd /tmp/blitzy/blitzy-cal/blitzy-c22906a7-f20a-4d01-a3ea-08fc622415d4_a3e360
 
-# 2. Install dependencies
-yarn install
+# Install dependencies (immutable for reproducibility)
+yarn install --immutable
 
-# 3. Copy environment template and configure
-cp .env.example .env
-
-# 4. Set required environment variables in .env:
-# DATABASE_URL="postgresql://postgres:@localhost:5450/calendso"
-# CALENDSO_ENCRYPTION_KEY=<generate-a-32-char-random-string>
-# NEXTAUTH_SECRET=<generate-a-random-secret>
-# NEXT_PUBLIC_WEBAPP_URL='http://localhost:3000'
-
-# 5. For Sprint 3 gap closure features, also set:
-# GOOGLE_WEBHOOK_TOKEN=<generate-a-random-token>
-# GOOGLE_WEBHOOK_URL=https://<your-domain>/api/webhooks/google-calendar
-# GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL=https://<your-domain>/api/webhooks/google-calendar
-# MICROSOFT_WEBHOOK_TOKEN=<generate-a-random-token>
-# MICROSOFT_WEBHOOK_URL=https://<your-domain>/api/webhooks/microsoft-graph
-# OUTLOOK_GRAPH_NOTIFICATION_URL=https://<your-domain>/api/webhooks/microsoft-graph
-```
-
-### Database Setup
-
-```bash
 # Generate Prisma client
-npx prisma generate
-
-# Apply all migrations (including Sprint 3 gap closure migration)
-npx prisma migrate deploy
-
-# Verify new columns exist
-npx prisma db execute --stdin <<SQL
-SELECT column_name, data_type, is_nullable
-FROM information_schema.columns
-WHERE table_name IN ('EventType', 'Credential')
-AND column_name IN ('syncBuffersToCalendar', 'externalCancellationSyncEnabled');
-SQL
-
-# Verify feature flags exist
-npx prisma db execute --stdin <<SQL
-SELECT slug, enabled, description FROM "Feature"
-WHERE slug IN ('calendar-cancellation-sync', 'calendar-buffer-sync');
-SQL
+yarn prisma generate
 ```
 
 ### Running Tests
 
+**Run seated booking tests (includes new buffer event tests):**
 ```bash
-# Run all Sprint 3 calendar-related tests (673 tests, ~16 seconds)
-TZ=UTC CI=true npx vitest run --no-isolate \
-  packages/app-store/googlecalendar/lib/__tests__/ \
-  packages/app-store/office365calendar/lib/__tests__/ \
-  packages/app-store/applecalendar/lib/__tests__/ \
-  packages/features/calendars/ \
-  packages/features/busyTimes/ \
-  packages/features/CalendarEventBuilder.test.ts \
-  packages/features/calendar-subscription/ \
-  packages/features/selectedCalendar/
-
-# Run specific test suites:
-# Google Calendar parity tests only
-TZ=UTC CI=true npx vitest run --no-isolate packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts
-
-# Bi-directional sync integration tests
-TZ=UTC CI=true npx vitest run --no-isolate packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts
-
-# Buffer time visualization tests
-TZ=UTC CI=true npx vitest run --no-isolate packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts
-
-# Cancellation sync handler tests
-TZ=UTC CI=true npx vitest run --no-isolate packages/features/calendars/lib/cancellation-sync/handlers/__tests__/
+TZ=UTC npx vitest run packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts --reporter=verbose
 ```
+Expected output: `Tests  27 passed (27)` — 20 existing + 7 new buffer event tests.
 
-### TypeScript Verification
-
+**Run buffer time visualization regression tests:**
 ```bash
-# Type check entire project (0 errors expected)
-npx tsc --noEmit
-
-# Type check specific modified file
-npx tsc --noEmit packages/features/bookings/lib/EventManager.ts
+TZ=UTC npx vitest run packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts --reporter=verbose
 ```
+Expected output: `Tests  27 passed (27)`
 
-### Application Startup
-
+**Run full calendar integration test suite:**
 ```bash
-# Start the development server
-yarn dev
-
-# The application will be available at http://localhost:3000
-# Calendar settings: http://localhost:3000/settings/my-account/calendars
-# Event type settings: http://localhost:3000/event-types
+TZ=UTC npx vitest run packages/features/calendars/lib/__tests__/ --reporter=verbose
 ```
+Expected output: `Tests  80 passed (80)`
+
+**Run full bookings test suite:**
+```bash
+TZ=UTC npx vitest run packages/features/bookings/ --reporter=verbose
+```
+Expected output: `Tests  621 passed | 1 skipped | 5 todo (627)` — 1 skip and 5 TODOs are pre-existing.
 
 ### Verification Steps
 
+1. **Verify compilation of in-scope files:**
 ```bash
-# 1. Verify tests pass
-TZ=UTC CI=true npx vitest run --no-isolate 2>&1 | tail -5
-# Expected: "Test Files  29 passed (29)" and "Tests  673 passed (673)"
-
-# 2. Verify TypeScript compilation
-npx tsc --noEmit 2>&1 | grep -c "error TS"
-# Expected: 0
-
-# 3. Verify Prisma client generated
-ls -la node_modules/.prisma/client/index.js
-# Expected: file exists
-
-# 4. Verify migration file exists
-cat packages/prisma/migrations/20260305000000_calendar_integration_gap_closure/migration.sql
-# Expected: Shows ALTER TABLE and INSERT INTO statements
+npx tsc --noEmit --pretty 2>&1 | grep -E "moveSeatedBookingToNewTimeSlot|combineTwoSeatedBookings|lastAttendeeDeleteBooking"
 ```
+Expected: No output (no errors in in-scope files).
+
+2. **Verify only in-scope files are modified:**
+```bash
+git diff --name-status origin/main...HEAD
+```
+Expected: 4 files with `M` (modified) status only.
+
+3. **Verify no uncommitted changes:**
+```bash
+git status
+```
+Expected: `nothing to commit, working tree clean`
 
 ### Troubleshooting
 
 | Issue | Resolution |
-|-------|------------|
-| `Cannot find module '@calcom/prisma'` | Run `npx prisma generate` to regenerate the Prisma client |
-| Tests fail with timezone errors | Ensure `TZ=UTC` is set before running tests |
-| Vitest enters watch mode | Add `CI=true` environment variable before the command |
-| `CALENDSO_ENCRYPTION_KEY` missing | Generate a 32-character random string and set in `.env` |
-| Migration fails with "column already exists" | Feature flag inserts use `ON CONFLICT DO NOTHING` — safe to re-run |
+|-------|-----------|
+| `TZ=UTC` required for test execution | Vitest workspace requires UTC timezone; tests may produce date mismatches without it |
+| `yarn install` fails with lockfile mismatch | Use `--immutable` flag; do not modify `yarn.lock` |
+| Pre-existing TS errors appear in `npx tsc --noEmit` | 114 errors are in out-of-scope files (dayjs plugins, OAuth callbacks); filter with `grep` for in-scope files only |
+| Test timeout on CI | Add `--timeout=300000` flag to vitest; the full bookings suite takes ~67s locally |
 
 ---
 
@@ -377,96 +306,65 @@ cat packages/prisma/migrations/20260305000000_calendar_integration_gap_closure/m
 
 | Command | Purpose |
 |---------|---------|
-| `yarn install` | Install all workspace dependencies |
-| `npx prisma generate` | Generate Prisma client from schema |
-| `npx prisma migrate deploy` | Apply pending database migrations |
-| `npx prisma migrate dev` | Create and apply dev migrations |
-| `TZ=UTC CI=true npx vitest run --no-isolate` | Run all tests in CI mode |
-| `npx tsc --noEmit` | TypeScript type checking without emit |
-| `yarn dev` | Start development server |
+| `TZ=UTC npx vitest run packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts --reporter=verbose` | Run seated booking tests including new buffer event tests |
+| `TZ=UTC npx vitest run packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts --reporter=verbose` | Run buffer time visualization regression tests |
+| `TZ=UTC npx vitest run packages/features/calendars/lib/__tests__/ --reporter=verbose` | Run full calendar integration test suite |
+| `TZ=UTC npx vitest run packages/features/bookings/ --reporter=verbose` | Run full bookings test suite |
+| `yarn install --immutable` | Install dependencies without modifying lockfile |
+| `yarn prisma generate` | Generate Prisma client from schema |
+| `npx tsc --noEmit --pretty` | Type-check without emitting (114 pre-existing errors expected) |
 
 ### B. Port Reference
 
-| Service | Port | Notes |
-|---------|------|-------|
-| Cal.com Web | 3000 | Main Next.js application |
-| PostgreSQL | 5450 | Default database port per .env.example |
-| API v2 | 5555 | NestJS API v2 server (if running separately) |
+No ports are used by this bug fix. All tests run in-process using Vitest with mocked calendar adapters.
 
 ### C. Key File Locations
 
-| Component | Path |
-|-----------|------|
-| Google Calendar Adapter | `packages/app-store/googlecalendar/lib/CalendarService.ts` |
-| Outlook Calendar Adapter | `packages/app-store/office365calendar/lib/CalendarService.ts` |
-| Apple Calendar Adapter | `packages/app-store/applecalendar/lib/CalendarService.ts` |
-| CalendarManager | `packages/features/calendars/lib/CalendarManager.ts` |
-| CalendarEventBuilder | `packages/features/CalendarEventBuilder.ts` |
-| BusyTimes Service | `packages/features/busyTimes/services/getBusyTimes.ts` |
-| Cancellation Sync Service | `packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts` |
-| Google Cancellation Handler | `packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts` |
-| Outlook Cancellation Handler | `packages/features/calendars/lib/cancellation-sync/handlers/OutlookCancellationHandler.ts` |
-| Buffer Time Event Service | `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` |
-| EventManager (booking lifecycle) | `packages/features/bookings/lib/EventManager.ts` |
-| Database Migration | `packages/prisma/migrations/20260305000000_calendar_integration_gap_closure/migration.sql` |
-| Prisma Schema | `packages/prisma/schema.prisma` |
-| Calendar Types | `packages/types/Calendar.d.ts` |
-| Feature Flags Config | `packages/features/flags/config.ts` |
-| Google Webhook Route | `apps/web/app/api/webhooks/google-calendar/route.ts` |
-| Microsoft Graph Webhook Route | `apps/web/app/api/webhooks/microsoft-graph/route.ts` |
-| Design Spec | `specs/calendar-integrations/design.md` |
-| Architecture Decisions | `specs/calendar-integrations/decisions.md` |
+| File | Purpose | Lines Changed |
+|------|---------|---------------|
+| `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts` | Fix 1: Buffer context for seated booking reschedule | +38/-1 (163 total) |
+| `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts` | Fix 2: Buffer cleanup on merge-reschedule cancellation | +73/-0 (236 total) |
+| `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts` | Fix 3: Buffer reference handling in last-attendee cleanup | +10/-0 (81 total) |
+| `packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` | 7 new buffer event test cases | +1322/-0 (4313 total) |
+| `packages/features/bookings/lib/EventManager.ts` | Reference: BufferEventContext type, reschedule() API (NOT modified) | — |
+| `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` | Reference: Buffer event service (NOT modified) | — |
+| `packages/features/bookings/lib/service/RegularBookingService.ts` | Reference: Correct buffer context pattern (NOT modified) | — |
 
 ### D. Technology Versions
 
 | Technology | Version |
 |------------|---------|
-| Node.js | v20.20.1 |
-| TypeScript | 5.9.3 |
+| Node.js | 20.20.1 |
 | Yarn | 4.12.0 |
-| Prisma | 6.16.1 |
+| TypeScript | 5.9.3 |
 | Vitest | 4.0.16 |
-| Next.js | Latest (from package.json) |
-| @googleapis/calendar | 9.7.9 |
-| Zod | 3.25.76 |
+| Prisma | (workspace-managed) |
+| Biome | (workspace-managed) |
 
 ### E. Environment Variable Reference
 
-| Variable | Purpose | Required | Sprint 3 Addition |
-|----------|---------|----------|-------------------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes | No |
-| `CALENDSO_ENCRYPTION_KEY` | AES-256 encryption key for credentials | Yes | No |
-| `NEXTAUTH_SECRET` | NextAuth session secret | Yes | No |
-| `NEXT_PUBLIC_WEBAPP_URL` | Public webapp URL | Yes | No |
-| `GOOGLE_API_CREDENTIALS` | Google OAuth2 app credentials | For Google adapter | No |
-| `MS_GRAPH_CLIENT_ID` | Microsoft Azure AD app client ID | For Outlook adapter | No |
-| `MS_GRAPH_CLIENT_SECRET` | Microsoft Azure AD app client secret | For Outlook adapter | No |
-| `GOOGLE_WEBHOOK_TOKEN` | Token for validating Google push notifications | For cancellation sync | **Yes** |
-| `GOOGLE_WEBHOOK_URL` | Base URL for Google webhook endpoints | For cancellation sync | **Yes** |
-| `GOOGLE_CALENDAR_PUSH_NOTIFICATION_URL` | Full URL for Google Calendar push notifications | For cancellation sync | **Yes** |
-| `MICROSOFT_WEBHOOK_TOKEN` | Token for validating Microsoft Graph notifications | For cancellation sync | **Yes** |
-| `MICROSOFT_WEBHOOK_URL` | Base URL for Microsoft Graph webhook endpoints | For cancellation sync | **Yes** |
-| `OUTLOOK_GRAPH_NOTIFICATION_URL` | Full URL for Outlook Graph change notifications | For cancellation sync | **Yes** |
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `TZ=UTC` | Yes (for tests) | Ensures consistent date/time handling in Vitest test execution |
+| `VITEST_MODE` | No | Controls Vitest workspace configuration (default: unit tests) |
 
 ### F. Developer Tools Guide
 
-| Tool | Command | Purpose |
-|------|---------|---------|
-| Prisma Studio | `npx prisma studio` | Visual database browser |
-| Vitest UI | `npx vitest --ui` | Visual test runner |
-| TypeScript Compiler | `npx tsc --noEmit --watch` | Continuous type checking |
-| Biome Lint | `npx biome lint <file>` | Code linting |
+| Tool | Usage |
+|------|-------|
+| Vitest | Primary test runner; use `--reporter=verbose` for detailed output; use `--run` to prevent watch mode |
+| TypeScript Compiler | Use `npx tsc --noEmit` for type checking; 114 pre-existing errors are expected |
+| Biome | Linter/formatter; configured via monorepo; run via `npx biome check` |
+| Git | 6 commits on branch `blitzy-c22906a7-f20a-4d01-a3ea-08fc622415d4`; all by Blitzy Agent |
 
 ### G. Glossary
 
 | Term | Definition |
 |------|-----------|
-| CalDAV | Calendar Distributed Authoring and Versioning — protocol used by Apple Calendar/iCloud |
-| FreeBusy API | Google Calendar API for querying busy/free time windows |
-| showAs | Microsoft Graph event property indicating availability status (Busy, Tentative, Free, Oof, WorkingElsewhere, Unknown) |
-| statusFilter | Sprint 3 CI-004 parameter enabling configurable conflict detection by event status |
-| Push Notification Channel | Google Calendar API mechanism for receiving real-time event change notifications |
-| Graph Change Notification | Microsoft Graph API subscription for receiving event change webhooks |
-| BookingReference | Database model linking Cal.com bookings to external calendar event UIDs |
-| Buffer Event | Optional separate calendar event representing pre/post-event buffer time |
-| Gate 3 | Sprint validation checkpoint — 5 dimensions must pass before Sprint 4 begins |
+| Buffer Event | A calendar event created before or after a booking to block off buffer time in the organizer's external calendar |
+| `BufferEventContext` | TypeScript type containing booking ID, UID, title, start/end times, event type config, and organizer info; passed to `EventManager.reschedule()` to trigger buffer lifecycle |
+| `syncBuffersToCalendar` | Boolean toggle on EventType model; when `true`, buffer events are synced to external calendars |
+| `calendar-buffer-sync` | Feature flag gating all buffer event operations; must be enabled for buffer sync to function |
+| CI-002 Gap Closure | Sprint 3 deliverable: Buffer time visualization on external calendars; the original implementation that these fixes extend to seated bookings |
+| Seated Booking | A booking type where multiple attendees can book the same time slot up to a seat limit |
+| `buffer_time_before` / `buffer_time_after` | BookingReference type values used to track buffer events in the database |

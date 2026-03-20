@@ -551,6 +551,11 @@ export const updateEvent = async (
     calWarnings = updatedResult?.additionalInfo?.calWarnings || [];
   }
 
+  // CI-002 gap closure: Include credentialId, delegatedToId, and externalId in the update
+  // result to match createEvent's return shape. Without these fields,
+  // EventManager.createBufferEventsForBooking() cannot resolve the calendar credential
+  // needed to create buffer time events at the rescheduled time, causing buffer events
+  // to be silently skipped after a non-seated booking reschedule.
   return {
     appName: credential.appName || credential.appId || "",
     type: credential.type,
@@ -560,6 +565,9 @@ export const updateEvent = async (
     originalEvent: calEvent,
     calError,
     calWarnings,
+    externalId: externalCalendarId,
+    credentialId: credential.id,
+    delegatedToId: credential.delegatedToId ?? undefined,
   };
 };
 

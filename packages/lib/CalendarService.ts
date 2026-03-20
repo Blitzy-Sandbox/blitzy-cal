@@ -424,7 +424,11 @@ export default abstract class BaseCalendarService implements Calendar {
     return attendees;
   }
 
-  async createEvent(event: CalendarServiceEvent, credentialId: number): Promise<NewCalendarEventType> {
+  async createEvent(
+    event: CalendarServiceEvent,
+    credentialId: number,
+    externalCalendarId?: string
+  ): Promise<NewCalendarEventType> {
     try {
       const calendars = await this.listCalendars(event);
       const uid = event.uid || uuidv4();
@@ -462,14 +466,17 @@ export default abstract class BaseCalendarService implements Calendar {
           event.destinationCalendar[0])
         : undefined;
 
+      // Determine which calendar to target. externalCalendarId takes priority over
+      // destinationCalendar lookup so that callers (e.g. buffer event creation via
+      // BufferTimeEventService) can explicitly target a single calendar, preventing
+      // events from being created on ALL user calendars (which causes partial failures
+      // on read-only calendars such as iCloud subscribed calendars).
+      const targetExternalId = externalCalendarId ?? mainHostDestinationCalendar?.externalId;
+
       // We create the event directly on iCal
       const responses = await Promise.all(
         calendars
-          .filter((c) =>
-            mainHostDestinationCalendar?.externalId
-              ? c.externalId === mainHostDestinationCalendar.externalId
-              : true
-          )
+          .filter((c) => (targetExternalId ? c.externalId === targetExternalId : true))
           .map((calendar) =>
             createCalendarObject({
               calendar: {

@@ -409,16 +409,15 @@ export const createEvent = async (
 
   const calEvent = processEvent(formattedEvent);
 
-  const externalCalendarIdWhenDelegationCredentialIsChosen = credential.delegatedToId
-    ? externalId
-    : undefined;
-
-  // TODO: Surface success/error messages coming from apps to improve end user visibility
+  // Pass externalId for all credentials so that calendar adapters (including
+  // Apple Calendar / CalDAV via BaseCalendarService) can target the specific
+  // destination calendar. Without this, CalDAV-based adapters create events on
+  // ALL user calendars, causing partial failures on read-only calendars and
+  // preventing BookingReference storage (so deletion on reschedule/cancel finds
+  // nothing to delete).
   const creationResult = calendar
     ? await calendar
-        // Ideally we should pass externalId always, but let's start with DelegationCredential case first as in that case, CalendarService need to handle a special case for DelegationCredential to determine the selectedCalendar.
-        // Such logic shouldn't exist in CalendarService as it would be same for all calendar apps.
-        .createEvent(calEvent, credential.id, externalCalendarIdWhenDelegationCredentialIsChosen)
+        .createEvent(calEvent, credential.id, externalId)
         .catch(async (error: { code: number; calError: string }) => {
           success = false;
           /**

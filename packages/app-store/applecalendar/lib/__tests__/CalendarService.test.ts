@@ -544,6 +544,208 @@ describe("deleteEvent", () => {
 
     expect(deleteCalendarObject).not.toHaveBeenCalled();
   });
+
+  it("should delete a buffer event directly via externalCalendarId without listing all calendars", async () => {
+    // CI-002 gap closure: Buffer events store externalCalendarId in BookingReference.
+    // When provided, deleteEvent should use it for direct URL construction via the
+    // URL constructor (matching tsdav's createCalendarObject) instead of iterating
+    // all calendars through getEventsByUID. This prevents silent deletion failures
+    // caused by URL construction mismatches.
+    const credential = createAppleCredential();
+    const service = BuildCalendarService(credential);
+    const bufferUid = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+    const externalCalendarId = "https://caldav.icloud.com/123456/calendars/work/";
+
+    vi.mocked(fetchCalendarObjects).mockResolvedValue([
+      {
+        url: `${externalCalendarId}${bufferUid}.ics`,
+        data: `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:${bufferUid}\r\nDTSTART:20240615T090000Z\r\nDTEND:20240615T091500Z\r\nSUMMARY:Buffer: Before Test Event\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+        etag: "etag-buffer-123",
+      },
+    ] as any);
+
+    await service.deleteEvent(bufferUid, {} as any, externalCalendarId);
+
+    // Should call fetchCalendarObjects with the direct URL (not listing all calendars first)
+    expect(fetchCalendarObjects).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendar: { url: externalCalendarId },
+        objectUrls: [`${externalCalendarId}${bufferUid}.ics`],
+      })
+    );
+    expect(deleteCalendarObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarObject: expect.objectContaining({
+          url: `${externalCalendarId}${bufferUid}.ics`,
+          etag: "etag-buffer-123",
+        }),
+      })
+    );
+    // Should NOT have called fetchCalendars (listCalendars) since direct path succeeded
+    expect(fetchCalendars).not.toHaveBeenCalled();
+  });
+
+  it("should fall back to full calendar search when direct externalCalendarId lookup returns empty", async () => {
+    // If the buffer event is not found at the direct URL (e.g., calendar was moved),
+    // deleteEvent should fall back to searching all calendars via getEventsByUID.
+    const credential = createAppleCredential();
+    const service = BuildCalendarService(credential);
+    const bufferUid = "fallback-uid-1234-5678-abcdef012345";
+    const externalCalendarId = "https://caldav.icloud.com/123456/calendars/old-calendar/";
+    const actualCalendarUrl = "https://caldav.icloud.com/123456/calendars/new-calendar/";
+
+    // First call (direct lookup) returns empty — event not on the old calendar
+    // Second call (fallback via getEventsByUID) finds it on the new calendar
+    vi.mocked(fetchCalendarObjects)
+      .mockResolvedValueOnce([] as any) // direct lookup fails
+      .mockResolvedValueOnce([
+        {
+          url: `${actualCalendarUrl}${bufferUid}.ics`,
+          data: `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:${bufferUid}\r\nDTSTART:20240615T090000Z\r\nDTEND:20240615T091500Z\r\nSUMMARY:Buffer: After Test Event\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+          etag: "etag-fallback-456",
+        },
+      ] as any);
+
+    vi.mocked(createAccount).mockResolvedValue({} as any);
+    vi.mocked(fetchCalendars).mockResolvedValue([
+      { url: actualCalendarUrl, components: ["VEVENT"] },
+    ] as any);
+
+    await service.deleteEvent(bufferUid, {} as any, externalCalendarId);
+
+    // Should have attempted direct lookup first, then fallen back to full search
+    expect(fetchCalendarObjects).toHaveBeenCalledTimes(2);
+    expect(fetchCalendars).toHaveBeenCalled();
+    expect(deleteCalendarObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarObject: expect.objectContaining({
+          url: `${actualCalendarUrl}${bufferUid}.ics`,
+        }),
+      })
+    );
+  });
+
+  it("should construct correct URL for buffer events when calendar URL lacks trailing slash", async () => {
+    // This is the core bug scenario: when a CalDAV calendar URL does not end with a
+    // trailing slash, string concatenation produces "https://host/caluid.ics" instead
+    // of the correct "https://host/uid.ics". The URL constructor handles this correctly
+    // by resolving the filename relative to the calendar URL.
+    const credential = createAppleCredential();
+    const service = BuildCalendarService(credential);
+    const bufferUid = "no-slash-uid-1234-5678-abcdef012345";
+    // Calendar URL WITHOUT trailing slash
+    const externalCalendarId = "https://caldav.icloud.com/123456/calendars/work";
+    // URL constructor resolves "uid.ics" relative to parent path: https://host/.../uid.ics
+    const expectedObjectUrl = new URL(`${bufferUid}.ics`, externalCalendarId).href;
+
+    vi.mocked(fetchCalendarObjects).mockResolvedValue([
+      {
+        url: expectedObjectUrl,
+        data: `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:${bufferUid}\r\nDTSTART:20240615T090000Z\r\nDTEND:20240615T091500Z\r\nSUMMARY:Buffer: Before Event\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+        etag: "etag-no-slash",
+      },
+    ] as any);
+
+    await service.deleteEvent(bufferUid, {} as any, externalCalendarId);
+
+    // Verify the correct URL was used (URL constructor, not string concat)
+    expect(fetchCalendarObjects).toHaveBeenCalledWith(
+      expect.objectContaining({
+        objectUrls: [expectedObjectUrl],
+      })
+    );
+    expect(deleteCalendarObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarObject: expect.objectContaining({
+          url: expectedObjectUrl,
+        }),
+      })
+    );
+  });
+
+  it("should delete buffer events on reschedule (old buffer events removed)", async () => {
+    // Simulates the reschedule scenario: EventManager.deleteBufferEventsForBooking
+    // calls CalendarManager.deleteEvent with the buffer reference uid and
+    // externalCalendarId from BookingReference. The CalDAV adapter should delete
+    // both before and after buffer events from the external calendar.
+    const credential = createAppleCredential();
+    const service = BuildCalendarService(credential);
+    const calendarUrl = "https://caldav.icloud.com/123456/calendars/primary/";
+
+    const beforeBufferUid = "before-buf-1234-5678-abcdef012345";
+    const afterBufferUid = "after-buf-abcd-ef12-3456789abcde";
+
+    // Delete the "before" buffer event
+    vi.mocked(fetchCalendarObjects).mockResolvedValueOnce([
+      {
+        url: `${calendarUrl}${beforeBufferUid}.ics`,
+        data: `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:${beforeBufferUid}\r\nDTSTART:20240615T094500Z\r\nDTEND:20240615T100000Z\r\nSUMMARY:Buffer: Before Meeting\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+        etag: "etag-before",
+      },
+    ] as any);
+
+    await service.deleteEvent(beforeBufferUid, {} as any, calendarUrl);
+
+    expect(deleteCalendarObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarObject: expect.objectContaining({
+          url: `${calendarUrl}${beforeBufferUid}.ics`,
+        }),
+      })
+    );
+
+    vi.clearAllMocks();
+
+    // Delete the "after" buffer event
+    vi.mocked(fetchCalendarObjects).mockResolvedValueOnce([
+      {
+        url: `${calendarUrl}${afterBufferUid}.ics`,
+        data: `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:${afterBufferUid}\r\nDTSTART:20240615T110000Z\r\nDTEND:20240615T111500Z\r\nSUMMARY:Buffer: After Meeting\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+        etag: "etag-after",
+      },
+    ] as any);
+
+    await service.deleteEvent(afterBufferUid, {} as any, calendarUrl);
+
+    expect(deleteCalendarObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarObject: expect.objectContaining({
+          url: `${calendarUrl}${afterBufferUid}.ics`,
+        }),
+      })
+    );
+  });
+
+  it("should delete buffer events on cancellation (last attendee leaves seated booking)", async () => {
+    // Simulates the cancellation scenario: lastAttendeeDeleteBooking iterates
+    // references and calls calendar.deleteEvent for each buffer_time reference.
+    // The CalDAV adapter receives the uid and externalCalendarId and should
+    // delete the buffer event from Apple Calendar.
+    const credential = createAppleCredential();
+    const service = BuildCalendarService(credential);
+    const calendarUrl = "https://caldav.icloud.com/789012/calendars/personal/";
+    const bufferUid = "cancel-buf-1234-5678-abcdef012345";
+
+    vi.mocked(fetchCalendarObjects).mockResolvedValue([
+      {
+        url: `${calendarUrl}${bufferUid}.ics`,
+        data: `BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:${bufferUid}\r\nDTSTART:20240615T090000Z\r\nDTEND:20240615T091500Z\r\nSUMMARY:Buffer: Before Cancelled Event\r\nEND:VEVENT\r\nEND:VCALENDAR`,
+        etag: "etag-cancel",
+      },
+    ] as any);
+
+    await service.deleteEvent(bufferUid, {} as any, calendarUrl);
+
+    expect(deleteCalendarObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarObject: expect.objectContaining({
+          url: `${calendarUrl}${bufferUid}.ics`,
+        }),
+      })
+    );
+    // Verify no unnecessary calendar enumeration when externalCalendarId is provided
+    expect(fetchCalendars).not.toHaveBeenCalled();
+  });
 });
 
 describe("getAvailability", () => {

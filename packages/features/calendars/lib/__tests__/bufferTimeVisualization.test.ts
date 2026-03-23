@@ -955,7 +955,176 @@ describe("Buffer Time Calendar Visualization (CI-002 gap)", () => {
     });
   });
 
-  // ── Phase 8: Cross-Adapter Consistency Verification ───────────────────────
+  // ── Phase 8: Apple Calendar Destination Calendar Targeting ─────────────────
+  //
+  // Verifies that buffer events for Apple Calendar (CalDAV) are created only on
+  // the specified destination calendar, not on ALL user calendars. This prevents
+  // partial failures on read-only calendars (e.g. iCloud subscribed calendars)
+  // which would prevent storeBufferReference from being called.
+
+  describe("Apple Calendar Destination Calendar Targeting", () => {
+    it("should pass externalCalendarId to CalendarManager.createEvent for Apple Calendar buffer events", async () => {
+      mockBuildBufferEvent
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: iCloud Targeted" }))
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: iCloud Targeted" }));
+
+      const appleBeforeResult: EventResult<NewCalendarEventType> = {
+        appName: "apple-calendar",
+        type: "apple_calendar",
+        success: true,
+        uid: "apple-targeted-before",
+        createdEvent: {
+          uid: "apple-targeted-before",
+          id: "caldav-targeted-before-uid",
+          type: "apple_calendar",
+          password: "",
+          url: "",
+          additionalInfo: {},
+        },
+        originalEvent: {} as CalendarEvent,
+        calError: undefined,
+        calWarnings: [],
+        externalId: "caldav-primary-calendar",
+        credentialId: 30,
+      };
+      const appleAfterResult: EventResult<NewCalendarEventType> = {
+        ...appleBeforeResult,
+        uid: "apple-targeted-after",
+        createdEvent: {
+          ...appleBeforeResult.createdEvent!,
+          uid: "apple-targeted-after",
+          id: "caldav-targeted-after-uid",
+        },
+      };
+      mockCreateEvent.mockResolvedValueOnce(appleBeforeResult).mockResolvedValueOnce(appleAfterResult);
+
+      const appleCredential = buildCredential({ id: 30, type: "apple_calendar" });
+      const targetCalendarId = "caldav-primary-calendar";
+
+      await service.createBufferEvents({
+        booking: buildMockBooking() as any,
+        credential: appleCredential,
+        externalCalendarId: targetCalendarId,
+      });
+
+      // Verify CalendarManager.createEvent receives the externalCalendarId for each buffer event
+      expect(mockCreateEvent).toHaveBeenCalledTimes(2);
+      // First call: before buffer
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ id: 30 }), // credential
+        expect.objectContaining({ title: "Buffer: iCloud Targeted" }), // calEvent
+        targetCalendarId // externalCalendarId — ensures only target calendar is used
+      );
+      // Second call: after buffer
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ id: 30 }),
+        expect.objectContaining({ title: "Buffer: iCloud Targeted" }),
+        targetCalendarId
+      );
+
+      // Verify BookingReference stores the target calendar ID
+      expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(2);
+      const beforeRef = mockPrismaBookingReference.create.mock.calls[0][0];
+      expect(beforeRef.data.externalCalendarId).toBe(targetCalendarId);
+      const afterRef = mockPrismaBookingReference.create.mock.calls[1][0];
+      expect(afterRef.data.externalCalendarId).toBe(targetCalendarId);
+    });
+
+    it("should create buffer events without externalCalendarId when none is specified", async () => {
+      mockBuildBufferEvent
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: No Target" }))
+        .mockReturnValueOnce(null);
+
+      const result: EventResult<NewCalendarEventType> = {
+        appName: "apple-calendar",
+        type: "apple_calendar",
+        success: true,
+        uid: "no-target-uid",
+        createdEvent: {
+          uid: "no-target-uid",
+          id: "caldav-no-target-id",
+          type: "apple_calendar",
+          password: "",
+          url: "",
+          additionalInfo: {},
+        },
+        originalEvent: {} as CalendarEvent,
+        calError: undefined,
+        calWarnings: [],
+        externalId: undefined,
+        credentialId: 30,
+      };
+      mockCreateEvent.mockResolvedValueOnce(result);
+
+      const appleCredential = buildCredential({ id: 30, type: "apple_calendar" });
+
+      // No externalCalendarId provided
+      await service.createBufferEvents({
+        booking: buildMockBooking() as any,
+        credential: appleCredential,
+      });
+
+      expect(mockCreateEvent).toHaveBeenCalledTimes(1);
+      // Third argument (externalCalendarId) should be undefined
+      expect(mockCreateEvent).toHaveBeenCalledWith(expect.anything(), expect.anything(), undefined);
+
+      // BookingReference stores null for externalCalendarId
+      expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(1);
+      const ref = mockPrismaBookingReference.create.mock.calls[0][0];
+      expect(ref.data.externalCalendarId).toBeNull();
+    });
+
+    it("should store buffer references even when externalCalendarId targets a specific Apple calendar", async () => {
+      mockBuildBufferEvent
+        .mockReturnValueOnce(buildCalendarEvent({ title: "Buffer: Targeted Store" }))
+        .mockReturnValueOnce(null); // only before buffer
+
+      const result: EventResult<NewCalendarEventType> = {
+        appName: "apple-calendar",
+        type: "apple_calendar",
+        success: true,
+        uid: "store-uid",
+        createdEvent: {
+          uid: "store-uid",
+          id: "caldav-stored-id-99",
+          type: "apple_calendar",
+          password: "",
+          url: "",
+          additionalInfo: {},
+        },
+        originalEvent: {} as CalendarEvent,
+        calError: undefined,
+        calWarnings: [],
+        externalId: "caldav-work-calendar",
+        credentialId: 30,
+      };
+      mockCreateEvent.mockResolvedValueOnce(result);
+
+      const appleCredential = buildCredential({ id: 30, type: "apple_calendar" });
+
+      await service.createBufferEvents({
+        booking: buildMockBooking() as any,
+        credential: appleCredential,
+        externalCalendarId: "caldav-work-calendar",
+      });
+
+      // Verify that storeBufferReference was called (BookingReference.create)
+      // This confirms the flow succeeds end-to-end when targeting a specific calendar
+      expect(mockPrismaBookingReference.create).toHaveBeenCalledTimes(1);
+      const ref = mockPrismaBookingReference.create.mock.calls[0][0];
+      expect(ref.data).toMatchObject({
+        bookingId: 123,
+        type: "buffer_time_before",
+        uid: "caldav-stored-id-99", // external event ID stored, not internal
+        credentialId: 30,
+        externalCalendarId: "caldav-work-calendar", // target calendar preserved
+      });
+    });
+  });
+
+  // ── Phase 9: Cross-Adapter Consistency Verification ───────────────────────
   //
   // Verifies that the external ID storage pattern (result.createdEvent.id)
   // works consistently across provider-specific ID formats.

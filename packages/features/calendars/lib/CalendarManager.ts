@@ -409,16 +409,15 @@ export const createEvent = async (
 
   const calEvent = processEvent(formattedEvent);
 
-  const externalCalendarIdWhenDelegationCredentialIsChosen = credential.delegatedToId
-    ? externalId
-    : undefined;
-
-  // TODO: Surface success/error messages coming from apps to improve end user visibility
+  // Pass externalId for all credentials so that calendar adapters (including
+  // Apple Calendar / CalDAV via BaseCalendarService) can target the specific
+  // destination calendar. Without this, CalDAV-based adapters create events on
+  // ALL user calendars, causing partial failures on read-only calendars and
+  // preventing BookingReference storage (so deletion on reschedule/cancel finds
+  // nothing to delete).
   const creationResult = calendar
     ? await calendar
-        // Ideally we should pass externalId always, but let's start with DelegationCredential case first as in that case, CalendarService need to handle a special case for DelegationCredential to determine the selectedCalendar.
-        // Such logic shouldn't exist in CalendarService as it would be same for all calendar apps.
-        .createEvent(calEvent, credential.id, externalCalendarIdWhenDelegationCredentialIsChosen)
+        .createEvent(calEvent, credential.id, externalId)
         .catch(async (error: { code: number; calError: string }) => {
           success = false;
           /**
@@ -551,6 +550,11 @@ export const updateEvent = async (
     calWarnings = updatedResult?.additionalInfo?.calWarnings || [];
   }
 
+  // CI-002 gap closure: Include credentialId, delegatedToId, and externalId in the update
+  // result to match createEvent's return shape. Without these fields,
+  // EventManager.createBufferEventsForBooking() cannot resolve the calendar credential
+  // needed to create buffer time events at the rescheduled time, causing buffer events
+  // to be silently skipped after a non-seated booking reschedule.
   return {
     appName: credential.appName || credential.appId || "",
     type: credential.type,
@@ -560,6 +564,9 @@ export const updateEvent = async (
     originalEvent: calEvent,
     calError,
     calWarnings,
+    externalId: externalCalendarId,
+    credentialId: credential.id,
+    delegatedToId: credential.delegatedToId ?? undefined,
   };
 };
 

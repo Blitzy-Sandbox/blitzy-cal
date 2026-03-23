@@ -1,4 +1,6 @@
 import { prisma } from "@calcom/prisma/__mocks__/prisma";
+import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
+import getCalendarsEvents from "@calcom/features/calendars/lib/getCalendarsEvents";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -7,9 +9,8 @@ import {
   getBusyCalendarTimes,
   getCalendarCredentials,
   processEvent,
+  updateEvent,
 } from "./CalendarManager";
-import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
-import getCalendarsEvents from "@calcom/features/calendars/lib/getCalendarsEvents";
 
 vi.mock("@calcom/prisma", () => ({
   prisma,
@@ -30,6 +31,7 @@ vi.mock("@calcom/app-store/locations", () => ({
 
 vi.mock("@calcom/lib/CalEventParser", () => ({
   getRichDescription: vi.fn(() => "Test description"),
+  getUid: vi.fn((uid: string) => uid || "generated-uid"),
 }));
 
 vi.mock("@calcom/features/calendars/lib/getCalendarsEvents", () => ({
@@ -683,12 +685,7 @@ describe("CalendarManager tests", () => {
     it("should handle empty credentials array gracefully", async () => {
       vi.mocked(getCalendarsEvents).mockResolvedValue([]);
 
-      const result = await getBusyCalendarTimes(
-        [],
-        "2024-01-01T00:00:00Z",
-        "2024-01-31T23:59:59Z",
-        []
-      );
+      const result = await getBusyCalendarTimes([], "2024-01-01T00:00:00Z", "2024-01-31T23:59:59Z", []);
 
       // An empty credentials array should still return a success result with empty data
       expect(result).toBeDefined();
@@ -857,9 +854,7 @@ describe("CalendarManager tests", () => {
           { start: "2024-01-10T09:00:00Z", end: "2024-01-10T10:00:00Z" },
           { start: "2024-01-10T14:00:00Z", end: "2024-01-10T15:00:00Z" },
         ],
-        [
-          { start: "2024-01-11T11:00:00Z", end: "2024-01-11T12:00:00Z" },
-        ],
+        [{ start: "2024-01-11T11:00:00Z", end: "2024-01-11T12:00:00Z" }],
       ];
       vi.mocked(getCalendarsEvents).mockResolvedValue(busyTimes as any);
 
@@ -956,6 +951,293 @@ describe("CalendarManager tests", () => {
       expect(result.customInputs).toBeNull();
       // calendarDescription is still generated
       expect(result.calendarDescription).toBe("Test description");
+    });
+  });
+
+  /**
+   * CI-002 gap closure: updateEvent credential info propagation tests
+   *
+   * These tests verify that updateEvent returns credentialId, delegatedToId, and
+   * externalId in its result — matching createEvent's return shape. This is critical
+   * for the non-seated booking reschedule buffer event creation path:
+   *
+   * RegularBookingService.reschedule() → EventManager.reschedule() →
+   *   updateAllCalendarEvents() → CalendarManager.updateEvent() → [results] →
+   *   EventManager.createBufferEventsForBooking() resolves credential from results
+   *
+   * Without these fields, createBufferEventsForBooking() cannot resolve the calendar
+   * credential and silently skips buffer event creation after a reschedule.
+   */
+  describe("fn: updateEvent — credential info propagation for buffer event creation (CI-002 gap)", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should include credentialId in the update result for buffer event credential resolution", async () => {
+      const mockCalendar = {
+        updateEvent: vi.fn().mockResolvedValue({
+          id: "updated-event-123",
+          url: "https://calendar.google.com/event/updated-event-123",
+        }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendar as any);
+
+      const credential = {
+        id: 42,
+        type: "google_calendar",
+        key: { access_token: "test_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "google-calendar",
+        appName: "Google Calendar",
+        invalid: false,
+        delegationCredentialId: null,
+        delegatedTo: null,
+        delegatedToId: null,
+      };
+
+      const result = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "existing-event-uid",
+        "primary-calendar-id"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.credentialId).toBe(42);
+    });
+
+    it("should include delegatedToId in the update result when credential uses delegation", async () => {
+      const mockCalendar = {
+        updateEvent: vi.fn().mockResolvedValue({
+          id: "updated-event-456",
+          url: "https://calendar.google.com/event/updated-event-456",
+        }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendar as any);
+
+      const credential = {
+        id: 99,
+        type: "google_calendar",
+        key: { access_token: "delegated_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "google-calendar",
+        appName: "Google Calendar",
+        invalid: false,
+        delegationCredentialId: "delegation-abc",
+        delegatedTo: { serviceAccountKey: {} },
+        delegatedToId: "delegated-service-account-xyz",
+      };
+
+      const result = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "existing-event-uid",
+        "primary-calendar-id"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.credentialId).toBe(99);
+      expect(result.delegatedToId).toBe("delegated-service-account-xyz");
+    });
+
+    it("should include externalId matching the externalCalendarId argument", async () => {
+      const mockCalendar = {
+        updateEvent: vi.fn().mockResolvedValue({
+          id: "updated-event-789",
+        }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendar as any);
+
+      const credential = {
+        id: 10,
+        type: "google_calendar",
+        key: { access_token: "test_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "google-calendar",
+        appName: "Google Calendar",
+        invalid: false,
+        delegationCredentialId: null,
+        delegatedTo: null,
+        delegatedToId: null,
+      };
+
+      const result = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "existing-event-uid",
+        "user-calendar-external-id"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.externalId).toBe("user-calendar-external-id");
+    });
+
+    it("should set externalId to null when externalCalendarId is null", async () => {
+      const mockCalendar = {
+        updateEvent: vi.fn().mockResolvedValue({ id: "event-100" }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendar as any);
+
+      const credential = {
+        id: 5,
+        type: "office365_calendar",
+        key: { access_token: "test_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "office365-calendar",
+        appName: "Office 365 Calendar",
+        invalid: false,
+        delegationCredentialId: null,
+        delegatedTo: null,
+        delegatedToId: null,
+      };
+
+      const result = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "existing-event-uid",
+        null
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.externalId).toBeNull();
+      expect(result.credentialId).toBe(5);
+    });
+
+    it("should still include credential info even when the calendar update fails", async () => {
+      const mockCalendar = {
+        updateEvent: vi.fn().mockRejectedValue({ calError: "Calendar API error" }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendar as any);
+
+      const credential = {
+        id: 77,
+        type: "google_calendar",
+        key: { access_token: "test_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "google-calendar",
+        appName: "Google Calendar",
+        invalid: false,
+        delegationCredentialId: null,
+        delegatedTo: null,
+        delegatedToId: null,
+      };
+
+      const result = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "existing-event-uid",
+        "calendar-id"
+      );
+
+      // Even on failure, credential info must be present so EventManager
+      // can resolve the credential if needed for other operations
+      expect(result.success).toBe(false);
+      expect(result.credentialId).toBe(77);
+      expect(result.externalId).toBe("calendar-id");
+      expect(result.calError).toBe("Calendar API error");
+    });
+
+    it("should set delegatedToId to undefined when credential has null delegatedToId", async () => {
+      const mockCalendar = {
+        updateEvent: vi.fn().mockResolvedValue({ id: "event-200" }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendar as any);
+
+      const credential = {
+        id: 15,
+        type: "google_calendar",
+        key: { access_token: "test_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "google-calendar",
+        appName: "Google Calendar",
+        invalid: false,
+        delegationCredentialId: null,
+        delegatedTo: null,
+        delegatedToId: null,
+      };
+
+      const result = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "existing-event-uid",
+        "calendar-id"
+      );
+
+      expect(result.success).toBe(true);
+      // null delegatedToId is coalesced to undefined to match createEvent behavior
+      expect(result.delegatedToId).toBeUndefined();
+    });
+
+    it("should return consistent shape between successful and failed updates for credential resolution", async () => {
+      const credential = {
+        id: 33,
+        type: "google_calendar",
+        key: { access_token: "test_token" },
+        encryptedKey: null,
+        userId: 1,
+        user: { email: "organizer@example.com" },
+        teamId: null,
+        appId: "google-calendar",
+        appName: "Google Calendar",
+        invalid: false,
+        delegationCredentialId: null,
+        delegatedTo: null,
+        delegatedToId: "delegation-123",
+      };
+
+      // Successful update
+      const mockCalendarSuccess = {
+        updateEvent: vi.fn().mockResolvedValue({ id: "event-success" }),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendarSuccess as any);
+
+      const successResult = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "event-uid",
+        "external-cal"
+      );
+
+      // Failed update
+      const mockCalendarFail = {
+        updateEvent: vi.fn().mockRejectedValue(new Error("API down")),
+      };
+      vi.mocked(getCalendar).mockResolvedValue(mockCalendarFail as any);
+
+      const failResult = await updateEvent(
+        credential as any,
+        buildCalendarEvent() as CalendarEvent,
+        "event-uid",
+        "external-cal"
+      );
+
+      // Both results must have identical credential info fields regardless of success/failure
+      expect(successResult.credentialId).toBe(33);
+      expect(failResult.credentialId).toBe(33);
+      expect(successResult.delegatedToId).toBe("delegation-123");
+      expect(failResult.delegatedToId).toBe("delegation-123");
+      expect(successResult.externalId).toBe("external-cal");
+      expect(failResult.externalId).toBe("external-cal");
+      expect(successResult.success).toBe(true);
+      expect(failResult.success).toBe(false);
     });
   });
 });

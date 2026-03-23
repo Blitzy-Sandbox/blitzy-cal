@@ -1,3 +1,4 @@
+import type { CredentialPayload } from "@calcom/types/Credential";
 import { createEvent as createIcsEvent } from "ics";
 import { createCalendarObject, updateCalendarObject } from "tsdav";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -100,6 +101,175 @@ class TestCalendarService extends BaseCalendarService {
     return this.updateEvent(uid, event);
   }
 }
+
+/**
+ * Test subclass that exposes multiple calendars (like Apple iCloud with a writable
+ * calendar and a read-only subscribed calendar). Used to verify that externalCalendarId
+ * filtering prevents events from being created on all calendars.
+ */
+class MultiCalendarTestService extends BaseCalendarService {
+  constructor() {
+    super(
+      {
+        id: 2,
+        type: "apple_calendar",
+        delegationCredentialId: null,
+        user: { email: "user@icloud.com" },
+        userId: 1,
+        teamId: null,
+        appId: "apple-calendar",
+        invalid: false,
+        key: {
+          username: "user@icloud.com",
+          password: "app-password",
+          url: "https://caldav.icloud.com",
+        },
+      } as unknown as CredentialPayload,
+      "apple_calendar",
+      "https://caldav.icloud.com"
+    );
+  }
+
+  async listCalendars() {
+    return [
+      {
+        externalId: "https://caldav.icloud.com/user/calendars/primary/",
+        name: "Primary",
+        primary: true,
+        readOnly: false,
+        email: "user@icloud.com",
+        integration: "apple_calendar",
+        credentialId: 2,
+      },
+      {
+        externalId: "https://caldav.icloud.com/user/calendars/work/",
+        name: "Work",
+        primary: false,
+        readOnly: false,
+        email: "user@icloud.com",
+        integration: "apple_calendar",
+        credentialId: 2,
+      },
+      {
+        externalId: "https://caldav.icloud.com/user/calendars/holidays/",
+        name: "Holidays (Read Only)",
+        primary: false,
+        readOnly: true,
+        email: "user@icloud.com",
+        integration: "apple_calendar",
+        credentialId: 2,
+      },
+    ];
+  }
+}
+
+describe("CalendarService - Apple Calendar externalCalendarId targeting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should create event only on the specified calendar when externalCalendarId is provided", async () => {
+    const service = new MultiCalendarTestService();
+    const mockIcsOutput = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:buffer-event-uid\r\nDTSTART:20230615T150000Z\r\nDTEND:20230615T160000Z\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+
+    vi.mocked(createIcsEvent).mockReturnValue({
+      error: null as unknown as Error,
+      value: mockIcsOutput,
+    });
+
+    const event = createMockEvent({ uid: "buffer-event-uid", title: "Buffer: Test Meeting" });
+    const targetCalendar = "https://caldav.icloud.com/user/calendars/primary/";
+
+    // Pass externalCalendarId as 3rd argument to createEvent
+    await service.createEvent(event, 2, targetCalendar);
+
+    // Should only create on the target calendar (1 call), not all 3 calendars
+    expect(createCalendarObject).toHaveBeenCalledTimes(1);
+    const calledArg = vi.mocked(createCalendarObject).mock.calls[0][0];
+    expect(calledArg.calendar.url).toBe(targetCalendar);
+  });
+
+  it("should create event on ALL calendars when externalCalendarId is not provided and no destinationCalendar", async () => {
+    const service = new MultiCalendarTestService();
+    const mockIcsOutput = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:test-uid\r\nDTSTART:20230615T150000Z\r\nDTEND:20230615T160000Z\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+
+    vi.mocked(createIcsEvent).mockReturnValue({
+      error: null as unknown as Error,
+      value: mockIcsOutput,
+    });
+
+    const event = createMockEvent({ uid: "test-uid" });
+    // No externalCalendarId, no destinationCalendar — should hit all 3 calendars
+    await service.createEvent(event, 2);
+
+    expect(createCalendarObject).toHaveBeenCalledTimes(3);
+  });
+
+  it("should prefer externalCalendarId over destinationCalendar when both are provided", async () => {
+    const service = new MultiCalendarTestService();
+    const mockIcsOutput = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:priority-uid\r\nDTSTART:20230615T150000Z\r\nDTEND:20230615T160000Z\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+
+    vi.mocked(createIcsEvent).mockReturnValue({
+      error: null as unknown as Error,
+      value: mockIcsOutput,
+    });
+
+    const workCalendarId = "https://caldav.icloud.com/user/calendars/work/";
+    const primaryCalendarId = "https://caldav.icloud.com/user/calendars/primary/";
+
+    // Event has destinationCalendar pointing to "Work" calendar
+    const event = createMockEvent({
+      uid: "priority-uid",
+      destinationCalendar: [
+        {
+          id: 10,
+          integration: "apple_calendar",
+          externalId: workCalendarId,
+          userId: 1,
+          eventTypeId: null,
+          credentialId: 2,
+          primaryEmail: "user@icloud.com",
+          createdAt: null,
+          updatedAt: null,
+          delegationCredentialId: null,
+          domainWideDelegationCredentialId: null,
+          customCalendarReminder: null,
+        },
+      ],
+    });
+
+    // But externalCalendarId points to "Primary" calendar — should take priority
+    await service.createEvent(event, 2, primaryCalendarId);
+
+    expect(createCalendarObject).toHaveBeenCalledTimes(1);
+    const calledArg = vi.mocked(createCalendarObject).mock.calls[0][0];
+    expect(calledArg.calendar.url).toBe(primaryCalendarId);
+  });
+
+  it("should avoid creating buffer events on read-only calendars when externalCalendarId targets writable calendar", async () => {
+    const service = new MultiCalendarTestService();
+    const mockIcsOutput = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:buffer-uid\r\nDTSTART:20230615T093000Z\r\nDTEND:20230615T100000Z\r\nSUMMARY:Buffer: Team Standup\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+
+    vi.mocked(createIcsEvent).mockReturnValue({
+      error: null as unknown as Error,
+      value: mockIcsOutput,
+    });
+
+    const event = createMockEvent({ uid: "buffer-uid", title: "Buffer: Team Standup" });
+    // Target only the writable primary calendar
+    const writableCalendar = "https://caldav.icloud.com/user/calendars/primary/";
+
+    await service.createEvent(event, 2, writableCalendar);
+
+    // Only 1 call to the writable calendar, not 3 (would include read-only holidays)
+    expect(createCalendarObject).toHaveBeenCalledTimes(1);
+    const calledArg = vi.mocked(createCalendarObject).mock.calls[0][0];
+    expect(calledArg.calendar.url).toBe(writableCalendar);
+    // Verify the read-only calendar was NOT targeted
+    const allCalendarUrls = vi.mocked(createCalendarObject).mock.calls.map((call) => call[0].calendar.url);
+    expect(allCalendarUrls).not.toContain("https://caldav.icloud.com/user/calendars/holidays/");
+  });
+});
 
 describe("CalendarService - UID Consistency", () => {
   beforeEach(() => {

@@ -331,15 +331,17 @@ describe("Bi-Directional Sync Verification (CI-005)", () => {
       expect(externalIdArg).toBe("external-cal-id-456");
     });
 
-    it("should not pass externalId to adapter when delegatedToId is null", async () => {
+    it("should pass externalId to adapter even when delegatedToId is null", async () => {
       const credential = buildCredential({ delegatedToId: null });
       const calendarEvent = buildCalendarEvent();
 
       await createEvent(credential, calendarEvent, "external-cal-id-456");
 
-      // When delegatedToId is null, externalId must be undefined per CalendarManager logic
+      // externalId is forwarded to adapter.createEvent for all credentials (not only
+      // delegation credentials) so that Apple Calendar / CalDAV buffer events target
+      // only the destination calendar instead of being created on every user calendar.
       const externalIdArg = mockCalendar.createEvent.mock.calls[0][2];
-      expect(externalIdArg).toBeUndefined();
+      expect(externalIdArg).toBe("external-cal-id-456");
     });
 
     it("should return iCalUID from adapter creation result", async () => {

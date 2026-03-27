@@ -200,6 +200,34 @@ export function isPeriodType(keyInput: string): keyInput is PeriodType {
   return Object.keys(PeriodType).includes(keyInput);
 }
 
+/**
+ * Maps a string period type to the {@link PeriodType} enum for booking window configuration.
+ *
+ * **ET-005 — Booking Window Configuration Alignment:**
+ * This function translates user-provided period type strings into the Prisma `PeriodType` enum,
+ * enabling event types to enforce date-range restrictions on bookable slots.
+ *
+ * **Calendly Booking Window Mapping:**
+ * - `UNLIMITED` → Calendly "indefinitely" — no booking window restriction; invitees can book
+ *   any available slot with no advance time limit.
+ * - `ROLLING` → Calendly "days into future" (calendar days) — a rolling window of N calendar
+ *   days from today. Slots beyond this window are not bookable.
+ * - `ROLLING_WINDOW` → Calendly "days into future" (business days) — a rolling window of N
+ *   business days, skipping weekends and holidays. Addresses AVL-GAP-001 parity for
+ *   business-day-based booking windows.
+ * - `RANGE` → Calendly "date range" — an explicit start/end date restriction. Only slots
+ *   within the configured date range are bookable.
+ *
+ * **Implementation Detail:** Performs case-insensitive matching via `toUpperCase()` and validates
+ * against the `PeriodType` enum keys. Returns `undefined` for invalid or missing input, allowing
+ * callers to fall back to the event type's existing period configuration.
+ *
+ * @param periodType - The string representation of the period type (case-insensitive)
+ * @returns The corresponding {@link PeriodType} enum value, or `undefined` if invalid/missing
+ *
+ * @see {@link isPeriodType} for the underlying type guard
+ * @see EventLimitsTab for the UI component that presents these booking window options
+ */
 export function handlePeriodType(periodType: string | undefined): PeriodType | undefined {
   if (typeof periodType !== "string") return undefined;
   const passedPeriodType = periodType.toUpperCase();
@@ -207,6 +235,40 @@ export function handlePeriodType(periodType: string | undefined): PeriodType | u
   return PeriodType[passedPeriodType];
 }
 
+/**
+ * Handles CRUD operations for legacy custom inputs on an event type.
+ *
+ * **ET-006 — Custom Fields/Questions Parity:**
+ * This function manages the lifecycle of custom inputs (the legacy custom input system,
+ * predecessor to the newer `bookingFields` system). It processes an array of custom input
+ * definitions and generates the Prisma nested write operations for batch create, update,
+ * and delete in a single transaction.
+ *
+ * **Calendly Question Type Support:**
+ * Custom inputs support most Calendly question types through the `EventTypeCustomInputType` enum:
+ * - `TEXT` → Calendly single-line text question
+ * - `TEXTLONG` → Calendly multi-line text (textarea equivalent)
+ * - `NUMBER` → Numeric input field
+ * - `BOOL` → Calendly checkbox question (boolean toggle)
+ * - `RADIO` → Calendly radio button question (single-select from options)
+ * - `PHONE` → Calendly phone number question
+ *
+ * Note: Calendly's **dropdown/select** question type is NOT supported by this legacy `customInputs`
+ * system. Dropdown fields are supported via the newer `bookingFields` system (JSON-based booking
+ * fields with `type: "select"`), which is the recommended approach for new field configurations.
+ *
+ * **Operation Logic:**
+ * - Inputs with `hasToBeCreated: true` → batched via `createMany` (new custom inputs)
+ * - Inputs with `hasToBeCreated: false` → individual `update` operations (existing inputs)
+ * - Inputs not present in the provided array → removed via `deleteMany` (stale inputs purged)
+ *
+ * **Data Shape:** Each custom input contains `type`, `label`, `required`, `placeholder`, and
+ * `options` (for RADIO type providing the selectable choices).
+ *
+ * @param customInputs - Array of custom input schemas with CRUD flags
+ * @param eventTypeId - The event type ID for scoping delete operations
+ * @returns Prisma nested write object with `deleteMany`, `createMany`, and `update` operations
+ */
 export function handleCustomInputs(customInputs: CustomInputSchema[], eventTypeId: number) {
   const cInputsIdsToDeleteOrUpdated = customInputs.filter((input) => !input.hasToBeCreated);
   const cInputsIdsToDelete = cInputsIdsToDeleteOrUpdated.map((e) => e.id);
@@ -246,6 +308,33 @@ export function handleCustomInputs(customInputs: CustomInputSchema[], eventTypeI
   };
 }
 
+/**
+ * Validates that no duplicate booking field names exist in the bookingFields array.
+ *
+ * **ET-006 — Custom Fields Validation:**
+ * This function enforces uniqueness of booking field names to prevent data collisions
+ * when capturing invitee responses during the booking flow.
+ *
+ * **Type-Agnostic Validation:** This check works for ALL booking field types including:
+ * text, radio, checkbox, phone, select (dropdown), textarea, number, email, address,
+ * multiemail, multiselect, radioInput, boolean, url, and name. The validation operates
+ * solely on the `name` property, making it inherently compatible with any current or
+ * future field type additions.
+ *
+ * **Calendly Parity:** All Calendly question types (text, radio, checkbox, phone, dropdown)
+ * are correctly validated since this function is type-agnostic — it only inspects field names,
+ * not field types.
+ *
+ * @param fields - The booking fields array from the event type update input
+ * @throws {TRPCError} BAD_REQUEST with message identifying the duplicate field name
+ *
+ * @example
+ * // Throws TRPCError with "Duplicate booking field name: company"
+ * ensureUniqueBookingFields([
+ *   { name: "company", type: "text", ... },
+ *   { name: "company", type: "textarea", ... },
+ * ]);
+ */
 export function ensureUniqueBookingFields(fields: TUpdateInputSchema["bookingFields"]) {
   if (!fields) {
     return;
@@ -268,6 +357,34 @@ export function ensureUniqueBookingFields(fields: TUpdateInputSchema["bookingFie
   );
 }
 
+/**
+ * Validates that at least one contact method (email or phone) is available and required
+ * for booking.
+ *
+ * **ET-006 — Phone Field Support / Custom Fields Parity:**
+ * This function enforces Calendly's requirement that invitees must provide contact information
+ * when booking. It validates the visibility and required status of both the email and phone
+ * (`attendeePhoneNumber`) booking fields.
+ *
+ * **Validation Rules:**
+ * 1. Both email and phone cannot be hidden simultaneously — at least one must be visible
+ * 2. At least one of email or phone must be marked as required
+ * 3. If email is hidden, phone must be required (phone becomes the sole contact method)
+ * 4. If phone is hidden, email must be required (email becomes the sole contact method)
+ *
+ * **Calendly Parity:** Matches Calendly's behavior where invitees must always provide at
+ * least one form of contact information. The phone field type support is part of ET-006
+ * custom fields parity, ensuring Cal.com supports the same contact method flexibility.
+ *
+ * **Error Messages (i18n keys):**
+ * - `booking_fields_email_and_phone_both_hidden` — both contact methods hidden
+ * - `booking_fields_email_or_phone_required` — neither contact method is required
+ * - `booking_fields_phone_required_when_email_hidden` — email hidden but phone not required
+ * - `booking_fields_email_required_when_phone_hidden` — phone hidden but email not required
+ *
+ * @param fields - The booking fields array from the event type update input
+ * @throws {TRPCError} BAD_REQUEST with an i18n error key describing the validation failure
+ */
 export function ensureEmailOrPhoneNumberIsPresent(fields: TUpdateInputSchema["bookingFields"]) {
   if (!fields || fields.length === 0) {
     return;

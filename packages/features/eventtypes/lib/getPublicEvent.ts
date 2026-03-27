@@ -89,12 +89,16 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
     recurringEvent: true,
     price: true,
     currency: true,
+    // ET-002: Group event parity — seatsPerTimeSlot enables multiple attendees per slot.
+    // Remaining seat count is calculated at booking time, not in public event resolution.
     seatsPerTimeSlot: true,
     disableCancelling: true,
     disableRescheduling: true,
     minimumRescheduleNotice: true,
     allowReschedulingCancelledBookings: true,
+    // ET-002: Controls whether the public booker UI shows remaining seat availability count.
     seatsShowAvailabilityCount: true,
+    // ET-006: bookingFields includes custom field definitions (text, radio, checkbox, phone, dropdown).
     bookingFields: true,
     teamId: true,
     team: {
@@ -141,11 +145,22 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
         },
       },
     },
+    // ET-001/ET-003/ET-004: Host assignment metadata is included for all scheduling paradigms.
+    // - isFixed: distinguishes fixed hosts (collective) from round-robin candidates
+    // - priority: host priority for round-robin distribution (ET-003)
+    // - weight: host weight for weighted round-robin distribution (ET-003)
+    // - weightAdjustment: deprecated calibration value (included for backward compat)
+    // - groupId: segment-based round-robin filtering via rrSegmentQueryValue (ET-003)
     hosts: {
       select: {
         user: {
           select: userSelect,
         },
+        isFixed: true,
+        priority: true,
+        weight: true,
+        weightAdjustment: true,
+        groupId: true,
       },
       ...(fetchAllUsers ? {} : { take: 3 }),
     },
@@ -164,11 +179,14 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
         timeZone: true,
       },
     },
+    // ET-005: Booking window configuration — periodType (UNLIMITED, RANGE, ROLLING, ROLLING_WINDOW)
+    // maps to Calendly's booking window options: indefinitely, date range, and days into future.
+    // ROLLING uses calendar days; ROLLING_WINDOW uses business days (AVL-GAP-001 parity).
     periodType: true,
-    periodDays: true, // days if limiting future bookings
-    periodEndDate: true, //end date limit by range
-    periodStartDate: true, //start date limit by range
-    periodCountCalendarDays: true, // count calendar days? Or only business days based on periodDays
+    periodDays: true, // days if limiting future bookings (ROLLING window)
+    periodEndDate: true, // end date limit by range (RANGE window)
+    periodStartDate: true, // start date limit by range (RANGE window)
+    periodCountCalendarDays: true, // count calendar days? Or only business days (AVL-GAP-001)
     hidden: true,
     assignAllTeamMembers: true,
     rescheduleWithSameRoundRobinHost: true,
@@ -256,6 +274,19 @@ function isAvailableInTimeSlot(
 
 export type PublicEventType = Awaited<ReturnType<typeof getPublicEvent>>;
 
+/**
+ * Enriches event type hosts with full user profile data via batch UserRepository call.
+ *
+ * ET-003 (Round-Robin): The enriched hosts preserve isFixed, priority, weight, weightAdjustment,
+ * and groupId from the Prisma select, enabling downstream consumers to access RR distribution
+ * metadata alongside profile data.
+ *
+ * ET-004 (Collective): All fixed hosts (isFixed=true) are included so the booker can display
+ * the full list of required participants for collective scheduling.
+ *
+ * The fetchAllUsers flag controls whether the full host list is returned (true) or only a
+ * subset for preview purposes (false, limited by take:3 in the Prisma query).
+ */
 export async function getEventTypeHosts({
   hosts,
   fetchAllUsers = false,
@@ -270,7 +301,11 @@ export async function getEventTypeHosts({
   // Enrich users in a single batch call
   const enrichedUsers = await new UserRepository(prisma).enrichUsersWithTheirProfiles(usersAsHosts);
 
-  // Map enriched users back to the hosts
+  // Map enriched users back to the hosts, preserving host assignment metadata
+  // (isFixed, priority, weight, weightAdjustment, groupId) via the spread of host properties.
+  // NOTE: Callers returning data to public/external consumers should strip internal RR metadata
+  // (weight, priority, weightAdjustment, groupId) before serialization — see getPublicEvent for
+  // the stripping pattern. isFixed is safe for public display (needed for collective event UX).
   const enrichedHosts = hosts.map((host, index) => ({
     ...host,
     user: enrichedUsers[index],
@@ -295,7 +330,11 @@ export const getPublicEvent = async (
 ) => {
   const usernameList = getUsernameList(username);
   const orgQuery = org ? getSlugOrRequestedSlug(org) : null;
-  // In case of dynamic group event, we fetch user's data and use the default event.
+
+  // ET-001: Dynamic group event path — when multiple usernames are provided (e.g., "user1+user2"),
+  // a dynamic event fixture is generated via getDefaultEvent. This path creates ad-hoc group
+  // events without a stored EventType record. Dynamic events use schedulingType=null (one-on-one
+  // semantics applied per-user) and do not support seats, RR, or collective paradigms.
   if (usernameList.length > 1) {
     const usersInOrgContext = await new UserRepository(prisma).findUsersByUsername({
       usernameList,
@@ -392,6 +431,10 @@ export const getPublicEvent = async (
     };
   }
 
+  // ET-001: Single user/team event path — resolves stored EventType records for ALL scheduling
+  // paradigms: one-on-one (schedulingType=null), group (seatsPerTimeSlot>0), round-robin
+  // (ROUND_ROBIN), collective (COLLECTIVE), and managed (team admin templates).
+  // Team events query by team slug; individual events query by user slug with org context.
   const usersOrTeamQuery = isTeamEvent
     ? {
         team: {
@@ -461,7 +504,10 @@ export const getPublicEvent = async (
   // Enrich users in a single batch call
   const enrichedUsers = await new UserRepository(prisma).enrichUsersWithTheirProfiles(usersAsHosts);
 
-  // Map enriched users back to the hosts
+  // Map enriched users back to the hosts, preserving all fields for internal function calls
+  // (getUsersFromEvent, getProfileFromEvent) that require the full Event["hosts"] type.
+  // Sensitive RR metadata (weight, priority, weightAdjustment, groupId) is stripped later
+  // at the public response boundary — see the return statement below.
   const hosts = event.hosts.map((host, index) => ({
     ...host,
     user: enrichedUsers[index],
@@ -549,13 +595,26 @@ export const getPublicEvent = async (
     users = [];
   }
 
+  // ET-001/ET-002: The spread of eventWithUserProfiles propagates all paradigm-specific fields
+  // from the Prisma select, including seatsPerTimeSlot, seatsShowAvailabilityCount, schedulingType,
+  // and enriched host data. Internal RR distribution metadata (weight, priority, weightAdjustment,
+  // groupId) is stripped from subsetOfHosts/hosts to avoid exposing scheduling algorithm parameters
+  // to external bookers. isFixed is preserved — needed for collective event UX (ET-004).
+  const stripHostRRMetadata = (
+    hostList: typeof hosts
+  ) => hostList.map(({ weight, priority, weightAdjustment, groupId, ...publicHost }) => publicHost);
+
   return {
     ...eventWithUserProfiles,
+    subsetOfHosts: stripHostRRMetadata(eventWithUserProfiles.subsetOfHosts),
+    hosts: eventWithUserProfiles.hosts ? stripHostRRMetadata(eventWithUserProfiles.hosts) : undefined,
     bookerLayouts: bookerLayoutsSchema.parse(eventMetaData?.bookerLayouts || null),
     description: markdownToSafeHTML(eventWithUserProfiles.description),
     metadata: eventMetaData,
     customInputs: customInputSchema.array().parse(event.customInputs || []),
     locations: privacyFilteredLocations((eventWithUserProfiles.locations || []) as LocationObject[]),
+    // ET-006: getBookingFieldsWithSystemFields normalizes custom fields for all paradigms,
+    // supporting text, radio, checkbox, phone, and dropdown field types.
     bookingFields: getBookingFieldsWithSystemFields(event),
     recurringEvent: isRecurringEvent(eventWithUserProfiles.recurringEvent)
       ? parseRecurringEvent(event.recurringEvent)
@@ -610,6 +669,13 @@ type GetProfileFromEventInput = Omit<Event, "hosts"> & {
   subsetOfHosts: Event["hosts"];
 };
 
+/**
+ * Resolves the display profile for a public event across all scheduling paradigms:
+ * - Team events (RR/collective/managed): uses team profile for branding
+ * - Individual events (1:1): uses first host or owner profile
+ * - Dynamic events: handled separately in the dynamic path above
+ * bookerLayouts parsing cascades: event metadata → user metadata → default layouts.
+ */
 export function getProfileFromEvent(event: GetProfileFromEventInput) {
   const { team, subsetOfHosts: hosts, owner } = event;
   const nonTeamProfile = hosts?.[0]?.user || owner;
@@ -641,6 +707,17 @@ export function getProfileFromEvent(event: GetProfileFromEventInput) {
   };
 }
 
+/**
+ * Extracts user data from an event for display in the public booker.
+ *
+ * ET-001/ET-003/ET-004: For team events (RR, collective, managed), users are derived from
+ * the hosts array. The hosts carry isFixed/priority/weight metadata, but this function
+ * maps them to a simplified user shape for the booker UI via mapHostsToUsers.
+ * For non-team events (1:1), the owner is used directly.
+ *
+ * Private team handling: when event.team.isPrivate is true and the current user lacks
+ * team.read permission, the users array is cleared to an empty array upstream (line ~548).
+ */
 export async function getUsersFromEvent(
   event: Omit<Event, "owner" | "hosts"> & {
     owner:
@@ -739,6 +816,15 @@ function mapHostsToUsers(host: {
   };
 }
 
+/**
+ * Shared event data processing for all scheduling paradigms.
+ *
+ * Handles: bookerLayouts parsing, HTML description sanitization, custom input validation,
+ * location privacy filtering, booking field normalization (ET-006), and recurring event parsing.
+ * All paradigm-specific fields (seatsPerTimeSlot, schedulingType, host metadata) are preserved
+ * via the spread of eventData. The instant meeting modal check uses @calcom/dayjs for
+ * timezone-aware availability comparison.
+ */
 export const processEventDataShared = async ({
   eventData,
   metadata,

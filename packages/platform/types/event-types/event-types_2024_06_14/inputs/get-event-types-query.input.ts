@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsNumber, IsOptional, IsString, Min, Max } from "class-validator";
 
 import { SkipTakePagination, SortOrder, SortOrderType } from "../../../pagination/pagination.input";
 
@@ -69,9 +69,11 @@ export class GetTeamEventTypesQuery_2024_06_14 {
   @Transform(({ value }) => Number(value))
   @IsOptional()
   @IsNumber()
+  @Min(1, { message: "hostsLimit must be at least 1" })
+  @Max(1000, { message: "hostsLimit must not exceed 1000" })
   @ApiPropertyOptional({
     description:
-      "Specifies the maximum number of hosts to include in the response. This limit helps optimize performance. If not provided, all Hosts will be fetched.",
+      "Specifies the maximum number of hosts to include in the response (1–1000). This limit helps optimize performance. If not provided, all Hosts will be fetched.",
   })
   hostsLimit?: number;
 

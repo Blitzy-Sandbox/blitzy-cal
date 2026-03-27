@@ -236,12 +236,6 @@ export const roundRobinManualReassignment = async ({
       select: bookingSelect,
     });
 
-    await AssignmentReasonRecorder.roundRobinReassignment({
-      bookingId,
-      reassignReason,
-      reassignById: reassignedById,
-      reassignmentType: RRReassignmentType.MANUAL,
-    });
   } else if (currentRRHostAttendee) {
     // Update the round-robin host attendee
     await prisma.attendee.update({
@@ -284,6 +278,16 @@ export const roundRobinManualReassignment = async ({
       reassignmentType: "manual",
     },
     isBookingAuditEnabled,
+  });
+
+  // Record assignment reason for ALL manual reassignment contexts — both organizer-change and
+  // attendee-swap paths — to ensure complete telemetry coverage (ET-003 parity with Calendly).
+  // This mirrors the unconditional recording pattern in roundRobinReassignment.ts.
+  await AssignmentReasonRecorder.roundRobinReassignment({
+    bookingId,
+    reassignReason,
+    reassignById: reassignedById,
+    reassignmentType: RRReassignmentType.MANUAL,
   });
 
   // When organizer hasn't changed, still extract conferenceCredentialId from event type locations

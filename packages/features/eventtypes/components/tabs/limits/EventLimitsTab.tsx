@@ -74,14 +74,31 @@ export type EventLimitsTabProps = Pick<EventTypeSetupProps, "eventType"> & {
 };
 
 /**
- * We technically have a ROLLING_WINDOW future limit option that isn't shown as a Radio Option. Because UX is better by providing it as a toggle with ROLLING Limit radio option.
- * Also, ROLLING_WINDOW reuses the same `periodDays` field and `periodCountCalendarDays` fields
+ * Converts a storage-level `PeriodType` enum value into the UI radio group value.
  *
- * So we consider `periodType=ROLLING && rollingExcludeUnavailableDays=true` to be the ROLLING_WINDOW option
- * We can't set `periodType=ROLLING_WINDOW` directly because it is not a valid Radio Option in UI
- * So, here we can convert from periodType to uiValue any time.
+ * **ET-005 — Booking Window Alignment (Calendly Parity):**
+ * Cal.com persists four `PeriodType` values (`ROLLING`, `ROLLING_WINDOW`, `RANGE`, `UNLIMITED`),
+ * but only three are exposed as distinct radio options in the UI:
+ *   - `ROLLING` / `ROLLING_WINDOW` → **Rolling (Days into Future)** radio item
+ *   - `RANGE`                      → **Date Range** radio item
+ *   - `UNLIMITED`                  → toggle disabled (no radio selected)
+ *
+ * `ROLLING_WINDOW` is not a visible radio option — it is surfaced as a checkbox modifier
+ * ("Always show X days") on the `ROLLING` radio item.  This function bridges the two
+ * representations so the radio group always reflects the persisted `periodType`.
+ *
+ * **Cal.com advantage over Calendly:** The `ROLLING_WINDOW` mode (always show X calendar
+ * days, excluding unavailable days) has no direct Calendly equivalent, giving Cal.com
+ * finer-grained control over how far into the future invitees can book.
+ *
+ * @param periodType - The persisted `PeriodType` enum value from the event type record.
+ * @returns An object with `value` (the radio option to select) and
+ *          `rollingExcludeUnavailableDays` (the checkbox modifier state, or `null`
+ *          when the selected option is not `ROLLING`).
  */
-const getUiValueFromPeriodType = (periodType: PeriodType) => {
+const getUiValueFromPeriodType = (
+  periodType: PeriodType
+): { value: PeriodType; rollingExcludeUnavailableDays: boolean | null } => {
   if (periodType === PeriodType.ROLLING_WINDOW) {
     return {
       value: PeriodType.ROLLING,
@@ -103,7 +120,16 @@ const getUiValueFromPeriodType = (periodType: PeriodType) => {
 };
 
 /**
- * It compliments `getUiValueFromPeriodType`
+ * Converts a UI radio group value back into the storage-level `PeriodType` enum.
+ *
+ * This is the inverse of {@link getUiValueFromPeriodType}.  When the user selects the
+ * `ROLLING` radio option **and** the "Always show X days" checkbox is checked, the
+ * persisted value becomes `ROLLING_WINDOW`; otherwise the radio value passes through
+ * unchanged.
+ *
+ * @param uiValue - An object containing the selected radio `value` and the state of the
+ *                  `rollingExcludeUnavailableDays` checkbox modifier.
+ * @returns The `PeriodType` enum value to persist.
  */
 const getPeriodTypeFromUiValue = (uiValue: { value: PeriodType; rollingExcludeUnavailableDays: boolean }) => {
   if (uiValue.value === PeriodType.ROLLING && uiValue.rollingExcludeUnavailableDays === true) {
@@ -190,6 +216,18 @@ type RollingLimitCustomClassNames = {
   periodTypeSelect?: Pick<SelectClassNames, "select" | "innerClassNames">;
 };
 
+/**
+ * Rolling limit radio item — maps to Calendly's "Rolling (Days into Future)" booking window.
+ *
+ * **AVL-GAP-001 alignment:** The business-days vs calendar-days distinction corresponds to
+ * Calendly's booking window behavior where users choose how rolling days are counted.
+ *   - `periodCountCalendarDays = false` (value 0) → **Business days** — excludes weekends
+ *   - `periodCountCalendarDays = true`  (value 1) → **Calendar days** — all days counted
+ *
+ * The "Always show X days" checkbox maps the `ROLLING` period type to `ROLLING_WINDOW`,
+ * which is a Cal.com enhancement beyond Calendly's capabilities: it guarantees that the
+ * invitee always sees at least X bookable days, skipping unavailable ones.
+ */
 function RollingLimitRadioItem({
   radioValue,
   isDisabled,
@@ -207,6 +245,8 @@ function RollingLimitRadioItem({
 }) {
   const { t } = useLocale();
 
+  // AVL-GAP-001: Business days (value 0) vs calendar days (value 1) — aligns with
+  // Calendly's rolling window day-type selection for booking window configuration.
   const options = [
     { value: 0, label: t("business_days") },
     { value: 1, label: t("calendar_days") },
@@ -397,6 +437,36 @@ const MinimumBookingNoticeInput = React.forwardRef<
   );
 });
 
+/**
+ * **EventLimitsTab** — Central "Limits" tab in the event type configuration UI.
+ *
+ * Orchestrates all booking constraint controls for an event type:
+ *   - Buffer time (before/after event)
+ *   - Minimum booking notice with duration-type conversion
+ *   - Slot interval configuration
+ *   - Booking frequency limits (per day/week/month/year)
+ *   - Duration limits (per day/week/month/year)
+ *   - First available slot only toggle
+ *   - Max active bookings per booker
+ *   - **Future booking limits** (primary scope for ET-005)
+ *   - Offset start times
+ *
+ * **ET-005 — Booking Window Configuration Alignment:**
+ * The future booking limits section provides Calendly-equivalent booking window options:
+ *   1. **Rolling (Days into Future)** — `PeriodType.ROLLING` or `PeriodType.ROLLING_WINDOW`
+ *      Maps to Calendly's "Invitees can schedule within a rolling window of X days."
+ *      Includes calendar-day vs business-day selection (AVL-GAP-001 alignment).
+ *   2. **Date Range** — `PeriodType.RANGE`
+ *      Maps to Calendly's "Invitees can schedule within a date range."
+ *      Uses UTC-normalized DateRangePicker.
+ *   3. **Indefinite** — `PeriodType.UNLIMITED`
+ *      Maps to Calendly's "Invitees can schedule indefinitely into the future."
+ *      Represented by the toggle being disabled (no radio option selected).
+ *
+ * Cal.com extends beyond Calendly with the `ROLLING_WINDOW` variant, which guarantees
+ * a minimum number of bookable days by skipping unavailable ones — a feature with no
+ * direct Calendly equivalent.
+ */
 export const EventLimitsTab = ({ eventType, customClassNames }: EventLimitsTabProps) => {
   const { t, i18n } = useLocale();
   const formMethods = useFormContext<FormValues>();
@@ -795,6 +865,18 @@ export const EventLimitsTab = ({ eventType, customClassNames }: EventLimitsTabPr
       <MaxActiveBookingsPerBookerController
         maxActiveBookingsPerBookerLocked={maxActiveBookingsPerBookerLocked}
       />
+      {/*
+        * ET-005 — Future Booking Limits (Calendly Booking Window Parity)
+        *
+        * This Controller maps the three Calendly booking window options to Cal.com's PeriodType:
+        *   Calendly "Rolling"      → PeriodType.ROLLING  (calendar days) or
+        *                              PeriodType.ROLLING_WINDOW (exclude unavailable / business days)
+        *   Calendly "Date Range"   → PeriodType.RANGE
+        *   Calendly "Indefinitely" → PeriodType.UNLIMITED (toggle off — no radio selected)
+        *
+        * Cal.com advantage: ROLLING_WINDOW mode lets hosts guarantee a minimum number of
+        * visible bookable days, skipping unavailable ones — beyond Calendly's capabilities.
+        */}
       <Controller
         name="periodType"
         render={({ field: { onChange, value } }) => {

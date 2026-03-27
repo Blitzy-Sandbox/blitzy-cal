@@ -26,6 +26,7 @@ import AssignmentReasonRecorder, {
   RRReassignmentType,
 } from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
 import { getEventName } from "@calcom/features/eventtypes/lib/eventNaming";
+import { findMatchingHostsWithEventSegment } from "@calcom/features/users/lib/getRoutedUsers";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { IdempotencyKeyService } from "@calcom/lib/idempotencyKey/idempotencyKeyService";
 import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
@@ -145,10 +146,29 @@ export const roundRobinReassignment = async ({
     orgId,
     hosts: eventType.hosts,
   });
+
+  // ET-003: Apply segment-based filtering to match the new booking flow behavior.
+  // When assignRRMembersUsingSegment is enabled, hosts are pre-filtered by the
+  // rrSegmentQueryValue attribute query so that only segment-matching team members
+  // are considered for round-robin reassignment — aligning with Calendly's equitable
+  // distribution within defined host segments.
+  const segmentFilteredHosts = await findMatchingHostsWithEventSegment({
+    eventType,
+    hosts: eventTypeHosts,
+  });
+
   // Filter out the current attendees of the booking from the event type
-  const availableEventTypeUsers = eventTypeHosts.reduce((availableUsers, host) => {
+  const availableEventTypeUsers = segmentFilteredHosts.reduce((availableUsers, host) => {
     if (!attendeeEmailsSet.has(host.user.email) && host.user.email !== originalOrganizer.email) {
-      availableUsers.push({ ...host.user, isFixed: host.isFixed, priority: host?.priority ?? 2 });
+      // ET-003: Propagate host weight alongside priority for equitable distribution.
+      // The weight property is used by LuckyUserService to calculate weighted round-robin
+      // assignment when isRRWeightsEnabled is true on the event type.
+      availableUsers.push({
+        ...host.user,
+        isFixed: host.isFixed,
+        priority: host?.priority ?? 2,
+        weight: host?.weight ?? 100,
+      });
     }
     return availableUsers;
   }, [] as IsFixedAwareUser[]);
@@ -166,7 +186,11 @@ export const roundRobinReassignment = async ({
   const reassignedRRHost = await luckyUserService.getLuckyUser({
     availableUsers,
     eventType,
-    allRRHosts: eventTypeHosts.filter((host) => !host.isFixed), // todo: only use hosts from virtual queue
+    // ET-003: Use segment-filtered hosts for the RR pool so that LuckyUserService
+    // computes equitable distribution only across segment-matching, non-fixed hosts.
+    allRRHosts: segmentFilteredHosts
+      .filter((host) => !host.isFixed)
+      .map((host) => ({ ...host, createdAt: host.createdAt ?? new Date(0) })),
     routingFormResponse: null,
   });
 

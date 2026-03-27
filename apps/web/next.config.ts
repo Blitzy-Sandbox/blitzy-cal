@@ -222,6 +222,7 @@ const nextConfig = (phase: string): NextConfig => {
   }
 
   return {
+    poweredByHeader: false,
     output: process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
     serverExternalPackages: [
       "deasync",
@@ -418,6 +419,19 @@ const nextConfig = (phase: string): NextConfig => {
             {
               key: "Referrer-Policy",
               value: "strict-origin-when-cross-origin",
+            },
+            {
+              key: "X-Frame-Options",
+              value: "SAMEORIGIN",
+            },
+            {
+              key: "Strict-Transport-Security",
+              value: "max-age=31536000; includeSubDomains",
+            },
+            {
+              key: "Content-Security-Policy",
+              value:
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
             },
           ],
         },

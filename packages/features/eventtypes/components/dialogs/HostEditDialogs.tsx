@@ -141,7 +141,7 @@ export const WeightDialog = (props: IDialog & { customClassNames?: WeightDialogC
   const [newWeight, setNewWeight] = useState<number | undefined>();
 
   const setWeight = () => {
-    if (!!newWeight) {
+    if (newWeight !== undefined && !isNaN(newWeight)) {
       const hosts: Host[] = getValues("hosts");
       const isRRWeightsEnabled = getValues("isRRWeightsEnabled");
       const hostGroups = getValues("hostGroups");
@@ -220,6 +220,8 @@ export const WeightDialog = (props: IDialog & { customClassNames?: WeightDialogC
             <TextField
               required
               min={0}
+              max={999}
+              step={1}
               className={customClassNames?.weightInput?.input}
               labelClassName={customClassNames?.weightInput?.label}
               addOnClassname={customClassNames?.weightInput?.addOn}
@@ -227,7 +229,15 @@ export const WeightDialog = (props: IDialog & { customClassNames?: WeightDialogC
               value={newWeight}
               defaultValue={option.weight ?? 100}
               type="number"
-              onChange={(e) => setNewWeight(parseInt(e.target.value))}
+              onChange={(e) => {
+                const parsed = parseInt(e.target.value, 10);
+                if (isNaN(parsed)) {
+                  setNewWeight(undefined);
+                  return;
+                }
+                // Enforce non-negative integer capped at 999
+                setNewWeight(Math.min(Math.max(Math.floor(parsed), 0), 999));
+              }}
               addOnSuffix={<>%</>}
             />
           </div>

@@ -42,6 +42,26 @@ export type HostLocation = {
   phoneNumber?: string | null;
 };
 
+/**
+ * Represents a host assigned to a team event type.
+ *
+ * Used across multiple scheduling paradigms:
+ *
+ * - **Round-Robin (ET-003):** `isFixed` is `false`. The `priority` field controls
+ *   host ordering in the distribution queue; `weight` controls the proportional share
+ *   of bookings each host receives when `isRRWeightsEnabled` is `true`. `groupId`
+ *   enables segment-based round-robin assignment via `rrSegmentQueryValue`.
+ *
+ * - **Collective (ET-004):** `isFixed` is `true`. All fixed hosts must be
+ *   simultaneously available for a slot to be bookable. `priority` and `weight`
+ *   are not used for collective scheduling but are retained for type consistency.
+ *
+ * - **Managed:** Hosts are propagated from parent to child event types.
+ *   `scheduleId` allows per-host schedule overrides for availability.
+ *
+ * - **1:1 (ET-001):** Not applicable — one-on-one events use `schedulingType: null`
+ *   and do not have a `hosts` array.
+ */
 export type Host = {
   isFixed: boolean;
   userId: number;
@@ -94,7 +114,33 @@ export type PrivateLinkWithOptions = {
   usageCount?: number;
 };
 
+/**
+ * Comprehensive form state type for event type configuration.
+ *
+ * Covers all six scheduling paradigms supported by Cal.com:
+ *
+ * - **1:1 (ET-001):** `schedulingType` is `null` — single host paired with a
+ *   single invitee. Host assignment and confirmation workflow are implicit.
+ * - **Group (ET-002):** Configured via `seatsPerTimeSlot` — multiple attendees
+ *   book the same time slot up to the seat limit.
+ * - **Round-Robin (ET-003):** `schedulingType` is `ROUND_ROBIN` — equitable host
+ *   distribution controlled by `isRRWeightsEnabled`, `hosts[].weight`,
+ *   `hosts[].priority`, `rrSegmentQueryValue`, and `assignRRMembersUsingSegment`.
+ * - **Collective (ET-004):** `schedulingType` is `COLLECTIVE` — all fixed hosts
+ *   must be simultaneously available. Controlled by `assignAllTeamMembers` and
+ *   `hosts[].isFixed`.
+ * - **Managed:** `schedulingType` is `MANAGED` — admin-created templates
+ *   propagated to `children` event types.
+ * - **Dynamic:** Ad-hoc links combining multiple users without pre-configuration.
+ *
+ * Booking window fields (ET-005) are documented inline below. Custom booking
+ * fields (ET-006) are captured by `bookingFields` via the `eventTypeBookingFields`
+ * Zod schema which supports text, radio, checkbox, phone, select (dropdown),
+ * textarea, number, email, and other field types — covering all Calendly
+ * question types.
+ */
 export type FormValues = {
+  // ── Core identity fields ──────────────────────────────────────────────
   id: number;
   title: string;
   eventTitle: string;
@@ -115,7 +161,11 @@ export type FormValues = {
   requiresConfirmationForFreeEmail: boolean;
   requiresBookerEmailVerification: boolean;
   recurringEvent: RecurringEvent | null;
+
+  // ── Scheduling paradigm (ET-001) ──────────────────────────────────────
+  /** `null` = 1:1 (one-on-one), otherwise ROUND_ROBIN | COLLECTIVE | MANAGED */
   schedulingType: SchedulingType | null;
+
   hidden: boolean;
   hideCalendarNotes: boolean;
   multiplePrivateLinks: (string | PrivateLinkWithOptions)[] | undefined;
@@ -129,35 +179,55 @@ export type FormValues = {
   disabledCancelling: boolean;
   disabledRescheduling: boolean;
   minimumRescheduleNotice: number | null;
+
+  // ── Booking window fields (ET-005) ────────────────────────────────────
+  // Maps to Calendly's booking window options via PeriodType enum:
+  //   ROLLING        → "days into the future" (calendar days)
+  //   ROLLING_WINDOW → "days into the future" (business days only — AVL-GAP-001 parity)
+  //   RANGE          → "date range" (explicit start/end)
+  //   UNLIMITED      → "indefinitely into the future"
   periodType: PeriodType;
   /**
-   * Number of days(Applicable only for ROLLING period type)
+   * Number of days (applicable only for ROLLING period type).
+   * Combined with `periodCountCalendarDays` to distinguish calendar days
+   * from business days — aligns with Calendly's booking window behavior.
    */
   periodDays: number;
   /**
-   * Should consider Calendar Days(and not Business Days)(Applicable only for ROLLING period type)
+   * When `true`, counts calendar days; when `false`, counts business days.
+   * Applicable only for ROLLING period type. Addresses AVL-GAP-001 parity
+   * with Calendly's calendar/business day distinction.
    */
   periodCountCalendarDays: boolean;
   /**
-   * Date Range(Applicable only for RANGE period type)
+   * Explicit date range for RANGE period type — maps to Calendly's
+   * "date range" booking window option.
    */
   periodDates: { startDate: Date; endDate: Date };
+  /** Excludes unavailable days from the rolling window count. */
   rollingExcludeUnavailableDays: boolean;
 
+  // ── Group event fields (ET-002) ───────────────────────────────────────
+  // Enables seated booking: multiple attendees per time slot up to the limit.
+  // The (N+1)th attendee is rejected when `seatsPerTimeSlot` is reached.
   seatsPerTimeSlot: number | null;
   seatsShowAttendees: boolean | null;
   seatsShowAvailabilityCount: boolean | null;
   seatsPerTimeSlotEnabled: boolean;
+
   autoTranslateDescriptionEnabled: boolean;
   autoTranslateInstantMeetingTitleEnabled: boolean;
   fieldTranslations: EventTypeTranslation[];
   scheduleName: string;
+
+  // ── Minimum notice & buffer fields (ET-005) ───────────────────────────
   minimumBookingNotice: number;
   minimumBookingNoticeInDurationType: number;
   maxActiveBookingsPerBooker: number | null;
   beforeEventBuffer: number;
   afterEventBuffer: number;
   slotInterval: number | null;
+
   metadata: z.infer<typeof eventTypeMetaDataSchemaWithTypedApps>;
   destinationCalendar: {
     integration: string;
@@ -169,26 +239,53 @@ export type FormValues = {
   bookingLimits?: IntervalLimit;
   onlyShowFirstAvailableSlot: boolean;
   showOptimizedSlots: boolean;
+
+  // ── Managed event type fields ─────────────────────────────────────────
+  /** Child event types propagated from this managed parent template. */
   children: ChildrenEventType[];
+
+  // ── Team host fields (ET-003 Round-Robin, ET-004 Collective) ──────────
+  /** Array of hosts with paradigm-specific fields. See `Host` type JSDoc. */
   hosts: Host[];
+  /** Named host groups for segment-based round-robin assignment. */
   hostGroups: {
     id: string;
     name: string;
   }[];
+
+  // ── Custom booking fields (ET-006) ────────────────────────────────────
+  // Supports all Calendly question types via the Zod schema:
+  //   text, radio, checkbox, phone, select (dropdown), textarea, number, email
+  // Calendly mapping: text→text, radio→radio, checkbox→checkbox,
+  //   phone→phone, dropdown→select
   bookingFields: z.infer<typeof eventTypeBookingFields>;
+
   availability?: AvailabilityOption;
   bookerLayouts: BookerLayoutSettings;
   multipleDurationEnabled: boolean;
   users: EventTypeSetup["users"];
+
+  // ── Collective scheduling fields (ET-004) ─────────────────────────────
+  /** When `true`, all team members are assigned as hosts (collective mode). */
   assignAllTeamMembers: boolean;
+
+  // ── Round-robin distribution fields (ET-003) ──────────────────────────
+  /** Enables segment-based member assignment for round-robin. */
   assignRRMembersUsingSegment: boolean;
+  /** RAQB query value for segment-based RR filtering. */
   rrSegmentQueryValue: AttributesQueryValue | null;
+  /** When `true`, rescheduled bookings keep the same RR host. */
   rescheduleWithSameRoundRobinHost: boolean;
+
   useEventTypeDestinationCalendarEmail: boolean;
   forwardParamsSuccessRedirect: boolean | null;
   secondaryEmailId?: number;
+
+  /** Enables weighted distribution for round-robin hosts. */
   isRRWeightsEnabled: boolean;
+  /** Maximum lead threshold for round-robin host assignment. */
   maxLeadThreshold?: number;
+
   restrictionScheduleId: number | null;
   useBookerTimezone: boolean;
   restrictionScheduleName: string | null;
@@ -217,6 +314,24 @@ export type EventTypeAssignedUsers = {
   slug: string;
 }[];
 
+/**
+ * Database-projected host records for event type queries.
+ *
+ * Used by the availability engine and booking flow to resolve host-specific
+ * scheduling data:
+ *
+ * - **Round-Robin (ET-003):** `isFixed` is `false`; `priority` controls queue
+ *   ordering; `weight` controls proportional booking share when weighted RR is
+ *   enabled; `groupId` supports segment-based assignment. Hosts are grouped by
+ *   `groupId` in `getAggregatedAvailability` with at-least-one-available logic.
+ *
+ * - **Collective (ET-004):** `isFixed` is `true`; all fixed hosts must have
+ *   overlapping availability for a slot to be presented. `priority` and `weight`
+ *   are nullable and unused for collective intersection logic.
+ *
+ * The `scheduleId` allows per-host schedule overrides — when `null`, the host's
+ * default schedule is used for availability computation.
+ */
 export type EventTypeHosts = {
   user: {
     timeZone: string;
@@ -266,6 +381,22 @@ export type HostLocationInput = {
   phoneNumber?: string | null;
 };
 
+/**
+ * Input type for creating or updating host assignments on a team event type.
+ *
+ * All fields except `userId` are optional to support partial updates (`.partial()`
+ * pattern). Used by `EventTypeUpdateInput.hosts` for all team scheduling paradigms:
+ *
+ * - **Round-Robin (ET-003):** Set `isFixed: false`, configure `priority` for
+ *   queue ordering, `weight` for weighted distribution, and `groupId` for
+ *   segment-based assignment via `rrSegmentQueryValue`.
+ * - **Collective (ET-004):** Set `isFixed: true` — all fixed hosts must be
+ *   simultaneously available.
+ * - **Managed:** Hosts propagated from parent template to child event types.
+ *
+ * @see Host — the form-state counterpart with required fields
+ * @see EventTypeHosts — the database-projected counterpart
+ */
 export type HostInput = {
   userId: number;
   profileId?: number | null;
@@ -277,6 +408,11 @@ export type HostInput = {
   location?: HostLocationInput | null;
 };
 
+/**
+ * Input type for named host groups used in segment-based round-robin
+ * assignment (ET-003). Groups partition hosts for `rrSegmentQueryValue`
+ * filtering via the `groupId` field on `HostInput`.
+ */
 export type HostGroupInput = {
   id: string;
   name: string;
@@ -312,9 +448,27 @@ export type EventTypeColorInput = {
 } | null;
 
 /**
- * Booking field type - minimal type definition for fields that need to be accessed.
- * Only includes properties that are actually read in server code.
- * Does NOT use an index signature to maintain compatibility with API v2 DTO classes.
+ * Minimal booking field input type for event type update operations (ET-006).
+ *
+ * Only includes properties that are actually read in server code. Does NOT use
+ * an index signature to maintain compatibility with API v2 DTO classes.
+ *
+ * The `type` field accepts any string value, supporting all Cal.com booking field
+ * types which provide full parity with Calendly's question types:
+ *
+ * | Cal.com `type` | Calendly equivalent | Description                  |
+ * |----------------|---------------------|------------------------------|
+ * | `"text"`       | Text                | Single-line text input       |
+ * | `"textarea"`   | Text (multi-line)   | Multi-line text input        |
+ * | `"radio"`      | Radio buttons       | Single-choice radio group    |
+ * | `"checkbox"`   | Checkboxes          | Multi-choice checkbox group  |
+ * | `"phone"`      | Phone number        | Phone number with validation |
+ * | `"select"`     | Dropdown            | Single-choice dropdown menu  |
+ * | `"email"`      | —                   | Email input (Cal.com extra)  |
+ * | `"number"`     | —                   | Numeric input (Cal.com extra)|
+ *
+ * The `type` is optional to support partial updates — creation flows should
+ * always specify a type via the full `eventTypeBookingFields` Zod schema.
  */
 export type BookingFieldInput = {
   name: string;
@@ -324,7 +478,13 @@ export type BookingFieldInput = {
 };
 
 /**
- * RR Segment query value - using index signature for complex RAQB structure.
+ * Round-robin segment query value for attribute-based host filtering (ET-003).
+ *
+ * Uses an index signature to accommodate the complex React Awesome Query Builder
+ * (RAQB) structure that defines segment conditions. When `assignRRMembersUsingSegment`
+ * is `true`, this query filters which hosts in a round-robin pool are eligible
+ * for assignment based on attribute matching.
+ *
  * The values need to be indexable (string keys) for downstream usage.
  */
 export type RRSegmentQueryValueInput = {
@@ -334,19 +494,36 @@ export type RRSegmentQueryValueInput = {
 /**
  * Explicit type definition for event type update input.
  *
- * This type is defined explicitly rather than using z.infer<> on a complex
+ * This type is defined explicitly rather than using `z.infer<>` on a complex
  * schema chain to significantly reduce TypeScript type-checking time.
  * The schema still validates all fields at runtime.
  *
- * All fields are optional (from .partial()) except `id` which is required.
+ * All fields are optional (from `.partial()`) except `id` which is required.
+ *
+ * Supports all six Cal.com scheduling paradigms:
+ * - **1:1 (ET-001):** `schedulingType: null` — default one-on-one flow
+ * - **Group (ET-002):** `seatsPerTimeSlot`, `seatsShowAttendees`, `seatsShowAvailabilityCount`
+ * - **Round-Robin (ET-003):** `isRRWeightsEnabled`, `rrSegmentQueryValue`,
+ *   `assignRRMembersUsingSegment`, `rescheduleWithSameRoundRobinHost`,
+ *   `includeNoShowInRRCalculation`, `maxLeadThreshold`, `rrHostSubsetEnabled`
+ * - **Collective (ET-004):** `assignAllTeamMembers` with `hosts[].isFixed: true`
+ * - **Booking Windows (ET-005):** `periodType`, `periodDays`, `periodStartDate`,
+ *   `periodEndDate`, `periodCountCalendarDays`, `minimumBookingNotice`
+ * - **Custom Fields (ET-006):** `bookingFields` (see `BookingFieldInput`)
  */
 export type EventTypeUpdateInput = {
-  // Required field
+  // ── Required field ────────────────────────────────────────────────────
   id: number;
 
-  // Fields from EventTypeSchema (all optional due to .partial())
+  // ── Booking window fields (ET-005) ────────────────────────────────────
+  // ROLLING → days into the future, RANGE → date range, UNLIMITED → indefinite
   periodType?: PeriodType;
+
+  // ── Scheduling paradigm (ET-001) ──────────────────────────────────────
+  /** `null` = 1:1 (one-on-one), otherwise ROUND_ROBIN | COLLECTIVE | MANAGED */
   schedulingType?: SchedulingType | null;
+
+  // ── Core identity fields ──────────────────────────────────────────────
   title?: string;
   slug?: string;
   description?: string | null;
@@ -362,12 +539,20 @@ export type EventTypeUpdateInput = {
   useEventLevelSelectedCalendars?: boolean;
   eventName?: string | null;
   parentId?: number | null;
+
+  // ── Custom booking fields (ET-006) ────────────────────────────────────
+  // Supports all Calendly question types: text, radio, checkbox, phone, select
   bookingFields?: BookingFieldInput[] | null;
+
   timeZone?: string | null;
+
+  // ── Booking window fields (ET-005) continued ──────────────────────────
   periodStartDate?: Date | null;
   periodEndDate?: Date | null;
   periodDays?: number | null;
+  /** Calendar vs. business day counting for ROLLING window (AVL-GAP-001). */
   periodCountCalendarDays?: boolean | null;
+
   lockTimeZoneToggleOnBookingPage?: boolean;
   lockedTimeZone?: string | null;
   requiresConfirmation?: boolean;
@@ -381,18 +566,25 @@ export type EventTypeUpdateInput = {
   disableGuests?: boolean;
   hideCalendarNotes?: boolean;
   hideCalendarEventDetails?: boolean;
+  /** Minimum advance notice required for bookings (ET-005). */
   minimumBookingNotice?: number;
   beforeEventBuffer?: number;
   afterEventBuffer?: number;
   syncBuffersToCalendar?: boolean | null;
+
+  // ── Group event fields (ET-002) ───────────────────────────────────────
+  /** Number of seats per time slot for group/seated events. */
   seatsPerTimeSlot?: number | null;
   onlyShowFirstAvailableSlot?: boolean;
   showOptimizedSlots?: boolean | null;
   disableCancelling?: boolean | null;
   disableRescheduling?: boolean | null;
   minimumRescheduleNotice?: number | null;
+  /** Whether attendee names are visible to other attendees in group events. */
   seatsShowAttendees?: boolean | null;
+  /** Whether remaining seat count is displayed on the booking page. */
   seatsShowAvailabilityCount?: boolean | null;
+
   scheduleId?: number | null;
   allowReschedulingCancelledBookings?: boolean | null;
   price?: number;
@@ -408,40 +600,57 @@ export type EventTypeUpdateInput = {
   instantMeetingExpiryTimeOffsetInSeconds?: number;
   instantMeetingScheduleId?: number | null;
   instantMeetingParameters?: string[];
+
+  // ── Collective scheduling fields (ET-004) ─────────────────────────────
+  /** When `true`, all team members are assigned as fixed hosts. */
   assignAllTeamMembers?: boolean;
+
+  // ── Round-robin distribution fields (ET-003) ──────────────────────────
+  /** Enables segment-based member assignment for round-robin. */
   assignRRMembersUsingSegment?: boolean;
+  /** RAQB query value for segment-based RR host filtering. */
   rrSegmentQueryValue?: RRSegmentQueryValueInput;
   useEventTypeDestinationCalendarEmail?: boolean;
+  /** Enables weighted (non-equal) distribution across round-robin hosts. */
   isRRWeightsEnabled?: boolean;
+  /** Maximum lead threshold for round-robin host assignment queue. */
   maxLeadThreshold?: number | null;
+  /** Whether no-shows count toward RR distribution calculations. */
   includeNoShowInRRCalculation?: boolean;
+
   allowReschedulingPastBookings?: boolean;
   hideOrganizerEmail?: boolean;
   maxActiveBookingsPerBooker?: number | null;
   maxActiveBookingPerBookerOfferReschedule?: boolean;
   customReplyToEmail?: string | null;
   eventTypeColor?: EventTypeColorInput;
+
+  /** When `true`, rescheduled bookings keep the same round-robin host. */
   rescheduleWithSameRoundRobinHost?: boolean;
   secondaryEmailId?: number | null;
   useBookerTimezone?: boolean;
   restrictionScheduleId?: number | null;
   bookingRequiresAuthentication?: boolean;
+  /** Enables round-robin host subset selection. */
   rrHostSubsetEnabled?: boolean;
   createdAt?: Date | null;
   updatedAt?: Date | null;
 
-  // Extended fields (all optional due to .partial())
+  // ── Extended fields ───────────────────────────────────────────────────
   aiPhoneCallConfig?: AiPhoneCallConfig;
   calVideoSettings?: CalVideoSettings;
   calAiPhoneScript?: string;
   customInputs?: CustomInputSchema[];
   destinationCalendar?: DestinationCalendarInput;
   users?: number[];
+  /** Child event types for managed paradigm propagation. */
   children?: ChildInput[];
+  /** Host assignments for team paradigms (RR, collective, managed). See `HostInput`. */
   hosts?: HostInput[];
   schedule?: number | null;
   instantMeetingSchedule?: number | null;
   multiplePrivateLinks?: (string | HashedLinkInput)[];
+  /** Named host groups for segment-based round-robin assignment. */
   hostGroups?: HostGroupInput[];
   enablePerHostLocations?: boolean;
 };

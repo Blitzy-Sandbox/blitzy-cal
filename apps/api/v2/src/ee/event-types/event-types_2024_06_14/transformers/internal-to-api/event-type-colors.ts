@@ -6,5 +6,5 @@ export function transformEventTypeColorsInternalToApi(
   return {
     darkThemeHex: transformedColors.darkEventTypeColor,
     lightThemeHex: transformedColors.lightEventTypeColor,
-  };
+  } satisfies EventTypeColor_2024_06_14;
 }

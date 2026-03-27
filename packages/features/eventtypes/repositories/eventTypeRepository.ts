@@ -1914,4 +1914,109 @@ export class EventTypeRepository implements IEventTypesRepository {
 
     return eventTypeResult;
   }
+
+  /**
+   * Returns the seat configuration for a group event type (ET-002).
+   * Used to verify that seatsPerTimeSlot is correctly configured and queryable
+   * for group events where multiple attendees can book the same time slot.
+   */
+  async findSeatCountByEventTypeId(
+    eventTypeId: number
+  ): Promise<{ seatsPerTimeSlot: number | null } | null> {
+    const eventType = await this.prismaClient.eventType.findUnique({
+      where: { id: eventTypeId },
+      select: { seatsPerTimeSlot: true },
+    });
+
+    if (!eventType) {
+      return null;
+    }
+
+    return { seatsPerTimeSlot: eventType.seatsPerTimeSlot };
+  }
+
+  /**
+   * Returns host assignment data with weight and priority for round-robin
+   * distribution verification (ET-003). Exposes the host weights and priorities
+   * needed to verify equitable round-robin distribution across hosts.
+   */
+  async findHostsWithWeights(
+    eventTypeId: number
+  ): Promise<
+    Array<{
+      userId: number;
+      isFixed: boolean;
+      weight: number;
+      priority: number;
+      scheduleId: number | null;
+    }>
+  > {
+    const hosts = await this.prismaClient.host.findMany({
+      where: { eventTypeId },
+      select: {
+        userId: true,
+        isFixed: true,
+        weight: true,
+        priority: true,
+        scheduleId: true,
+      },
+    });
+
+    return hosts.map((host) => ({
+      userId: host.userId,
+      isFixed: host.isFixed,
+      weight: host.weight ?? 100,
+      priority: host.priority ?? 2,
+      scheduleId: host.scheduleId,
+    }));
+  }
+
+  /**
+   * Returns all fixed hosts for a collective event type (ET-004).
+   * Used to verify mutual availability intersection — collective scheduling
+   * requires all fixed hosts to be simultaneously available.
+   */
+  async findFixedHosts(
+    eventTypeId: number
+  ): Promise<Array<{ userId: number; isFixed: boolean }>> {
+    const hosts = await this.prismaClient.host.findMany({
+      where: { eventTypeId },
+      select: {
+        userId: true,
+        isFixed: true,
+      },
+    });
+
+    return hosts.map((host) => ({
+      userId: host.userId,
+      isFixed: host.isFixed,
+    }));
+  }
+
+  /**
+   * Returns the scheduling paradigm and seat configuration for an event type.
+   * Supports paradigm-specific branching logic in services and guards by
+   * identifying whether the event type is one-on-one (null), round-robin,
+   * collective, or managed, and whether it uses seated (group) booking.
+   */
+  async findSchedulingType(
+    eventTypeId: number
+  ): Promise<{ schedulingType: "ROUND_ROBIN" | "COLLECTIVE" | "MANAGED" | null; seatsPerTimeSlot: number | null } | null> {
+    const eventType = await this.prismaClient.eventType.findUnique({
+      where: { id: eventTypeId },
+      select: {
+        schedulingType: true,
+        seatsPerTimeSlot: true,
+      },
+    });
+
+    if (!eventType) {
+      return null;
+    }
+
+    return {
+      schedulingType: eventType.schedulingType,
+      seatsPerTimeSlot: eventType.seatsPerTimeSlot,
+    };
+  }
 }

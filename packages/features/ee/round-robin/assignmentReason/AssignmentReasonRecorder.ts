@@ -215,8 +215,8 @@ export default class AssignmentReasonRecorder {
         ? AssignmentReasonEnum.REASSIGNED
         : AssignmentReasonEnum.RR_REASSIGNED;
 
-    const reasonString = `Reassigned by: ${reassignedBy?.username || "team member"}. ${
-      reassignReason ? `Reason: ${reassignReason}` : ""
+    const reasonString = `Reassigned by: ${reassignedBy?.username || "team member"}.${
+      reassignReason ? ` Reason: ${reassignReason}` : ""
     }`;
 
     await prisma.assignmentReason.create({

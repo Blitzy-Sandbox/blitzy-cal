@@ -15,7 +15,29 @@ vi.mock("@calcom/app-store/locations", async () => {
   };
 });
 
+vi.mock("@calcom/app-store/appStoreMetaData", () => ({
+  appStoreMetadata: {
+    "some-app": {
+      type: "some_app_type",
+      appData: {
+        location: {
+          type: "integrations:some-app",
+        },
+      },
+    },
+  },
+}));
+
+vi.mock("@calcom/features/host/repositories/HostLocationRepository", () => {
+  const MockHLR = vi.fn();
+  MockHLR.prototype.linkCredential = vi.fn().mockResolvedValue(undefined);
+  return { HostLocationRepository: MockHLR };
+});
+
 const { getAppFromSlug } = await import("@calcom/app-store/utils");
+const { HostLocationRepository: HostLocationRepositoryMock } = await import(
+  "@calcom/features/host/repositories/HostLocationRepository"
+);
 
 describe("BookingLocationService", () => {
   beforeEach(() => {
@@ -553,6 +575,316 @@ describe("BookingLocationService", () => {
           conferenceCredentialId: null,
         });
       });
+    });
+  });
+
+  describe("getPerHostLocation", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should return location type with credential when credentialId is present", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:zoom",
+          credentialId: 42,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [{ id: 42, type: "zoom_video" }],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:zoom",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: 42,
+      });
+    });
+
+    it("should return Cal Video type without credential", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:daily-video",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:daily-video",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should return static link when link is present", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:custom-video",
+          credentialId: null,
+          link: "https://custom-video.com/room123",
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "https://custom-video.com/room123",
+        organizerDefaultLocationUrl: "https://custom-video.com/room123",
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should return address for inPerson location type", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "inPerson",
+          credentialId: null,
+          link: null,
+          address: "123 Main St, City",
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "123 Main St, City",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should fallback to type for inPerson when address is null", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "inPerson",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "inPerson",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should return phone number for userPhone location type", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "userPhone",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: "+1-555-0123",
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "+1-555-0123",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should fallback to type for userPhone when phoneNumber is null", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "userPhone",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "userPhone",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should return type for attendeeInPerson location", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "attendeeInPerson",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "attendeeInPerson",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should return type for phone location", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "phone",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "phone",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+    });
+
+    it("should treat credentialId 0 as a valid credential", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:zoom",
+          credentialId: 0,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [{ id: 0, type: "zoom_video" }],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:zoom",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: 0,
+      });
+    });
+
+    it("should find matching credential for unknown app and link it via HostLocationRepository", async () => {
+      const mockPrismaClient = {} as any;
+
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:some-app",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [{ id: 99, type: "some_app_type" }],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: mockPrismaClient,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:some-app",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: 99,
+      });
+
+      // Verify HostLocationRepository was instantiated with the prisma client
+      expect(HostLocationRepositoryMock).toHaveBeenCalledWith(mockPrismaClient);
+
+      // Verify linkCredential was called with the correct parameters via prototype mock
+      expect((HostLocationRepositoryMock as any).prototype.linkCredential).toHaveBeenCalledWith({
+        userId: 1,
+        eventTypeId: 1,
+        credentialId: 99,
+      });
+    });
+
+    it("should fallback to Cal Video when no matching credential found", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:some-app",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [], // no matching credentials
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:daily-video",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+
+      // Verify HostLocationRepository was NOT instantiated since no credential matched
+      expect(HostLocationRepositoryMock).not.toHaveBeenCalled();
+    });
+
+    it("should fallback to Cal Video when location type not in appStoreMetadata", async () => {
+      const result = await BookingLocationService.getPerHostLocation({
+        hostLocation: {
+          type: "integrations:completely-unknown",
+          credentialId: null,
+          link: null,
+          address: null,
+          phoneNumber: null,
+        },
+        allCredentials: [{ id: 1, type: "some_type" }],
+        eventTypeId: 1,
+        userId: 1,
+        prismaClient: {} as any,
+      });
+
+      expect(result).toEqual({
+        locationBodyString: "integrations:daily-video",
+        organizerDefaultLocationUrl: null,
+        perHostCredentialId: undefined,
+      });
+
+      // Verify HostLocationRepository was NOT instantiated since the app was not found
+      expect(HostLocationRepositoryMock).not.toHaveBeenCalled();
     });
   });
 });

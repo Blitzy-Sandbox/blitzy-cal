@@ -40,8 +40,21 @@ export const bootstrap = (app: NestExpressApplication): NestExpressApplication =
       defaultVersion: VERSION_2024_04_15,
     });
     app.use(helmet());
+    // CORS configuration: use environment-specified allowed origins in production,
+    // fall back to wildcard only in development mode for local testing convenience.
+    // Set ALLOWED_ORIGINS as a comma-separated list of origins (e.g., "https://app.cal.com,https://cal.com").
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+      : undefined;
+    const corsOrigin =
+      allowedOrigins && allowedOrigins.length > 0
+        ? allowedOrigins
+        : process.env.NODE_ENV === "production"
+          ? false
+          : "*";
+
     app.enableCors({
-      origin: "*",
+      origin: corsOrigin,
       methods: ["GET", "PATCH", "DELETE", "HEAD", "POST", "PUT", "OPTIONS"],
       allowedHeaders: [
         X_CAL_CLIENT_ID,

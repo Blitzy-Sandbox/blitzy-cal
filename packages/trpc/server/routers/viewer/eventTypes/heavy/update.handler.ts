@@ -1,3 +1,58 @@
+/**
+ * Update Event Type Handler (Heavy Router)
+ *
+ * This is the MOST COMPLEX handler in the viewer event types tRPC surface — the single source
+ * of truth for ALL paradigm-specific field updates. The create handler sets minimal fields,
+ * and all paradigm customization happens here via the create → update two-step pattern.
+ *
+ * ## Sprint 2 Paradigm Coverage (ET-001 through ET-006)
+ *
+ * ### ET-001 — 1:1 Event Types
+ * Default paradigm when `schedulingType` is null. No special handling needed — the base
+ * update flow covers all 1:1 configuration (title, description, locations, duration).
+ *
+ * ### ET-002 — Group Events (Seats)
+ * - `seatsPerTimeSlot` (in input destructuring, event type select, and `data` assembly):
+ *   Controls max attendees per time slot. When non-null, enables group event behavior.
+ * - Mutual exclusion: seats and recurring events cannot coexist (in the seats+recurring validation block).
+ * - Seat visibility: `seatsShowAttendees` and `seatsShowAvailabilityCount` via `...rest`.
+ *
+ * ### ET-003 — Round-Robin Distribution
+ * - `isRRWeightsEnabled` (in input destructuring, event type select, and `data` assembly):
+ *   Toggles weighted vs. equal distribution among RR hosts.
+ * - `rrSegmentQueryValue` (in `data` assembly): RAQB filter for segment-based RR assignment.
+ * - Host weight/priority handling (in the host assignment section): Each host gets `priority` (0-4, app default 2)
+ *   and `weight` (min 0, app default 100) for equitable distribution.
+ * - `hostGroups` CRUD (in the host groups transaction block): Group-based RR assignment.
+ * - `isFixed` check (in host create/update mappings): Forces `isFixed=true` for COLLECTIVE scheduling type.
+ * - `maxLeadThreshold` (in `data` assembly): Disabled when load balancing is off.
+ * - Load balancing disabled check (in the `isLoadBalancingDisabled` computation): Based on `rrTimestampBasis` and multiple host groups.
+ *
+ * ### ET-004 — Collective Scheduling
+ * - `assignAllTeamMembers` (in input destructuring, and the assign-all-members section):
+ *   Auto-assigns all team members as fixed hosts for collective events.
+ * - `isFixed` forced true (in host create/update mappings): All hosts in COLLECTIVE type are fixed (must all be available).
+ *
+ * ### ET-005 — Booking Windows
+ * - `periodType` (in input destructuring, and `data` assembly via `handlePeriodType()`):
+ *   Mapped via `handlePeriodType()` from ../util.ts to PeriodType enum values:
+ *   UNLIMITED → indefinitely, ROLLING → calendar days, ROLLING_WINDOW → business days, RANGE → date range.
+ * - `periodStartDate`, `periodEndDate`, `periodDays`, `periodCountCalendarDays` via `...rest`.
+ * - `minimumBookingNotice` via `...rest`.
+ * - `bookingLimits` and `durationLimits` validation (in the interval limits validation block).
+ *
+ * ### ET-006 — Custom Fields/Questions
+ * - `bookingFields` (in input destructuring, validated via `ensureUniqueBookingFields()` and
+ *   `ensureEmailOrPhoneNumberIsPresent()`, and included in `data` assembly):
+ *   JSON array of booking form fields. Supports all Calendly types:
+ *   text, radio, checkbox, phone, select/dropdown.
+ * - `customInputs` (in input destructuring, handled via `handleCustomInputs()` from ../util.ts):
+ *   Legacy custom input system — CRUD operations batched in the Prisma update.
+ *
+ * @see {@link packages/trpc/server/routers/viewer/eventTypes/util.ts} for handlePeriodType, ensureUniqueBookingFields, ensureEmailOrPhoneNumberIsPresent, handleCustomInputs
+ * @see {@link packages/features/eventtypes/lib/types.ts} for EventTypeUpdateInput type definition
+ * @module
+ */
 import type { NextApiResponse, GetServerSidePropsContext } from "next";
 
 import type { appDataSchemas } from "@calcom/app-store/apps.schemas.generated";
@@ -68,6 +123,13 @@ type UpdateOptions = {
 export type UpdateEventTypeReturn = Awaited<ReturnType<typeof updateHandler>>;
 
 export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
+  // === Input Destructuring ===
+  // All paradigm-specific fields are destructured here. Key paradigm fields:
+  // - ET-002 (Group): seatsPerTimeSlot
+  // - ET-003 (Round-Robin): isRRWeightsEnabled, hosts, hostGroups
+  // - ET-004 (Collective): assignAllTeamMembers
+  // - ET-005 (Booking Windows): periodType
+  // - ET-006 (Custom Fields): bookingFields, customInputs
   const {
     schedule,
     instantMeetingSchedule,
@@ -98,6 +160,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     autoTranslateInstantMeetingTitleEnabled,
     description: newDescription,
     title: newTitle,
+    // ET-002 (Group Events): max attendees per time slot. null = non-seated event.
     seatsPerTimeSlot,
     restrictionScheduleId,
     calVideoSettings,
@@ -106,6 +169,12 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     ...rest
   } = input;
 
+  // Fetch current event type state — select includes paradigm-relevant fields for validation:
+  // - seatsPerTimeSlot (ET-002): needed for seats+recurring mutual exclusion check
+  // - isRRWeightsEnabled (ET-003): current RR weight toggle state
+  // - hosts with priority/weight/isFixed (ET-003/ET-004): current host configuration
+  // - hostGroups (ET-003): current RR group structure
+  // - team.rrTimestampBasis (ET-003): RR fairness timestamp basis
   const eventType = await ctx.prisma.eventType.findUniqueOrThrow({
     where: { id },
     select: {
@@ -204,6 +273,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
+  // ET-002 (Group Events) validation: seated events (seatsPerTimeSlot > 0) and recurring events
+  // are mutually exclusive. This matches Calendly's behavior where group events cannot recur.
   const finalSeatsPerTimeSlot =
     seatsPerTimeSlot === undefined ? eventType.seatsPerTimeSlot : seatsPerTimeSlot;
   const finalRecurringEvent = recurringEvent === undefined ? eventType.recurringEvent : recurringEvent;
@@ -218,6 +289,11 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
   const teamId = input.teamId || eventType.team?.id;
   const guestsField = bookingFields?.find((field) => field.name === "guests");
 
+  // ET-006 (Custom Fields) validation:
+  // - ensureUniqueBookingFields: prevents duplicate field names across ALL field types
+  //   (text, radio, checkbox, phone, select/dropdown, and Cal.com extras)
+  // - ensureEmailOrPhoneNumberIsPresent: ensures at least one contact method is required,
+  //   matching Calendly's requirement for invitee contact information
   ensureUniqueBookingFields(bookingFields);
   ensureEmailOrPhoneNumberIsPresent(bookingFields);
 
@@ -227,12 +303,21 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     );
   }
 
+  // ET-003 (Round-Robin) load balancing: disabled when rrTimestampBasis is not CREATED_AT
+  // or when multiple host groups exist. This affects maxLeadThreshold calculation.
   const isLoadBalancingDisabled = !!(
     (eventType.team?.rrTimestampBasis && eventType.team?.rrTimestampBasis !== RRTimestampBasis.CREATED_AT) ||
     (hostGroups && hostGroups.length > 1) ||
     (!hostGroups && eventType.hostGroups && eventType.hostGroups.length > 1)
   );
 
+  // === Build Prisma Update Payload ===
+  // Paradigm-specific fields in the update payload:
+  // - bookingFields (ET-006): JSON array, null → Prisma.DbNull
+  // - isRRWeightsEnabled (ET-003): boolean toggle for weighted distribution
+  // - rrSegmentQueryValue (ET-003): RAQB filter for segment-based RR, null → Prisma.DbNull
+  // - seatsPerTimeSlot (ET-002): integer or null for group events
+  // - maxLeadThreshold (ET-003): null when load balancing disabled
   const data: Prisma.EventTypeUpdateInput = {
     ...rest,
     // Only update autoTranslateInstantMeetingTitleEnabled when explicitly provided to avoid overwriting saved opt-out
@@ -261,6 +346,9 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
   };
   data.locations = locations ?? undefined;
 
+  // ET-005 (Booking Windows): Maps string periodType to PeriodType enum via handlePeriodType().
+  // Calendly equivalents: UNLIMITED→indefinitely, ROLLING→calendar days,
+  // ROLLING_WINDOW→business days (AVL-GAP-001), RANGE→date range
   if (periodType) {
     data.periodType = handlePeriodType(periodType);
   }
@@ -289,6 +377,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     });
   }
 
+  // ET-006 (Custom Fields — Legacy): handleCustomInputs() performs CRUD for the legacy
+  // custom input system (predecessor to bookingFields). Supports all Calendly question types.
   if (customInputs) {
     data.customInputs = handleCustomInputs(customInputs, id);
   }
@@ -423,6 +513,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     };
   }
 
+  // ET-003 (Round-Robin) host groups: Full CRUD for group-based RR assignment.
+  // Groups allow segmenting hosts for different distribution pools.
   // Handle hostGroups updates
   if (hostGroups !== undefined) {
     const existingHostGroups = await ctx.prisma.hostGroup.findMany({
@@ -477,6 +569,13 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
 
   let hostLocationDeletions: { userId: number; eventTypeId: number }[] = [];
 
+  // === Host Assignment (ET-003 Round-Robin / ET-004 Collective) ===
+  // Handles create/update/delete of hosts with paradigm-specific properties:
+  // - isFixed: forced true for COLLECTIVE (all hosts must be available) — see host create/update mappings below
+  // - priority: 0-4 scale for RR ordering (app default 2 = middle) — see host create/update mappings below
+  // - weight: relative weight for weighted RR distribution (app default 100) — see host create/update mappings below
+  // - groupId: RR group assignment for group-based distribution — see host create/update mappings below
+  // - scheduleId: per-host schedule override — see host create/update mappings below
   if (teamId && hosts) {
     // check if all hosts can be assigned (memberships that have accepted invite)
     const teamMemberIds = await membershipRepo.listAcceptedTeamMemberIds({ teamId });
@@ -673,6 +772,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     connectedMultiplePrivateLinks,
   });
 
+  // ET-004 (Collective): assignAllTeamMembers auto-assigns all team members as fixed hosts.
+  // When true, all accepted team members are automatically included in collective scheduling.
   if (assignAllTeamMembers !== undefined) {
     data.assignAllTeamMembers = assignAllTeamMembers;
   }

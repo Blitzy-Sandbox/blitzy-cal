@@ -1,3 +1,40 @@
+/**
+ * Create Event Type Handler (Heavy Router)
+ *
+ * Handles viewer-scoped event type creation for ALL scheduling paradigms:
+ * - **1:1 (ET-001):** Default when `schedulingType` is not provided — connects owner directly.
+ * - **Group (ET-002):** Created with `schedulingType` null initially; `seatsPerTimeSlot` configured
+ *   via the update handler after creation. Group event semantics (multiple attendees per slot)
+ *   are applied post-creation through the update flow.
+ * - **Round-Robin (ET-003):** Created with `schedulingType: ROUND_ROBIN` and `teamId`. Host weights,
+ *   priorities, segment-based filtering, and `isRRWeightsEnabled` are all configured via the
+ *   update handler after creation.
+ * - **Collective (ET-004):** Created with `schedulingType: COLLECTIVE` and `teamId`. All-hosts-available
+ *   intersection logic and `assignAllTeamMembers` are configured via the update handler.
+ * - **Managed:** Created with `schedulingType: MANAGED` and `teamId` — admin template that propagates
+ *   to children event types.
+ * - **Dynamic:** Not created via this handler — resolved at booking time via multi-host links.
+ *
+ * DESIGN NOTE: The create schema intentionally has minimal fields. Paradigm-specific configuration
+ * (seats, RR weights/priorities, collective settings, booking windows, custom fields) all happen
+ * via the update handler after the event type is created. This two-step pattern (create → update)
+ * keeps the creation flow simple and the update handler as the single source of truth for all
+ * paradigm-specific field handling.
+ *
+ * Validation: `schedulingType` is validated via the upstream `createEventTypeInput` Zod schema's
+ * `.refine()` rule, which requires `schedulingType` when `teamId` is present. This ensures
+ * team event types always have an explicit paradigm.
+ *
+ * Permission checks: `PermissionCheckService` with PBAC covers all paradigm types:
+ * - Organization-level: `eventType.create` permission with ADMIN/OWNER fallback
+ * - Team-level: `eventType.create` permission with ADMIN/OWNER fallback (for team events)
+ * - System admin: bypasses all permission checks
+ * - Organization lock: `lockEventTypeCreationForUsers` prevents non-admin personal event creation
+ *
+ * @see {@link packages/features/eventtypes/lib/schemas.ts} for `createEventTypeInput` schema
+ * @see {@link packages/trpc/server/routers/viewer/eventTypes/heavy/update.handler.ts} for paradigm-specific configuration
+ * @module
+ */
 import type { z } from "zod";
 
 import { getDefaultLocations } from "@calcom/app-store/_utils/getDefaultLocations";
@@ -51,6 +88,9 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
   } = input;
 
   const userId = ctx.user.id;
+  // Paradigm detection: only MANAGED has special handling at creation time.
+  // Other paradigms (1:1, group, RR, collective) use the same creation path —
+  // their paradigm-specific fields are configured via the update handler.
   const isManagedEventType = schedulingType === SchedulingType.MANAGED;
   const isOrgAdmin = !!ctx.user?.organization?.isOrgAdmin;
 
@@ -72,6 +112,9 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
 
   const isCalVideoLocationActive = locations.some((location) => location.type === DailyLocationType);
 
+  // Build creation payload — paradigm-agnostic base fields only.
+  // Paradigm-specific fields (seatsPerTimeSlot, isRRWeightsEnabled, assignAllTeamMembers,
+  // bookingFields, periodType, hosts with weights/priorities) are set via update handler.
   const data: Prisma.EventTypeCreateInput = {
     ...rest,
     owner: teamId ? undefined : { connect: { id: userId } },
@@ -97,6 +140,11 @@ export const createHandler = async ({ ctx, input }: CreateOptions) => {
     };
   }
 
+  // Team event type paradigm assignment:
+  // - ROUND_ROBIN (ET-003): creates team event with RR distribution
+  // - COLLECTIVE (ET-004): creates team event requiring all hosts available
+  // - MANAGED: creates admin template for propagation to children
+  // Permission checks via PermissionCheckService cover all team paradigms equally.
   if (teamId && schedulingType) {
     const isSystemAdmin = ctx.user.role === "ADMIN";
 

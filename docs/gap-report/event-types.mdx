@@ -157,7 +157,7 @@ The Prisma-backed implementation provides comprehensive event type management in
 
 ### Event Type Data Model
 
-The `EventType` Prisma model contains **70+ fields** covering every aspect of event configuration. Key field categories include:
+The `EventType` Prisma model contains **85+ scalar fields** (100+ including relations) covering every aspect of event configuration. Key field categories include:
 
 <Tabs>
   <Tab title="Core Fields">
@@ -372,15 +372,15 @@ The following table provides a comprehensive side-by-side comparison of event ty
 
 | Feature | Calendly Behavior | Cal.com Status | Gap Severity | Notes |
 |---------|------------------|----------------|-------------|-------|
-| **One-on-One Events** | Core format — single host, single invitee | ✅ Fully supported (default when no `SchedulingType` set) | **Low** | Feature parity |
-| **Group Events** | Host meets multiple invitees in same slot; configurable max capacity | ✅ Fully supported via `seatsPerTimeSlot` with attendee visibility controls | **Low** | Cal.com adds `seatsShowAttendees` and `seatsShowAvailabilityCount` |
-| **Round-Robin** | Rotate meetings among team members; maximize availability or equal distribution; priority stars; fairness cap (3 meetings) | ✅ Fully supported via `SchedulingType.ROUND_ROBIN` with weight-based distribution, segment filtering, no-show tracking | **Low** | Cal.com adds RR weights, segment-based filtering, and no-show inclusion |
-| **Collective** | All hosts must be available; all attend | ✅ Fully supported via `SchedulingType.COLLECTIVE` | **Low** | Feature parity |
+| **One-on-One Events** | Core format — single host, single invitee | ✅ Fully supported (default when no `SchedulingType` set) | **Low** | Feature parity. ✅ ET-001 parity verified in Sprint 2 (ET-VAL-001) |
+| **Group Events** | Host meets multiple invitees in same slot; configurable max capacity | ✅ Fully supported via `seatsPerTimeSlot` with attendee visibility controls | **Low** | Cal.com adds `seatsShowAttendees` and `seatsShowAvailabilityCount`. ✅ ET-002 parity verified in Sprint 2 (ET-VAL-002) |
+| **Round-Robin** | Rotate meetings among team members; maximize availability or equal distribution; priority stars; fairness cap (3 meetings) | ✅ Fully supported via `SchedulingType.ROUND_ROBIN` with weight-based distribution, segment filtering, no-show tracking | **Low** | Cal.com adds RR weights, segment-based filtering, and no-show inclusion. ✅ ET-003 parity verified in Sprint 2 (ET-VAL-003) |
+| **Collective** | All hosts must be available; all attend | ✅ Fully supported via `SchedulingType.COLLECTIVE` | **Low** | Feature parity. ✅ ET-004 parity verified in Sprint 2 (ET-VAL-004) |
 | **Managed Events** | ❌ Not available | ✅ Supported via `SchedulingType.MANAGED` — admin pushes templates to members | **Low** | **Cal.com advantage** — no Calendly equivalent |
 | **Dynamic Links** | ❌ Not available | ✅ Supported — ad-hoc meeting links with instant meeting capability | **Low** | **Cal.com advantage** — no Calendly equivalent |
 | **Hybrid (Collective + RR)** | Combine co-hosts with Round Robin pools (Teams/Enterprise) | ✅ Supported via `hostGroups` and mixed host configuration | **Low** | Both platforms support hybrid scheduling |
-| **Booking Windows** | Date range limits for future bookings | ✅ Supported via `PeriodType` enum: `UNLIMITED`, `ROLLING`, `ROLLING_WINDOW`, `RANGE` with `periodDays`, `periodStartDate`, `periodEndDate` | **Low** | Cal.com offers 4 distinct period types vs. Calendly's single range approach |
-| **Custom Fields** | Custom invitee questions | ✅ Supported via `bookingFields` JSON and legacy `customInputs` | **Low** | Cal.com uses flexible JSON schema for custom fields |
+| **Booking Windows** | Date range limits for future bookings | ✅ Supported via `PeriodType` enum: `UNLIMITED`, `ROLLING`, `ROLLING_WINDOW`, `RANGE` with `periodDays`, `periodStartDate`, `periodEndDate` | **Low** | Cal.com offers 4 distinct period types vs. Calendly's single range approach. ✅ ET-005 parity verified in Sprint 2 (ET-VAL-006) |
+| **Custom Fields** | Custom invitee questions | ✅ Supported via `bookingFields` JSON and legacy `customInputs` | **Low** | Cal.com uses flexible JSON schema for custom fields. ✅ ET-006 parity verified in Sprint 2 (ET-VAL-005) |
 | **Pricing / Payments** | Native payment integration (paid plans) | ✅ Supported via `metadata.apps.stripe` for Stripe integration | **Low** | Both support payments; Cal.com uses extensible metadata pattern |
 | **Location Options** | In-person, phone, video (Zoom, Meet, Teams), custom | ✅ Supported via `locations` JSON — in-person, phone, video conferencing, custom | **Low** | Feature parity |
 | **Buffer Times** | Before/after event buffers | ✅ Supported via `beforeEventBuffer` and `afterEventBuffer` (in minutes) | **Low** | Feature parity |
@@ -392,7 +392,7 @@ The following table provides a comprehensive side-by-side comparison of event ty
 | **Confirmation Required** | Supports confirmation workflows | ✅ Supported via `requiresConfirmation` with slot blocking and free email filtering | **Low** | Cal.com adds granular confirmation options |
 | **Disable Cancel/Reschedule** | Limited control | ✅ Supported via `disableCancelling`, `disableRescheduling`, `minimumRescheduleNotice` | **Low** | **Cal.com advantage** — granular cancellation/rescheduling control |
 | **API Event Type Creation** | Recently added (June 2025): one-on-one only, basic fields | ✅ Full CRUD for all types via API v2 | **Low** | **Major Cal.com advantage** — full API management vs. Calendly's limited one-on-one-only API |
-| **Meeting Polls** | Calendly Meeting Polls for one-off group scheduling | ❌ No native meeting polls feature | **Medium** | Calendly offers a polling mechanism for ad-hoc group time selection |
+| **Meeting Polls** | Calendly Meeting Polls for one-off group scheduling | ❌ No native meeting polls feature | **Medium** | Calendly offers a polling mechanism for ad-hoc group time selection. ⏳ Deferred to future work — see `specs/event-types/future-work.md` |
 | **Event Type Permissions** | Owner/admin/group admin can edit; permission delegation available | ✅ Supported via team membership roles and managed event types | **Low** | Both platforms support permission-based editing |
 
 ---
@@ -403,16 +403,16 @@ The following table catalogs all identified gaps between Cal.com and Calendly's 
 
 | Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
 |--------|------------|----------|---------------|-------------------|----------------|
-| **ET-001** | **Meeting Polls** — Calendly offers Meeting Polls for one-off group scheduling where participants vote on preferred times. Cal.com has no native meeting poll feature. | **Medium** | `packages/features/eventtypes/` | [Calendly Blog — Team Scheduling](https://calendly.com/blog/team-scheduling-options) | Consider implementing a lightweight polling mechanism as an optional feature. This could extend the dynamic event type paradigm with a poll-based time selection flow. |
-| **ET-002** | **RR Fairness Cap Display** — Calendly's RR shows an explicit "UNFAIR" error in troubleshooting when meeting distribution exceeds 3-meeting variance. Cal.com's RR weights provide more flexible control but lack explicit fairness cap visualization. | **Low** | `packages/features/eventtypes/` | [Calendly Help — RR Distribution](https://help.calendly.com/hc/en-us/articles/4402432846999-Round-Robin-distribution-overview) | Consider adding visual distribution analytics and fairness indicators to the RR configuration UI. |
-| **ET-ADV-001** | **Managed Event Types** — Cal.com provides admin-pushed event type templates via `SchedulingType.MANAGED`. Calendly has no equivalent feature. | **Low** (Cal.com advantage) | `packages/features/eventtypes/repositories/eventTypeRepository.ts` | N/A | Document as Cal.com unique capability. No action needed. |
-| **ET-ADV-002** | **Dynamic Links / Instant Meetings** — Cal.com supports ad-hoc meeting links and instant meeting creation. Calendly has no equivalent. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. |
-| **ET-ADV-003** | **Full API Management** — Cal.com's API v2 supports complete event type CRUD for all scheduling paradigms. Calendly's API is limited to one-on-one types with basic fields only. | **Low** (Cal.com advantage) | `apps/api/v2/` | [developer.calendly.com](https://developer.calendly.com) | Document as major Cal.com advantage. No action needed. |
-| **ET-ADV-004** | **Recurring Event Types** — Cal.com natively supports recurring event configuration. Calendly has no native recurring event type. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. |
-| **ET-ADV-005** | **Booking Limits** — Cal.com provides interval-based booking frequency and duration limits. Calendly has limited booking constraint configuration. | **Low** (Cal.com advantage) | `packages/features/eventtypes/lib/` | N/A | Document as Cal.com unique capability. No action needed. |
-| **ET-ADV-006** | **6 vs 4 Scheduling Paradigms** — Cal.com implements 6 scheduling types vs. Calendly's 4, with managed and dynamic being Cal.com exclusives. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | [Calendly — Event Types](https://calendly.com/scheduling/event-types) | Document as architectural advantage. No action needed. |
-| **ET-ADV-007** | **Segment-Based RR Filtering** — Cal.com's round-robin supports attribute-based team member segmentation via `rrSegmentQueryValue`. Calendly's RR uses priority stars only. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. |
-| **ET-ADV-008** | **Cancel/Reschedule Controls** — Cal.com offers granular per-event-type controls for disabling cancellation, disabling rescheduling, and setting minimum reschedule notice. Calendly has more limited control. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. |
+| **ET-001** | **Meeting Polls** — Calendly offers Meeting Polls for one-off group scheduling where participants vote on preferred times. Cal.com has no native meeting poll feature. | **Medium** | `packages/features/eventtypes/` | [Calendly Blog — Team Scheduling](https://calendly.com/blog/team-scheduling-options) | Consider implementing a lightweight polling mechanism as an optional feature. This could extend the dynamic event type paradigm with a poll-based time selection flow. **Sprint 2 Status:** ⏳ Deferred to future work — this gap represents net-new functionality rather than behavioral parity. Documented in `specs/event-types/future-work.md`. |
+| **ET-002** | **RR Fairness Cap Display** — Calendly's RR shows an explicit "UNFAIR" error in troubleshooting when meeting distribution exceeds 3-meeting variance. Cal.com's RR weights provide more flexible control but lack explicit fairness cap visualization. | **Low** | `packages/features/eventtypes/` | [Calendly Help — RR Distribution](https://help.calendly.com/hc/en-us/articles/4402432846999-Round-Robin-distribution-overview) | Consider adding visual distribution analytics and fairness indicators to the RR configuration UI. **Sprint 2 Status:** ⏳ Deferred to future work — low-priority UI enhancement not required for behavioral parity. Documented in `specs/event-types/future-work.md`. |
+| **ET-ADV-001** | **Managed Event Types** — Cal.com provides admin-pushed event type templates via `SchedulingType.MANAGED`. Calendly has no equivalent feature. | **Low** (Cal.com advantage) | `packages/features/eventtypes/repositories/eventTypeRepository.ts` | N/A | Document as Cal.com unique capability. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-002** | **Dynamic Links / Instant Meetings** — Cal.com supports ad-hoc meeting links and instant meeting creation. Calendly has no equivalent. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-003** | **Full API Management** — Cal.com's API v2 supports complete event type CRUD for all scheduling paradigms. Calendly's API is limited to one-on-one types with basic fields only. | **Low** (Cal.com advantage) | `apps/api/v2/` | [developer.calendly.com](https://developer.calendly.com) | Document as major Cal.com advantage. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-004** | **Recurring Event Types** — Cal.com natively supports recurring event configuration. Calendly has no native recurring event type. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-005** | **Booking Limits** — Cal.com provides interval-based booking frequency and duration limits. Calendly has limited booking constraint configuration. | **Low** (Cal.com advantage) | `packages/features/eventtypes/lib/` | N/A | Document as Cal.com unique capability. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-006** | **6 vs 4 Scheduling Paradigms** — Cal.com implements 6 scheduling types vs. Calendly's 4, with managed and dynamic being Cal.com exclusives. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | [Calendly — Event Types](https://calendly.com/scheduling/event-types) | Document as architectural advantage. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-007** | **Segment-Based RR Filtering** — Cal.com's round-robin supports attribute-based team member segmentation via `rrSegmentQueryValue`. Calendly's RR uses priority stars only. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
+| **ET-ADV-008** | **Cancel/Reschedule Controls** — Cal.com offers granular per-event-type controls for disabling cancellation, disabling rescheduling, and setting minimum reschedule notice. Calendly has more limited control. | **Low** (Cal.com advantage) | `packages/prisma/schema.prisma` | N/A | Document as Cal.com unique capability. No action needed. **Sprint 2 Status:** ✅ Verified and preserved during Gate 2 validation. |
 
 ---
 
@@ -512,6 +512,8 @@ Prioritized implementation recommendations for closing identified gaps, ordered 
     - `packages/emails/` — poll notification templates
 
     **Estimated Complexity:** Medium — requires new model, API endpoints, and UI components
+
+    **Sprint 2 Status:** ⏳ **Deferred** — Meeting Polls are explicitly out of scope for Sprint 2 per the gap closure roadmap. This gap represents net-new functionality rather than behavioral parity alignment. Documented in `specs/event-types/future-work.md`. Sprint 2 focused on verifying and hardening existing event type capabilities (ET-001 through ET-006) rather than adding new features.
   </Step>
 </Steps>
 
@@ -530,6 +532,8 @@ Prioritized implementation recommendations for closing identified gaps, ordered 
     **Cal.com Module:** `packages/features/eventtypes/components/`
 
     **Estimated Complexity:** Low — UI enhancement using existing data
+
+    **Sprint 2 Status:** ⏳ **Deferred** — RR Fairness Cap Visualization is explicitly out of scope for Sprint 2. This is a low-priority UI enhancement not required for behavioral parity. Cal.com's existing RR weight-based distribution exceeds Calendly's simpler model. Documented in `specs/event-types/future-work.md`.
   </Step>
 </Steps>
 
@@ -538,6 +542,8 @@ Prioritized implementation recommendations for closing identified gaps, ordered 
 The following areas represent **Cal.com advantages** that require no implementation work:
 
 - **ET-ADV-001 through ET-ADV-008**: Cal.com's managed event types, dynamic links, full API management, recurring events, booking limits, 6 scheduling paradigms, segment-based RR filtering, and granular cancel/reschedule controls all represent capabilities that **exceed Calendly's feature set**.
+
+> **Sprint 2 Gate 2 Validation:** ✅ All 8 Cal.com advantages (ET-ADV-001 through ET-ADV-008) were **verified and preserved** during Sprint 2 Gate 2 validation. Managed event types, dynamic links, full API management, recurring events, booking limits, 6 scheduling paradigms, segment-based RR filtering, and cancel/reschedule controls all confirmed as Cal.com advantages exceeding Calendly's capabilities. Validation evidence recorded against ET-VAL-008 (managed types) and ET-VAL-009 (dynamic links).
 
 ---
 

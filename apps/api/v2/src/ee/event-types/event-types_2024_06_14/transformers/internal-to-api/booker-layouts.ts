@@ -2,11 +2,11 @@ import {
   BookerLayoutsInputEnum_2024_06_14,
   BookerLayoutsOutputEnum_2024_06_14,
 } from "@calcom/platform-enums";
-import type { BookerLayoutsTransformedSchema } from "@calcom/platform-types";
+import type { BookerLayouts_2024_06_14, BookerLayoutsTransformedSchema } from "@calcom/platform-types";
 
 export function transformBookerLayoutsInternalToApi(
   transformedBookerLayouts: BookerLayoutsTransformedSchema
-) {
+): BookerLayouts_2024_06_14 {
   const outputToInputMap = {
     [BookerLayoutsOutputEnum_2024_06_14.month_view]: BookerLayoutsInputEnum_2024_06_14.month,
     [BookerLayoutsOutputEnum_2024_06_14.week_view]: BookerLayoutsInputEnum_2024_06_14.week,

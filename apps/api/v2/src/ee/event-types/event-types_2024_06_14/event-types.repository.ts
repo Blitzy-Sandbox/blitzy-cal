@@ -40,6 +40,9 @@ export class EventTypesRepository_2024_06_14 {
       select: {
         users: { select: { id: true } },
         seatsPerTimeSlot: true,
+        seatsShowAttendees: true,
+        seatsShowAvailabilityCount: true,
+        schedulingType: true,
         locations: true,
         requiresConfirmation: true,
       },
@@ -112,7 +115,13 @@ export class EventTypesRepository_2024_06_14 {
         id: eventTypeId,
         userId,
       },
-      include: { users: this.usersInclude, schedule: true, destinationCalendar: true },
+      include: {
+        users: this.usersInclude,
+        schedule: true,
+        destinationCalendar: true,
+        calVideoSettings: true,
+        hosts: true,
+      },
     });
   }
 
@@ -122,7 +131,13 @@ export class EventTypesRepository_2024_06_14 {
         userId,
       },
       ...(sortCreatedAt && { orderBy: { id: sortCreatedAt } }),
-      include: { users: this.usersInclude, schedule: true, destinationCalendar: true },
+      include: {
+        users: this.usersInclude,
+        schedule: true,
+        destinationCalendar: true,
+        calVideoSettings: true,
+        hosts: true,
+      },
     });
   }
 
@@ -133,7 +148,13 @@ export class EventTypesRepository_2024_06_14 {
         hidden: false,
       },
       ...(sortCreatedAt && { orderBy: { id: sortCreatedAt } }),
-      include: { users: this.usersInclude, schedule: true, destinationCalendar: true },
+      include: {
+        users: this.usersInclude,
+        schedule: true,
+        destinationCalendar: true,
+        calVideoSettings: true,
+        hosts: true,
+      },
     });
   }
 
@@ -145,6 +166,7 @@ export class EventTypesRepository_2024_06_14 {
         schedule: true,
         destinationCalendar: true,
         calVideoSettings: true,
+        hosts: true,
       },
     });
   }
@@ -165,7 +187,7 @@ export class EventTypesRepository_2024_06_14 {
   async getEventTypeByIdIncludeUsersAndTeam(eventTypeId: number) {
     const eventType = await this.dbRead.prisma.eventType.findUnique({
       where: { id: eventTypeId },
-      include: { users: true, team: true },
+      include: { users: true, team: true, hosts: true },
     });
 
     if (!eventType) {
@@ -193,7 +215,13 @@ export class EventTypesRepository_2024_06_14 {
           slug: slug,
         },
       },
-      include: { users: this.usersInclude, schedule: true, destinationCalendar: true },
+      include: {
+        users: this.usersInclude,
+        schedule: true,
+        destinationCalendar: true,
+        calVideoSettings: true,
+        hosts: true,
+      },
     });
   }
 

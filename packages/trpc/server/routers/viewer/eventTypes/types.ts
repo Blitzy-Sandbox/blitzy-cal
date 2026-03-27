@@ -21,6 +21,11 @@ import {
   rrSegmentQueryValueSchema,
 } from "@calcom/prisma/zod-utils";
 import { z } from "zod";
+/**
+ * Type alias for the event type update input, imported from the features layer.
+ * Covers all scheduling paradigm fields: 1:1, group (seats), round-robin, collective, booking windows, and custom fields.
+ * @see packages/features/eventtypes/lib/types.ts for the canonical EventTypeUpdateInput definition
+ */
 export type TUpdateInputSchema = EventTypeUpdateInput;
 
 // ============================================================================
@@ -75,6 +80,19 @@ const hostLocationSchema = z.object({
   phoneNumber: z.string().optional().nullable(),
 });
 
+/**
+ * Host input schema for team event type host assignment.
+ *
+ * Used by both Round-Robin (ET-003) and Collective (ET-004) paradigms:
+ * - userId: the team member's user ID
+ * - profileId: optional profile ID for multi-profile users
+ * - isFixed: true for collective/fixed hosts, false for round-robin pool
+ * - priority: 0-4 priority level for RR ordering (0 = lowest, 4 = highest)
+ * - weight: relative weight for weighted RR distribution (0+ scale, default 100)
+ * - scheduleId: custom availability schedule override for this host
+ * - groupId: group identifier for group-based RR assignment
+ * - location: per-host location configuration
+ */
 const hostSchema: z.ZodType<HostInput> = z.object({
   userId: z.number(),
   profileId: z.number().or(z.null()).optional(),
@@ -117,11 +135,18 @@ const destinationCalendarInputSchema: z.ZodType<DestinationCalendarInput> = z
  */
 const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
   .object({
-    // Required field
+    // === Required Fields ===
     id: z.number().int(),
 
-    // Fields from EventTypeSchema
+    // === Booking Window Fields (ET-005) ===
+    // Maps to Calendly's booking window options:
+    // - UNLIMITED → "indefinitely"
+    // - ROLLING → "days into future" (calendar days)
+    // - ROLLING_WINDOW → "days into future" (business days, AVL-GAP-001)
+    // - RANGE → "date range" with explicit start/end dates
     periodType: z.enum(["UNLIMITED", "ROLLING", "ROLLING_WINDOW", "RANGE"]).optional(),
+    // === Scheduling Paradigm Selection ===
+    // null = 1:1 (ET-001), ROUND_ROBIN (ET-003), COLLECTIVE (ET-004), MANAGED
     schedulingType: z.enum(["ROUND_ROBIN", "COLLECTIVE", "MANAGED"]).nullable().optional(),
     title: z.string().min(1).optional(),
     slug: z.string().optional(),
@@ -138,6 +163,9 @@ const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
     useEventLevelSelectedCalendars: z.boolean().optional(),
     eventName: z.string().nullable().optional(),
     parentId: z.number().int().nullable().optional(),
+    // === Custom Booking Fields (ET-006) ===
+    // bookingFields: array of booking form fields supporting all Calendly types
+    //   (text, radio, checkbox, phone, select/dropdown) plus Cal.com extras
     bookingFields: eventTypeBookingFields.nullable().optional(),
     timeZone: z.string().nullable().optional(),
     periodStartDate: z.coerce.date().nullable().optional(),
@@ -161,6 +189,10 @@ const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
     beforeEventBuffer: z.number().int().optional(),
     afterEventBuffer: z.number().int().optional(),
     syncBuffersToCalendar: z.boolean().nullable().optional(),
+    // === Group Event Fields (ET-002) ===
+    // seatsPerTimeSlot: max attendees per slot (null = non-seated)
+    // seatsShowAttendees: show attendee names to other attendees
+    // seatsShowAvailabilityCount: show remaining seats in booking UI
     seatsPerTimeSlot: z.number().min(1).max(MAX_SEATS_PER_TIME_SLOT).nullable().optional(),
     onlyShowFirstAvailableSlot: z.boolean().optional(),
     showOptimizedSlots: z.boolean().nullable().optional(),
@@ -184,7 +216,17 @@ const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
     instantMeetingExpiryTimeOffsetInSeconds: z.number().int().optional(),
     instantMeetingScheduleId: z.number().int().nullable().optional(),
     instantMeetingParameters: z.string().array().optional(),
+    // === Collective Scheduling Fields (ET-004) ===
+    // assignAllTeamMembers: auto-assign all team members as fixed hosts
     assignAllTeamMembers: z.boolean().optional(),
+    // === Round-Robin Distribution Fields (ET-003) ===
+    // isRRWeightsEnabled: enable weight-based distribution
+    // assignRRMembersUsingSegment: use segment-based host filtering
+    // rrSegmentQueryValue: RAQB filter for segment-based RR assignment
+    // includeNoShowInRRCalculation: count no-shows in fairness calculation
+    // rescheduleWithSameRoundRobinHost: preserve host on reschedule
+    // rrHostSubsetEnabled: enable host subset selection
+    // maxLeadThreshold: max booking lead per host (null = disabled)
     assignRRMembersUsingSegment: z.boolean().optional(),
     rrSegmentQueryValue: rrSegmentQueryValueSchema.nullable().optional(),
     useEventTypeDestinationCalendarEmail: z.boolean().optional(),
@@ -210,6 +252,9 @@ const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
     aiPhoneCallConfig: aiPhoneCallConfigSchema,
     calVideoSettings: calVideoSettingsSchema,
     calAiPhoneScript: z.string().optional(),
+    // === Legacy Custom Inputs (ET-006) ===
+    // customInputs: legacy custom input system (pre-bookingFields)
+    //   Supports all Calendly question types for backward compatibility
     customInputs: z.array(customInputSchema).optional(),
     destinationCalendar: destinationCalendarInputSchema.optional(),
     users: z.array(z.number()).optional(),

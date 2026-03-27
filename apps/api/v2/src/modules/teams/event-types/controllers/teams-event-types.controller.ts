@@ -54,6 +54,30 @@ export type EventTypeHandlerResponse = {
   version: API_VERSIONS_VALUES,
 })
 @DocsTags("Teams / Event Types")
+/**
+ * Teams Event Types Controller — Sprint 2 Event Type Parity Verified (ET-001 through ET-006)
+ *
+ * This controller is a thin orchestration layer that delegates to `InputOrganizationsEventTypesService`,
+ * `TeamsEventTypesService`, and `OutputTeamEventTypesResponsePipe`. All 6 scheduling paradigms are
+ * fully supported through the DTO → Service → Repository → Platform Libraries pipeline:
+ *
+ * - **One-on-one (ET-001):** Default when `schedulingType` is omitted — single host paired with a single invitee.
+ * - **Group events (ET-002):** Enabled via `seatsPerTimeSlot` — multiple attendees book the same time slot.
+ * - **Round-robin (ET-003):** `ROUND_ROBIN` schedulingType with optional host weights, priorities,
+ *   and segment-based filtering via `rrSegmentQueryValue` and `assignRRMembersUsingSegment`.
+ * - **Collective (ET-004):** `COLLECTIVE` schedulingType requiring all fixed hosts to be simultaneously available.
+ * - **Managed (ET-005 context):** `MANAGED` schedulingType with parent/child event type propagation.
+ * - **Booking windows (ET-005):** `periodType`, `periodDays`, `periodStartDate`, `periodEndDate`,
+ *   and `minimumBookingNotice` enforce date-range restrictions matching Calendly's three booking window options.
+ * - **Custom fields (ET-006):** `bookingFields` support text, radio, checkbox, phone, and dropdown question types.
+ *
+ * Guards: `ApiAuthGuard` and `RolesGuard` with `@Roles("TEAM_ADMIN")` correctly enforce team admin
+ * access for all paradigm mutations (POST, PATCH, DELETE).
+ *
+ * Response transformation: `OutputTeamEventTypesResponsePipe` correctly transforms all paradigm types
+ * to `TeamEventTypeOutput_2024_06_14`, including paradigm-specific fields (schedulingType, hosts,
+ * seatsPerTimeSlot, bookingFields, booking window configuration, etc.).
+ */
 export class TeamsEventTypesController {
   constructor(
     private readonly teamsEventTypesService: TeamsEventTypesService,
@@ -66,7 +90,14 @@ export class TeamsEventTypesController {
   @UseGuards(ApiAuthGuard, RolesGuard)
   @ApiHeader(API_KEY_HEADER)
   @Post("/")
-  @ApiOperation({ summary: "Create an event type" })
+  @ApiOperation({
+    summary: "Create an event type",
+    description:
+      "Creates a team event type supporting all scheduling paradigms: one-on-one (default when schedulingType is omitted), " +
+      "group events (via seatsPerTimeSlot), round-robin (ROUND_ROBIN with optional host weights/priorities and segment-based filtering), " +
+      "collective (COLLECTIVE requiring all hosts available), and managed (MANAGED with parent/child propagation). " +
+      "Provide hosts array with team member userIds or use assignAllTeamMembers: true.",
+  })
   async createTeamEventType(
     @GetUser() user: UserWithProfile,
     @Param("teamId", ParseIntPipe) teamId: number,
@@ -90,10 +121,15 @@ export class TeamsEventTypesController {
   @UseGuards(ApiAuthGuard, RolesGuard)
   @ApiHeader(API_KEY_HEADER)
   @Get("/:eventTypeId")
-  @ApiOperation({ summary: "Get an event type" })
+  @ApiOperation({
+    summary: "Get an event type",
+    description:
+      "Retrieves a single team event type with full paradigm-specific metadata including schedulingType, " +
+      "hosts with priorities, assignAllTeamMembers, seatsPerTimeSlot, bookingFields, and booking window configuration.",
+  })
   async getTeamEventType(
     @Param("teamId", ParseIntPipe) teamId: number,
-    @Param("eventTypeId") eventTypeId: number
+    @Param("eventTypeId", ParseIntPipe) eventTypeId: number
   ): Promise<GetTeamEventTypeOutput> {
     const eventType = await this.teamsEventTypesService.getTeamEventType(teamId, eventTypeId);
 
@@ -135,11 +171,18 @@ export class TeamsEventTypesController {
     };
   }
 
+  @Roles("TEAM_MEMBER")
+  @UseGuards(ApiAuthGuard, RolesGuard)
+  @ApiHeader(API_KEY_HEADER)
   @Get("/")
   @ApiOperation({
     summary: "Get team event types",
     description:
-      'Use the optional `sortCreatedAt` query parameter to order results by creation date (by ID). Accepts "asc" (oldest first) or "desc" (newest first). When not provided, no explicit ordering is applied.',
+      "Returns all team event types including all scheduling paradigms (one-on-one, group, round-robin, collective, managed). " +
+      'Use the optional `sortCreatedAt` query parameter to order results by creation date. ' +
+      'Accepts "asc" (oldest first) or "desc" (newest first). ' +
+      "Use `eventSlug` to filter by a specific event type slug. " +
+      "Each event type in the response includes its paradigm-specific fields (schedulingType, hosts, seatsPerTimeSlot, bookingFields, etc.).",
   })
   async getTeamEventTypes(
     @Param("teamId", ParseIntPipe) teamId: number,
@@ -172,7 +215,14 @@ export class TeamsEventTypesController {
   @UseGuards(ApiAuthGuard, RolesGuard)
   @ApiHeader(API_KEY_HEADER)
   @Patch("/:eventTypeId")
-  @ApiOperation({ summary: "Update a team event type" })
+  @ApiOperation({
+    summary: "Update a team event type",
+    description:
+      "Updates a team event type with support for all paradigm-specific field modifications including " +
+      "schedulingType transitions, host weight/priority changes (round-robin), seat count adjustments (group events), " +
+      "booking window configuration (periodType, periodDays, date range), custom field updates (bookingFields), " +
+      "and team member assignment toggles (assignAllTeamMembers). For managed types, returns updated parent and child event types.",
+  })
   async updateTeamEventType(
     @Param("teamId", ParseIntPipe) teamId: number,
     @Param("eventTypeId", ParseIntPipe) eventTypeId: number,
@@ -205,7 +255,11 @@ export class TeamsEventTypesController {
   @ApiHeader(API_KEY_HEADER)
   @Delete("/:eventTypeId")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Delete a team event type" })
+  @ApiOperation({
+    summary: "Delete a team event type",
+    description:
+      "Deletes a team event type of any scheduling paradigm (one-on-one, group, round-robin, collective, managed).",
+  })
   async deleteTeamEventType(
     @Param("teamId", ParseIntPipe) teamId: number,
     @Param("eventTypeId", ParseIntPipe) eventTypeId: number

@@ -19,10 +19,27 @@ export const GENERIC_CALENDAR_SUFFIXES: Record<CalendarSubscriptionProvider, str
   office365_calendar: [],
 };
 
+/**
+ * Providers that support cancellation-sync push notification channels.
+ * These adapters can subscribe to external calendar change notifications
+ * to detect event deletions/declines and propagate cancellations back to Cal.com.
+ *
+ * Google Calendar: Uses push notification channels via events.watch
+ * Office 365: Uses Microsoft Graph change notifications via POST /subscriptions
+ *
+ * @see CI-001 gap closure — Calendar-driven cancellation sync
+ */
+export const CANCELLATION_SYNC_CAPABLE_PROVIDERS: CalendarSubscriptionProvider[] = [
+  "google_calendar",
+  "office365_calendar",
+];
+
 export interface AdapterFactory {
   get(provider: CalendarSubscriptionProvider): ICalendarSubscriptionPort;
   getProviders(): CalendarSubscriptionProvider[];
   getGenericCalendarSuffixes(): string[];
+  /** Returns providers that support cancellation-sync push notification channels (CI-001 gap) */
+  getCancellationSyncCapableProviders(): CalendarSubscriptionProvider[];
 }
 
 /**
@@ -66,5 +83,16 @@ export class DefaultAdapterFactory implements AdapterFactory {
    */
   getGenericCalendarSuffixes(): string[] {
     return this.getProviders().flatMap((provider) => GENERIC_CALENDAR_SUFFIXES[provider]);
+  }
+
+  /**
+   * Returns all providers that support cancellation-sync push notification channels.
+   * Used by CalendarCancellationSyncService to determine which adapters can be
+   * enrolled for external calendar change notification subscriptions.
+   *
+   * @returns Array of provider identifiers supporting cancellation-sync
+   */
+  getCancellationSyncCapableProviders(): CalendarSubscriptionProvider[] {
+    return CANCELLATION_SYNC_CAPABLE_PROVIDERS;
   }
 }

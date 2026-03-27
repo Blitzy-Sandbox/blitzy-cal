@@ -49,6 +49,16 @@ const lastAttendeeDeleteBooking = async (
               );
             }
           }
+          // CI-002 gap closure: Delete buffer time events (buffer_time_before, buffer_time_after)
+          // from external calendar when last attendee leaves a seated booking.
+          if (reference.type.startsWith("buffer_time") && originalBookingEvt) {
+            const calendar = await getCalendar(credential, "booking");
+            if (calendar) {
+              integrationsToDelete.push(
+                calendar.deleteEvent(reference.uid, originalBookingEvt, reference.externalCalendarId)
+              );
+            }
+          }
         }
       }
     }

@@ -2,6 +2,7 @@ import { BookingRepository } from "@calcom/features/bookings/repositories/Bookin
 import type { CalendarSubscriptionEventItem } from "@calcom/features/calendar-subscription/lib/CalendarSubscriptionPort.interface";
 import logger from "@calcom/lib/logger";
 import type { SelectedCalendar } from "@calcom/prisma/client";
+import { BookingStatus } from "@calcom/prisma/enums";
 
 const log = logger.getSubLogger({ prefix: ["CalendarSyncService"] });
 
@@ -72,7 +73,52 @@ export class CalendarSyncService {
       return;
     }
 
-    // todo handle cancel booking
+    // Check if booking is already cancelled or rejected — skip if so
+    if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {
+      log.debug("Booking already cancelled or rejected, skipping", {
+        bookingUid,
+        status: booking.status,
+      });
+      return;
+    }
+
+    log.info("Processing calendar-driven cancellation", {
+      bookingUid,
+      bookingId: booking.id,
+      eventStatus: event.status,
+    });
+
+    try {
+      // Lazy import to avoid circular dependencies — matching pattern used in CalendarCancellationSyncService
+      const { default: handleCancelBooking } = await import(
+        "@calcom/features/bookings/lib/handleCancelBooking"
+      );
+
+      await handleCancelBooking({
+        // Pass userId if available from the booking for proper audit actor resolution
+        userId: booking.userId ?? undefined,
+        bookingData: {
+          id: booking.id,
+          uid: booking.uid,
+          cancellationReason: "Cancelled from external calendar sync",
+        },
+        actionSource: "SYSTEM",
+        // CI-001 gap: Mark this cancellation as originating from an external calendar
+        // event deletion/decline so handleCancelBooking can produce proper audit logs.
+        source: "external_calendar" as const,
+      });
+
+      log.info("Successfully cancelled booking via calendar sync", {
+        bookingUid,
+        bookingId: booking.id,
+      });
+    } catch (error) {
+      log.error("Failed to cancel booking via calendar sync", {
+        bookingUid,
+        bookingId: booking.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   /**
@@ -93,6 +139,14 @@ export class CalendarSyncService {
       return;
     }
 
-    // todo handle update booking
+    // Rescheduling from external calendar sync is not yet implemented
+    // This requires complex time comparison and attendee notification logic
+    // Tracked in specs/calendar-integrations/future-work.md
+    log.info("Reschedule detected from external calendar but not yet implemented", {
+      bookingUid,
+      bookingId: booking.id,
+      eventStart: event.start,
+      eventEnd: event.end,
+    });
   }
 }

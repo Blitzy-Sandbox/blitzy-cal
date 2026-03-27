@@ -2148,6 +2148,8 @@
   "seats": "seats",
   "every_app_published": "Every app published on the {{appName}} App Store is open source and thoroughly tested via peer reviews. Nevertheless, {{companyName}} does not endorse or certify these apps unless they are published by {{appName}}. If you encounter inappropriate content or behaviour please report it.",
   "report_app": "Report app",
+  "sync_buffers_to_calendar": "Sync buffer times to calendar",
+  "sync_buffers_to_calendar_description": "Write buffer periods as separate calendar events for visual clarity in external calendars",
   "limit_booking_frequency": "Limit booking frequency",
   "limit_booking_frequency_description": "Limit how many times this event can be booked. <0>Learn more</0>",
   "only_show_first_available_slot": "Only show the first slot of each day as available",

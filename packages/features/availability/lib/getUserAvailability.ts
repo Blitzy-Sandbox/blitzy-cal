@@ -58,6 +58,7 @@ type GetUsersAvailabilityQuery = {
   bypassBusyCalendarTimes?: boolean;
   silentlyHandleCalendarFailures?: boolean;
   mode?: string;
+  statusFilter?: string[];
 };
 
 /**
@@ -91,6 +92,7 @@ const availabilitySchema: z.ZodType<GetUserAvailabilityParams, z.ZodTypeDef, unk
   silentlyHandleCalendarFailures: z.boolean().optional(),
   shouldServeCache: z.boolean().optional(),
   mode: z.enum(["slots", "overlay", "booking", "none"]).default("none"),
+  statusFilter: z.array(z.string()).optional(),
 });
 
 /**
@@ -115,6 +117,7 @@ type GetUserAvailabilityParams = {
   bypassBusyCalendarTimes?: boolean;
   silentlyHandleCalendarFailures?: boolean;
   mode?: CalendarFetchMode;
+  statusFilter?: string[];
 };
 
 interface GetUserAvailabilityParamsDTO {
@@ -539,6 +542,7 @@ export class UserAvailabilityService {
       bypassBusyCalendarTimes = false,
       silentlyHandleCalendarFailures = false,
       mode = "none",
+      statusFilter,
     } = params;
 
     log.debug(
@@ -780,6 +784,7 @@ export class UserAvailabilityService {
         bypassBusyCalendarTimes,
         silentlyHandleCalendarFailures,
         mode,
+        statusFilter,
       });
     } catch (error) {
       log.error(`Error fetching busy times for user ${username}:`, error);

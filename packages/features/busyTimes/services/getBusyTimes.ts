@@ -112,6 +112,7 @@ export class BusyTimesService {
     bypassBusyCalendarTimes: boolean;
     silentlyHandleCalendarFailures?: boolean;
     mode?: CalendarFetchMode;
+    statusFilter?: string[];
   }) {
     const {
       credentials,
@@ -130,6 +131,7 @@ export class BusyTimesService {
       bypassBusyCalendarTimes = false,
       silentlyHandleCalendarFailures = false,
       mode,
+      statusFilter,
     } = params;
 
     logger.silly(
@@ -253,7 +255,9 @@ export class BusyTimesService {
         startTime,
         endTime,
         selectedCalendars,
-        mode
+        mode,
+        undefined,
+        statusFilter
       );
 
       if (!calendarBusyTimesQuery.success) {

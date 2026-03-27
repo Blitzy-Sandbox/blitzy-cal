@@ -7,11 +7,79 @@ import { ErrorCode } from "@calcom/lib/errorCodes";
 import { HttpError } from "@calcom/lib/http-error";
 import prisma from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
+import type { CalendarEvent } from "@calcom/types/Calendar";
 
 import { addVideoCallDataToEvent } from "../../../handleNewBooking/addVideoCallDataToEvent";
 import { findBookingQuery } from "../../../handleNewBooking/findBookingQuery";
 import type { createLoggerWithEventDetails } from "../../../handleNewBooking/logger";
 import type { SeatedBooking, RescheduleSeatedBookingObject, NewTimeSlotBooking } from "../../types";
+
+/**
+ * CI-002 gap closure: Deletes buffer events from external calendars for a cancelled
+ * seated booking. Follows the pattern established in EventManager.ts:deleteBufferEventsForBooking().
+ * Best-effort — errors are logged but never propagated to the caller.
+ */
+async function deleteBufferEventsForCancelledBooking(
+  bookingId: number,
+  loggerWithEventDetails: ReturnType<typeof createLoggerWithEventDetails>
+): Promise<void> {
+  try {
+    const { BufferTimeEventService } = await import(
+      "@calcom/features/calendars/lib/buffer-sync/BufferTimeEventService"
+    );
+    const bufferService = new BufferTimeEventService();
+    const isEnabled = await bufferService.isBufferSyncEnabled();
+    if (!isEnabled) return;
+
+    const bufferReferences = await prisma.bookingReference.findMany({
+      where: {
+        bookingId,
+        type: { startsWith: "buffer_time" },
+        deleted: null,
+      },
+    });
+
+    for (const ref of bufferReferences) {
+      try {
+        if (ref.uid) {
+          // Use CredentialRepository to get correctly-typed CredentialForCalendarService,
+          // matching the pattern at EventManager.ts:1583-1586
+          const { CredentialRepository } = await import(
+            "@calcom/features/credentials/repositories/CredentialRepository"
+          );
+          const credential = ref.credentialId
+            ? await CredentialRepository.findCredentialForCalendarServiceById({ id: ref.credentialId })
+            : null;
+
+          if (credential) {
+            const { getCalendar } = await import("@calcom/app-store/_utils/getCalendar");
+            const calendar = await getCalendar(credential, "booking");
+            if (calendar) {
+              await calendar.deleteEvent(ref.uid, {} as CalendarEvent, ref.externalCalendarId);
+            }
+          }
+        }
+
+        // Always soft-delete the reference regardless of uid presence,
+        // matching the pattern at EventManager.ts:1610-1614
+        await prisma.bookingReference.update({
+          where: { id: ref.id },
+          data: { deleted: true },
+        });
+      } catch (_refError) {
+        loggerWithEventDetails.warn("Error deleting individual buffer event for cancelled seated booking", {
+          bookingId,
+          bufferRefId: ref.id,
+        });
+      }
+    }
+  } catch (error) {
+    loggerWithEventDetails.warn("Best-effort buffer event cleanup failed for cancelled seated booking", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      bookingId,
+    });
+  }
+}
 
 const combineTwoSeatedBookings = async (
   rescheduleSeatedBookingObject: RescheduleSeatedBookingObject,
@@ -154,6 +222,11 @@ const combineTwoSeatedBookings = async (
       status: BookingStatus.CANCELLED,
     },
   });
+
+  // CI-002 gap closure: Clean up buffer events from the cancelled source booking.
+  // The target booking (newTimeSlotBooking) retains its own buffer events —
+  // no new creation needed to avoid duplicates.
+  await deleteBufferEventsForCancelledBooking(seatedBooking.id, loggerWithEventDetails);
 
   const foundBooking = await findBookingQuery(newTimeSlotBooking.id);
 

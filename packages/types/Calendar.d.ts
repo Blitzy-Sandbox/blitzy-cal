@@ -280,6 +280,19 @@ export interface GetAvailabilityParams {
   selectedCalendars: IntegrationCalendar[];
   mode: CalendarFetchMode;
   fallbackToPrimary?: boolean;
+  /**
+   * Optional array of event status strings used to configure which calendar event statuses
+   * are treated as blocking availability. Matches Calendly's "What's considered unavailable?"
+   * dropdown behavior.
+   *
+   * Supported values vary by adapter:
+   * - Outlook/Office 365: "Busy", "Tentative", "Away", "WorkingElsewhere", "Oof"
+   * - Google Calendar: "opaque" (interpreted from event transparency)
+   * - Apple Calendar/CalDAV: "OPAQUE" (interpreted from TRANSP property)
+   *
+   * When undefined, adapters use their default behavior (typically treating Busy events as blocking).
+   */
+  statusFilter?: string[];
 }
 
 /**
@@ -317,6 +330,30 @@ export interface Calendar {
   listCalendars(event?: CalendarEvent): Promise<IntegrationCalendar[]>;
 
   testDelegationCredentialSetup?(): Promise<void>;
+
+  /**
+   * Subscribe to external calendar change notifications for detecting event deletions/declines.
+   * Used by the calendar-driven cancellation sync feature (CI-001 gap).
+   *
+   * - Google Calendar: Creates a push notification channel via Google Calendar API v3 channels.watch
+   * - Outlook/Office 365: Creates a Microsoft Graph change notification subscription
+   *
+   * @param credentialId - The ID of the calendar credential to subscribe for
+   * @returns Channel/subscription metadata including channelId, resourceId, and expiration timestamp
+   */
+  subscribeToChanges?(credentialId: number): Promise<{ channelId: string; resourceId: string; expiration: string }>;
+
+  /**
+   * Unsubscribe from external calendar change notifications.
+   * Cleans up push notification channels/subscriptions when no longer needed.
+   *
+   * - Google Calendar: Stops a push notification channel via channels.stop
+   * - Outlook/Office 365: Deletes a Microsoft Graph change notification subscription
+   *
+   * @param channelId - The channel/subscription identifier to remove
+   * @param resourceId - The resource identifier associated with the subscription
+   */
+  unsubscribeFromChanges?(channelId: string, resourceId: string): Promise<void>;
 }
 
 /**

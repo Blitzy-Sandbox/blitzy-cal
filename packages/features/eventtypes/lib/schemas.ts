@@ -108,6 +108,7 @@ export type TCreateEventTypeInput = {
   minimumBookingNotice?: number;
   beforeEventBuffer?: number;
   afterEventBuffer?: number;
+  syncBuffersToCalendar?: boolean;
   scheduleId?: number;
   calVideoSettings?: CalVideoSettings;
 };
@@ -175,6 +176,7 @@ export const createEventTypeInput: z.ZodType<TCreateEventTypeInput> = z
     minimumBookingNotice: z.number().int().min(0).optional(),
     beforeEventBuffer: z.number().int().min(0).optional(),
     afterEventBuffer: z.number().int().min(0).optional(),
+    syncBuffersToCalendar: z.boolean().optional(),
     scheduleId: z.number().int().optional(),
     calVideoSettings: calVideoSettingsSchema,
   })

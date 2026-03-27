@@ -2,7 +2,7 @@ import { bindModuleToClassOnToken, createModule, type ModuleLoader } from "@calc
 import { moduleLoader as loggerServiceModule } from "@calcom/features/di/shared/services/logger.service";
 import { CalendarsSyncTasker } from "@calcom/features/calendars/lib/tasker/CalendarsSyncTasker";
 
-import { moduleLoader as calendarsTaskServiceModuleLoader } from "./CalendarsTaskService.module";
+import { moduleLoader as calendarsTaskServiceModuleLoader, cancellationSyncModuleLoader } from "./CalendarsTaskService.module";
 import { CALENDARS_TASKER_DI_TOKENS } from "./tokens";
 
 const thisModule = createModule();
@@ -17,6 +17,7 @@ const loadModule = bindModuleToClassOnToken({
   depsMap: {
     logger: loggerServiceModule,
     calendarsTaskService: calendarsTaskServiceModuleLoader,
+    cancellationSyncService: cancellationSyncModuleLoader,
   },
 });
 

@@ -2,646 +2,463 @@
 
 # 0. Agent Action Plan
 
-## 0.1 Intent Clarification
-
-### 0.1.1 Core Feature Objective
-
-Based on the prompt, the Blitzy platform understands that the new feature requirement is to **complete Sprint 2: Event Types (F-002)** as defined in the Calendly gap closure sprint roadmap for Cal.com's open-source scheduling platform. This sprint encompasses the systematic closure of all identified behavioral gaps between Cal.com's event type system and Calendly's event type capabilities, as documented across eight source-of-truth documents.
-
-The specific feature requirements are:
-
-- **ET-001 — 1:1 Event Type Behavioral Parity (Medium, M):** Ensure one-on-one event types produce bookable flows that match Calendly's documented one-on-one event behavior — single host paired with a single invitee, correct host assignment, and confirmation workflow. Depends on availability engine (AV-001).
-- **ET-002 — Group Event Type Parity via `seatsPerTimeSlot` (Medium, M):** Verify and align group event behavior where multiple attendees book the same time slot, matching Calendly's group event type semantics. Depends on ET-001.
-- **ET-003 — Round-Robin Distribution Parity (High, L):** Align Cal.com's `SchedulingType.ROUND_ROBIN` distribution logic — including host weights, priority, and segment-based filtering — with Calendly's equitable round-robin assignment behavior. This is the highest-priority epic in Sprint 2. Depends on ET-001.
-- **ET-004 — Collective Scheduling Parity (Medium, M):** Ensure `SchedulingType.COLLECTIVE` correctly requires all hosts to be simultaneously available before presenting bookable slots, matching Calendly's collective event behavior. Depends on ET-001.
-- **ET-005 — Booking Window Configuration Alignment (Medium, S):** Verify that event-type-level booking window settings (minimum notice, maximum advance) integrate correctly with availability rules and match Calendly's date-range restrictions. Depends on AV-005.
-- **ET-006 — Custom Fields/Questions Parity (Low, M):** Align custom booking field types and capture behavior with Calendly's supported question types (text, radio, checkbox, phone, dropdown). Depends on ET-001.
-
-Implicit requirements detected:
-
-- **Spec-First Workflow Compliance:** Before implementing any gap closure changes, a design spec must be created following `specs/README.md` conventions — `cp -r specs/_templates specs/event-types` — with `design.md`, `implementation.md`, `decisions.md`, and `docs/` artifacts.
-- **Validation Gate Readiness (Gate 2):** Sprint 2 must pass Gate 2 before Sprint 3 (Calendar Integrations) can begin. All five validation dimensions — behavioral testing, regression testing, data preservation, webhook compatibility, and cross-domain integration — must pass.
-- **Zero-Downtime Migration Safety:** Any schema changes required by event type epics must follow additive-only patterns from `docs/migration/zero-downtime-strategy.mdx`. No column renames, type changes, or NOT NULL additions without defaults.
-- **Webhook Backward Compatibility:** Event type changes must not alter existing `v2021-10-20` webhook payloads. The `BOOKING_CREATED`, `BOOKING_RESCHEDULED`, and `BOOKING_CANCELLED` events must continue producing identical payload structures.
-- **PR Size Constraints:** Every PR must be reviewable in under 10 minutes — max 5–7 files changed (excluding tests), max 500 lines changed, one focused change per PR.
-
-### 0.1.2 Special Instructions and Constraints
-
-- **Read All Docs Before Coding:** The user explicitly requires reading all source-of-truth documents in full before writing any code. If referenced documents point to additional documents, those must be read as well.
-- **Sprint Dependency Prerequisite:** Sprint 2 depends on Sprint 1 (Availability & Scheduling, F-004) having passed Gate 1. Event type slot generation, buffer enforcement, and booking windows all rely on the availability engine producing correct results.
-- **Follow Existing Cal.com Conventions:** All implementations must adhere to established architectural patterns — `@evyweb/ioctopus` DI, Prisma repositories, Zod validation, `@calcom/dayjs`, and Vitest testing.
-- **Maintain Backward Compatibility:** Platform SDK (`packages/platform/`), API v1 (`apps/api/v1/`), API v2 (`apps/api/v2/`), and web consumers (`apps/web/`) must all continue functioning without regression.
-- **Calendly API as Behavioral Source of Truth:** All behavioral targets reference Calendly's API documentation at `developer.calendly.com` as the authoritative benchmark for expected scheduling platform behavior.
-
-### 0.1.3 Technical Interpretation
-
-These feature requirements translate to the following technical implementation strategy:
-
-- To **achieve 1:1 event type parity (ET-001)**, we will verify and harden the default event type booking flow in `packages/features/eventtypes/` where `schedulingType` is `null` (one-on-one implicit type), ensuring correct host assignment, attendee capture, and confirmation behavior aligned with Calendly's documented 1:1 flow.
-- To **achieve group event parity (ET-002)**, we will verify and align the `seatsPerTimeSlot` behavior in `packages/features/eventtypes/` and the booking engine, ensuring that multiple attendees can book the same slot up to the seat limit, and the (N+1)th attendee is correctly rejected.
-- To **achieve round-robin parity (ET-003)**, we will audit and align the `SchedulingType.ROUND_ROBIN` distribution logic in `packages/features/ee/round-robin/`, verifying equitable host assignment against Calendly's documented behavior, including weight/priority handling and the `isRRWeightsEnabled`/`rrSegmentQueryValue` configurations in the Prisma schema.
-- To **achieve collective scheduling parity (ET-004)**, we will verify that `SchedulingType.COLLECTIVE` in `packages/features/availability/lib/getAggregatedAvailability/` correctly computes the intersection of all fixed hosts' schedules and presents only mutually available slots.
-- To **achieve booking window alignment (ET-005)**, we will verify the `periodType`, `periodDays`, `periodStartDate`, `periodEndDate`, and `minimumBookingNotice` fields on the `EventType` Prisma model enforce date-range restrictions matching Calendly's three booking window options (days into future, date range, indefinitely).
-- To **achieve custom fields parity (ET-006)**, we will audit the `bookingFields` configuration and `customInputs` system in `packages/features/eventtypes/lib/types.ts` to ensure Cal.com supports all Calendly question types (text, radio, checkbox, phone, dropdown) and captures responses correctly.
-
-
-## 0.2 Repository Scope Discovery
-
-### 0.2.1 Comprehensive File Analysis
-
-The following is an exhaustive catalog of all repository files and folders affected by Sprint 2: Event Types (F-002). Files are grouped by their role in the implementation.
-
-**Core Event Type Feature Files**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/features/eventtypes/eventtypes.repository.interface.ts` | MODIFY | Central interface for `IEventTypesRepository` — may need additional method signatures for parity verification |
-| `packages/features/eventtypes/repositories/eventTypeRepository.ts` | MODIFY | Primary Prisma-backed persistence layer — verify query projections, authorization, and metadata validation for all 6 paradigms |
-| `packages/features/eventtypes/repositories/EventRepository.ts` | VERIFY | Static `getPublicEvent` wrapper — confirm correct behavior for all event type paradigms |
-| `packages/features/eventtypes/lib/getEventTypeById.ts` | MODIFY | Central server-side helper assembling event type data — verify enrichment for group/RR/collective types |
-| `packages/features/eventtypes/lib/getEventTypesByViewer.ts` | VERIFY | Viewer-scoped event type listing — ensure all paradigms represented correctly |
-| `packages/features/eventtypes/lib/getEventTypesPublic.ts` | VERIFY | Public event type resolution — verify public-facing behavior for all types |
-| `packages/features/eventtypes/lib/getPublicEvent.ts` | VERIFY | Public event resolution with slug/team handling — confirm parity flows |
-| `packages/features/eventtypes/lib/getTeamEventType.ts` | VERIFY | Team event type resolution — critical for RR and collective types |
-| `packages/features/eventtypes/lib/types.ts` | MODIFY | `FormValues`, `EventTypeUpdateInput`, and all TypeScript contracts — ensure all paradigm-specific fields are typed |
-| `packages/features/eventtypes/lib/schemas.ts` | MODIFY | Zod schemas for event type creation/duplication — verify validation rules |
-| `packages/features/eventtypes/lib/defaultEvents.ts` | VERIFY | Default event type templates — verify default configurations |
-| `packages/features/eventtypes/lib/bookingFieldsManager.ts` | MODIFY | Booking field normalization — extend for custom field parity (ET-006) |
-| `packages/features/eventtypes/lib/checkForEmptyAssignment.ts` | VERIFY | Host assignment validation — relevant for RR/collective |
-| `packages/features/eventtypes/lib/getDefinedBufferTimes.ts` | VERIFY | Buffer time retrieval — verify integration with booking windows |
-| `packages/features/eventtypes/lib/eventNaming.ts` | VERIFY | Event naming template engine — verify correct rendering for all paradigms |
-
-**Event Type UI Components**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/features/eventtypes/components/CreateEventTypeForm.tsx` | MODIFY | Event type creation form — verify all paradigm options available |
-| `packages/features/eventtypes/components/AssignAllTeamMembers.tsx` | VERIFY | Team member assignment toggle — relevant for RR/collective |
-| `packages/features/eventtypes/components/CheckedTeamSelect.tsx` | VERIFY | Team member multi-select — host selection for team events |
-| `packages/features/eventtypes/components/ChildrenEventTypeSelect.tsx` | VERIFY | Managed event type children — parent/child paradigm |
-| `packages/features/eventtypes/components/dialogs/HostEditDialogs.tsx` | VERIFY | Host editing modals — weight/priority for RR |
-| `packages/features/eventtypes/components/dialogs/ManagedEventDialog.tsx` | VERIFY | Managed event type dialog — admin template flows |
-| `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx` | MODIFY | Booking limits and windows — ET-005 alignment |
-| `packages/features/eventtypes/components/tabs/recurring/EventRecurringTab.tsx` | VERIFY | Recurring event configuration — verify parity |
-| `packages/features/eventtypes/components/WeightDescription.tsx` | VERIFY | RR weight description component — ET-003 |
-
-**Round-Robin Enterprise Module**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/features/ee/round-robin/**/*.ts` | MODIFY | RR rescheduling, reassignment, booking manager, event manager, host priority/weight, slot validation, assignment reason recording — ET-003 |
-
-**Availability Integration (Upstream Dependency)**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/features/availability/lib/getUserAvailability.ts` | VERIFY | Orchestrator for availability pipeline — verify correct integration with event types |
-| `packages/features/availability/lib/getAggregatedAvailability/*.ts` | VERIFY | Team availability aggregation — critical for ET-003 (RR) and ET-004 (Collective) |
-| `packages/features/schedules/lib/slots.ts` | VERIFY | Slot generation — verify correct slot production for all event type paradigms |
-| `packages/features/schedules/lib/date-ranges.ts` | VERIFY | Date range calculation with DST — upstream dependency |
-| `packages/features/busyTimes/services/getBusyTimes.ts` | VERIFY | Busy time aggregation — verify seated event handling for group events |
-
-**Prisma Schema and Database**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/prisma/schema.prisma` | MODIFY | `EventType` model, `SchedulingType` enum, `BookingSeat` model — potential schema additions for parity |
-| `packages/prisma/selects/event-types.ts` | VERIFY | `bookEventTypeSelect`, `availiblityPageEventTypeSelect` — verify projections cover all fields |
-| `packages/prisma/selects/booking.ts` | VERIFY | Booking select projections — verify group/seated booking fields |
-| `packages/prisma/selects/user.ts` | VERIFY | User select for availability — verify host data projections |
-| `packages/prisma/migrations/` | CREATE | New migration files for any schema changes (additive-only patterns) |
-
-**API v2 (NestJS)**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `apps/api/v2/src/ee/event-types/event-types_2024_06_14/**/*.ts` | MODIFY | Latest versioned EE event type CRUD — verify all paradigm support |
-| `apps/api/v2/src/ee/event-types/event-types_2024_04_15/**/*.ts` | VERIFY | Previous version — maintain backward compatibility |
-| `apps/api/v2/src/modules/teams/event-types/**/*.ts` | MODIFY | Team event type repository/service — verify RR/collective flows |
-| `apps/api/v2/src/modules/organizations/event-types/**/*.ts` | VERIFY | Organization-scoped event types — verify managed type propagation |
-| `apps/api/v2/src/modules/atoms/services/event-types-atom.service.ts` | VERIFY | Atoms event type orchestration — verify all paradigm support |
-
-**tRPC Routers**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/trpc/server/routers/viewer/eventTypes/**/*.ts` | MODIFY | Viewer-scoped event type tRPC routes — verify create/update/list for all paradigms |
-
-**Platform SDK**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/platform/libraries/event-types.ts` | VERIFY | Re-export surface — ensure new helpers are surfaced |
-| `packages/platform/atoms/event-types/**/*.ts` | VERIFY | Atom types and wrappers — verify paradigm coverage |
-
-**Webhook System (Backward Compatibility)**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `packages/features/webhooks/lib/factory/versioned/v2021-10-20/**/*.ts` | VERIFY | Existing payload builders — ensure no changes to booking payloads |
-| `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts` | VERIFY | Factory routing — verify trigger mapping remains intact |
-
-**Spec Workflow Artifacts**
-
-| File/Pattern | Type | Purpose |
-|---|---|---|
-| `specs/event-types/design.md` | CREATE | Design spec documenting what to build and how |
-| `specs/event-types/implementation.md` | CREATE | Progress tracking for session continuity |
-| `specs/event-types/decisions.md` | CREATE | Architecture Decision Records for trade-offs |
-| `specs/event-types/CLAUDE.md` | CREATE | AI agent instructions for this feature |
-| `specs/event-types/AGENTS.md` | CREATE | Agent guidelines for this feature |
-| `specs/event-types/prompts.md` | CREATE | Reusable prompts for common tasks |
-| `specs/event-types/future-work.md` | CREATE | Deferred ideas and enhancements |
-| `specs/event-types/docs/README.md` | CREATE | Internal documentation |
-
-### 0.2.2 Web Search Research Conducted
-
-No external web search is required for this sprint. All behavioral targets are documented in the source-of-truth files within the repository:
-
-- Calendly behavioral benchmarks are captured in `docs/gap-report/event-types.mdx`
-- Acceptance criteria are defined in `docs/sprint-roadmap/validation-criteria.mdx` (ET-VAL-001 through ET-VAL-009)
-- Migration patterns are documented in `docs/migration/zero-downtime-strategy.mdx`
-- Webhook compatibility rules are in `docs/migration/webhook-compatibility.mdx`
-
-### 0.2.3 New File Requirements
-
-**New spec files to create:**
-- `specs/event-types/design.md` — Comprehensive design spec for Sprint 2 event type parity closure
-- `specs/event-types/implementation.md` — Progress tracker for all 6 epics (ET-001 through ET-006)
-- `specs/event-types/decisions.md` — ADRs for any architectural trade-offs during parity work
-- `specs/event-types/CLAUDE.md` — AI agent instructions scoped to event types
-- `specs/event-types/AGENTS.md` — Agent guidelines scoped to event types
-- `specs/event-types/prompts.md` — Reusable prompts for event type tasks
-- `specs/event-types/future-work.md` — Deferred items (e.g., ET-001 Meeting Polls gap)
-- `specs/event-types/docs/README.md` — Internal documentation with screenshots
+## 0.1 Executive Summary
 
-**New test files to create:**
-- `packages/features/eventtypes/lib/__tests__/eventTypeParity.test.ts` — Behavioral parity tests for all 6 scheduling paradigms
-- `packages/features/eventtypes/lib/__tests__/bookingWindowParity.test.ts` — Booking window alignment tests (ET-005)
-- `packages/features/eventtypes/lib/__tests__/customFieldsParity.test.ts` — Custom field type coverage tests (ET-006)
-- `packages/features/ee/round-robin/__tests__/distributionParity.test.ts` — Round-robin equitable distribution tests (ET-003)
-
-**New migration files (if schema changes needed):**
-- `packages/prisma/migrations/[timestamp]_event_type_parity_fields/migration.sql` — Additive-only columns for any missing parity fields
-
-
-## 0.3 Dependency Inventory
-
-### 0.3.1 Private and Public Packages
-
-The following table lists all key packages relevant to the Sprint 2 event type parity implementation. Versions are sourced from the repository's dependency manifests.
-
-| Registry | Package | Version | Purpose |
-|---|---|---|---|
-| Workspace | `@calcom/features` | Workspace | Event type feature modules, availability, schedules, busy times, round-robin |
-| Workspace | `@calcom/prisma` | Workspace | Prisma ORM client, schema, migrations, selects, auto-migrations |
-| Workspace | `@calcom/trpc` | Workspace | tRPC server routers for event type CRUD operations |
-| Workspace | `@calcom/lib` | Workspace | Utility functions — slug generation, timezone, formatting |
-| Workspace | `@calcom/ui` | Workspace | Shared UI component library for event type forms and dialogs |
-| Workspace | `@calcom/dayjs` | Workspace | Day.js with plugins for scheduling (BusinessDays, UTC, timezone) |
-| Workspace | `@calcom/platform` | Workspace | Platform SDK — atoms, types, utils, constants, libraries |
-| Workspace | `@calcom/emails` | Workspace | Email templates for booking confirmations |
-| Workspace | `@calcom/types` | Workspace | Shared TypeScript type declarations |
-| Workspace | `@calcom/ee` | Workspace | Enterprise DI modules for round-robin, managed types |
-| Workspace | `@calcom/testing` | Workspace | Vitest fixtures, mocks, performance harnesses |
-| npm | `@prisma/client` | Per lockfile | Prisma ORM runtime client |
-| npm | `prisma` | Per lockfile | Prisma CLI for migrations and schema management |
-| npm | `zod` | Per lockfile | Schema validation for event type inputs, metadata, booking fields |
-| npm | `next` | Per lockfile | Next.js framework for web application |
-| npm | `react` | Per lockfile | UI rendering for event type components |
-| npm | `react-hook-form` | Per lockfile | Form state management for event type configuration UI |
-| npm | `@trpc/server` | next-beta 11 | tRPC server framework for typed API routes |
-| npm | `@trpc/react-query` | Per lockfile | React Query integration for tRPC client |
-| npm | `vitest` | Per lockfile | Test runner for unit and integration tests |
-| npm | `@nestjs/core` | Per lockfile | NestJS framework for API v2 event type modules |
-| npm | `superjson` | Per lockfile | JSON serialization for tRPC responses |
-| npm | `@evyweb/ioctopus` | Per lockfile | Dependency injection container |
-| npm | `handlebars` | Per lockfile | Webhook payload template rendering |
-| npm | `yarn` | 4.12.0 | Package manager (pinned via `.yarnrc.yml`) |
-
-### 0.3.2 Dependency Updates
-
-**Import Updates**
-
-Files requiring import updates follow the event type feature's modular structure:
-
-- `packages/features/eventtypes/**/*.ts` — Internal imports for new parity test utilities, type extensions, and schema modifications
-- `packages/features/ee/round-robin/**/*.ts` — RR module imports for distribution alignment helpers
-- `specs/event-types/**/*.md` — New spec folder referencing existing design patterns from `specs/_templates/`
-
-**Import Transformation Rules:**
-
-- Existing: `from '@calcom/features/eventtypes/lib/types'` — No changes, preserve existing import paths
-- New tests: `from '@calcom/features/eventtypes/lib/types'` and `from '@calcom/testing'` for test fixtures
-- Spec references: Follow `specs/_templates/` patterns exactly
-
-**External Reference Updates:**
-
-- `docs/gap-report/event-types.mdx` — Update gap inventory status after parity closure
-- `docs/sprint-roadmap/epic-catalog.mdx` — Mark ET-001 through ET-006 completion status
-- `docs/sprint-roadmap/validation-criteria.mdx` — Record validation evidence for ET-VAL criteria
-- `README.md` — No changes expected unless new user-facing features are added
-
-
-## 0.4 Integration Analysis
-
-### 0.4.1 Existing Code Touchpoints
-
-**Direct Modifications Required:**
-
-- `packages/features/eventtypes/lib/getEventTypeById.ts` — Verify enrichment pipeline correctly handles all 6 scheduling paradigms (one-on-one, group, RR, collective, managed, dynamic); ensure metadata parsing, booking field assembly, and location configuration are correct for each type
-- `packages/features/eventtypes/lib/bookingFieldsManager.ts` — Extend booking field normalization to support all Calendly question types (text, radio, checkbox, phone, dropdown) for ET-006
-- `packages/features/eventtypes/lib/types.ts` — Verify `FormValues` covers all paradigm-specific properties; ensure `EventTypeUpdateInput` includes all necessary optional fields
-- `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx` — Align booking window UI controls with Calendly's three booking window options for ET-005
-- `packages/features/ee/round-robin/**/*.ts` — Audit and align distribution algorithm, weight handling, priority assignment, and fairness logic for ET-003
-- `packages/features/eventtypes/components/CreateEventTypeForm.tsx` — Verify paradigm selection options and form validation
-
-**Dependency Injections:**
-
-- `packages/features/di/` — Verify DI container registrations for event type services include all required repository and service bindings
-- `packages/features/ee/round-robin/` — Verify enterprise DI module wiring for round-robin booking manager, event manager, and assignment services
-
-**Availability Integration (Upstream):**
-
-- `packages/features/availability/lib/getUserAvailability.ts` — Verify the `UserAvailabilityService` orchestrator correctly feeds into event type booking flows for all paradigms
-- `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` — Critical for ET-003 (RR grouping) and ET-004 (collective intersection) — verify fixed-host intersection and round-robin grouping by `groupId`
-- `packages/features/schedules/lib/slots.ts` — Verify `buildSlotsWithDateRanges` correctly handles `seatsPerTimeSlot` for group events (ET-002)
-- `packages/features/busyTimes/services/getBusyTimes.ts` — Verify seated event handling and buffer application for group events
-
-**Database/Schema Touchpoints:**
-
-- `packages/prisma/schema.prisma` — The `EventType` model contains all relevant fields: `schedulingType` (enum: ROUND_ROBIN, COLLECTIVE, MANAGED), `seatsPerTimeSlot`, `minimumBookingNotice`, `beforeEventBuffer`, `afterEventBuffer`, `periodType`, `periodDays`, `periodStartDate`, `periodEndDate`, `bookingLimits`, `durationLimits`, `isRRWeightsEnabled`, `rrSegmentQueryValue`, `assignAllTeamMembers`, `assignRRMembersUsingSegment`, `bookingFields`, `customInputs`, and related fields. Any new columns must follow additive-only migration patterns.
-- `packages/prisma/selects/event-types.ts` — Verify `bookEventTypeSelect` and `availiblityPageEventTypeSelect` include all fields needed by parity tests
-- `packages/prisma/migrations/` — New migration directory for any required schema additions
-
-### 0.4.2 Cross-Feature Integration Map
-
-```mermaid
-flowchart TD
-    subgraph Sprint2["Sprint 2: Event Types (F-002)"]
-        ET001["ET-001: 1:1 Events"]
-        ET002["ET-002: Group Events"]
-        ET003["ET-003: Round-Robin"]
-        ET004["ET-004: Collective"]
-        ET005["ET-005: Booking Windows"]
-        ET006["ET-006: Custom Fields"]
-    end
-
-    subgraph Upstream["Upstream Dependencies (Sprint 1)"]
-        AV["Availability Engine\ngetUserAvailability"]
-        SLOTS["Slot Generation\nbuildSlotsWithDateRanges"]
-        BUSY["Busy Time Aggregation\ngetBusyTimes"]
-        SCHED["Schedule Service\nScheduleRepository"]
-    end
-
-    subgraph Downstream["Downstream Consumers"]
-        WH["Webhooks\nPayloadBuilderFactory"]
-        BOOK["Booking Engine\nBookingAccessService"]
-        API2["API v2\nEventTypes Controllers"]
-        TRPC["tRPC Routers\nviewer.eventTypes"]
-        SDK["Platform SDK\nlibraries/event-types.ts"]
-        WEB["Web App\napps/web/"]
-    end
-
-    AV --> ET001
-    AV --> ET003
-    AV --> ET004
-    SLOTS --> ET001
-    SLOTS --> ET002
-    BUSY --> ET002
-    SCHED --> ET005
-
-    ET001 --> WH
-    ET001 --> BOOK
-    ET001 --> API2
-    ET001 --> TRPC
-    ET001 --> SDK
-    ET001 --> WEB
-    ET002 --> BOOK
-    ET003 --> BOOK
-    ET004 --> BOOK
-    ET006 --> BOOK
+Based on the bug description, the Blitzy platform understands that the bug is **orphaned buffer time events persisting in external calendars when seated bookings undergo reschedule or last-attendee-leaves flows, due to the Sprint 3 CI-002 gap closure (buffer time visualization) not being uniformly integrated into all booking lifecycle paths**.
+
+The reported symptom — old buffer events remaining in the external calendar upon reschedule when `syncBuffersToCalendar = true` and the `calendar-buffer-sync` feature flag is enabled — is confirmed and is part of a broader class of defects affecting the seated booking subsystem. The platform has independently audited all Sprint 3 calendar integration deliverables (CI-001 through CI-005, including both gap closures) and identified **three distinct bugs** where buffer event lifecycle management is absent from seated booking code paths.
+
+### 0.1.1 Technical Failure Classification
+
+The bugs are **logic omission errors** — the buffer event lifecycle (create, update, delete) was correctly implemented in `EventManager.ts` and `BufferTimeEventService.ts`, and correctly wired into `RegularBookingService.ts` for non-seated bookings, `handleCancelBooking.ts` for cancellations, and `handleConfirmation.ts` for booking confirmations. However, the seated booking subsystem in `packages/features/bookings/lib/handleSeats/` was never updated to participate in buffer event lifecycle management during the CI-002 gap closure implementation.
+
+### 0.1.2 Affected Flows
+
+- **Owner reschedule of seated booking to a new time slot** — `moveSeatedBookingToNewTimeSlot.ts` calls `eventManager.reschedule()` without `bufferContext`, so old buffer events are never deleted and new ones are never created
+- **Owner reschedule merging two seated bookings** — `combineTwoSeatedBookings.ts` calls `eventManager.reschedule()` without `bufferContext`, so old buffer events from the source booking are never deleted
+- **Last attendee leaving a seated booking** — `lastAttendeeDeleteBooking.ts` only cleans up `_video` and `_calendar` references, completely ignoring `buffer_time_*` references, leaving orphaned buffer events in the external calendar
+
+### 0.1.3 Reproduction Steps
+
+- Enable the `calendar-buffer-sync` feature flag globally
+- Create an event type with `syncBuffersToCalendar = true`, `beforeEventBuffer = 15`, `afterEventBuffer = 15`, and seats enabled
+- Book a seated event — verify buffer events appear in external calendar
+- Reschedule the seated booking (as owner) to a new time slot
+- Observe: old buffer events remain at the original time; no new buffer events at the rescheduled time
+
+### 0.1.4 Audit Scope and Findings
+
+The full Sprint 3 audit covered all five epics (CI-001 through CI-005) plus both gap closures (calendar-driven cancellation sync and buffer time visualization). The audit examined every booking lifecycle path: regular bookings, seated bookings, recurring bookings, round-robin bookings, organizer-changed reschedules, booking confirmations, and cancellations. The three bugs documented in this plan are the **only defects found** — all other Sprint 3 deliverables are correctly implemented and passing their validation criteria.
+
+## 0.2 Root Cause Identification
+
+Based on exhaustive codebase investigation, there are **three definitive root causes**, all stemming from the same architectural gap: the seated booking subsystem was not updated to participate in buffer event lifecycle management when the CI-002 gap closure was implemented.
+
+### 0.2.1 Root Cause 1 — Missing Buffer Context in Seated Booking Owner Reschedule (Move to New Time Slot)
+
+- **Root Cause:** The `moveSeatedBookingToNewTimeSlot` function calls `eventManager.reschedule()` with only 3 positional arguments, omitting the `bufferContext` parameter (8th argument). Without `bufferContext`, the buffer event delete-and-recreate block at `EventManager.ts` lines 811–816 is never executed.
+- **Located in:** `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts`, line 74
+- **Triggered by:** An event owner rescheduling a seated booking to a time slot that has no existing booking, when `syncBuffersToCalendar = true` and `calendar-buffer-sync` feature flag is enabled
+- **Evidence:** Line 74 reads `const updateManager = await eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id);` — this passes only `event`, `rescheduleUid`, and `newBookingId`. Parameters 4–8 (`changedOrganizer`, `previousHostDestinationCalendar`, `isBookingRequestedReschedule`, `skipDeleteEventsAndMeetings`, `bufferContext`) are all omitted, defaulting to `undefined`. Compare with `RegularBookingService.ts` lines 2190–2200, which correctly passes `rescheduleBufferCtx` as the 8th argument.
+- **This conclusion is definitive because:** The `EventManager.reschedule()` method at line 811 explicitly gates buffer operations behind `if (bufferContext)`. When `bufferContext` is `undefined`, no buffer operations occur — old buffer events are never deleted from the external calendar, and no new buffer events are created at the rescheduled time.
+
+### 0.2.2 Root Cause 2 — Missing Buffer Context in Seated Booking Merge Reschedule
+
+- **Root Cause:** The `combineTwoSeatedBookings` function calls `eventManager.reschedule()` with only 3 positional arguments, omitting the `bufferContext` parameter. The old booking's buffer events are never cleaned up when attendees are merged into the target booking.
+- **Located in:** `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts`, line 125
+- **Triggered by:** An event owner rescheduling a seated booking to a time slot that already has another booking (the two bookings are merged), when `syncBuffersToCalendar = true` and `calendar-buffer-sync` feature flag is enabled
+- **Evidence:** Line 125 reads `const updateManager = await eventManager.reschedule(copyEvent, rescheduleUid, newTimeSlotBooking.id);` — identical omission pattern. Additionally, when the old booking is cancelled at lines 149–156, no buffer cleanup is performed. The target booking (`newTimeSlotBooking`) may already have its own buffer events from when it was originally created, so only deletion of the source booking's buffer events is needed (not creation of new ones).
+- **This conclusion is definitive because:** The source booking (being merged/cancelled) retains its buffer events in the external calendar indefinitely. The cancellation at lines 149–156 uses a direct `prisma.booking.update` to set status to `CANCELLED` without invoking `EventManager.cancelEvent()` or any buffer cleanup mechanism.
+
+### 0.2.3 Root Cause 3 — Buffer Events Not Cleaned Up on Last Attendee Departure
+
+- **Root Cause:** The `lastAttendeeDeleteBooking` function iterates through `originalRescheduledBooking.references` but only processes references matching `_video` (line 41) or `_calendar` (line 44) type patterns. Buffer event references have types `buffer_time_before` and `buffer_time_after`, which match neither pattern and are completely skipped.
+- **Located in:** `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts`, lines 30–54
+- **Triggered by:** The last attendee leaving a seated booking (either by cancelling or rescheduling to a different booking), when `syncBuffersToCalendar = true` and `calendar-buffer-sync` feature flag is enabled
+- **Evidence:** The reference processing loop at lines 30–53 contains exactly two type checks: `reference.type.includes("_video")` (line 41) and `reference.type.includes("_calendar")` (line 44). Buffer references use types `buffer_time_before` and `buffer_time_after` (defined in `BufferTimeEventService.ts` line 97, pattern: `buffer_time_${type}`). The string `buffer_time_before` does not include `_video` or `_calendar`, so buffer references are silently skipped. The booking is then marked as `CANCELLED` (lines 56–64) without any buffer event cleanup.
+- **This conclusion is definitive because:** The function explicitly iterates through ALL references (line 30: `for (const reference of originalRescheduledBooking.references)`) but the conditional branching at lines 41 and 44 creates a filter that excludes buffer references by design — they were added after this function was originally written and the function was never updated to handle the new reference type.
+
+### 0.2.4 Why Only Seated Bookings Are Affected
+
+The buffer event lifecycle was correctly integrated into the following paths during the CI-002 gap closure:
+
+| Path | File | Buffer Handling | Status |
+|------|------|----------------|--------|
+| Regular booking creation | `RegularBookingService.ts:2336–2367` | Builds `bufferCtx`, passes to `eventManager.create()` | ✅ Correct |
+| Regular booking reschedule | `RegularBookingService.ts:2163–2199` | Builds `rescheduleBufferCtx`, passes to `eventManager.reschedule()` | ✅ Correct |
+| Organizer-changed reschedule | `RegularBookingService.ts:2116–2157` | Buffer cleanup via `eventManager.reschedule()` with DB credential fallback | ✅ Correct |
+| Booking cancellation | `handleCancelBooking.ts:640–660` | Passes `bookingToDelete.id` to `eventManager.cancelEvent()` | ✅ Correct |
+| Booking confirmation | `handleConfirmation.ts:150–220` | Builds `bufferContext`, passes to `eventManager.create()` | ✅ Correct |
+| Recurring bookings | `RecurringBookingService.ts` | Delegates to `RegularBookingService`, inherits buffer handling | ✅ Correct |
+| Seated booking reschedule (owner, move) | `moveSeatedBookingToNewTimeSlot.ts:74` | **No buffer context passed** | ❌ Bug 1 |
+| Seated booking reschedule (owner, merge) | `combineTwoSeatedBookings.ts:125` | **No buffer context passed, no cleanup on cancellation** | ❌ Bug 2 |
+| Last attendee leaves seated booking | `lastAttendeeDeleteBooking.ts:30–54` | **Buffer references skipped in cleanup loop** | ❌ Bug 3 |
+
+The seated booking subsystem (`packages/features/bookings/lib/handleSeats/`) operates as a parallel code path that bypasses `RegularBookingService.ts` when the event type has seats enabled. This parallel path was not updated when the CI-002 buffer event lifecycle was added, creating an integration gap exclusively in seated booking flows.
+
+## 0.3 Diagnostic Execution
+
+### 0.3.1 Code Examination Results
+
+**File analyzed:** `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts`
+- Problematic code block: line 74
+- Specific failure point: `eventManager.reschedule()` called with 3 arguments; `bufferContext` (8th parameter) is absent
+- Execution flow: `handleSeats()` → `rescheduleSeatedBooking()` → `ownerRescheduleSeatedBooking()` → `moveSeatedBookingToNewTimeSlot()` → `eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id)` → `EventManager.reschedule()` enters with `bufferContext = undefined` → line 811 `if (bufferContext)` evaluates to `false` → buffer delete/create block skipped entirely
+
+**File analyzed:** `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts`
+- Problematic code block: lines 125 and 149–156
+- Specific failure point 1: `eventManager.reschedule()` called with 3 arguments; `bufferContext` absent
+- Specific failure point 2: Old booking cancelled via direct `prisma.booking.update` at lines 149–156 without buffer cleanup
+- Execution flow: `handleSeats()` → `rescheduleSeatedBooking()` → `ownerRescheduleSeatedBooking()` → `combineTwoSeatedBookings()` → `eventManager.reschedule(copyEvent, rescheduleUid, newTimeSlotBooking.id)` → buffer skip (same as above) → old booking marked `CANCELLED` via Prisma without any `EventManager.cancelEvent()` call
+
+**File analyzed:** `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts`
+- Problematic code block: lines 30–54
+- Specific failure point: Reference type filter at lines 41 and 44 does not include `buffer_time_*` pattern
+- Execution flow: `attendeeRescheduleSeatedBooking()` → `lastAttendeeDeleteBooking()` → iterates `originalRescheduledBooking.references` → for each reference, checks `type.includes("_video")` and `type.includes("_calendar")` → buffer references (`buffer_time_before`, `buffer_time_after`) match neither check → skipped → booking marked `CANCELLED` at lines 56–64 → buffer events remain in external calendar
+
+### 0.3.2 Repository File Analysis Findings
+
+| Tool Used | Command/Path Examined | Finding | File:Line |
+|-----------|----------------------|---------|-----------|
+| read_file | `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` | Buffer reference type uses `buffer_time_${type}` pattern (e.g., `buffer_time_before`, `buffer_time_after`); gated behind `calendar-buffer-sync` flag AND `syncBuffersToCalendar` toggle | BufferTimeEventService.ts:97 |
+| read_file | `packages/features/bookings/lib/EventManager.ts` | `BufferEventContext` type defined; `reschedule()` accepts `bufferContext` as 8th param; buffer delete/create gated behind `if (bufferContext)` at line 811 | EventManager.ts:142–169, 667–676, 811–816 |
+| read_file | `packages/features/bookings/lib/EventManager.ts` | `deleteEventsAndMeetings()` deletes buffer events only when `bookingId` is provided (line 925) | EventManager.ts:922–927 |
+| grep | `grep -n "buffer\|BufferEventContext\|bufferContext" packages/features/bookings/lib/handleSeats/handleSeats.ts` | **No buffer-related code** found in entire handleSeats entry point | handleSeats.ts (all lines) |
+| grep | `grep -n "buffer" packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` | **No buffer-related tests** exist for seated bookings (2991-line test file) | handleSeats.test.ts (all lines) |
+| read_file | `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts` | `eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id)` — only 3 args, missing `bufferContext` | moveSeatedBookingToNewTimeSlot.ts:74 |
+| read_file | `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts` | `eventManager.reschedule(copyEvent, rescheduleUid, newTimeSlotBooking.id)` — only 3 args, missing `bufferContext`; old booking cancelled via direct Prisma update without buffer cleanup | combineTwoSeatedBookings.ts:125, 149–156 |
+| read_file | `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts` | Reference loop only checks `_video` and `_calendar` types; `buffer_time_*` references silently skipped | lastAttendeeDeleteBooking.ts:41, 44 |
+| read_file | `packages/features/bookings/lib/service/RegularBookingService.ts` | Correct buffer context construction at lines 2163–2199; correct pass-through to `eventManager.reschedule()` as 8th arg at lines 2190–2200 | RegularBookingService.ts:2163–2200 |
+| read_file | `packages/features/bookings/lib/handleSeats/types.d.ts` | `NewSeatedBookingObject.eventType` is `NewBookingEventType` which includes `syncBuffersToCalendar`, `beforeEventBuffer`, `afterEventBuffer` — buffer data IS available in seated booking path but NOT used | types.d.ts:34 |
+| read_file | `packages/features/bookings/lib/handleSeats/reschedule/rescheduleSeatedBooking.ts` | Entry point for seated reschedule — creates `EventManager` with `organizerUser` credentials but does not build or pass buffer context | rescheduleSeatedBooking.ts:54 |
+| read_file | `packages/features/bookings/lib/handleSeats/reschedule/attendee/attendeeRescheduleSeatedBooking.ts` | Calls `lastAttendeeDeleteBooking` at lines 35 and 117 — inherits BUG 3 | attendeeRescheduleSeatedBooking.ts:35, 117 |
+| read_file | `packages/features/bookings/lib/handleCancelBooking.ts` | Correctly passes `bookingToDelete.id` to `eventManager.cancelEvent()`, enabling buffer cleanup via `deleteEventsAndMeetings` | handleCancelBooking.ts:640–660 |
+| read_file | `packages/features/bookings/lib/handleConfirmation.ts` | Correctly builds `bufferContext` and passes to `eventManager.create()` | handleConfirmation.ts:150–220 |
+
+### 0.3.3 Fix Verification Analysis
+
+- **Steps to reproduce Bug 1 and Bug 2:** Enable `calendar-buffer-sync` feature flag → create event type with `syncBuffersToCalendar = true`, `beforeEventBuffer = 15`, `afterEventBuffer = 15`, and seats enabled → book a seated event → verify buffer events in external calendar → reschedule as owner to new time (Bug 1) or to a time with an existing booking (Bug 2) → observe orphaned buffer events at original time
+- **Steps to reproduce Bug 3:** Same setup as above → book a seated event with one attendee → attendee reschedules to a different time → last attendee leaves the original booking → `lastAttendeeDeleteBooking` is invoked → observe that the cancelled booking's buffer events remain in external calendar
+- **Confirmation tests:** Existing buffer event tests in `packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts` cover `BufferTimeEventService` operations (creation, deletion, feature flag gating). New tests must be added to `packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` to cover buffer event handling in seated booking reschedule and last-attendee-delete flows.
+- **Boundary conditions and edge cases:**
+  - Event type with `syncBuffersToCalendar = false` or `null` — buffer operations should be skipped entirely (no regression)
+  - `calendar-buffer-sync` feature flag disabled — buffer operations should be skipped (no regression)
+  - Event type with only `beforeEventBuffer` or only `afterEventBuffer` configured (not both)
+  - Seated booking with zero buffer minutes (both before and after set to 0) — `shouldCreateBufferEvents` returns `false`, no buffer events created
+  - Credential not found for buffer event deletion — best-effort error handling should log warning and continue
+  - `combineTwoSeatedBookings` where target booking already has buffer events — must not create duplicate buffer events
+- **Confidence level:** 92% — The root causes are definitively identified via code tracing. The 8% uncertainty accounts for potential edge cases in credential resolution during buffer deletion for seated bookings where the organizer's calendar credential might differ from what `EventManager` has in memory (mitigated by the existing DB fallback at `EventManager.ts:1583–1592`).
+
+## 0.4 Bug Fix Specification
+
+### 0.4.1 The Definitive Fix
+
+The fix consists of three targeted changes to integrate buffer event lifecycle management into the seated booking subsystem, following the exact same patterns established by `RegularBookingService.ts` and `handleCancelBooking.ts`:
+
+**Fix 1 — Add buffer context to `moveSeatedBookingToNewTimeSlot.ts`**
+
+- **File to modify:** `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts`
+- **Current implementation at line 74:**
+```typescript
+const updateManager = await eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id);
+```
+- **Required change:** Build a `BufferEventContext` from the available `eventType` and `organizerUser` data (both already accessible via `rescheduleSeatedBookingObject`), then pass it as the 8th argument to `eventManager.reschedule()`. The buffer context should use the updated booking's ID, title, start time, and end time.
+- **This fixes the root cause by:** Providing a truthy `bufferContext` to `EventManager.reschedule()`, which causes the buffer block at line 811 to execute — deleting old buffer events from the original booking (via `deleteBufferEventsForBooking(booking.id)` where `booking` is found by `rescheduleUid`) and creating new buffer events at the rescheduled time (via `createBufferEventsForBooking(bufferContext, results)`).
+
+**Fix 2 — Add buffer cleanup to `combineTwoSeatedBookings.ts`**
+
+- **File to modify:** `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts`
+- **Current implementation at line 125:**
+```typescript
+const updateManager = await eventManager.reschedule(copyEvent, rescheduleUid, newTimeSlotBooking.id);
+```
+- **Current implementation at lines 149–156:** Old booking marked `CANCELLED` via direct `prisma.booking.update` without buffer cleanup.
+- **Required change:** After the old booking is cancelled (after line 156), add explicit buffer event cleanup for the old booking using `eventManager.cancelEvent()` or direct `BufferTimeEventService.deleteBufferEvents()` invocation. The target booking (`newTimeSlotBooking`) must NOT receive new buffer events because it may already have its own from when it was originally created — creating new ones would produce duplicates in the external calendar.
+- **This fixes the root cause by:** Ensuring buffer events associated with the source booking (being merged/cancelled) are deleted from the external calendar. The target booking retains its own existing buffer events unchanged.
+
+**Fix 3 — Add buffer reference handling to `lastAttendeeDeleteBooking.ts`**
+
+- **File to modify:** `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts`
+- **Current implementation at lines 41–51:** Only processes `_video` and `_calendar` reference types.
+- **Required change:** Add a third condition in the reference processing loop (after line 51) to handle `buffer_time` reference types. When a reference's type starts with `buffer_time`, resolve the credential, obtain the calendar adapter, and delete the external calendar event using `calendar.deleteEvent(reference.uid, originalBookingEvt, reference.externalCalendarId)` — the same pattern used for `_calendar` references at lines 44–50.
+- **This fixes the root cause by:** Including buffer event references in the cleanup loop so they are deleted from the external calendar when the last attendee leaves a seated booking and the booking is cancelled.
+
+### 0.4.2 Change Instructions
+
+**File: `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts`**
+
+- IMPORT at top of file: Add import for `BufferEventContext` type from `@calcom/features/bookings/lib/EventManager`
+- INSERT before line 74: Build `BufferEventContext` conditionally when `eventType.syncBuffersToCalendar` is truthy, using the pattern from `RegularBookingService.ts:2165–2188`. The context must reference `newBooking.id` (the updated booking ID), `newBooking.uid` (or the existing booking UID), `evt.title`, `evt.startTime`, `evt.endTime`, `eventType` fields (`id`, `slug`, `syncBuffersToCalendar`, `beforeEventBuffer`, `afterEventBuffer`), and `organizerUser` fields (`id`, `name`, `email`, `username`, `timeZone`). Note: `organizerUser` and `eventType` are already available via the `rescheduleSeatedBookingObject` parameter.
+- MODIFY line 74: Change from `eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id)` to `eventManager.reschedule(copyEvent, rescheduleUid, newBooking.id, undefined, undefined, undefined, undefined, bufferCtx)` — passing the constructed buffer context as the 8th positional argument
+- ADD comment above the buffer context construction explaining the motive: `// CI-002 gap closure: Build buffer event context for seated booking reschedule. When syncBuffersToCalendar is enabled, EventManager.reschedule() deletes old buffer events and creates new ones at the rescheduled time.`
+
+**File: `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts`**
+
+- IMPORT at top of file: Add import for `BufferTimeEventService` from `@calcom/features/calendars/lib/buffer-sync/BufferTimeEventService` (dynamic import preferred, matching the pattern in `EventManager.ts:1452`)
+- INSERT after line 156 (after old booking is marked CANCELLED): Add buffer event cleanup block for the old booking. Use `eventManager.cancelEvent()` with the old booking's references and `seatedBooking.id` to trigger `deleteEventsAndMeetings` which includes buffer cleanup when `bookingId` is provided. Alternatively, directly invoke `BufferTimeEventService.deleteBufferEvents()` with the old booking's references and credential. Wrap in try/catch for best-effort error handling matching the established pattern.
+- ADD comment above the cleanup block: `// CI-002 gap closure: Clean up buffer events from the cancelled source booking. The target booking (newTimeSlotBooking) retains its own buffer events — no new creation needed to avoid duplicates.`
+- DO NOT modify line 125 — the `eventManager.reschedule()` call should remain unchanged (without `bufferContext`) because the target booking may already have buffer events
+
+**File: `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts`**
+
+- INSERT after line 51 (after the `_calendar` block, inside the `if (credential)` check): Add a new condition:
+```typescript
+if (reference.type.startsWith("buffer_time") && originalBookingEvt) {
+  const calendar = await getCalendar(credential, "booking");
+  if (calendar) {
+    integrationsToDelete.push(
+      calendar.deleteEvent(reference.uid, originalBookingEvt, reference.externalCalendarId)
+    );
+  }
+}
+```
+- ADD comment above the new block: `// CI-002 gap closure: Delete buffer time events (buffer_time_before, buffer_time_after) from external calendar when last attendee leaves a seated booking.`
+- This follows the exact same pattern as the `_calendar` deletion at lines 44–50, reusing the same `credential`, `getCalendar()`, and `calendar.deleteEvent()` mechanisms
+
+### 0.4.3 Supporting Type Changes
+
+**No type changes are required.** The `BufferEventContext` type is already exported from `EventManager.ts` (line 142). The `NewSeatedBookingObject.eventType` is already of type `NewBookingEventType` which includes `syncBuffersToCalendar`, `beforeEventBuffer`, and `afterEventBuffer`. The `organizerUser` in `NewSeatedBookingObject` already has `id`, `name`, `email`, `username`, and `timeZone` fields. All data required to construct a `BufferEventContext` is already available in the seated booking path — it simply was never used.
+
+### 0.4.4 Fix Validation
+
+- **Test command to verify fixes:**
+```
+cd packages/features/bookings && npx vitest run lib/handleSeats/test/handleSeats.test.ts --reporter=verbose
+cd packages/features/calendars && npx vitest run lib/__tests__/bufferTimeVisualization.test.ts --reporter=verbose
+```
+- **Expected output after fix:** All existing tests pass (280+ calendar integration tests) plus new buffer-related test cases for seated bookings pass
+- **Confirmation method:**
+  - Verify that `moveSeatedBookingToNewTimeSlot` passes `bufferContext` to `eventManager.reschedule()` when `syncBuffersToCalendar` is truthy
+  - Verify that `combineTwoSeatedBookings` cleans up buffer events from the old/cancelled booking
+  - Verify that `lastAttendeeDeleteBooking` processes `buffer_time_*` references in its cleanup loop
+  - Verify that all three fixes are no-ops when `syncBuffersToCalendar` is falsy or `calendar-buffer-sync` flag is disabled (no regression to non-buffer flows)
+
+### 0.4.5 Edge Cases and Boundary Conditions
+
+| Edge Case | Expected Behavior | Handling Strategy |
+|-----------|------------------|-------------------|
+| `syncBuffersToCalendar = false` | Buffer context is `undefined`, buffer operations skipped | Conditional construction: `eventType.syncBuffersToCalendar ? { ... } : undefined` |
+| `calendar-buffer-sync` flag disabled | `isBufferSyncEnabled()` returns `false`, all buffer operations no-op | Existing gating in `BufferTimeEventService` handles this |
+| `beforeEventBuffer = 0` and `afterEventBuffer = 0` | `shouldCreateBufferEvents()` returns `false`, no buffer events created | Existing logic in `BufferTimeEventService.createBufferEvents()` handles this |
+| Only `beforeEventBuffer` configured (after is 0) | Only `buffer_time_before` event created; only `buffer_time_before` reference needs cleanup | `BufferTimeEventService` handles partial buffer configuration |
+| Target booking in `combineTwoSeatedBookings` already has buffer events | Must NOT create duplicate buffer events | Fix 2 explicitly avoids passing `bufferContext` to `eventManager.reschedule()` for the merge path |
+| Target booking in `combineTwoSeatedBookings` has no buffer events (created before feature was enabled) | Target booking remains without buffer events | Acceptable: buffer events will be created on next reschedule of the target booking via the corrected path |
+| Credential not found during buffer deletion | Best-effort: log warning, continue | Existing `try/catch` patterns in `EventManager.deleteBufferEventsForBooking()` and `BufferTimeEventService.deleteBufferEvents()` |
+| `originalRescheduledBooking` has no buffer references | No buffer cleanup needed | `deleteBufferEventsForBooking` queries for `buffer_time_*` references; empty result = no-op |
+| Attendee reschedule (not owner) | Attendee path uses `updateCalendarAttendees()`, not `eventManager.reschedule()` | Buffer cleanup only needed via `lastAttendeeDeleteBooking` (Bug 3 fix); attendee moving between bookings does not affect buffer events of those bookings |
+
+## 0.5 Scope Boundaries
+
+### 0.5.1 Changes Required (Exhaustive List)
+
+| Action | File Path | Lines | Specific Change |
+|--------|-----------|-------|----------------|
+| MODIFIED | `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts` | 1–5, 70–80 | Add `BufferEventContext` import; build buffer context from `eventType` and `organizerUser`; pass as 8th arg to `eventManager.reschedule()` |
+| MODIFIED | `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts` | 1–5, 149–165 | Add buffer cleanup imports; after old booking is cancelled (line 156), add explicit buffer event deletion for the source booking |
+| MODIFIED | `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts` | 41–54 | Add `buffer_time` reference type handling inside the existing credential-based cleanup loop, after the `_calendar` block |
+| MODIFIED | `packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` | End of file | Add test cases covering buffer event handling in seated booking reschedule (owner move, owner merge) and last-attendee-delete flows |
+
+No files are CREATED or DELETED. All changes are modifications to existing files within the seated booking subsystem.
+
+### 0.5.2 Explicitly Excluded
+
+- **Do not modify:** `packages/features/bookings/lib/EventManager.ts` — the `EventManager` API surface is correct and complete. The `reschedule()` method already accepts `bufferContext`, `deleteEventsAndMeetings()` already handles `bookingId`-based buffer cleanup, and `cancelEvent()` already passes through correctly. No changes needed.
+- **Do not modify:** `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` — the buffer service itself is correctly implemented. The bugs are in the callers, not the service.
+- **Do not modify:** `packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts` — the cancellation sync service is a separate CI-001 gap closure and is not affected by these bugs.
+- **Do not modify:** `packages/features/bookings/lib/service/RegularBookingService.ts` — buffer handling in non-seated booking paths is correct.
+- **Do not modify:** `packages/features/bookings/lib/handleCancelBooking.ts` — direct cancellation flow correctly handles buffer cleanup.
+- **Do not modify:** `packages/features/bookings/lib/handleConfirmation.ts` — confirmation flow correctly handles buffer creation.
+- **Do not modify:** `packages/features/bookings/lib/handleSeats/reschedule/rescheduleSeatedBooking.ts` — this is the entry-point orchestrator; buffer context construction belongs in the leaf functions closer to the `eventManager.reschedule()` call site, matching the pattern in `RegularBookingService.ts`.
+- **Do not modify:** `packages/features/bookings/lib/handleSeats/reschedule/owner/ownerRescheduleSeatedBooking.ts` — this is a pass-through dispatcher; buffer context should not be built here.
+- **Do not modify:** `packages/features/bookings/lib/handleSeats/reschedule/attendee/attendeeRescheduleSeatedBooking.ts` — the attendee path only calls `updateCalendarAttendees()` (not `reschedule()`); buffer cleanup is handled by `lastAttendeeDeleteBooking` (Fix 3).
+- **Do not refactor:** The reference processing loop in `lastAttendeeDeleteBooking.ts` — the existing `_video` and `_calendar` handling is correct and should not be restructured. Only add the `buffer_time` handling as a new conditional block.
+- **Do not add:** New database migrations — the `BookingReference` schema already supports buffer event references via the `type` field prefix pattern.
+- **Do not modify:** Feature flag names `calendar-buffer-sync` and `calendar-cancellation-sync` — these are stable identifiers referenced across the codebase.
+- **Do not modify:** `BufferEventContext` interface — it already contains all required fields.
+- **Avoid unless strictly necessary:** `packages/features/availability/` (availability engine), `packages/features/webhooks/` (webhook pipeline), payment flows, and any Sprint 1 or Sprint 2 deliverables.
+
+## 0.6 Verification Protocol
+
+### 0.6.1 Bug Elimination Confirmation
+
+- **Execute seated booking buffer tests:**
+```
+npx vitest run packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts --reporter=verbose
+```
+- **Verify output matches:** All existing seated booking test cases pass (no regressions), plus new test cases for buffer event handling pass:
+  - `owner reschedule to new time slot creates buffer events when syncBuffersToCalendar is true`
+  - `owner reschedule to new time slot skips buffer events when syncBuffersToCalendar is false`
+  - `owner reschedule merge deletes source booking buffer events`
+  - `owner reschedule merge does not create duplicate buffer events on target booking`
+  - `last attendee delete cleans up buffer events from external calendar`
+  - `last attendee delete skips buffer cleanup when no buffer references exist`
+- **Confirm error no longer appears:** Buffer events for the original time slot are deleted from the external calendar upon reschedule; no orphaned buffer events remain
+- **Validate with buffer service tests:**
+```
+npx vitest run packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts --reporter=verbose
 ```
 
-### 0.4.3 API Surface Impact
+### 0.6.2 Regression Check
 
-**tRPC Routes (Viewer Scope):**
-- `viewer.eventTypes.create` — Verify creation supports all 6 paradigms with correct validation
-- `viewer.eventTypes.update` — Verify update handles paradigm-specific fields
-- `viewer.eventTypes.get` — Verify retrieval returns enriched data for all paradigms
-- `viewer.eventTypes.list` — Verify listing includes paradigm metadata
+- **Run existing calendar integration test suite:**
+```
+npx vitest run packages/features/calendars/lib/__tests__/ --reporter=verbose
+```
+- **Verify 280+ calendar integration tests pass** — this includes `bidirectionalSync.integration.test.ts` (844 lines) covering create, reschedule, and cancel flows for Google and Outlook adapters
+- **Run full seated booking test suite:**
+```
+npx vitest run packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts --reporter=verbose
+```
+- **Verify unchanged behavior in:**
+  - Regular (non-seated) booking creation, reschedule, and cancellation flows
+  - Seated booking attendee-only operations (adding attendees, updating calendar attendees)
+  - Booking confirmation flow with buffer events
+  - Buffer event creation and deletion when `syncBuffersToCalendar = false` (should remain no-op)
+  - Buffer event creation and deletion when `calendar-buffer-sync` flag is disabled (should remain no-op)
+- **Run full booking service test suite:**
+```
+npx vitest run packages/features/bookings/ --reporter=verbose
+```
 
-**API v2 (NestJS):**
-- `POST /v2/event-types` — Verify full paradigm support with correct DTOs
-- `PATCH /v2/event-types/:id` — Verify update preserves paradigm-specific configurations
-- `GET /v2/event-types` — Verify listing and filtering across paradigms
-- `DELETE /v2/event-types/:id` — Verify safe deletion with booking handling
+### 0.6.3 Feature Flag Safety Verification
 
-**Webhook Events Affected:**
-- `BOOKING_CREATED` — Must fire with correct payload for all event type paradigms
-- `BOOKING_RESCHEDULED` — Must include old/new booking details for all paradigms
-- `BOOKING_CANCELLED` — Must fire for all paradigm types
-- All `v2021-10-20` payloads must remain unchanged (additive-only extensions permitted)
+All three fixes must be inert when either gating control is off:
 
+| Condition | Expected Behavior | Verification |
+|-----------|------------------|--------------|
+| `calendar-buffer-sync` flag disabled | All buffer operations are no-ops; fixes introduce zero behavioral change | `BufferTimeEventService.isBufferSyncEnabled()` returns `false`, short-circuiting all buffer paths |
+| `syncBuffersToCalendar = false` on EventType | Buffer context evaluates to `undefined`; `eventManager.reschedule()` skips buffer block | Conditional `eventType.syncBuffersToCalendar ? { ... } : undefined` produces `undefined` |
+| Both controls enabled | Buffer events correctly deleted and/or created | Full lifecycle test with mock calendar adapter |
+| Flag enabled but toggle `null` (never set) | Treated as falsy; buffer operations skipped | Nullish check in buffer context construction |
 
-## 0.5 Technical Implementation
+## 0.7 Rules
 
-### 0.5.1 File-by-File Execution Plan
+### 0.7.1 Change Discipline
 
-Every file listed below MUST be created or modified as part of Sprint 2 execution. Files are grouped by implementation priority.
+- Make the exact specified changes only — three targeted modifications to three files in the seated booking subsystem
+- Zero modifications outside the bug fix scope — do not refactor, restructure, or improve any code that is not directly related to the buffer event lifecycle bugs
+- All changes must follow the existing code patterns established by the CI-002 gap closure in `RegularBookingService.ts`, `EventManager.ts`, and `handleCancelBooking.ts`
+- Buffer context construction must use the same field mapping as `RegularBookingService.ts:2165–2188`
+- Buffer event deletion must use best-effort error handling (try/catch with logging, never throw) matching the pattern in `BufferTimeEventService.ts` and `EventManager.ts`
 
-**Group 1 — Spec-First Design Artifacts (Pre-Implementation)**
+### 0.7.2 Interface Contracts
 
-- CREATE: `specs/event-types/design.md` — Comprehensive design spec covering all 6 epics with technical approach, affected modules, and acceptance criteria drawn from `docs/sprint-roadmap/validation-criteria.mdx`
-- CREATE: `specs/event-types/implementation.md` — Progress tracker with status for ET-001 through ET-006 (Status, Completed, In Progress, Blocked, Next Steps, Session Notes)
-- CREATE: `specs/event-types/decisions.md` — ADR scaffold for architectural trade-offs (e.g., whether to add new schema columns vs. metadata-based approaches)
-- CREATE: `specs/event-types/CLAUDE.md` — Agent instructions referencing `design.md`, `implementation.md`, and relevant source directories
-- CREATE: `specs/event-types/AGENTS.md` — Agent guidelines with project context and preparatory checklist
-- CREATE: `specs/event-types/prompts.md` — Lifecycle prompts for sync, test generation, code review, and documentation
-- CREATE: `specs/event-types/future-work.md` — Deferred items including Meeting Polls (ET-001 gap from gap report) and RR fairness visualization (ET-002 gap)
-- CREATE: `specs/event-types/docs/README.md` — Internal documentation template with screenshot placeholders
+- `EventManager` public API surface must not be modified — only add to it if strictly necessary; do not change existing public method signatures
+- `BufferEventContext` interface must remain unchanged
+- `BookingReference` schema must not receive new migrations unless strictly necessary (none are needed for these fixes)
+- Feature flag names `calendar-buffer-sync` and `calendar-cancellation-sync` must remain unchanged
+- All 280+ existing calendar integration tests must continue to pass without modification
 
-**Group 2 — Core Event Type Parity (ET-001, ET-002)**
+### 0.7.3 Coding Standards
 
-- MODIFY: `packages/features/eventtypes/lib/getEventTypeById.ts` — Verify and harden enrichment pipeline for 1:1 and group event types; ensure correct host assignment, seat handling, and metadata parsing
-- MODIFY: `packages/features/eventtypes/lib/getPublicEvent.ts` — Verify public event resolution returns correct data for seated (group) events including remaining seat count
-- VERIFY: `packages/features/eventtypes/repositories/eventTypeRepository.ts` — Confirm `findForSlots` and `findByIdForUserAvailability` return correct projections for group events
-- VERIFY: `packages/features/schedules/lib/slots.ts` — Confirm `buildSlotsWithDateRanges` correctly handles `seatsPerTimeSlot` and out-of-office overlay for seated events
-- CREATE: `packages/features/eventtypes/lib/__tests__/eventTypeParity.test.ts` — Behavioral parity test suite covering ET-VAL-001 through ET-VAL-004
+- TypeScript strict mode compliance — all new code must satisfy the project's TypeScript configuration
+- Use UTC time methods consistently (matching existing `dayjs.utc()` usage throughout the codebase)
+- Follow the existing import patterns — dynamic imports for `BufferTimeEventService` (matching `EventManager.ts:1452`), static imports for types
+- Use the project's logging patterns — `log.warn()` for best-effort failures, `log.debug()` for diagnostic information
+- Comments must explain the "why" (motive) not just the "what" — reference the CI-002 gap closure context in all new comments
+- Follow Biome linting and formatting rules configured in the monorepo
 
-**Group 3 — Round-Robin Distribution Parity (ET-003)**
+### 0.7.4 Testing Requirements
 
-- MODIFY: `packages/features/ee/round-robin/**/*.ts` — Audit distribution algorithm against Calendly's equitable round-robin behavior; verify weight/priority handling, segment-based filtering via `rrSegmentQueryValue`, and assignment reason recording
-- VERIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` — Confirm RR hosts grouped by `groupId` with at-least-one-available logic
-- VERIFY: `packages/features/eventtypes/components/dialogs/HostEditDialogs.tsx` — Confirm host weight/priority editing UI is correct
-- VERIFY: `packages/features/eventtypes/components/WeightDescription.tsx` — Confirm weight description text is accurate
-- CREATE: `packages/features/ee/round-robin/__tests__/distributionParity.test.ts` — Distribution fairness test suite verifying equitable assignment across hosts
-
-**Group 4 — Collective Scheduling Parity (ET-004)**
-
-- VERIFY: `packages/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability.ts` — Confirm fixed-host intersection correctly computes mutual availability for `SchedulingType.COLLECTIVE`
-- VERIFY: `packages/features/eventtypes/components/AssignAllTeamMembers.tsx` — Confirm collective host assignment toggle behavior
-- VERIFY: `packages/features/eventtypes/components/CheckedTeamSelect.tsx` — Confirm team member selection for collective events
-
-**Group 5 — Booking Window Alignment (ET-005)**
-
-- MODIFY: `packages/features/eventtypes/components/tabs/limits/EventLimitsTab.tsx` — Align booking window configuration with Calendly's three options (days into future with calendar/business day support, date range, indefinitely)
-- VERIFY: `packages/prisma/schema.prisma` — Confirm `periodType` enum (`UNLIMITED`, `RANGE`, `ROLLING`) covers all Calendly equivalents
-- CREATE: `packages/features/eventtypes/lib/__tests__/bookingWindowParity.test.ts` — Booking window behavioral tests covering ET-VAL-006
-
-**Group 6 — Custom Fields/Questions Parity (ET-006)**
-
-- MODIFY: `packages/features/eventtypes/lib/bookingFieldsManager.ts` — Verify and extend field type support to cover all Calendly question types (text, radio, checkbox, phone, dropdown)
-- VERIFY: `packages/features/eventtypes/lib/types.ts` — Confirm `FormValues.bookingFields` schema supports all required field types
-- CREATE: `packages/features/eventtypes/lib/__tests__/customFieldsParity.test.ts` — Custom field type coverage test suite covering ET-VAL-005
-
-**Group 7 — Validation Gate Preparation**
-
-- MODIFY: `docs/gap-report/event-types.mdx` — Update gap inventory status after parity closure; mark completed gaps
-- MODIFY: `docs/sprint-roadmap/epic-catalog.mdx` — Record completion status for ET-001 through ET-006
-- CREATE: `specs/event-types/docs/validation-report.md` — Gate 2 validation evidence report with pass/fail for all ET-VAL criteria
-
-### 0.5.2 Implementation Approach per File
-
-The implementation follows a six-step progression aligned with the autonomous execution protocol defined in `docs/sprint-roadmap/overview.mdx`:
-
-- **Step 1 — Gap Analysis Review:** Read `docs/gap-report/event-types.mdx` and `docs/gap-report/availability-scheduling.mdx` to fully understand all identified gaps, their severity, and the current Cal.com implementation state for each event type paradigm
-- **Step 2 — Epic Selection:** Select all 6 epics (ET-001 through ET-006) from `docs/sprint-roadmap/epic-catalog.mdx`, respecting the internal dependency ordering (ET-001 → ET-002/ET-003/ET-004/ET-006, AV-005 → ET-005)
-- **Step 3 — Spec-First Design:** Create the `specs/event-types/` folder by cloning `specs/_templates/` and populate `design.md` with the technical approach for all 6 epics
-- **Step 4 — Implementation:** Execute implementation following design spec, adhering to Cal.com conventions (`@evyweb/ioctopus` DI, Prisma repositories, Zod validation, `@calcom/dayjs`, Vitest), with max 5–7 files per PR, max 500 lines per PR, and one focused change per PR
-- **Step 5 — Migration Safety:** Apply zero-downtime migration patterns for any schema changes: additive-only columns with defaults, nullable columns, feature flag gating. Follow `docs/migration/zero-downtime-strategy.mdx` patterns
-- **Step 6 — Validation:** Verify against all ET-VAL behavioral acceptance criteria from `docs/sprint-roadmap/validation-criteria.mdx`, then run regression tests, data preservation checks, webhook compatibility checks, and cross-domain integration tests
-
-### 0.5.3 User Interface Design
-
-The Sprint 2 event type parity work primarily involves verification and alignment of existing UI rather than new UI creation. Key UI considerations:
-
-- **Event Type Creation Flow:** The `CreateEventTypeForm.tsx` must present all 6 scheduling paradigm options correctly — one-on-one (default), group (via seats toggle), round-robin, collective, managed (for team admins), and dynamic
-- **Booking Window Configuration:** The `EventLimitsTab.tsx` must expose Calendly-equivalent booking window options — days into future (with calendar vs. business day distinction per AVL-GAP-001), date range picker, and indefinite option
-- **Custom Fields Builder:** The booking field configuration UI must support text, radio, checkbox, phone, and dropdown field types to match Calendly's question type taxonomy
-- **Round-Robin Host Configuration:** The host editing dialogs must expose weight and priority controls with clear descriptions of distribution impact
-- **Validation Feedback:** All event type forms must provide clear validation feedback through Zod schema-driven error messages
-
-
-## 0.6 Scope Boundaries
-
-### 0.6.1 Exhaustively In Scope
-
-**All Event Type Feature Source Files:**
-- `packages/features/eventtypes/**/*.ts` — Core event type logic, types, schemas, repositories, and tests
-- `packages/features/eventtypes/**/*.tsx` — UI components for event type configuration and management
-
-**Round-Robin Enterprise Module:**
-- `packages/features/ee/round-robin/**/*.ts` — Distribution algorithm, rescheduling, reassignment, host priority/weight
-
-**Availability Integration Points:**
-- `packages/features/availability/lib/getUserAvailability.ts` — Orchestrator verification
-- `packages/features/availability/lib/getAggregatedAvailability/**/*.ts` — Team availability aggregation (RR/collective)
-- `packages/features/schedules/lib/slots.ts` — Slot generation for seated events
-- `packages/features/busyTimes/services/getBusyTimes.ts` — Busy time handling for group events
-
-**Database and Schema:**
-- `packages/prisma/schema.prisma` — `EventType` model, `SchedulingType` enum, `BookingSeat` model
-- `packages/prisma/selects/event-types.ts` — Event type select projections
-- `packages/prisma/selects/booking.ts` — Booking select projections
-- `packages/prisma/migrations/[timestamp]_*` — New additive-only migration files
-
-**API Surfaces:**
-- `apps/api/v2/src/ee/event-types/**/*.ts` — NestJS event type CRUD modules
-- `apps/api/v2/src/modules/teams/event-types/**/*.ts` — Team event type management
-- `packages/trpc/server/routers/viewer/eventTypes/**/*.ts` — tRPC event type routes
-
-**Platform SDK:**
-- `packages/platform/libraries/event-types.ts` — Re-export surface verification
-- `packages/platform/atoms/event-types/**/*.ts` — Atom types verification
-
-**Webhook Compatibility Verification:**
-- `packages/features/webhooks/lib/factory/versioned/v2021-10-20/**/*.ts` — Payload preservation verification
-- `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts` — Factory routing verification
-
-**Spec Workflow Artifacts:**
-- `specs/event-types/**/*` — All spec-first design documents
-
-**Test Files:**
-- `packages/features/eventtypes/**/*.test.ts` — Existing and new unit/integration tests
-- `packages/features/ee/round-robin/**/*.test.ts` — Round-robin distribution tests
-- `packages/features/eventtypes/repositories/__tests__/**/*.ts` — Repository tests
-
-**Documentation Updates:**
-- `docs/gap-report/event-types.mdx` — Gap inventory status updates
-- `docs/sprint-roadmap/epic-catalog.mdx` — Epic completion status
-- `docs/sprint-roadmap/validation-criteria.mdx` — Validation evidence
-
-**Configuration Files:**
-- `.env.example` — If new environment variables are required
-- `packages/prisma/docker-compose.yml` — PostgreSQL 13 local development verification
-
-### 0.6.2 Explicitly Out of Scope
-
-- **Sprint 1 (Availability & Scheduling) rework** — Sprint 1 must already be complete and Gate 1 passed. No availability engine modifications unless bugs are discovered during event type validation.
-- **Sprint 3+ feature domains** — Calendar Integrations (F-003), Webhooks (F-013), Routing Forms (F-015), Embed (F-008), Admin/Teams (F-009), and Notifications (F-018) are all out of scope for Sprint 2.
-- **Meeting Polls (ET-001 gap)** — The gap report identifies Meeting Polls as a Medium priority gap. This is explicitly deferred to `specs/event-types/future-work.md` as it represents net-new functionality rather than behavioral parity.
-- **RR Fairness Cap Visualization (ET-002 gap)** — Low priority UI enhancement for round-robin distribution analytics. Deferred to future work.
-- **Performance optimizations** — No performance tuning beyond what is required for correct parity behavior.
-- **Refactoring of existing code** — No structural refactoring unrelated to parity alignment.
-- **New webhook payload versions** — No new `PayloadBuilderFactory` versions. Only verify backward compatibility of existing `v2021-10-20` payloads.
-- **Email/SMS template changes** — Notification content is out of scope (Sprint 8).
-- **Embed behavior changes** — Embed rendering is out of scope (Sprint 6).
-- **Admin/team governance changes** — Role model and team routing changes are out of scope (Sprint 7).
-
-
-## 0.7 Rules for Feature Addition
-
-### 0.7.1 Spec-First Development Compliance
-
-- Every implementation change MUST be preceded by a design spec in `specs/event-types/design.md` following the repository's spec-first workflow defined in `specs/README.md`
-- Progress MUST be tracked in `specs/event-types/implementation.md` for session continuity across Claude sessions
-- Architectural trade-offs MUST be documented as ADRs in `specs/event-types/decisions.md` with Context, Options Considered (with pros/cons), Decision rationale, and Consequences sections
-
-### 0.7.2 PR Size and Focus Constraints
-
-- Every PR MUST be reviewable in under 10 minutes
-- Max 5–7 files changed per PR (excluding test files)
-- Max 500 lines changed per PR
-- One focused change per PR — e.g., one epic per PR or one sub-task within an epic
-- If a change is larger, it MUST be split into multiple focused PRs
-
-### 0.7.3 Zero-Downtime Migration Rules
-
-- All schema migrations MUST use backward-compatible patterns only: additive columns with defaults, nullable columns, feature flag gating
-- NEVER rename columns, change column types, add NOT NULL columns without defaults, or drop columns in the same deployment as code changes
-- NEVER rename or remove enum values from `SchedulingType` or any other Prisma enum
-- All migrations MUST include a rollback SQL script tested in staging
-- All migrations MUST follow the blue-green deployment approach: schema first, then application, then backfill
-- Migration SQL must be placed in `packages/prisma/migrations/[timestamp]_descriptive_name/migration.sql`
-
-### 0.7.4 Webhook Backward Compatibility Rules
-
-- Existing `v2021-10-20` webhook payloads MUST NOT be modified — no field removals, renames, or type changes
-- The `V20211020BookingEventPayload` type with its legacy `assignmentReason` format MUST be preserved exactly
-- New optional fields MAY be added to payloads (Rule R-1 from webhook compatibility guide)
-- `DEFAULT_WEBHOOK_VERSION` MUST remain `V_2021_10_20`
-- `TRIGGER_TO_BUILDER_CATEGORY` mapping MUST remain exhaustive for all 20 `WebhookTriggerEvents`
-
-### 0.7.5 Validation Gate Requirements
-
-- Sprint 2 completion requires passing Gate 2 across all five validation dimensions:
-  - **Behavioral Validation:** All ET-VAL-001 through ET-VAL-009 criteria met
-  - **Regression Testing:** Zero test failures across all affected packages — `packages/features/eventtypes/`, `packages/features/ee/round-robin/`, `packages/features/availability/`
-  - **Data Preservation:** Zero data loss — all existing event types, bookings, users, credentials, and schedules intact after any migrations
-  - **Webhook Compatibility:** All existing webhook consumers receive unchanged `v2021-10-20` payloads
-  - **Cross-Domain Integration:** Booking creation through all event type paradigms triggers correct webhooks and uses correct availability schedules
-
-### 0.7.6 Cal.com Architectural Conventions
-
-- Use `@evyweb/ioctopus` for dependency injection — follow existing DI container patterns in `packages/features/di/`
-- Use Prisma repositories for all database access — never query Prisma directly from service or UI layers
-- Use Zod schemas for all input validation — validate at the API boundary and parse metadata with `EventTypeMetaDataSchema`
-- Use `@calcom/dayjs` for all date/time operations — never use native `Date` or raw `dayjs` imports
-- Use Vitest for all tests — follow existing test patterns with `vi.mock` for Prisma mocking
-- Use `useLocale()` / `ServerTrans` for all user-facing strings — maintain i18n compliance
-- Maintain backward compatibility with Platform SDK, API v1, API v2, and web consumers
-
-### 0.7.7 Calendly Behavioral Source of Truth
-
-- All behavioral targets MUST reference Calendly's API documentation at `developer.calendly.com` as the authoritative benchmark
-- Where Cal.com exceeds Calendly capabilities (managed types, dynamic links, 6 vs 4 paradigms), document the advantage and ensure backward compatibility
-- Use the gap severity classification consistently: Critical (blocks parity), High (significant behavioral gap), Medium (minor behavioral difference), Low (cosmetic or edge case)
-
+- New test cases must be added to `packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` using the existing Vitest patterns in that file
+- Tests must cover both positive cases (buffer events handled when feature is enabled) and negative cases (no-op when feature is disabled)
+- Tests must use mocks consistently with the existing test infrastructure — mock `EventManager`, `BufferTimeEventService`, and Prisma as appropriate
+- Do not modify existing test assertions — only add new describe/test blocks
 
 ## 0.8 References
 
-### 0.8.1 Source-of-Truth Documents Reviewed
+### 0.8.1 Codebase Files and Folders Investigated
 
-The following documents were read in full as directed by the user and form the basis of this Agent Action Plan:
+The following files and folders were systematically examined to derive the conclusions in this Agent Action Plan:
 
-**Sprint Roadmap:**
+**Buffer Event Infrastructure (CI-002 Gap Closure)**
+| File Path | Purpose | Key Findings |
+|-----------|---------|-------------|
+| `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` (302 lines) | Core buffer event service — creation, deletion, feature flag gating | Reference type pattern `buffer_time_${type}`; gated behind `calendar-buffer-sync` flag AND `syncBuffersToCalendar` toggle; best-effort error handling |
+| `packages/features/bookings/lib/EventManager.ts` (1636 lines) | Central event lifecycle manager — orchestrates calendar, video, CRM, and buffer operations | `BufferEventContext` type at lines 142–169; `reschedule()` accepts `bufferContext` as 8th param; buffer delete/create gated behind `if (bufferContext)` at line 811; `deleteEventsAndMeetings()` buffer cleanup gated behind `bookingId` at line 925 |
+| `packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts` | Comprehensive test suite for BufferTimeEventService | Covers creation, deletion, feature flag gating, multi-adapter (Google, Outlook, Apple), edge cases; no seated booking integration tests |
 
-| Document | Path | Summary |
-|---|---|---|
-| Sprint Roadmap Overview | `docs/sprint-roadmap/overview.mdx` | Defines methodology, dependency-first sequencing strategy across 8 feature domains, autonomous execution protocol with 7 steps (gap review → epic selection → spec-first design → implementation → migration safety → validation → documentation update), validation gates between sprints, and risk management matrix |
-| Epic Catalog | `docs/sprint-roadmap/epic-catalog.mdx` | Comprehensive registry of 40 epics across 8 domains with stable IDs, priority (Critical/High/Medium/Low), complexity estimates (S/M/L/XL), dependency chains, and cross-domain DAG. Sprint 2 contains 6 epics: ET-001 through ET-006 |
-| Validation Criteria | `docs/sprint-roadmap/validation-criteria.mdx` | Defines 71 behavioral acceptance criteria across all domains. Event Types domain: ET-VAL-001 through ET-VAL-009 covering 1:1, group, RR, collective, custom fields, booking windows, locations, managed types, and dynamic links |
+**Seated Booking Subsystem (Bug Location)**
+| File Path | Purpose | Key Findings |
+|-----------|---------|-------------|
+| `packages/features/bookings/lib/handleSeats/handleSeats.ts` | Entry point for seated booking flows | No buffer-related code whatsoever |
+| `packages/features/bookings/lib/handleSeats/reschedule/rescheduleSeatedBooking.ts` (153 lines) | Orchestrator for seated booking reschedule | Creates EventManager, dispatches to owner or attendee paths; no buffer context |
+| `packages/features/bookings/lib/handleSeats/reschedule/owner/ownerRescheduleSeatedBooking.ts` (57 lines) | Dispatcher for owner reschedule sub-flows | Routes to `moveSeatedBookingToNewTimeSlot` or `combineTwoSeatedBookings`; no buffer context |
+| `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts` (127 lines) | Owner reschedules seated booking to empty time slot | **BUG 1:** Line 74 — `eventManager.reschedule()` missing `bufferContext` (8th param) |
+| `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts` (164 lines) | Owner reschedules seated booking to time with existing booking (merge) | **BUG 2:** Line 125 — `eventManager.reschedule()` missing `bufferContext`; lines 149–156 — old booking cancelled without buffer cleanup |
+| `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts` (71 lines) | Cancels booking when last attendee leaves | **BUG 3:** Lines 41, 44 — reference loop only handles `_video` and `_calendar`, skips `buffer_time_*` |
+| `packages/features/bookings/lib/handleSeats/reschedule/attendee/attendeeRescheduleSeatedBooking.ts` (125 lines) | Attendee reschedule path for seated bookings | Calls `lastAttendeeDeleteBooking` at lines 35 and 117; inherits Bug 3 |
+| `packages/features/bookings/lib/handleSeats/types.d.ts` | Type definitions for seated booking flows | `NewSeatedBookingObject.eventType` is `NewBookingEventType` — includes `syncBuffersToCalendar`, `beforeEventBuffer`, `afterEventBuffer` (data available but unused) |
+| `packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` (2991 lines) | Test suite for seated booking flows | Zero buffer-related tests |
 
-**Gap Analysis:**
+**Correctly-Handled Paths (Verified No Bugs)**
+| File Path | Purpose | Key Findings |
+|-----------|---------|-------------|
+| `packages/features/bookings/lib/service/RegularBookingService.ts` (3126 lines) | Main booking service for non-seated bookings | Correct buffer context at lines 2163–2199 (reschedule) and lines 2336–2367 (creation) |
+| `packages/features/bookings/lib/service/RecurringBookingService.ts` (315 lines) | Recurring booking service | Delegates to RegularBookingService; inherits correct buffer handling |
+| `packages/features/bookings/lib/handleCancelBooking.ts` | Direct booking cancellation | Correctly passes `bookingToDelete.id` to `eventManager.cancelEvent()` at lines 640–660 |
+| `packages/features/bookings/lib/handleConfirmation.ts` | Booking confirmation (opt-in approval) | Correctly builds `bufferContext` and passes to `eventManager.create()` at lines 150–220 |
 
-| Document | Path | Summary |
-|---|---|---|
-| Gap Report Overview | `docs/gap-report/overview.mdx` | Executive summary showing Cal.com exceeds Calendly across 7 of 8 domains (Low severity); only Notifications has Medium severity gaps. Documents Cal.com advantages: 20 vs 3 webhooks, 11+ vs 3 calendars, 6 vs 4 scheduling paradigms |
-| Availability & Scheduling Gap Report | `docs/gap-report/availability-scheduling.mdx` | Detailed analysis of availability engine with 3 minor gaps (AVL-GAP-001 business-day windows, AVL-GAP-002 slot diagnostics, AVL-GAP-003 buffer-to-calendar sync) and 7 Cal.com advantages. All gaps rated Low severity |
-| Event Types Gap Report | `docs/gap-report/event-types.mdx` | Documents 2 gaps (ET-001 Meeting Polls at Medium, ET-002 RR Fairness Visualization at Low) and 8 Cal.com advantages (managed types, dynamic links, full API management, recurring events, booking limits, 6 paradigms, segment-based RR, cancel/reschedule controls). Feature comparison matrix shows full parity or Cal.com advantage across all 24 analyzed features |
+**Schema and Type References**
+| File Path | Purpose | Key Findings |
+|-----------|---------|-------------|
+| `packages/prisma/schema.prisma` | Database schema | `syncBuffersToCalendar Boolean?` on EventType model (line 269) |
+| `packages/features/bookings/lib/handleNewBooking/getEventTypesFromDB.ts` | EventType query builder | Selects `syncBuffersToCalendar`, `beforeEventBuffer`, `afterEventBuffer` fields |
+| `packages/features/bookings/lib/CalendarEventBuilder.ts` | Calendar event construction | `buildBufferEvent()` static method at lines 288–369 constructs CalendarEvent for buffer periods |
 
-**Migration Safety:**
+**Sprint Documentation**
+| File Path | Purpose | Key Findings |
+|-----------|---------|-------------|
+| `docs/sprint-roadmap/epic-catalog.mdx` (466 lines) | Epic registry for gap closure | CI-001 through CI-005 completed; CI-002 gap = buffer time visualization; confirms Sprint 3 scope |
+| `docs/sprint-roadmap/overview.mdx` (312 lines) | Sprint methodology and sequencing | Sprint 3 = Calendar Integrations; Gate 3 validation complete |
+| `docs/sprint-roadmap/validation-criteria.mdx` (534 lines) | Acceptance criteria for each sprint gate | CI-VAL-006 bi-directional sync verified; buffer time events pass; cancellation sync pass |
 
-| Document | Path | Summary |
-|---|---|---|
-| Zero-Downtime Migration Strategy | `docs/migration/zero-downtime-strategy.mdx` | Defines 7 backward-compatible schema change patterns proven across 584 Cal.com migrations, blue-green deployment approach, anti-patterns list, rollback procedures, and gap closure migration checklist |
-| Data Preservation | `docs/migration/data-preservation.mdx` | Documents complete user data inventory (bookings, event types, schedules, webhooks, credentials, users, teams, organizations, payments, workflows), encryption key handling (CALENDSO_ENCRYPTION_KEY for AES-256), migration safeguards pipeline, and formal preservation guarantees for each entity |
-| Webhook Backward Compatibility | `docs/migration/webhook-compatibility.mdx` | Defines `PayloadBuilderFactory` versioning architecture, `v2021-10-20` payload preservation guarantees, additive-only field rules (R-1 through R-6), consumer migration path, and rollback procedures |
+### 0.8.2 External Research
 
-**Spec Workflow:**
-
-| Document | Path | Summary |
-|---|---|---|
-| Spec-First Development README | `specs/README.md` | Defines the spec-first workflow: template duplication, Claude review, implementation tracking, ADR logging, documentation with screenshots, and PR review constraints (5–7 files, ≤500 lines, one change per PR) |
-
-### 0.8.2 Repository Files and Folders Searched
-
-The following repository paths were explored during context gathering to derive the conclusions in this Action Plan:
-
-**Root-Level Files:**
-- `package.json` — Yarn 4.12.0 monorepo configuration, workspaces, engines
-- `turbo.json` — Turborepo pipeline configuration
-- `.yarnrc.yml` — Yarn configuration with node_modules linker
-
-**Feature Packages:**
-- `packages/features/eventtypes/` — Complete event type feature module (interface, components, lib, repositories)
-- `packages/features/eventtypes/eventtypes.repository.interface.ts` — IEventTypesRepository contract
-- `packages/features/eventtypes/repositories/eventTypeRepository.ts` — Primary Prisma persistence layer
-- `packages/features/eventtypes/repositories/EventRepository.ts` — Static getPublicEvent wrapper
-- `packages/features/eventtypes/lib/types.ts` — FormValues, EventTypeUpdateInput contracts
-- `packages/features/eventtypes/lib/getEventTypeById.ts` — Central enrichment helper
-- `packages/features/eventtypes/lib/schemas.ts` — Zod validation schemas
-- `packages/features/eventtypes/components/**/*.tsx` — UI components for event type configuration
-
-**Prisma:**
-- `packages/prisma/schema.prisma` — EventType model (lines 200–280), SchedulingType enum (lines 42–46)
-- `packages/prisma/selects/event-types.ts` — bookEventTypeSelect, availiblityPageEventTypeSelect
-- `packages/prisma/selects/booking.ts` — bookingMinimalSelect, bookingDetailsSelect
-- `packages/prisma/selects/user.ts` — availabilityUserSelect, userSelect
-- `packages/prisma/selects/credential.ts` — credentialForCalendarServiceSelect
-
-**API v2:**
-- `apps/api/v2/src/ee/event-types/` — Versioned event type CRUD modules
-- `apps/api/v2/src/modules/teams/event-types/` — Team event type repository/service
-- `apps/api/v2/src/modules/organizations/event-types/` — Organization event type service
-- `apps/api/v2/src/modules/atoms/services/event-types-atom.service.ts` — Atoms orchestration
-
-**Platform SDK:**
-- `packages/platform/libraries/event-types.ts` — Re-export aggregator
-- `packages/platform/atoms/event-types/types.ts` — AtomEventTypeListItem, AtomEventTypesResponse
-
-**Documentation:**
-- `docs/sprint-roadmap/overview.mdx` — Sprint sequencing methodology
-- `docs/sprint-roadmap/epic-catalog.mdx` — 40 epics across 8 domains
-- `docs/sprint-roadmap/validation-criteria.mdx` — 71 behavioral criteria
-- `docs/gap-report/overview.mdx` — Executive parity summary
-- `docs/gap-report/availability-scheduling.mdx` — Availability domain analysis
-- `docs/gap-report/event-types.mdx` — Event types domain analysis
-- `docs/migration/zero-downtime-strategy.mdx` — Migration patterns
-- `docs/migration/data-preservation.mdx` — Data preservation guarantees
-- `docs/migration/webhook-compatibility.mdx` — Webhook versioning strategy
-
-**Blitzy Sprint 1 Artifacts:**
-- `blitzy/documentation/Project Guide.md` — Sprint 1 deliverable dossier
-- `blitzy/documentation/Technical Specifications.md` — Sprint 1 agent action plan
-
-**Spec Templates:**
-- `specs/README.md` — Spec-first development workflow
-- `specs/_templates/` — Template folder for new feature specs
+| Source | Query | Relevance |
+|--------|-------|-----------|
+| Cal.com Help (cal.com/help/event-types/event-buffer) | Buffer time event configuration documentation | Confirmed buffer time is applied around busy times, not working day boundaries |
+| GitHub Issue #22333 (calcom/cal.com) | Feature request for buffer events on external calendar | Confirmed community demand for buffer event visualization on external calendars — the exact feature implemented by CI-002 gap closure |
+| Cal.com Blog (maximize-productivity-buffer-time) | Buffer time product documentation | Confirmed that buffer time automatically blocks off calendar windows for availability purposes |
 
 ### 0.8.3 Attachments
 
-No attachments were provided for this project. No Figma URLs were specified.
+No attachments were provided for this task.
 
+### 0.8.4 Architecture Reference Diagram
+
+```mermaid
+graph TD
+    subgraph "Booking Lifecycle Entry Points"
+        RBS["RegularBookingService<br/>(non-seated bookings)"]
+        HS["handleSeats<br/>(seated bookings)"]
+        HCB["handleCancelBooking"]
+        HC["handleConfirmation"]
+    end
+
+    subgraph "Seated Booking Paths"
+        RS["rescheduleSeatedBooking"]
+        ORS["ownerRescheduleSeatedBooking"]
+        ARS["attendeeRescheduleSeatedBooking"]
+        MOVE["moveSeatedBookingToNewTimeSlot<br/>BUG 1: missing bufferContext"]
+        COMBINE["combineTwoSeatedBookings<br/>BUG 2: no buffer cleanup"]
+        LADB["lastAttendeeDeleteBooking<br/>BUG 3: skips buffer_time refs"]
+    end
+
+    subgraph "Event Management Layer"
+        EM["EventManager"]
+        RESCHEDULE["reschedule()"]
+        CANCEL["cancelEvent()"]
+        CREATE["create()"]
+        DELETE_BUF["deleteBufferEventsForBooking()"]
+        CREATE_BUF["createBufferEventsForBooking()"]
+    end
+
+    subgraph "Buffer Service"
+        BTES["BufferTimeEventService"]
+    end
+
+    RBS -->|"bufferCtx ✅"| RESCHEDULE
+    RBS -->|"bufferCtx ✅"| CREATE
+    HC -->|"bufferCtx ✅"| CREATE
+    HCB -->|"bookingId ✅"| CANCEL
+
+    HS --> RS
+    RS --> ORS
+    RS --> ARS
+    ORS --> MOVE
+    ORS --> COMBINE
+    ARS --> LADB
+
+    MOVE -->|"bufferCtx ❌ MISSING"| RESCHEDULE
+    COMBINE -->|"bufferCtx ❌ MISSING"| RESCHEDULE
+    COMBINE -->|"no buffer cleanup ❌"| LADB
+
+    RESCHEDULE -->|"if bufferContext"| DELETE_BUF
+    RESCHEDULE -->|"if bufferContext"| CREATE_BUF
+    CANCEL --> DELETE_BUF
+
+    DELETE_BUF --> BTES
+    CREATE_BUF --> BTES
+```
 

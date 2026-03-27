@@ -266,6 +266,7 @@ model EventType {
   /// @zod.import(["import { emailSchema } from '../../zod-utils'"]).custom.use(emailSchema)
   customReplyToEmail                       String?
   calVideoSettings                         CalVideoSettings?
+  syncBuffersToCalendar                    Boolean?
 
   /// @zod.import(["import { eventTypeColor } from '../../zod-utils'"]).custom.use(eventTypeColor)
   eventTypeColor                   Json?
@@ -320,15 +321,16 @@ model Credential {
   paymentStatus     String?
   billingCycleStart Int?
 
-  destinationCalendars      DestinationCalendar[]
-  selectedCalendars         SelectedCalendar[]
-  invalid                   Boolean?                   @default(false)
-  CalendarCache             CalendarCache[]
-  references                BookingReference[]
-  delegationCredentialId    String?
-  delegationCredential      DelegationCredential?      @relation(fields: [delegationCredentialId], references: [id], onDelete: Cascade)
-  integrationAttributeSyncs IntegrationAttributeSync[]
-  hostLocations             HostLocation[]
+  destinationCalendars            DestinationCalendar[]
+  selectedCalendars               SelectedCalendar[]
+  invalid                         Boolean?                   @default(false)
+  CalendarCache                   CalendarCache[]
+  references                      BookingReference[]
+  delegationCredentialId          String?
+  delegationCredential            DelegationCredential?      @relation(fields: [delegationCredentialId], references: [id], onDelete: Cascade)
+  externalCancellationSyncEnabled Boolean?
+  integrationAttributeSyncs       IntegrationAttributeSync[]
+  hostLocations                   HostLocation[]
 
   @@index([appId])
   @@index([subscriptionId])

@@ -719,6 +719,22 @@ export const EventLimitsTab = ({ eventType, customClassNames }: EventLimitsTabPr
         </div>
       </div>
       <Controller
+        name="syncBuffersToCalendar"
+        render={({ field: { onChange, value } }) => (
+          <SettingsToggle
+            toggleSwitchAtTheEnd={true}
+            labelClassName="text-sm"
+            title={t("sync_buffers_to_calendar")}
+            description={t("sync_buffers_to_calendar_description")}
+            checked={!!value}
+            onCheckedChange={(active) => {
+              onChange(active ?? false);
+            }}
+            switchContainerClassName="border-subtle mt-6 rounded-lg border py-6 px-4 sm:px-6"
+          />
+        )}
+      />
+      <Controller
         name="bookingLimits"
         render={({ field: { value } }) => {
           const isChecked = Object.keys(value ?? {}).length > 0;

@@ -188,6 +188,7 @@ const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
     minimumBookingNotice: z.number().min(0).optional(),
     beforeEventBuffer: z.number().int().optional(),
     afterEventBuffer: z.number().int().optional(),
+    syncBuffersToCalendar: z.boolean().nullable().optional(),
     // === Group Event Fields (ET-002) ===
     // seatsPerTimeSlot: max attendees per slot (null = non-seated)
     // seatsShowAttendees: show attendee names to other attendees

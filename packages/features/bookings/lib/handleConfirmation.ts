@@ -6,6 +6,7 @@ import type { ValidActionSource } from "@calcom/features/booking-audit/lib/types
 import { getBookingEventHandlerService } from "@calcom/features/bookings/di/BookingEventHandlerService.container";
 import type { EventManagerUser } from "@calcom/features/bookings/lib/EventManager";
 import EventManager, { placeholderCreatedEvent } from "@calcom/features/bookings/lib/EventManager";
+import type { BufferEventContext } from "@calcom/features/bookings/lib/EventManager";
 import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import type { ISimpleLogger } from "@calcom/features/di/shared/services/logger.service";
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
@@ -155,7 +156,54 @@ export async function handleConfirmation(args: {
   const apps = eventTypeAppMetadataOptionalSchema.parse(eventTypeMetadata?.apps);
   const eventManager = new EventManager(user, apps);
   const areCalendarEventsEnabled = platformClientParams?.areCalendarEventsEnabled ?? true;
-  const scheduleResult = await eventManager.create(evt, { skipCalendarEvent: !areCalendarEventsEnabled });
+
+  // Build buffer event context for CI-002 gap closure (buffer time visualization).
+  // Since callers of handleConfirmation don't include buffer fields, query them directly.
+  let bufferContext: BufferEventContext | undefined;
+  if (booking.eventTypeId) {
+    try {
+      const bufferFields = await prisma.eventType.findUnique({
+        where: { id: booking.eventTypeId },
+        select: {
+          syncBuffersToCalendar: true,
+          beforeEventBuffer: true,
+          afterEventBuffer: true,
+          slug: true,
+        },
+      });
+      if (bufferFields?.syncBuffersToCalendar) {
+        const bookingEndTime = new Date(booking.startTime.getTime() + (eventType?.length ?? 0) * 60000);
+        bufferContext = {
+          bookingId: booking.id,
+          bookingUid: booking.uid,
+          bookingTitle: eventType?.title ?? "",
+          bookingStartTime: booking.startTime,
+          bookingEndTime,
+          eventType: {
+            id: booking.eventTypeId,
+            slug: bufferFields.slug,
+            syncBuffersToCalendar: bufferFields.syncBuffersToCalendar,
+            beforeEventBuffer: bufferFields.beforeEventBuffer,
+            afterEventBuffer: bufferFields.afterEventBuffer,
+          },
+          organizer: {
+            id: user.id,
+            name: user.name ?? "",
+            email: user.email,
+            username: user.username,
+            timeZone: user.timeZone,
+          },
+        };
+      }
+    } catch {
+      // Best-effort: buffer event creation failure should not block booking confirmation
+    }
+  }
+
+  const scheduleResult = await eventManager.create(evt, {
+    skipCalendarEvent: !areCalendarEventsEnabled,
+    bufferContext,
+  });
   const results = scheduleResult.results;
   const metadata: AdditionalInformation = {};
   const workflows = await getAllWorkflowsFromEventType(eventType, booking.userId);

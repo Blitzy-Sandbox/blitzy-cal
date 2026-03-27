@@ -381,6 +381,62 @@ describe("Platform Calendars Endpoints", () => {
       });
   });
 
+  it(`/GET/v2/calendars/busy-times: should handle busy times with multiple calendar providers (CI-004)`, async () => {
+    const mockBusyTimes = [
+      {
+        start: new Date("2024-12-18T10:00:00Z"),
+        end: new Date("2024-12-18T11:00:00Z"),
+        source: "google_calendar",
+      },
+      {
+        start: new Date("2024-12-18T14:00:00Z"),
+        end: new Date("2024-12-18T15:00:00Z"),
+        source: "office365_calendar",
+      },
+    ];
+
+    const getBusyTimesSpy = jest
+      .spyOn(CalendarsService.prototype, "getBusyTimes")
+      .mockResolvedValue(mockBusyTimes);
+
+    const response = await request(app.getHttpServer())
+      .get(
+        `/v2/calendars/busy-times?timeZone=America/New_York&dateFrom=2024-12-18&dateTo=2024-12-18&calendarsToLoad[0][credentialId]=${googleCalendarCredentials.id}&calendarsToLoad[0][externalId]=test@example.com`
+      )
+      .set("Authorization", `Bearer ${accessTokenSecret}`)
+      .set("Origin", CLIENT_REDIRECT_URI)
+      .expect(200);
+
+    expect(response.body.status).toEqual(SUCCESS_STATUS);
+    expect(response.body.data).toBeDefined();
+    expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.data[0].source).toEqual("google_calendar");
+    expect(response.body.data[1].source).toEqual("office365_calendar");
+
+    getBusyTimesSpy.mockRestore();
+  });
+
+  it(`/GET/v2/calendars/${GOOGLE_CALENDAR}/check: should verify Google calendar connection status after CI-001 parity (CI-001)`, async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/v2/calendars/${GOOGLE_CALENDAR}/check`)
+      .set("Authorization", `Bearer ${accessTokenSecret}`)
+      .set("Origin", CLIENT_REDIRECT_URI)
+      .expect(200);
+
+    expect(response.body.status).toEqual(SUCCESS_STATUS);
+  });
+
+  it(`/GET/v2/calendars/${OFFICE_365_CALENDAR}/check: should verify Office365 calendar connection status after CI-002 parity (CI-002)`, async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/v2/calendars/${OFFICE_365_CALENDAR}/check`)
+      .set("Authorization", `Bearer ${accessTokenSecret}`)
+      .set("Origin", CLIENT_REDIRECT_URI)
+      .expect(200);
+
+    expect(response.body.status).toEqual(SUCCESS_STATUS);
+  });
+
   afterAll(async () => {
     await oauthClientRepositoryFixture.delete(oAuthClient.id);
     await teamRepositoryFixture.delete(organization.id);

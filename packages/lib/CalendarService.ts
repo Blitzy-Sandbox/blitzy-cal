@@ -424,7 +424,11 @@ export default abstract class BaseCalendarService implements Calendar {
     return attendees;
   }
 
-  async createEvent(event: CalendarServiceEvent, credentialId: number): Promise<NewCalendarEventType> {
+  async createEvent(
+    event: CalendarServiceEvent,
+    credentialId: number,
+    externalCalendarId?: string
+  ): Promise<NewCalendarEventType> {
     try {
       const calendars = await this.listCalendars(event);
       const uid = event.uid || uuidv4();
@@ -462,14 +466,17 @@ export default abstract class BaseCalendarService implements Calendar {
           event.destinationCalendar[0])
         : undefined;
 
+      // Determine which calendar to target. externalCalendarId takes priority over
+      // destinationCalendar lookup so that callers (e.g. buffer event creation via
+      // BufferTimeEventService) can explicitly target a single calendar, preventing
+      // events from being created on ALL user calendars (which causes partial failures
+      // on read-only calendars such as iCloud subscribed calendars).
+      const targetExternalId = externalCalendarId ?? mainHostDestinationCalendar?.externalId;
+
       // We create the event directly on iCal
       const responses = await Promise.all(
         calendars
-          .filter((c) =>
-            mainHostDestinationCalendar?.externalId
-              ? c.externalId === mainHostDestinationCalendar.externalId
-              : true
-          )
+          .filter((c) => (targetExternalId ? c.externalId === targetExternalId : true))
           .map((calendar) =>
             createCalendarObject({
               calendar: {
@@ -587,17 +594,47 @@ export default abstract class BaseCalendarService implements Calendar {
     }
   }
 
-  async deleteEvent(uid: string): Promise<void> {
+  async deleteEvent(uid: string, event?: CalendarEvent, externalCalendarId?: string | null): Promise<void> {
     try {
+      // CI-002 gap closure: When the specific calendar URL is known (e.g., buffer events
+      // store externalCalendarId in BookingReference), attempt a direct deletion on that
+      // calendar first. This avoids the costly listCalendars → iterate-all-calendars pattern
+      // and uses the URL constructor (matching tsdav's createCalendarObject) to correctly
+      // resolve the object filename against the calendar URL regardless of trailing slash
+      // presence. Without this, string concatenation in getEventsByUID can produce a
+      // mismatched URL when the calendar externalId omits a trailing slash, causing the
+      // CalDAV MULTIGET to silently return no results and the deletion to become a no-op.
+      if (externalCalendarId) {
+        const objectUrl = new URL(`${uid}.ics`, externalCalendarId).href;
+        const directEvents = await this.getEvents(externalCalendarId, null, null, [objectUrl]);
+        const directMatch = directEvents.filter((e) => e.uid === uid);
+        if (directMatch.length > 0) {
+          await Promise.all(
+            directMatch.map((e) =>
+              deleteCalendarObject({
+                calendarObject: { url: e.url, etag: e?.etag },
+                headers: this.headers,
+              })
+            )
+          );
+          return;
+        }
+        this.log.debug(
+          "Direct CalDAV deletion by externalCalendarId did not find event, falling back to full search",
+          { uid, externalCalendarId }
+        );
+      }
+
+      // Fallback: search all calendars for the event by UID
       const events = await this.getEventsByUID(uid);
 
-      const eventsToDelete = events.filter((event) => event.uid === uid);
+      const eventsToDelete = events.filter((e) => e.uid === uid);
       await Promise.all(
-        eventsToDelete.map((event) => {
+        eventsToDelete.map((e) => {
           return deleteCalendarObject({
             calendarObject: {
-              url: event.url,
-              etag: event?.etag,
+              url: e.url,
+              etag: e?.etag,
             },
             headers: this.headers,
           });
@@ -1000,7 +1037,15 @@ export default abstract class BaseCalendarService implements Calendar {
     const calendars = await this.listCalendars();
 
     for (const cal of calendars) {
-      const calEvents = await this.getEvents(cal.externalId, null, null, [`${cal.externalId}${uid}.ics`]);
+      // Use URL constructor to resolve the .ics filename against the calendar URL,
+      // matching the URL resolution used by tsdav's createCalendarObject. Direct
+      // string concatenation (`${cal.externalId}${uid}.ics`) produces incorrect
+      // URLs when the calendar externalId does not end with a trailing slash —
+      // e.g., "https://host/cal" + "uid.ics" = "https://host/caluid.ics" instead
+      // of the intended "https://host/uid.ics" (or "https://host/cal/uid.ics" with
+      // a trailing slash). The URL constructor handles both cases correctly.
+      const objectUrl = new URL(`${uid}.ics`, cal.externalId).href;
+      const calEvents = await this.getEvents(cal.externalId, null, null, [objectUrl]);
 
       for (const ev of calEvents) {
         events.push(ev);

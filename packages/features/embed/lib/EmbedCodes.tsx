@@ -11,6 +11,169 @@ export const doWeNeedCalOriginProp = (embedCalOrigin: string) => {
   return IS_SELF_HOSTED || (embedCalOrigin !== WEBAPP_URL && embedCalOrigin !== WEBSITE_URL);
 };
 
+/**
+ * Generates a shareable booking link URL with optional embed, prefill, UTM, and custom query parameters.
+ * Supports both event type URLs (e.g., "username/event-slug") and routing form URLs (e.g., "forms/form-slug")
+ * for Calendly-equivalent share flow parity (EM-004).
+ *
+ * All config fields are optional — the function works with minimal input (just calLink and embedCalOrigin).
+ * URL encoding is handled automatically via URLSearchParams.
+ *
+ * @param calLink - The cal link path segment (event type slug or routing form slug)
+ * @param embedCalOrigin - The embed cal origin URL
+ * @param embedType - Optional embed type: "inline", "popup", "floating" add an embed query param; "link" produces a direct URL
+ * @param config - Optional configuration for redirect, prefill, UTM, and custom query parameters
+ * @returns The complete shareable URL string with properly encoded query parameters
+ */
+export function generateShareableLink({
+  calLink,
+  embedCalOrigin,
+  embedType,
+  config,
+}: {
+  calLink: string;
+  embedCalOrigin: string;
+  embedType?: "inline" | "popup" | "floating" | "link";
+  config?: {
+    redirectUrl?: string;
+    prefill?: {
+      name?: string;
+      email?: string;
+      guests?: string[];
+      customFields?: Record<string, string>;
+    };
+    utmParams?: Record<string, string>;
+    customQueryParams?: Record<string, string>;
+  };
+}): string {
+  const baseUrl = doWeNeedCalOriginProp(embedCalOrigin)
+    ? `${embedCalOrigin}/${calLink}`
+    : `${WEBAPP_URL}/${calLink}`;
+
+  const params = new URLSearchParams();
+
+  // Add embed param based on embedType (only if not "link" — direct links have no embed query param)
+  if (embedType && embedType !== "link") {
+    params.set("embed", embedType);
+  }
+
+  if (config) {
+    // Add redirectUrl if provided
+    if (config.redirectUrl) {
+      params.set("redirectUrl", config.redirectUrl);
+    }
+
+    // Add prefill params if provided
+    if (config.prefill) {
+      const { name, email, guests, customFields } = config.prefill;
+
+      if (name) {
+        params.set("name", name);
+      }
+      if (email) {
+        params.set("email", email);
+      }
+      if (guests && guests.length > 0) {
+        params.set("guests", guests.join(","));
+      }
+      if (customFields) {
+        for (const [key, value] of Object.entries(customFields)) {
+          params.set(`field_${key}`, value);
+        }
+      }
+    }
+
+    // Add UTM params as-is (keys like utm_source, utm_medium, etc.)
+    if (config.utmParams) {
+      for (const [key, value] of Object.entries(config.utmParams)) {
+        params.set(key, value);
+      }
+    }
+
+    // Add custom query params as-is
+    if (config.customQueryParams) {
+      for (const [key, value] of Object.entries(config.customQueryParams)) {
+        params.set(key, value);
+      }
+    }
+  }
+
+  const queryString = params.toString();
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+}
+
+/**
+ * Generates a set of share-ready embed links for all supported embed types plus a direct booking link.
+ * Leverages the existing Codes snippet architecture and generateShareableLink to produce properly
+ * formatted URLs for Calendly-equivalent share flows (EM-004).
+ *
+ * Works for both event type calLinks ("username/event-slug") and routing form calLinks ("forms/form-slug").
+ * When previewState.shareConfig is present, its customQueryParams are included in all generated links.
+ *
+ * @param calLink - The cal link path segment (event type slug or routing form slug)
+ * @param embedCalOrigin - The embed cal origin URL
+ * @param namespace - The embed namespace identifier
+ * @param previewState - The current preview state with inline dimensions, floating config, and optional shareConfig
+ * @returns Object containing shareable links for inline, popup, floating, and direct link modes
+ */
+export function generateShareFlowSnippets({
+  calLink,
+  embedCalOrigin,
+  namespace,
+  previewState,
+}: {
+  calLink: string;
+  embedCalOrigin: string;
+  namespace: string;
+  previewState: PreviewState;
+}): {
+  inlineShareLink: string;
+  popupShareLink: string;
+  floatingShareLink: string;
+  directLink: string;
+} {
+  const shareConfig = previewState.shareConfig;
+  const customQueryParams = shareConfig?.customQueryParams;
+
+  // Build config object only when there are custom query params from the share flow configuration
+  const shareFlowConfig = customQueryParams ? { customQueryParams } : undefined;
+
+  const inlineShareLink = generateShareableLink({
+    calLink,
+    embedCalOrigin,
+    embedType: "inline",
+    config: shareFlowConfig,
+  });
+
+  const popupShareLink = generateShareableLink({
+    calLink,
+    embedCalOrigin,
+    embedType: "popup",
+    config: shareFlowConfig,
+  });
+
+  const floatingShareLink = generateShareableLink({
+    calLink,
+    embedCalOrigin,
+    embedType: "floating",
+    config: shareFlowConfig,
+  });
+
+  const directLink = generateShareableLink({
+    calLink,
+    embedCalOrigin,
+    embedType: "link",
+    config: shareFlowConfig,
+  });
+
+  return {
+    inlineShareLink,
+    popupShareLink,
+    floatingShareLink,
+    directLink,
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Codes = {
   react: {

@@ -47,18 +47,100 @@ const toICalDateArray = (date: string): DateArray => {
   ] satisfies DateArray;
 };
 
+/**
+ * Builds an enhanced ICS event description for Calendly notification parity (NF-001).
+ *
+ * When a bookingAction is provided, the description includes:
+ * - An action-context header (e.g., cancellation notice, rescheduling notice)
+ * - Timezone information from the event organizer
+ * - Explicit location details
+ *
+ * When no bookingAction is provided, returns the base description unchanged
+ * to maintain backward compatibility with existing callers.
+ */
+const buildEnhancedIcsDescription = ({
+  baseDescription,
+  event,
+  location,
+  bookingAction,
+}: {
+  baseDescription: string;
+  event: ICSCalendarEvent;
+  location: string | null | undefined;
+  bookingAction?: BookingAction;
+}): string => {
+  // When no bookingAction is provided, return base description unchanged
+  // to maintain backward compatibility with existing callers
+  if (!bookingAction) {
+    return baseDescription;
+  }
+
+  const descriptionParts: string[] = [];
+
+  // Prepend action-context line based on booking lifecycle action
+  switch (bookingAction) {
+    case BookingAction.Create:
+      descriptionParts.push("New booking confirmed.");
+      break;
+    case BookingAction.Cancel:
+      descriptionParts.push("This event has been cancelled.");
+      break;
+    case BookingAction.Reschedule:
+      descriptionParts.push("This event has been rescheduled.");
+      break;
+    case BookingAction.RequestReschedule:
+      descriptionParts.push("A reschedule has been requested for this event.");
+      break;
+    case BookingAction.LocationChange:
+      descriptionParts.push("The location for this event has been updated.");
+      break;
+  }
+
+  // Add empty line separator before base description
+  descriptionParts.push("");
+
+  // Add the base description from getRichDescription
+  descriptionParts.push(baseDescription);
+
+  // Append timezone information if available from the organizer
+  const organizerTimezone = event.organizer?.timeZone;
+  if (organizerTimezone) {
+    descriptionParts.push("");
+    descriptionParts.push(`Timezone: ${organizerTimezone}`);
+  }
+
+  // Append explicit location details for Calendly-parity visibility
+  if (location) {
+    descriptionParts.push("");
+    descriptionParts.push(`Location: ${location}`);
+  }
+
+  return descriptionParts.join("\n");
+};
+
 const generateIcsString = ({
   event,
   status,
   partstat = "ACCEPTED",
   t,
+  bookingAction,
 }: {
   event: ICSCalendarEvent;
   status: EventStatus;
   partstat?: ParticipationStatus;
   t?: TFunction;
+  bookingAction?: BookingAction;
 }): string | undefined => {
   const location = getVideoCallUrlFromCalEvent(event) || event.location;
+
+  // Build enhanced description with Calendly-parity content (NF-001)
+  const baseDescription = getRichDescription(event, t);
+  const enhancedDescription = buildEnhancedIcsDescription({
+    baseDescription,
+    event,
+    location,
+    bookingAction,
+  });
 
   // Taking care of recurrence rule
   let recurrenceRule: string | undefined = undefined;
@@ -80,7 +162,7 @@ const generateIcsString = ({
     startInputType: "utc",
     productId: "calcom/ics",
     title: event.title,
-    description: getRichDescription(event, t),
+    description: enhancedDescription,
     organizer: {
       name: event.organizer.name,
       ...(event.hideOrganizerEmail && !isOrganizerExempt

@@ -1,7 +1,15 @@
 /**
  * @fileoverview
  *
- * This file holds the utilities to build the options to render in the select field and it could be loaded on client side as well.
+ * This file holds the utilities to build the options to render in option-based fields
+ * (select, multiselect, and checkbox) and it could be loaded on client side as well.
+ *
+ * RF-003 Field Type Parity:
+ * - **checkbox**: Calendly's "Checkboxes" question type — a multi-option selection that is
+ *   functionally identical to multiselect. All utility functions in this file work for checkbox
+ *   fields because they operate on the generic `options` property, not on field type.
+ * - **url**: Free-text URL input — does NOT use options; no handling needed here.
+ * - **date**: Date picker input — does NOT use options; no handling needed here.
  */
 import type { z } from "zod";
 
@@ -19,6 +27,18 @@ const buildOptionsFromLegacySelectText = ({ legacySelectText }: { legacySelectTe
     }));
 };
 
+/**
+ * Returns the field with its `options` array populated.
+ *
+ * Resolution order:
+ * 1. If `field.options` exists, use it directly.
+ * 2. If the legacy `field.selectText` exists, parse newline-separated values into options.
+ * 3. Otherwise, return the field as-is (branded as FIELD_WITH_OPTIONS for downstream type safety).
+ *
+ * This function is field-type-agnostic — it works for select, multiselect, and checkbox
+ * (RF-003 Calendly "Checkboxes" parity) fields equally, since all three store their choices
+ * in the same `options` array structure.
+ */
 export const getFieldWithOptions = <T extends Field>(field: T) => {
   const legacySelectText = field.selectText;
   if (field.options) {
@@ -38,6 +58,12 @@ export const getFieldWithOptions = <T extends Field>(field: T) => {
   } as typeof field & z.BRAND<"FIELD_WITH_OPTIONS">;
 };
 
+/**
+ * Detects whether a field's options are stored in the legacy format (options with `null` ids).
+ * Legacy-format options use `option.label` as the value in routing conditions instead of `option.id`.
+ *
+ * Applies to all option-based field types: select, multiselect, and checkbox (RF-003).
+ */
 export function areSelectOptionsInLegacyFormat(
   field: Pick<Field, "options"> & z.BRAND<"FIELD_WITH_OPTIONS">
 ) {
@@ -45,6 +71,20 @@ export function areSelectOptionsInLegacyFormat(
   return !!options.find((option) => !option.id);
 }
 
+/**
+ * Builds a `{ value, title }` array suitable for RAQB `listValues` and form field rendering.
+ *
+ * For legacy-format options (null ids), `option.label` is used as the value to maintain
+ * backward compatibility with existing routing conditions. For modern options, `option.id`
+ * is preferred as it remains stable across label edits.
+ *
+ * This function is consumed by:
+ * - `getQueryBuilderConfig.ts` — RAQB `listValues` for select, multiselect, and checkbox fields
+ * - `FormInputFields.tsx` — rendering options in the form submission UI
+ *
+ * Supports all option-based field types (select, multiselect, checkbox) transparently
+ * because it operates on the generic `options` property via `getFieldWithOptions`.
+ */
 export function getUIOptionsForSelect(field: Field) {
   const fieldWithOptions = getFieldWithOptions(field);
   const options = fieldWithOptions.options || [];

@@ -195,6 +195,55 @@ const MultiSelectWidget = ({
   );
 };
 
+/**
+ * CheckboxGroupWidget — Calendly-parity "Checkboxes" question type (RF-001, RF-003).
+ *
+ * Renders a group of native checkbox inputs, one per listValue option. Follows the same
+ * stale-value-clearing pattern as MultiSelectWidget: if the current value array contains
+ * entries that no longer exist in listValues, the widget resets by calling setValue([]).
+ */
+const CheckboxGroupWidget = ({
+  listValues,
+  setValue,
+  value,
+  ...remainingProps
+}: SelectLikeComponentPropsRAQB<string[]>) => {
+  if (!listValues) {
+    return null;
+  }
+
+  const validValues = listValues.filter((item) => value?.includes(item.value));
+
+  // If no value could be found in the list, reset to empty array.
+  // Same stale-value-clearing pattern as MultiSelectWidget to keep outside state in sync.
+  // Only reset when value is non-empty to avoid infinite state updates.
+  if (validValues.length === 0 && value?.length) {
+    setValue([]);
+  }
+
+  return (
+    <div role="group" aria-label="checkbox-group" className="mb-2">
+      {listValues.map((item) => (
+        <label key={item.value} className="mb-1 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={value?.includes(item.value) ?? false}
+            disabled={remainingProps.readOnly}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setValue([...(value || []), item.value]);
+              } else {
+                setValue((value || []).filter((v) => v !== item.value));
+              }
+            }}
+          />
+          <span>{item.title}</span>
+        </label>
+      ))}
+    </div>
+  );
+};
+
 function SelectWidget({ listValues, setValue, value, ...remainingProps }: SelectLikeComponentPropsRAQB) {
   if (!listValues) {
     return null;
@@ -376,6 +425,7 @@ const widgets = {
   SelectWidget,
   NumberWidget,
   MultiSelectWidget,
+  CheckboxGroupWidget,
   FieldSelect,
   Button,
   ButtonGroup,

@@ -151,7 +151,16 @@ function extractFieldIdFromTemplate(template: string): string | null {
 }
 
 /**
- * Resolves a field template to its actual value from the form response
+ * Resolves a field template to its actual value from the form response.
+ *
+ * RF-002: Supports all Calendly-equivalent field types including:
+ * - String values (text, email, phone, textarea)
+ * - Numeric values (number field type)
+ * - Boolean values (checkbox field type — single boolean)
+ * - Array values (multiselect field type — multiple selection)
+ *
+ * Note: boolean `false` and numeric `0` are intentionally NOT treated as empty,
+ * ensuring that valid field responses are never lost during template resolution.
  */
 function resolveFieldTemplateValue(
   value: string,
@@ -181,6 +190,7 @@ function resolveFieldTemplateValue(
   }
 
   const fieldValue = fieldResponse.value;
+  // Strict equality checks ensure boolean false and numeric 0 pass through correctly
   if (fieldValue === null || fieldValue === undefined || fieldValue === "") {
     return "(empty)";
   }
@@ -189,12 +199,30 @@ function resolveFieldTemplateValue(
     return fieldValue.join(", ");
   }
 
+  // RF-002: Explicit boolean handling for checkbox field type.
+  // Boolean false must produce "false" string, not be treated as empty.
+  if (typeof fieldValue === "boolean") {
+    return fieldValue ? "true" : "false";
+  }
+
+  // RF-002: Explicit numeric handling for number field type.
+  // Numeric 0 must produce "0" string, not be treated as empty.
+  if (typeof fieldValue === "number") {
+    return String(fieldValue);
+  }
+
   return String(fieldValue);
 }
 
 /**
  * Extracts attribute name/value pairs from a resolved attributesQueryValue.
  * This is used to build the assignment reason string.
+ *
+ * RF-002: Supports Calendly-equivalent field types in rule properties:
+ * - Boolean values (checkbox field type) — boolean false is correctly preserved
+ *   through the null/undefined guard (which uses strict equality, not falsy checks)
+ * - Numeric values (number field type) — converted via explicit String() conversion
+ * - Array values (multiselect field type) — each element resolved individually
  */
 function extractAttributeRoutingDetails({
   resolvedAttributesQueryValue,
@@ -231,6 +259,8 @@ function extractAttributeRoutingDetails({
     const fieldId = properties.field;
     const value = properties.value;
 
+    // RF-002: Strict equality guards — boolean false and numeric 0 pass through correctly.
+    // Only null and undefined are filtered; falsy values like false and 0 are valid rule values.
     if (!fieldId || !value || value[0] === null || value[0] === undefined) {
       continue;
     }
@@ -243,11 +273,20 @@ function extractAttributeRoutingDetails({
     const attributeValueString = (() => {
       const firstValue = value[0];
       if (Array.isArray(firstValue)) {
-        // Handle array values - resolve any field templates within
+        // Handle array values (multiselect) - resolve any field templates within
         const resolvedValues = firstValue.map((v) =>
           typeof v === "string" ? resolveFieldTemplateValue(v, dynamicFieldValueOperands) : String(v)
         );
         return resolvedValues.join(", ");
+      }
+      // RF-002: Explicit boolean handling for checkbox field type rule values.
+      // Ensures boolean false produces "false" string representation.
+      if (typeof firstValue === "boolean") {
+        return firstValue ? "true" : "false";
+      }
+      // RF-002: Explicit numeric handling for number field type rule values.
+      if (typeof firstValue === "number") {
+        return String(firstValue);
       }
       const stringValue = String(firstValue);
       // Resolve field template if present
@@ -282,6 +321,12 @@ async function getLogicResultForAllMembers(
   const teamMembersMatchingAttributeLogicMap = new Map<number, RaqbLogicResult>();
   const attributesDataPerUser = new Map<number, ReturnType<typeof getAttributes>>();
 
+  // RF-002: jsonLogic.apply() natively supports boolean, numeric, string, and array values
+  // in the attributesData map. The RAQB attribute config builds field definitions that
+  // support these types, and jsonLogic operators (==, ===, in, starts_with, etc.) correctly
+  // evaluate them. Boolean comparisons use standard equality; numeric comparisons work with
+  // jsonLogic's built-in >, <, >=, <= operators; array values work with "in" and containment
+  // operators. No additional type coercion is needed before jsonLogic evaluation.
   await async.mapLimit<TeamMemberWithAttributeOptionValuePerAttribute, Promise<void>>(
     teamMembersWithAttributeOptionValuePerAttribute,
     concurrency,
@@ -521,6 +566,11 @@ export async function findTeamMembersMatchingAttributeLogic(
     enableTroubleshooter,
   };
 
+  // RF-002: dynamicFieldValueOperands carries form response values including all Calendly-equivalent
+  // field types: boolean (checkbox), numeric (number), string (text/email/phone), and array
+  // (multiselect). These are forwarded unchanged through the attribute logic evaluation pipeline,
+  // where RAQB resolves {field:uuid} template references to actual response values, and jsonLogic
+  // evaluates the resulting expressions against team member attribute data.
   const runAttributeLogicData: Omit<RunAttributeLogicData, "attributesQueryValue"> = {
     // Change it as per the main/fallback query
     attributesData: {

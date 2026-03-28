@@ -17,6 +17,9 @@ export default class EventSuccessfullyScheduledSMS extends SMSManager {
       interpolation: { escapeValue: false },
     });
 
+    // Prominently display the event title for Calendly SMS parity (NF-002)
+    const eventTitle = this.calEvent.title;
+
     const bookingUrl = `${this.calEvent.bookerUrl ?? WEBAPP_URL}/booking/${this.calEvent.uid}`;
 
     const urlText = t("you_can_view_booking_details_with_this_url", {
@@ -24,6 +27,11 @@ export default class EventSuccessfullyScheduledSMS extends SMSManager {
       interpolation: { escapeValue: false },
     });
 
-    return `${confirmationText}\n\n${urlText}`;
+    // Cancel and reschedule links for Calendly SMS parity (NF-002)
+    const cancelUrl = `${bookingUrl}?cancel=true`;
+    const rescheduleUrl = `${bookingUrl}?reschedule=true`;
+    const rescheduleOrCancelText = `${t("need_to_reschedule_or_cancel")}\n${t("cancel")}: ${cancelUrl}\n${t("reschedule")}: ${rescheduleUrl}`;
+
+    return `${confirmationText}\n${eventTitle}\n\n${urlText}\n\n${rescheduleOrCancelText}`;
   }
 }

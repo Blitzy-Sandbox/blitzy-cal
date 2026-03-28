@@ -19,7 +19,11 @@ export default class EventRequestToRescheduleSMS extends SMSManager {
 
     const needToRescheduleOrCancelText = t("need_to_reschedule_or_cancel");
 
-    const messageText = `${needToRescheduleOrCancelText}: ${requestRescheduleSubtitle} \n\n${t(
+    // Event details for Calendly parity: include title and date/time context
+    const eventTitle = this.calEvent.title;
+    const formattedDate = this.getFormattedDate(attendee.timeZone, attendee.language.locale);
+
+    const messageText = `${needToRescheduleOrCancelText}: ${requestRescheduleSubtitle}\n${eventTitle} - ${formattedDate} \n\n${t(
       "need_to_reschedule_or_cancel"
     )} ${bookingUrl}`;
 

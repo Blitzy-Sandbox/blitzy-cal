@@ -32,6 +32,14 @@ export class FormPayloadBuilder extends BaseFormPayloadBuilder {
       responses,
     };
 
+    // Calendly parity fields (WH-003: routing_form_submission.created alignment)
+    if ("submissionTimestamp" in dto && dto.submissionTimestamp) {
+      payload.submissionTimestamp = dto.submissionTimestamp;
+    }
+    if ("routingResult" in dto && dto.routingResult) {
+      payload.routingResult = dto.routingResult;
+    }
+
     // Add unwrapped response fields at root level for backwards compatibility
     this.addBackwardsCompatibilityFields(payload, responses);
 

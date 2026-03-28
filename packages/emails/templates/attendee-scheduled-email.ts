@@ -1,4 +1,4 @@
-import { getRichDescription } from "@calcom/lib/CalEventParser";
+import { getCancelLink, getRescheduleLink, getRichDescription } from "@calcom/lib/CalEventParser";
 import { getReplyToHeader } from "@calcom/lib/getReplyToHeader";
 import { TimeFormat } from "@calcom/lib/timeFormat";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
@@ -65,7 +65,7 @@ export default class AttendeeScheduledEmail extends BaseEmail {
   }
 
   protected getTextBody(title = "", subtitle = "emailed_you_and_any_other_attendees"): string {
-    return `
+    let text = `
 ${this.t(
   title
     ? title
@@ -77,6 +77,40 @@ ${this.t(subtitle)}
 
 ${getRichDescription(this.calEvent, this.t)}
 `.trim();
+
+    // NF-001: Append cancel/reschedule action links to the plain text body for Calendly parity.
+    // These links mirror the ManageLink component behavior in the HTML email version,
+    // ensuring text-only email clients also display booking management deep links.
+    if (this.calEvent.uid) {
+      if (!this.calEvent.recurringEvent && !this.calEvent.disableRescheduling) {
+        const rescheduleLink = getRescheduleLink({ calEvent: this.calEvent, attendee: this.attendee });
+        if (rescheduleLink) {
+          text += `\n\n${this.t("reschedule")}: ${rescheduleLink}`;
+        }
+      }
+
+      if (!this.calEvent.disableCancelling) {
+        const cancelLink = getCancelLink(
+          {
+            platformClientId: this.calEvent.platformClientId,
+            platformCancelUrl: this.calEvent.platformCancelUrl,
+            type: this.calEvent.type,
+            organizer: this.calEvent.organizer,
+            recurringEvent: this.calEvent.recurringEvent,
+            bookerUrl: this.calEvent.bookerUrl,
+            uid: this.calEvent.uid,
+            attendeeSeatId: this.calEvent.attendeeSeatId,
+            team: this.calEvent.team,
+          },
+          this.attendee
+        );
+        if (cancelLink) {
+          text += `\n${this.t("cancel")}: ${cancelLink}`;
+        }
+      }
+    }
+
+    return text;
   }
 
   protected getTimezone(): string {

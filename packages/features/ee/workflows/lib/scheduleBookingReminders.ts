@@ -9,7 +9,6 @@ import type { WorkflowStep } from "@calcom/prisma/client";
 import type { TimeUnit } from "@calcom/prisma/enums";
 import { SchedulingType, WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import type { CalEventResponses } from "@calcom/types/Calendar";
-
 import type { getBookings } from "./scheduleWorkflowNotifications";
 import { verifyEmailSender } from "./verifyEmailSender";
 
@@ -29,7 +28,13 @@ export async function scheduleBookingReminders(
   isOrg: boolean
 ) {
   if (!bookings.length) return;
-  if (trigger !== WorkflowTriggerEvents.BEFORE_EVENT && trigger !== WorkflowTriggerEvents.AFTER_EVENT) return;
+  // Schedulable (offset-based) triggers that require time-based reminder scheduling.
+  // Currently BEFORE_EVENT and AFTER_EVENT; extensible for future Calendly parity triggers (NF-003).
+  const SCHEDULABLE_TRIGGERS: Set<WorkflowTriggerEvents> = new Set([
+    WorkflowTriggerEvents.BEFORE_EVENT,
+    WorkflowTriggerEvents.AFTER_EVENT,
+  ]);
+  if (!SCHEDULABLE_TRIGGERS.has(trigger)) return;
 
   const bookerUrl = await getBookerBaseUrl(isOrg ? teamId : null);
 
@@ -43,6 +48,8 @@ export async function scheduleBookingReminders(
         uid: booking.uid,
         bookerUrl,
         type: booking.eventType?.slug || "event",
+        location: booking.location ?? "", // Added for Calendly parity (NF-003) — meeting location in notifications
+        description: booking.description ?? "", // Added for Calendly parity (NF-003) — additional notes
         attendees: booking.attendees.map((attendee) => {
           return {
             name: attendee.name,

@@ -16,7 +16,7 @@
   "teamsPlanRequired": {
     "upgradeUrl": "/routing"
   },
-  "description": "It would allow a booker to connect with the right person or choose the right event, faster. It would work by taking inputs from the booker and using that data to route to the correct booker/event as configured by Cal user",
+  "description": "It would allow a booker to connect with the right person or choose the right event, faster. It works by taking inputs from the booker through a flexible form builder with industry-standard question types — including multiple choice, dropdowns, checkboxes, phone, and email fields — and using that data to route to the correct booker/event as configured by the Cal user",
   "__createdUsingCli": true,
   "isOAuth": false
 }

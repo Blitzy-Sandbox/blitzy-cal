@@ -11,4 +11,19 @@ import type { EventPayloadType } from "../../../dto/types";
  */
 export type V20211020BookingEventPayload = Omit<EventPayloadType, "assignmentReason"> & {
   assignmentReason?: { reasonEnum: string; reasonString: string }[] | null;
+  // Calendly parity fields — additive, optional (WH-004, WH-005)
+  utmParams?: {
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    utmTerm?: string;
+    utmContent?: string;
+  };
+  inviteeUri?: string;
+  eventUri?: string;
+  schedulingUrl?: string;
+  rescheduleUri?: string;
+  cancellationTimestamp?: string;
+  oldInviteeUri?: string;
+  newInviteeUri?: string;
 };

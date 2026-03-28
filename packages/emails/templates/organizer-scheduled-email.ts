@@ -89,7 +89,7 @@ export default class OrganizerScheduledEmail extends BaseEmail {
     extraInfo = "",
     callToAction = ""
   ): string {
-    return `
+    let text = `
 ${this.t(
   title
     ? title
@@ -102,6 +102,22 @@ ${extraInfo}
 ${getRichDescription(this.calEvent, this.t, true)}
 ${callToAction}
 `.trim();
+
+    // NF-001: Append attendee contact info for Calendly parity in organizer-facing plain text emails
+    if (this.calEvent.attendees.length > 0) {
+      const attendeeInfo = this.calEvent.attendees
+        .map((a) => `${a.name} <${a.email}>`)
+        .join(", ");
+      text += `\n\n${this.t("attendees")}: ${attendeeInfo}`;
+    }
+
+    // NF-001: Append booking management link for organizer convenience (Calendly parity)
+    if (this.calEvent.uid && this.calEvent.bookerUrl) {
+      const bookingUrl = `${this.calEvent.bookerUrl}/booking/${this.calEvent.uid}`;
+      text += `\n\n${this.t("manage_this_event")}: ${bookingUrl}`;
+    }
+
+    return text;
   }
 
   protected getTimezone(): string {

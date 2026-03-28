@@ -87,6 +87,8 @@ const TRIGGER_TO_BUILDER_CATEGORY: Record<WebhookTriggerEvents, BuilderCategory>
   [WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED]: "booking",
   [WebhookTriggerEvents.BOOKING_PAID]: "booking",
   [WebhookTriggerEvents.BOOKING_NO_SHOW_UPDATED]: "booking",
+  // WH-005: Attendee-initiated reschedule — maps to Calendly invitee.created (reschedule variant)
+  [WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE]: "booking",
 
   // Form events
   [WebhookTriggerEvents.FORM_SUBMITTED]: "form",

@@ -46,7 +46,7 @@ export async function addOneFieldAndDescriptionAndSaveForm(
   // Verify all Options of SelectBox
   const { optionsInUi: types } = await verifySelectOptions(
     { selector: ".data-testid-field-type", nth: 0 },
-    ["Email", "Long text", "Multiple choice selection", "Number", "Phone", "Single-choice selection", "Short text"],
+    ["Checkbox", "Date", "Email", "Long text", "Multiple choice selection", "Number", "Phone", "Single-choice selection", "Short text", "URL"],
     page
   );
 
@@ -95,4 +95,128 @@ export async function verifySelectOptions(
   return {
     optionsInUi: selectOptions,
   };
+}
+
+/**
+ * Adds a field to the routing form builder at the specified index with the given type,
+ * label, and optional pre-defined options.
+ *
+ * Follows the same interaction pattern as `addAllTypesOfFieldsAndSaveForm` in `basic.e2e.ts`.
+ * Supports all Calendly-parity field types (RF-001, RF-003): Short text, Long text, Number,
+ * Email, Phone, Single-choice selection, Multiple choice selection, Checkbox, URL, and Date.
+ *
+ * For option-based field types (Single-choice selection, Multiple choice selection, Checkbox),
+ * provide the `options` array to populate the option inputs.
+ */
+export async function addFieldByType(
+  page: Page,
+  {
+    fieldIndex,
+    label,
+    fieldType,
+    options,
+  }: {
+    /** Zero-based index of the field within the form builder field list */
+    fieldIndex: number;
+    /** Display label for the field (also used to compute the identifier if not set explicitly) */
+    label: string;
+    /** Human-readable field type label as shown in the dropdown, e.g. "Short text", "Checkbox" */
+    fieldType: string;
+    /** Option values to populate for option-based field types (select, multiselect, checkbox) */
+    options?: string[];
+  }
+): Promise<void> {
+  // Click on the field type dropdown at the given field index to open it
+  await page.locator(".data-testid-field-type").nth(fieldIndex).click();
+
+  // Select the dropdown option matching the requested field type label
+  await page
+    .locator('[data-testid^="select-option-"]')
+    .filter({ hasText: fieldType })
+    .click();
+
+  // Fill in the field label
+  await page.fill(`[name="fields.${fieldIndex}.label"]`, label);
+
+  // If options are provided, fill option inputs for types that support them.
+  // The form builder renders pre-allocated option input slots for option-based field types
+  // (Single-choice selection, Multiple choice selection, Checkbox).
+  if (options && options.length > 0) {
+    for (let i = 0; i < options.length; i++) {
+      await page.fill(`[data-testid="fields.${fieldIndex}.options.${i}-input"]`, options[i]);
+    }
+  }
+}
+
+/**
+ * Fills a form field during form submission based on the field type.
+ *
+ * Handles all Calendly-parity field types (RF-003):
+ * - Text-like fields (Short text, Long text, Email, Phone, Number, URL, Date): direct input fill
+ * - Single-choice selection / Multiple choice selection: React Select dropdown interaction
+ * - Checkbox: native checkbox toggle via accessible role locator
+ *
+ * @param page — Playwright Page instance
+ * @param identifier — the field identifier used in `data-testid="form-field-{identifier}"`
+ * @param fieldType — the human-readable field type label (e.g. "Short text", "Checkbox")
+ * @param value — the value to fill or select; for Checkbox, this is the option label to toggle
+ */
+export async function fillFormFieldByType(
+  page: Page,
+  {
+    identifier,
+    fieldType,
+    value,
+  }: {
+    /** Field identifier, used in the form-field data-testid attribute */
+    identifier: string;
+    /** Human-readable field type label matching the dropdown options */
+    fieldType: string;
+    /** Value to fill or option label to select/toggle */
+    value: string;
+  }
+): Promise<void> {
+  const fieldSelector = `[data-testid="form-field-${identifier}"]`;
+
+  switch (fieldType) {
+    // Text-like input fields — direct fill via the data-testid selector
+    case "Short text":
+    case "Long text":
+    case "Email":
+    case "Phone":
+    case "Number":
+    case "URL":
+    case "Date": {
+      await page.fill(fieldSelector, value);
+      break;
+    }
+
+    // React Select single-value dropdown — open then pick option by text
+    case "Single-choice selection": {
+      await page.locator(fieldSelector).click();
+      const selectParent = page.locator(`:has(> ${fieldSelector})`);
+      await selectParent.getByText(value, { exact: true }).click();
+      break;
+    }
+
+    // React Select multi-value dropdown — open then pick option by text
+    case "Multiple choice selection": {
+      await page.locator(fieldSelector).click();
+      const multiSelectParent = page.locator(`:has(> ${fieldSelector})`);
+      await multiSelectParent.getByText(value, { exact: true }).click();
+      break;
+    }
+
+    // Native checkbox group — locate the checkbox by its accessible label and toggle
+    case "Checkbox": {
+      // CheckboxGroupWidget renders <label> elements wrapping <input type="checkbox">.
+      // The accessible name of each checkbox is derived from the label text.
+      // Use getByRole with the option label to robustly locate the correct checkbox.
+      await page.getByRole("checkbox", { name: value }).click();
+      break;
+    }
+
+    default:
+      throw new Error(`fillFormFieldByType: unsupported field type "${fieldType}"`);
+  }
 }

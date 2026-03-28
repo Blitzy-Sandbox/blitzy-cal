@@ -1,5 +1,5 @@
-import { createContext, useContext } from "react";
-import React, { useState } from "react";
+import type React from "react";
+import { createContext, useContext, useState } from "react";
 
 import type { EmbedState } from "../../types";
 
@@ -10,6 +10,10 @@ type EmbedDialogContextType = {
 
 const EmbedDialogContext = createContext<EmbedDialogContextType | null>(null);
 
+/**
+ * Provider for embed dialog state, including share flow configuration.
+ * Supports all EmbedState fields including the shareMode field for share flow parity.
+ */
 export function EmbedDialogProvider({ children }: { children: React.ReactNode }) {
   const [embedState, setEmbedState] = useState<EmbedState>(null);
   return (
@@ -19,6 +23,12 @@ export function EmbedDialogProvider({ children }: { children: React.ReactNode })
   );
 }
 
+/**
+ * Hook to access embed dialog context state.
+ * When noQueryParamMode is true, requires an EmbedDialogProvider ancestor.
+ * When false, returns stub values with null embedState and no-op setter.
+ * Supports extended EmbedState including shareMode for share flow parity.
+ */
 export function useEmbedDialogCtx(noQueryParamMode: boolean) {
   const context = useContext(EmbedDialogContext);
   if (noQueryParamMode) {

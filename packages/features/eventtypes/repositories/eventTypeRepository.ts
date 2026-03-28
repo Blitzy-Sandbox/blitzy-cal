@@ -2019,4 +2019,183 @@ export class EventTypeRepository implements IEventTypesRepository {
       seatsPerTimeSlot: eventType.seatsPerTimeSlot,
     };
   }
+
+  /**
+   * Returns the managed event type template (parent) for a given team (AG-003).
+   * Used to identify admin-templated event types that should be pushed to team members.
+   * A managed event type template is an event type with schedulingType = MANAGED
+   * that has a teamId and serves as the parent for child event types.
+   *
+   * @param teamId - The team ID to query managed templates for
+   * @param eventTypeId - The specific managed parent event type ID
+   * @returns The managed template with its configuration, or null if not found
+   */
+  async findManagedEventTypeTemplate(
+    teamId: number,
+    eventTypeId: number
+  ): Promise<{
+    id: number;
+    title: string;
+    slug: string;
+    schedulingType: "MANAGED" | null;
+    teamId: number | null;
+    assignAllTeamMembers: boolean;
+    metadata: unknown;
+  } | null> {
+    const template = await this.prismaClient.eventType.findFirst({
+      where: {
+        id: eventTypeId,
+        teamId: teamId,
+        schedulingType: "MANAGED",
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        schedulingType: true,
+        teamId: true,
+        assignAllTeamMembers: true,
+        metadata: true,
+      },
+    });
+
+    if (!template) {
+      return null;
+    }
+
+    // Narrow schedulingType from Prisma's SchedulingType enum to the expected
+    // "MANAGED" | null literal. The where filter guarantees schedulingType is "MANAGED"
+    // when the record exists, but TypeScript cannot infer this from the query.
+    return {
+      id: template.id,
+      title: template.title,
+      slug: template.slug,
+      schedulingType: template.schedulingType as "MANAGED" | null,
+      teamId: template.teamId,
+      assignAllTeamMembers: template.assignAllTeamMembers,
+      metadata: template.metadata,
+    };
+  }
+
+  /**
+   * Returns all child event types for a managed parent event type (AG-003).
+   * Used to determine which team members already have the managed event type
+   * and which still need it pushed to them.
+   *
+   * @param parentEventTypeId - The parent managed event type ID
+   * @returns Array of child event types with their owner user IDs
+   */
+  async findChildEventTypesByParentId(
+    parentEventTypeId: number
+  ): Promise<
+    Array<{
+      id: number;
+      userId: number | null;
+      slug: string;
+      hidden: boolean;
+    }>
+  > {
+    return this.prismaClient.eventType.findMany({
+      where: {
+        parentId: parentEventTypeId,
+      },
+      select: {
+        id: true,
+        userId: true,
+        slug: true,
+        hidden: true,
+      },
+    });
+  }
+
+  /**
+   * Returns all managed event type templates for a team (AG-003).
+   * Used to list all admin-templated event types that can be pushed to members
+   * when the team admin configures managed event type distribution.
+   *
+   * @param teamId - The team ID
+   * @returns Array of managed event type templates with push configuration
+   */
+  async findManagedEventTypesForTeam(
+    teamId: number
+  ): Promise<
+    Array<{
+      id: number;
+      title: string;
+      slug: string;
+      assignAllTeamMembers: boolean;
+      childCount: number;
+    }>
+  > {
+    const templates = await this.prismaClient.eventType.findMany({
+      where: {
+        teamId: teamId,
+        schedulingType: "MANAGED",
+        parentId: null,
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        assignAllTeamMembers: true,
+        _count: {
+          select: {
+            children: true,
+          },
+        },
+      },
+    });
+
+    return templates.map((template) => ({
+      id: template.id,
+      title: template.title,
+      slug: template.slug,
+      assignAllTeamMembers: template.assignAllTeamMembers,
+      childCount: template._count.children,
+    }));
+  }
+
+  /**
+   * Returns team members who do not yet have a child event type for a given
+   * managed parent event type (AG-003). Used to identify which members need
+   * the managed event type pushed to them during distribution.
+   *
+   * @param parentEventTypeId - The managed parent event type ID
+   * @param teamId - The team ID to check memberships against
+   * @returns Array of user IDs that lack a child of the given parent
+   */
+  async findTeamMembersWithoutManagedEventType(
+    parentEventTypeId: number,
+    teamId: number
+  ): Promise<Array<{ userId: number }>> {
+    // Step 1: Get user IDs of existing children for this managed parent
+    const existingChildren = await this.prismaClient.eventType.findMany({
+      where: {
+        parentId: parentEventTypeId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    const existingChildUserIds = existingChildren
+      .map((child) => child.userId)
+      .filter((userId): userId is number => userId !== null);
+
+    // Step 2: Find accepted team members whose userId is NOT in the existing children
+    const membersWithoutChild = await this.prismaClient.membership.findMany({
+      where: {
+        teamId: teamId,
+        accepted: true,
+        userId: {
+          notIn: existingChildUserIds,
+        },
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+    return membersWithoutChild;
+  }
 }

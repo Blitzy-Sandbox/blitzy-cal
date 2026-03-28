@@ -581,6 +581,184 @@ export class MembershipRepository {
     return membership?.accepted ?? false;
   }
 
+  // --- AG-004: Invitation Lifecycle Methods ---
+
+  /**
+   * Find all pending (not yet accepted) invitations for a user.
+   * Optionally filter by a specific team. Includes team name/slug for display
+   * in the pending invitations view (Calendly parity).
+   */
+  async findPendingInvitations({ userId, teamId }: { userId: number; teamId?: number }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        userId,
+        accepted: false,
+        ...(teamId !== undefined && { teamId }),
+      },
+      select: {
+        id: true,
+        teamId: true,
+        userId: true,
+        role: true,
+        accepted: true,
+        disableImpersonation: true,
+        createdAt: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Find all pending invitations for a given team. Includes user email/name
+   * so admins can see who has been invited and is awaiting acceptance.
+   */
+  async findPendingInvitationsByTeamId({ teamId }: { teamId: number }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        teamId,
+        accepted: false,
+      },
+      select: {
+        id: true,
+        teamId: true,
+        userId: true,
+        role: true,
+        accepted: true,
+        disableImpersonation: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Accept a pending membership invitation. Uses the composite unique key
+   * userId_teamId with an accepted: false guard so that already-accepted
+   * memberships are not modified. Returns null if no matching pending
+   * invitation exists (Prisma P2025).
+   */
+  async acceptMembership({ userId, teamId }: { userId: number; teamId: number }) {
+    try {
+      return await this.prismaClient.membership.update({
+        where: {
+          userId_teamId: { userId, teamId },
+          accepted: false,
+        },
+        data: {
+          accepted: true,
+        },
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Reject (delete) a pending membership invitation. Uses the composite unique
+   * key userId_teamId with an accepted: false guard so that accepted memberships
+   * cannot be accidentally deleted. Returns null if no matching pending
+   * invitation exists (Prisma P2025).
+   */
+  async rejectMembership({ userId, teamId }: { userId: number; teamId: number }) {
+    try {
+      return await this.prismaClient.membership.delete({
+        where: {
+          userId_teamId: { userId, teamId },
+          accepted: false,
+        },
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Update a membership's role. Supports admin/owner/user role transitions
+   * for Calendly admin role model parity (AG-001).
+   */
+  async updateMembershipRole({
+    userId,
+    teamId,
+    newRole,
+  }: {
+    userId: number;
+    teamId: number;
+    newRole: MembershipRole;
+  }) {
+    return this.prismaClient.membership.update({
+      where: {
+        userId_teamId: { userId, teamId },
+      },
+      data: {
+        role: newRole,
+      },
+    });
+  }
+
+  /**
+   * Find all members of a team with a specific role. Optionally filter
+   * by acceptance status. Includes user email/name for admin display.
+   * Use case: finding all admins/owners for privilege validation.
+   */
+  async findMembersByRole({
+    teamId,
+    role,
+    accepted,
+  }: {
+    teamId: number;
+    role: MembershipRole;
+    accepted?: boolean;
+  }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        teamId,
+        role,
+        ...(accepted !== undefined && { accepted }),
+      },
+      select: {
+        id: true,
+        teamId: true,
+        userId: true,
+        role: true,
+        accepted: true,
+        disableImpersonation: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Count the number of members in a team. Optionally filter by acceptance
+   * status. Use case: seat counting and invitation validation (Calendly
+   * shows team size in admin views).
+   */
+  async countMembersByTeamId({ teamId, accepted }: { teamId: number; accepted?: boolean }) {
+    return this.prismaClient.membership.count({
+      where: {
+        teamId,
+        ...(accepted !== undefined && { accepted }),
+      },
+    });
+  }
+
   static async hasPendingInviteByUserId({ userId }: { userId: number }): Promise<boolean> {
     const pendingInvite = await prisma.membership.findFirst({
       where: {

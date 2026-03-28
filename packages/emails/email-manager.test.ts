@@ -4,6 +4,7 @@ import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
 import { shouldSkipAttendeeEmailWithSettings, fetchOrganizationEmailSettings } from "./email-manager";
+import { EmailType } from "./email-types";
 import AttendeeScheduledEmail from "./templates/attendee-scheduled-email";
 
 const mockGetEmailSettings = vi.fn();
@@ -56,15 +57,15 @@ describe("shouldSkipAttendeeEmailWithSettings", () => {
   });
 
   describe.each([
-    ["confirmation", "disableAttendeeConfirmationEmail"],
-    ["cancellation", "disableAttendeeCancellationEmail"],
-    ["rescheduled", "disableAttendeeRescheduledEmail"],
-    ["request", "disableAttendeeRequestEmail"],
-    ["reassigned", "disableAttendeeReassignedEmail"],
-    ["awaiting_payment", "disableAttendeeAwaitingPaymentEmail"],
-    ["reschedule_request", "disableAttendeeRescheduleRequestEmail"],
-    ["location_change", "disableAttendeeLocationChangeEmail"],
-    ["new_event", "disableAttendeeNewEventEmail"],
+    [EmailType.CONFIRMATION, "disableAttendeeConfirmationEmail"],
+    [EmailType.CANCELLATION, "disableAttendeeCancellationEmail"],
+    [EmailType.RESCHEDULED, "disableAttendeeRescheduledEmail"],
+    [EmailType.REQUEST, "disableAttendeeRequestEmail"],
+    [EmailType.REASSIGNED, "disableAttendeeReassignedEmail"],
+    [EmailType.AWAITING_PAYMENT, "disableAttendeeAwaitingPaymentEmail"],
+    [EmailType.RESCHEDULE_REQUEST, "disableAttendeeRescheduleRequestEmail"],
+    [EmailType.LOCATION_CHANGE, "disableAttendeeLocationChangeEmail"],
+    [EmailType.NEW_EVENT, "disableAttendeeNewEventEmail"],
   ] as const)("Email type: %s", (emailType, settingKey) => {
     it(`should skip email when organization has ${settingKey} enabled`, async () => {
       const orgSettings = {
@@ -111,7 +112,7 @@ describe("shouldSkipAttendeeEmailWithSettings", () => {
         },
       };
 
-      const result = shouldSkipAttendeeEmailWithSettings(metadata, null, "confirmation");
+      const result = shouldSkipAttendeeEmailWithSettings(metadata, null, EmailType.CONFIRMATION);
       expect(result).toBe(true);
     });
   });
@@ -138,14 +139,14 @@ describe("shouldSkipAttendeeEmailWithSettings", () => {
         },
       };
 
-      const result = shouldSkipAttendeeEmailWithSettings(metadata, orgSettings, "confirmation");
+      const result = shouldSkipAttendeeEmailWithSettings(metadata, orgSettings, EmailType.CONFIRMATION);
       expect(result).toBe(true);
     });
   });
 
   describe("Edge cases", () => {
     it("should send email when organizationSettings is null", () => {
-      const result = shouldSkipAttendeeEmailWithSettings(undefined, null, "confirmation");
+      const result = shouldSkipAttendeeEmailWithSettings(undefined, null, EmailType.CONFIRMATION);
       expect(result).toBe(false);
     });
 
@@ -179,7 +180,7 @@ describe("shouldSkipAttendeeEmailWithSettings", () => {
         disableAttendeeNewEventEmail: false,
       };
 
-      const result = shouldSkipAttendeeEmailWithSettings(undefined, orgSettings, "confirmation");
+      const result = shouldSkipAttendeeEmailWithSettings(undefined, orgSettings, EmailType.CONFIRMATION);
       expect(result).toBe(false);
     });
   });
@@ -191,7 +192,7 @@ describe("AttendeeScheduledEmail - Privacy fix for seated events", () => {
     email,
     timeZone: "America/New_York",
     language: {
-      translate: vi.fn((key: string) => key),
+      translate: vi.fn((key: string) => key) as unknown as Person["language"]["translate"],
       locale: "en",
     },
   });

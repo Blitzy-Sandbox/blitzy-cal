@@ -98,6 +98,21 @@ export const shouldSkipAttendeeEmailWithSettings = (
       case EmailType.NEW_EVENT:
         if (organizationSettings.disableAttendeeNewEventEmail) return true;
         break;
+      case EmailType.REMINDER:
+        // Reminder emails are governed by the workflow engine (NF-003), not org-level attendee
+        // email settings. No corresponding OrganizationSettings disable flag exists in the
+        // Prisma schema. Fall through to the standard metadata check below.
+        break;
+      case EmailType.FOLLOW_UP:
+        // Follow-up emails are governed by the workflow engine (NF-003), not org-level attendee
+        // email settings. No corresponding OrganizationSettings disable flag exists in the
+        // Prisma schema. Fall through to the standard metadata check below.
+        break;
+      case EmailType.WORKFLOW:
+        // Workflow-triggered emails are controlled by the workflow automation system (NF-003),
+        // not org-level attendee email settings. No corresponding OrganizationSettings disable
+        // flag exists in the Prisma schema. Fall through to the standard metadata check below.
+        break;
     }
   }
   return !!metadata?.disableStandardEmails?.all?.attendee;
@@ -107,6 +122,63 @@ const eventTypeDisableHostEmail = (metadata?: EventTypeMetadata) => {
   return !!metadata?.disableStandardEmails?.all?.host;
 };
 
+/**
+ * Validates that critical Calendly-parity notification fields are present on the CalendarEvent.
+ * Logs debug-level warnings when parity-required fields are missing, enabling operational
+ * observability during the NF-001 parity transition without blocking email dispatch.
+ *
+ * Calendly-parity emails require:
+ *   - bookerUrl: Needed for cancel/reschedule/rebook deep links in ManageLink component
+ *   - uid: Booking identifier for self-service action URLs
+ *   - location: Physical address or video call URL for event details section
+ *   - organizer.name: Host name for greeting and context in notification emails
+ *
+ * @param calEvent - The calendar event being dispatched
+ * @param context - Descriptive label for the dispatch context (e.g., "scheduled", "cancelled")
+ */
+const warnMissingParityFields = (calEvent: CalendarEvent, context: string): void => {
+  const missingFields: string[] = [];
+
+  if (!calEvent.bookerUrl) {
+    missingFields.push("bookerUrl (required for cancel/reschedule links)");
+  }
+  if (!calEvent.uid) {
+    missingFields.push("uid (required for booking self-service URLs)");
+  }
+  if (!calEvent.location) {
+    missingFields.push("location (recommended for event details display)");
+  }
+  if (!calEvent.organizer?.name) {
+    missingFields.push("organizer.name (required for host identification)");
+  }
+
+  if (missingFields.length > 0) {
+    logger.debug(
+      `NF-001 parity: ${context} email missing fields`,
+      safeStringify({
+        context,
+        bookingId: calEvent.bookingId,
+        missingFields,
+      })
+    );
+  }
+};
+
+/**
+ * Dispatches scheduled (confirmation) emails and SMS for a booking.
+ *
+ * NF-001 Calendly parity: Confirmation emails must include all parity-required fields:
+ *   - Attendee name prominently in greeting/subject (via Person.name on each attendee)
+ *   - Event title prominently displayed (via CalendarEvent.title or eventNameObject override)
+ *   - Date/time with proper timezone per attendee preference (via startTime/endTime + Person.timeZone)
+ *   - Location details — physical address or video call URL (via CalendarEvent.location)
+ *   - Cancel/reschedule links — deep links with booking UID (via CalendarEvent.bookerUrl + uid,
+ *     rendered by the ManageLink email component using getCancelLink/getRescheduleLink)
+ *
+ * Organizer emails include attendee contact info, time in organizer timezone, and booking
+ * management links. All parity fields flow through the formattedCalEvent object which preserves
+ * the full CalendarEvent structure including bookerUrl, uid, location, and videoCallData.
+ */
 const _sendScheduledEmailsAndSMS = async (
   calEvent: CalendarEvent,
   eventNameObject?: EventNameObjectType,
@@ -117,6 +189,9 @@ const _sendScheduledEmailsAndSMS = async (
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
+
+  // NF-001: Validate parity-critical fields are present for cancel/reschedule link generation
+  warnMissingParityFields(formattedCalEvent, "scheduled-confirmation");
 
   if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
     emailsToSend.push(sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent })));
@@ -311,6 +386,20 @@ export const sendReassignedEmailsAndSMS = async (args: {
   await Promise.all(emailsAndSMSToSend);
 };
 
+/**
+ * Dispatches rescheduled emails and SMS for a booking.
+ *
+ * NF-001 Calendly parity: Rescheduled emails must include all parity-required fields:
+ *   - Both old and new date/time clearly shown (the CalendarEvent contains the NEW time in
+ *     startTime/endTime; the old time is embedded in the reschedule context for template rendering)
+ *   - Updated location if location changed during reschedule (via CalendarEvent.location)
+ *   - Reschedule context — who rescheduled and reason if provided (via CalendarEvent.rescheduledBy)
+ *   - Rescheduling attendee information for organizer emails (via CalendarEvent.attendees)
+ *   - Before/after comparison of event details rendered by the template components
+ *
+ * All parity fields flow through the calendarEvent object (formatted via formatCalEvent) which
+ * preserves the full CalendarEvent structure including rescheduledBy, bookerUrl, uid, and location.
+ */
 const _sendRescheduledEmailsAndSMS = async (
   calEvent: CalendarEvent,
   eventTypeMetadata?: EventTypeMetadata
@@ -318,6 +407,9 @@ const _sendRescheduledEmailsAndSMS = async (
   const calendarEvent = formatCalEvent(calEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
+
+  // NF-001: Validate parity-critical fields are present for reschedule context and links
+  warnMissingParityFields(calendarEvent, "rescheduled");
 
   if (!eventTypeDisableHostEmail(eventTypeMetadata)) {
     emailsToSend.push(sendEmail(() => new OrganizerRescheduledEmail({ calEvent: calendarEvent })));
@@ -529,6 +621,22 @@ export const sendDeclinedEmailsAndSMS = async (
   await eventDeclindedSms.sendSMSToAttendees();
 };
 
+/**
+ * Dispatches cancellation emails and SMS for a booking.
+ *
+ * NF-001 Calendly parity: Cancellation emails must include all parity-required fields:
+ *   - Cancellation reason when available (via CalendarEvent.cancellationReason, preserved
+ *     in the spread to AttendeeCancelledEmail and passed to OrganizerCancelledEmail)
+ *   - Rebooking CTA — link to rebook the same event type (via CalendarEvent.bookerUrl,
+ *     rendered by the ManageLink email component using getBookingUrl)
+ *   - Event details of the cancelled event for reference (title, date/time, location)
+ *   - Cancelled attendee information for organizer emails (via CalendarEvent.attendees)
+ *   - Cancellation context — who cancelled and reason (via CalendarEvent.cancellationReason)
+ *
+ * The dynamic event name resolution via getEventName is preserved, ensuring attendee-facing
+ * cancellation emails display properly localized event names with full context (attendee name,
+ * host, event type, duration, booking fields, and location).
+ */
 export const sendCancelledEmailsAndSMS = async (
   calEvent: CalendarEvent,
   eventNameObject: Pick<EventNameObjectType, "eventName">,
@@ -539,6 +647,9 @@ export const sendCancelledEmailsAndSMS = async (
   const calEventLength = calendarEvent.length;
   const eventDuration = dayjs(calEvent.endTime).diff(calEvent.startTime, "minutes");
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
+
+  // NF-001: Validate parity-critical fields are present for rebooking CTA and cancellation context
+  warnMissingParityFields(calendarEvent, "cancellation");
 
   if (typeof calEventLength !== "number") {
     logger.error(
@@ -567,6 +678,10 @@ export const sendCancelledEmailsAndSMS = async (
             new AttendeeCancelledEmail(
               {
                 ...calendarEvent,
+                // NF-001: Explicitly preserve cancellationReason for Calendly-parity cancellation
+                // context display. The spread above already includes it, but this makes the
+                // dependency explicit for future maintainers.
+                cancellationReason: calendarEvent.cancellationReason,
                 title: getEventName({
                   ...eventNameObject,
                   t: attendee.language.translate,

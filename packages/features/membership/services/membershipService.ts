@@ -165,8 +165,8 @@ export class MembershipService {
   }
 
   /**
-   * Rejects (deletes) a pending invitation for the given user and team.
-   * Delegates to repository to delete the pending membership.
+   * Rejects a pending invitation for the given user and team by setting declinedAt.
+   * Delegates to repository to mark the membership as declined while preserving the audit trail.
    * Returns true if the invitation was successfully rejected, false otherwise.
    */
   async rejectInvitation(userId: number, teamId: number): Promise<boolean> {

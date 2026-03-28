@@ -26,6 +26,13 @@ export type BookingExtraDataMap = {
     rescheduleEndTime?: string;
     rescheduledBy?: string;
   };
+  [WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE]: {
+    rescheduleId?: number;
+    rescheduleUid?: string;
+    rescheduleStartTime?: string;
+    rescheduleEndTime?: string;
+    rescheduledBy?: string;
+  };
   [WebhookTriggerEvents.BOOKING_PAID]: { paymentId?: number; paymentData?: Record<string, unknown> };
   [WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED]: {
     paymentId?: number;

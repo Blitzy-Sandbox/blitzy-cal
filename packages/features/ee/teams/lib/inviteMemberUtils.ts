@@ -153,7 +153,7 @@ export async function sendSignupToOrganizationEmail({
       newLink: null,
     });
   } catch (error) {
-    logger.error(
+    log.error(
       "Failed to send signup to organization email",
       safeStringify({
         usernameOrEmail,
@@ -169,7 +169,7 @@ export const sendEmails = async (emailPromises: Promise<void>[]) => {
   const sentEmails = await Promise.allSettled(emailPromises);
   sentEmails.forEach((sentEmail) => {
     if (sentEmail.status === "rejected") {
-      logger.error("Could not send email to user. Reason:", sentEmail.reason);
+      log.error("Could not send email to user. Reason:", sentEmail.reason);
     }
   });
 };
@@ -341,7 +341,7 @@ export async function createMemberships({
     await Promise.all(trackingPromises);
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
-      logger.error("Failed to create memberships", teamId);
+      log.error("Failed to create memberships", teamId);
     } else {
       throw e;
     }
@@ -563,7 +563,7 @@ export async function sendInvitationReminder({
 
     log.debug("Invitation reminder sent successfully", safeStringify({ email, teamId }));
   } catch (error) {
-    logger.error(
+    log.error(
       "Failed to send invitation reminder email",
       safeStringify({ email, teamId }),
       error

@@ -150,6 +150,25 @@ export class BookingPayloadBuilder extends BaseBookingPayloadBuilder {
           },
         });
 
+      // Attendee-initiated reschedule — same payload shape as BOOKING_RESCHEDULED
+      // Maps to Calendly invitee.created (reschedule variant) per WH-001
+      case WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE:
+        return this.buildBookingPayload({
+          booking: dto.booking,
+          eventType: dto.eventType,
+          evt: dto.evt,
+          status: BookingStatus.ACCEPTED,
+          triggerEvent: dto.triggerEvent,
+          createdAt: dto.createdAt,
+          extra: {
+            rescheduleId: dto.rescheduleId,
+            rescheduleUid: dto.rescheduleUid,
+            rescheduleStartTime: dto.rescheduleStartTime,
+            rescheduleEndTime: dto.rescheduleEndTime,
+            rescheduledBy: dto.rescheduledBy,
+          },
+        });
+
       case WebhookTriggerEvents.BOOKING_PAID:
         return this.buildBookingPayload({
           booking: dto.booking,

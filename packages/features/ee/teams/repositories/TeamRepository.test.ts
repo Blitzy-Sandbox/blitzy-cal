@@ -495,7 +495,7 @@ describe("TeamRepository", () => {
     });
   });
 
-  describe("updateRotationStateAfterBooking", () => {
+  describe("getLatestBookingForRotation", () => {
     it("should update booking assignment tracking for the specified member", async () => {
       const mockBooking = {
         id: 500,
@@ -505,7 +505,7 @@ describe("TeamRepository", () => {
       };
       prismaMock.booking.findFirst.mockResolvedValue(mockBooking as unknown as Booking);
 
-      const result = await teamRepository.updateRotationStateAfterBooking({
+      const result = await teamRepository.getLatestBookingForRotation({
         bookingId: 500,
         userId: 10,
         eventTypeId: 100,
@@ -543,7 +543,7 @@ describe("TeamRepository", () => {
       prismaMock.booking.findFirst.mockResolvedValue(mockBooking as unknown as Booking);
 
       // First call
-      const result1 = await teamRepository.updateRotationStateAfterBooking({
+      const result1 = await teamRepository.getLatestBookingForRotation({
         bookingId: 501,
         userId: 11,
         eventTypeId: 100,
@@ -551,7 +551,7 @@ describe("TeamRepository", () => {
       });
 
       // Second call with same arguments — should not throw
-      const result2 = await teamRepository.updateRotationStateAfterBooking({
+      const result2 = await teamRepository.getLatestBookingForRotation({
         bookingId: 501,
         userId: 11,
         eventTypeId: 100,

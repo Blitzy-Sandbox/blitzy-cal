@@ -121,6 +121,34 @@ export interface BookingRescheduledDTO extends BaseEventDTO {
   newInviteeUri?: string;
 }
 
+/**
+ * DTO for attendee-initiated reschedule events. Carries the same payload fields as
+ * BookingRescheduledDTO but with a distinct triggerEvent discriminant for
+ * BOOKING_RESCHEDULED_BY_ATTENDEE. Maps to Calendly invitee.created (reschedule variant)
+ * per WH-001.
+ */
+export interface BookingRescheduledByAttendeeDTO extends BaseEventDTO {
+  triggerEvent: typeof WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE;
+  evt: CalendarEvent;
+  eventType: EventTypeInfo & {
+    id: number;
+  };
+  booking: {
+    id: number;
+    eventTypeId: number | null;
+    userId: number | null;
+    smsReminderNumber?: string | null;
+  };
+  rescheduleId?: number;
+  rescheduleUid?: string;
+  rescheduleStartTime?: string;
+  rescheduleEndTime?: string;
+  rescheduledBy?: string;
+  // Calendly parity fields (WH-001: invitee.created reschedule variant)
+  oldInviteeUri?: string;
+  newInviteeUri?: string;
+}
+
 export interface BookingPaidDTO extends BaseEventDTO {
   triggerEvent: typeof WebhookTriggerEvents.BOOKING_PAID;
   evt: CalendarEvent;
@@ -371,6 +399,7 @@ export type WebhookEventDTO =
   | BookingRejectedDTO
   | BookingRequestedDTO
   | BookingRescheduledDTO
+  | BookingRescheduledByAttendeeDTO
   | BookingPaidDTO
   | BookingPaymentInitiatedDTO
   | BookingNoShowDTO
@@ -639,6 +668,7 @@ export type BookingWebhookEventDTO =
   | BookingCancelledDTO
   | BookingRequestedDTO
   | BookingRescheduledDTO
+  | BookingRescheduledByAttendeeDTO
   | BookingPaidDTO
   | BookingPaymentInitiatedDTO
   | BookingRejectedDTO

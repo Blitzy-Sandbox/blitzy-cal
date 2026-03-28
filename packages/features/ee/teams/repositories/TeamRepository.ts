@@ -751,11 +751,9 @@ export class TeamRepository {
   }
 
   /**
-   * Record a booking assignment for rotation tracking.
-   * This is a lightweight tracking verification to confirm the last assignment for round-robin
-   * state (AG-002). The actual booking record already captures the assignment — this method
-   * ensures the team-level rotation tracking is up to date by verifying the booking is recorded
-   * and assigned to the specified user/event type within the team.
+   * Retrieve a booking record for round-robin rotation tracking verification (AG-002).
+   * This is a read-only lookup that confirms the last assignment — verifying the booking is
+   * recorded and assigned to the specified user/event type within the team. No mutation occurs.
    *
    * @param bookingId - The booking ID to verify
    * @param userId - The user the booking should be assigned to
@@ -763,7 +761,7 @@ export class TeamRepository {
    * @param teamId - The team that owns the event type
    * @returns The booking record if found and matching all criteria, or null
    */
-  async updateRotationStateAfterBooking({
+  async getLatestBookingForRotation({
     bookingId,
     userId,
     eventTypeId,

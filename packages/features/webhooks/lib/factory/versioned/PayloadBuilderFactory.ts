@@ -134,6 +134,7 @@ const TRIGGER_TO_BUILDER_CATEGORY: Record<WebhookTriggerEvents, BuilderCategory>
 export type BookingTriggerEvents =
   | typeof WebhookTriggerEvents.BOOKING_CREATED
   | typeof WebhookTriggerEvents.BOOKING_RESCHEDULED
+  | typeof WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE
   | typeof WebhookTriggerEvents.BOOKING_CANCELLED
   | typeof WebhookTriggerEvents.BOOKING_REJECTED
   | typeof WebhookTriggerEvents.BOOKING_REQUESTED

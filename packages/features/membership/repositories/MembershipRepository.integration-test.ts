@@ -528,7 +528,7 @@ describe("MembershipRepository (Integration Tests)", () => {
   });
 
   describe("rejectMembership", () => {
-    it("should delete a pending membership", async () => {
+    it("should mark a pending membership as declined with declinedAt timestamp", async () => {
       const repo = new MembershipRepository();
       const ts = Date.now();
       const user = await prisma.user.create({
@@ -546,20 +546,26 @@ describe("MembershipRepository (Integration Tests)", () => {
           accepted: false,
         },
       });
-      // Not tracked in createdMembershipIds — rejectMembership deletes it
+      createdMembershipIds.push(membership.id);
 
+      const beforeReject = new Date();
       const result = await repo.rejectMembership({ userId: user.id, teamId: testTeamId });
 
       expect(result).not.toBeNull();
       expect(result?.userId).toBe(user.id);
       expect(result?.teamId).toBe(testTeamId);
+      expect(result?.declinedAt).toBeInstanceOf(Date);
+      expect(result!.declinedAt!.getTime()).toBeGreaterThanOrEqual(beforeReject.getTime());
 
-      // Verify membership no longer exists in DB
+      // Verify membership still exists in DB with declinedAt set (audit trail preserved)
       const dbRecord = await prisma.membership.findUnique({
         where: { id: membership.id },
       });
-      expect(dbRecord).toBeNull();
+      expect(dbRecord).not.toBeNull();
+      expect(dbRecord?.declinedAt).toBeInstanceOf(Date);
+      expect(dbRecord?.accepted).toBe(false);
 
+      await clearTestMemberships();
       await prisma.user.delete({ where: { id: user.id } });
     });
 
@@ -572,7 +578,7 @@ describe("MembershipRepository (Integration Tests)", () => {
       expect(result).toBeNull();
     });
 
-    it("should not delete accepted memberships", async () => {
+    it("should not reject accepted memberships", async () => {
       const repo = new MembershipRepository();
       const ts = Date.now();
       const user = await prisma.user.create({
@@ -594,15 +600,16 @@ describe("MembershipRepository (Integration Tests)", () => {
 
       const result = await repo.rejectMembership({ userId: user.id, teamId: testTeamId });
 
-      // Prisma P2025: accepted: false guard prevents deletion of accepted memberships
+      // Prisma P2025: accepted: false guard prevents rejection of accepted memberships
       expect(result).toBeNull();
 
-      // Verify the accepted membership still exists in DB
+      // Verify the accepted membership still exists in DB unchanged
       const dbRecord = await prisma.membership.findUnique({
         where: { id: membership.id },
       });
       expect(dbRecord).not.toBeNull();
       expect(dbRecord?.accepted).toBe(true);
+      expect(dbRecord?.declinedAt).toBeNull();
 
       await clearTestMemberships();
       await prisma.user.delete({ where: { id: user.id } });

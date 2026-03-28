@@ -1,18 +1,20 @@
+import type { Prisma } from "@calcom/prisma/client";
+
 // Dedicated type definition for routing form data
 export type RoutingForm = {
   id: string;
   description: string | null;
   position: number;
-  routes: any; // JSON field
+  routes: Prisma.JsonValue;
   createdAt: Date;
   updatedAt: Date;
   name: string;
-  fields: any; // JSON field
+  fields: Prisma.JsonValue;
   updatedById: number | null;
   userId: number | null;
   teamId: number | null;
   disabled: boolean;
-  settings: any; // JSON field
+  settings: Prisma.JsonValue;
 };
 
 // Helper type for select parameter
@@ -41,11 +43,11 @@ export type RoutingFormCreateData = {
   /** Optional form description */
   description?: string | null;
   /** Optional JSON field definitions */
-  fields?: any; // JSON field — matches Prisma schema type
+  fields?: Prisma.InputJsonValue;
   /** Optional JSON route definitions */
-  routes?: any; // JSON field — matches Prisma schema type
+  routes?: Prisma.InputJsonValue;
   /** Optional JSON settings */
-  settings?: any; // JSON field — matches Prisma schema type
+  settings?: Prisma.InputJsonValue;
   /** Optional team ID for team-scoped forms */
   teamId?: number | null;
   /** Whether form is disabled — defaults to false */
@@ -61,11 +63,11 @@ export type RoutingFormUpdateData = {
   /** Updated form description */
   description?: string | null;
   /** Updated JSON field definitions */
-  fields?: any; // JSON field
+  fields?: Prisma.InputJsonValue;
   /** Updated JSON route definitions */
-  routes?: any; // JSON field
+  routes?: Prisma.InputJsonValue;
   /** Updated JSON settings */
-  settings?: any; // JSON field
+  settings?: Prisma.InputJsonValue;
   /** Updated disabled state */
   disabled?: boolean;
   /** Updated display position */
@@ -87,19 +89,19 @@ export type RoutingFormWithUserTeamAndOrg = {
   id: string;
   description: string | null;
   position: number;
-  routes: any;
+  routes: Prisma.JsonValue;
   createdAt: Date;
   updatedAt: Date;
   name: string;
-  fields: any;
+  fields: Prisma.JsonValue;
   updatedById: number | null;
   userId: number;
   teamId: number | null;
   disabled: boolean;
-  settings: any;
+  settings: Prisma.JsonValue;
   user: {
     id: number;
-    metadata: any;
+    metadata: Prisma.JsonValue;
     organization: {
       slug: string | null;
     } | null;
@@ -110,7 +112,7 @@ export type RoutingFormWithUserTeamAndOrg = {
     locale: string | null;
   };
   team: {
-    metadata: any;
+    metadata: Prisma.JsonValue;
     slug: string | null;
     parentId: number | null;
     parent: {

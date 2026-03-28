@@ -668,15 +668,20 @@ export class MembershipRepository {
   /**
    * Reject (delete) a pending membership invitation. Uses the composite unique
    * key userId_teamId with an accepted: false guard so that accepted memberships
-   * cannot be accidentally deleted. Returns null if no matching pending
-   * invitation exists (Prisma P2025).
+   * cannot be accidentally rejected. Sets the declinedAt timestamp to preserve
+   * the audit trail per the AG-004 Calendly invitation lifecycle parity and the
+   * data preservation mandate. Returns null if no matching pending invitation
+   * exists (Prisma P2025).
    */
   async rejectMembership({ userId, teamId }: { userId: number; teamId: number }) {
     try {
-      return await this.prismaClient.membership.delete({
+      return await this.prismaClient.membership.update({
         where: {
           userId_teamId: { userId, teamId },
           accepted: false,
+        },
+        data: {
+          declinedAt: new Date(),
         },
       });
     } catch {

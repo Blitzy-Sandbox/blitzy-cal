@@ -13,7 +13,8 @@ const baseWebhookTaskSchema = z.object({
 /**
  * Booking-related webhook task payload
  * Used for: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED,
- *           BOOKING_REQUESTED, BOOKING_REJECTED, BOOKING_NO_SHOW_UPDATED
+ *           BOOKING_RESCHEDULED_BY_ATTENDEE, BOOKING_REQUESTED,
+ *           BOOKING_REJECTED, BOOKING_NO_SHOW_UPDATED
  */
 export const bookingWebhookTaskPayloadSchema = baseWebhookTaskSchema.extend({
   triggerEvent: z.enum([
@@ -23,6 +24,7 @@ export const bookingWebhookTaskPayloadSchema = baseWebhookTaskSchema.extend({
     WebhookTriggerEvents.BOOKING_REQUESTED,
     WebhookTriggerEvents.BOOKING_REJECTED,
     WebhookTriggerEvents.BOOKING_NO_SHOW_UPDATED,
+    WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE,
   ]),
   bookingUid: z.string(),
   eventTypeId: z.number().optional(),

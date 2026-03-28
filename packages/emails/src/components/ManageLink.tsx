@@ -1,7 +1,14 @@
 import { getBookingUrl, getCancelLink, getRescheduleLink } from "@calcom/lib/CalEventParser";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
-export function ManageLink(props: { calEvent: CalendarEvent; attendee: Person }) {
+export function ManageLink(props: {
+  calEvent: CalendarEvent;
+  attendee: Person;
+  /** NF-001: When true, renders a "Book a new time" rebook CTA linking to the event type booking page.
+   *  Designed for cancellation email contexts where Calendly-parity rebook action is needed.
+   *  Defaults to false for backward compatibility with existing templates. */
+  showRebookLink?: boolean;
+}) {
   // Only the original attendee can make changes to the event
   // Guests cannot
   const t = props.attendee.language.translate;
@@ -30,6 +37,15 @@ export function ManageLink(props: { calEvent: CalendarEvent; attendee: Person })
     attendeeSeatId: props.calEvent.attendeeSeatId,
   });
 
+  // NF-001: Compute rebook link — points to the event type booking page so the attendee can
+  // quickly book the same event type again after cancellation (Calendly CTA parity).
+  // Only computed when showRebookLink is enabled; requires bookerUrl and organizer username
+  // to construct a valid event type URL (e.g., https://cal.com/username/30min).
+  const rebookLink =
+    props.showRebookLink && props.calEvent.bookerUrl && props.calEvent.organizer.username
+      ? `${props.calEvent.bookerUrl}/${props.calEvent.organizer.username}/${props.calEvent.type}`
+      : "";
+
   const isOriginalAttendee = props.attendee.email === props.calEvent.attendees[0]?.email;
   const isOrganizer = props.calEvent.organizer.email === props.attendee.email;
   const hasCancelLink = Boolean(cancelLink) && !props.calEvent.disableCancelling;
@@ -38,10 +54,11 @@ export function ManageLink(props: { calEvent: CalendarEvent; attendee: Person })
   const isRecurringEvent = props.calEvent.recurringEvent;
   const shouldDisplayRescheduleLink = Boolean(hasRescheduleLink && !isRecurringEvent);
   const isTeamMember = props.calEvent.team?.members.some((member) => props.attendee.email === member.email);
+  const hasRebookLink = Boolean(rebookLink);
 
   if (
     (isOriginalAttendee || isOrganizer || isTeamMember) &&
-    (hasCancelLink || (!isRecurringEvent && hasRescheduleLink) || hasBookingLink)
+    (hasCancelLink || (!isRecurringEvent && hasRescheduleLink) || hasBookingLink || hasRebookLink)
   ) {
     return (
       <div
@@ -108,6 +125,31 @@ export function ManageLink(props: { calEvent: CalendarEvent; attendee: Person })
                   textDecoration: "underline",
                 }}>
                 <>{t("check_here")}</>
+              </a>
+            </span>
+          )}
+
+          {/* NF-001: Rebook CTA for Calendly parity — shown in cancellation email contexts */}
+          {hasRebookLink && (
+            <span>
+              {(hasCancelLink ||
+                shouldDisplayRescheduleLink ||
+                (props.calEvent.platformClientId && hasBookingLink)) && (
+                <span
+                  style={{
+                    marginLeft: "5px",
+                  }}>
+                  {t("or_lowercase")}
+                </span>
+              )}
+              <a
+                href={rebookLink}
+                style={{
+                  color: "#374151",
+                  marginLeft: "5px",
+                  textDecoration: "underline",
+                }}>
+                <>{t("book_a_new_time")}</>
               </a>
             </span>
           )}

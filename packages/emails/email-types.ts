@@ -8,4 +8,7 @@ export enum EmailType {
   RESCHEDULE_REQUEST = "reschedule_request",
   LOCATION_CHANGE = "location_change",
   NEW_EVENT = "new_event",
+  REMINDER = "reminder",
+  FOLLOW_UP = "follow_up",
+  WORKFLOW = "workflow",
 }

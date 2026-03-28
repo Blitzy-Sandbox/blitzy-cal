@@ -36,6 +36,48 @@ const attributeTypesMap = new Map<keyof typeof AttributeType, RoutingFormFieldTy
   [AttributeType.NUMBER, RoutingFormFieldType.NUMBER],
 ]);
 
+/**
+ * Fallback RAQB widget type mapping for Calendly-parity field types (RF-003) that do not yet
+ * have a dedicated widget registered in FormFieldsInitialConfig / AttributesInitialConfig.
+ *
+ * - "checkbox": Calendly "Checkboxes" question type — compared as text (equal/not_equal)
+ *   until a dedicated boolean or multiselect widget is registered upstream.
+ * - "url": Calendly "Website URL" question type — URL values are compared as strings.
+ * - "date": Calendly "Date" question type — date values are compared as text strings
+ *   until a dedicated RAQB date widget is configured.
+ *
+ * None of these types require `listValues` — see the IMPORTANT comment on the listValues
+ * conditional for why non-select types must leave listValues undefined.
+ */
+const FIELD_TYPE_WIDGET_FALLBACK: Partial<Record<RoutingFormFieldType, string>> = {
+  [RoutingFormFieldType.CHECKBOX]: "text",
+  [RoutingFormFieldType.URL]: "text",
+  [RoutingFormFieldType.DATE]: "text",
+};
+
+/**
+ * Resolves the RAQB widget type string for a given routing form field type.
+ *
+ * First checks if the RAQB config has a widget registered for this field type (the normal path
+ * for text, number, textarea, select, multiselect, phone, email). If no widget is registered,
+ * falls back to {@link FIELD_TYPE_WIDGET_FALLBACK} for new Calendly-parity field types.
+ * Throws if neither source can resolve the widget type — this indicates a configuration gap.
+ */
+function resolveWidgetType(
+  fieldType: (typeof FieldTypes)[number]["value"],
+  configWidgets: typeof FormFieldsInitialConfig.widgets
+): string {
+  const widget = configWidgets[fieldType];
+  if (widget) {
+    return widget.type;
+  }
+  const fallback = FIELD_TYPE_WIDGET_FALLBACK[fieldType as RoutingFormFieldType];
+  if (fallback) {
+    return fallback;
+  }
+  throw new Error(`No widget configuration found for field type: ${fieldType}`);
+}
+
 export type FormFieldsQueryBuilderConfigWithRaqbFields = ReturnType<
   typeof getQueryBuilderConfigForFormFields
 >;
@@ -55,8 +97,8 @@ export function getQueryBuilderConfigForFormFields(form: Pick<RoutingForm, "fiel
     if (FieldTypes.map((f) => f.value).includes(fieldType)) {
       const options = getUIOptionsForSelect(field);
 
-      const widget = FormFieldsInitialConfig.widgets[fieldType];
-      const widgetType = widget.type;
+      // Resolve widget type from the RAQB config or fallback mapping for new Calendly-parity types (RF-003)
+      const widgetType = resolveWidgetType(fieldType, FormFieldsInitialConfig.widgets);
 
       fields[field.id] = {
         label: field.label,
@@ -137,9 +179,8 @@ export function getQueryBuilderConfigForAttributes({
   transformedAttributes.forEach((attribute) => {
     const attributeType = attribute.type as (typeof FieldTypes)[number]["value"];
     if (FieldTypes.map((f) => f.value).includes(attributeType)) {
-      // We can assert the type because otherwise we throw 'Unsupported field type' error
-      const widget = FormFieldsInitialConfig.widgets[attributeType];
-      const widgetType = widget.type;
+      // Resolve widget type from the RAQB config or fallback mapping for new Calendly-parity types (RF-003)
+      const widgetType = resolveWidgetType(attributeType, FormFieldsInitialConfig.widgets);
       const valueOfFieldOptions = (() => {
         const formFieldsOptions = dynamicOperandFields.map((field) => ({
           title: `Value of field '${field.label}'`,

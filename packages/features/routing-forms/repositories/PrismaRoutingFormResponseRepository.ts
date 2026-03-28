@@ -41,7 +41,9 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
     });
   }
 
-  findAllByFormId(formId: string, options?: { limit?: number; offset?: number }) {
+  async findAllByFormId(formId: string, options?: { limit?: number; offset?: number }) {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
     return this.prismaClient.app_RoutingForms_FormResponse.findMany({
       where: {
         formId,
@@ -53,16 +55,15 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
         chosenRouteId: true,
         routedToBookingUid: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
-      ...(options?.limit !== undefined ? { take: options.limit } : {}),
-      ...(options?.offset !== undefined ? { skip: options.offset } : {}),
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
     });
   }
 
-  findByFormIdWithPagination(formId: string, pagination: { page: number; pageSize: number }) {
-    const skip = (pagination.page - 1) * pagination.pageSize;
+  async findByFormIdWithPagination(formId: string, pagination: { page: number; pageSize: number }) {
+    const { page, pageSize } = pagination;
+    const skip = (page - 1) * pageSize;
     return this.prismaClient.app_RoutingForms_FormResponse.findMany({
       where: {
         formId,
@@ -74,15 +75,13 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
         chosenRouteId: true,
         routedToBookingUid: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
+      take: pageSize,
       skip,
-      take: pagination.pageSize,
     });
   }
 
-  countByFormId(formId: string) {
+  async countByFormId(formId: string): Promise<number> {
     return this.prismaClient.app_RoutingForms_FormResponse.count({
       where: {
         formId,
@@ -90,7 +89,7 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
     });
   }
 
-  findResponsesForSlotCalculation(formId: string) {
+  async findResponsesForSlotCalculation(formId: string) {
     return this.prismaClient.app_RoutingForms_FormResponse.findMany({
       where: {
         formId,
@@ -108,11 +107,12 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
   }
 
   async deleteResponse(id: number) {
-    const deleted = await this.prismaClient.app_RoutingForms_FormResponse.delete({
+    return this.prismaClient.app_RoutingForms_FormResponse.delete({
       where: {
         id,
       },
@@ -120,6 +120,5 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
         id: true,
       },
     });
-    return { id: deleted.id };
   }
 }

@@ -60,7 +60,9 @@ export default function FormInputFields(props: FormInputFieldsProps) {
               </label>
             </div>
             <Component
-              value={response[field.id]?.value ?? ""}
+              // Checkbox fields produce string[] values (like multiselect), so default to empty array
+              // rather than empty string to ensure correct widget initialization
+              value={response[field.id]?.value ?? (field.type === "checkbox" ? [] : "")}
               placeholder={field.placeholder ?? ""}
               // required property isn't accepted by query-builder types
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment

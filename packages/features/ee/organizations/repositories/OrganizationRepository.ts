@@ -549,4 +549,126 @@ export class OrganizationRepository {
       },
     });
   }
+
+  /**
+   * Finds all organization members with a specific role.
+   * Supports Calendly-equivalent admin panel "list members by role" functionality (AG-001).
+   * Scoped to organization memberships only via the `isOrganization: true` filter.
+   */
+  async findMembersByRole({ orgId, role }: { orgId: number; role: MembershipRole }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        teamId: orgId,
+        role: role,
+        team: {
+          isOrganization: true,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Returns role distribution counts for an organization.
+   * Supports Calendly-equivalent admin dashboard role statistics (AG-001).
+   * Groups membership records by role and returns the count for each.
+   */
+  async countMembersByRole({ orgId }: { orgId: number }) {
+    return this.prismaClient.membership.groupBy({
+      by: ["role"],
+      where: {
+        teamId: orgId,
+        team: {
+          isOrganization: true,
+        },
+      },
+      _count: {
+        role: true,
+      },
+    });
+  }
+
+  /**
+   * Transitions a member's role within an organization.
+   * Supports Calendly-equivalent role transitions such as promoting a member to admin
+   * or demoting an admin to member (AG-001).
+   * Uses the composite unique key `userId_teamId` for precise lookup.
+   * Permission validation is the responsibility of the service/permission layer.
+   */
+  async transitionMemberRole({
+    orgId,
+    userId,
+    newRole,
+  }: {
+    orgId: number;
+    userId: number;
+    newRole: MembershipRole;
+  }) {
+    return this.prismaClient.membership.update({
+      where: {
+        userId_teamId: {
+          userId,
+          teamId: orgId,
+        },
+      },
+      data: {
+        role: newRole,
+      },
+    });
+  }
+
+  /**
+   * Finds all organization members whose role is at or above a given minimum role
+   * in the hierarchy: OWNER > ADMIN > MEMBER.
+   * Supports permission checks that need "all admins and above" queries (AG-001).
+   *
+   * Role hierarchy mapping:
+   * - minimumRole: OWNER  → returns only [OWNER]
+   * - minimumRole: ADMIN  → returns [ADMIN, OWNER]
+   * - minimumRole: MEMBER → returns [MEMBER, ADMIN, OWNER] (all members)
+   */
+  async findMembersWithRoleAtOrAbove({
+    orgId,
+    minimumRole,
+  }: {
+    orgId: number;
+    minimumRole: MembershipRole;
+  }) {
+    const roleHierarchy: Record<MembershipRole, MembershipRole[]> = {
+      [MembershipRole.OWNER]: [MembershipRole.OWNER],
+      [MembershipRole.ADMIN]: [MembershipRole.ADMIN, MembershipRole.OWNER],
+      [MembershipRole.MEMBER]: [MembershipRole.MEMBER, MembershipRole.ADMIN, MembershipRole.OWNER],
+    };
+
+    const applicableRoles = roleHierarchy[minimumRole];
+
+    return this.prismaClient.membership.findMany({
+      where: {
+        teamId: orgId,
+        role: {
+          in: applicableRoles,
+        },
+        team: {
+          isOrganization: true,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
 }

@@ -27,6 +27,7 @@ const {
   MultiSelectWidget,
   SelectWidget,
   NumberWidget,
+  CheckboxGroupWidget,
   FieldSelect,
   Conjs,
   Button,
@@ -76,6 +77,28 @@ const EmailFactory = (props: WidgetProps | undefined) => {
   );
 };
 
+const CheckboxFactory = (
+  props:
+    | (SelectWidgetProps & {
+        listValues: { title: string; value: string }[];
+      })
+    | undefined
+) => renderComponent(props, CheckboxGroupWidget);
+
+const UrlFactory = (props: WidgetProps | undefined) => {
+  if (!props) {
+    return <div />;
+  }
+  return <TextWidget type="url" {...props} />;
+};
+
+const DateFactory = (props: WidgetProps | undefined) => {
+  if (!props) {
+    return <div />;
+  }
+  return <TextWidget type="text" {...props} />;
+};
+
 // react-query-builder types have missing type property on Widget
 //TODO: Reuse FormBuilder Components - FormBuilder components are built considering Cal.com design system and coding guidelines. But when awesome-query-builder renders these components, it passes its own props which are different from what our Components expect.
 // So, a mapper should be written here that maps the props provided by awesome-query-builder to the props that our components expect.
@@ -110,6 +133,20 @@ function withFactoryWidgets(widgets: WidgetsWithoutFactory) {
     email: {
       ...widgets.text,
       factory: EmailFactory,
+    },
+    checkbox: {
+      ...widgets.multiselect,
+      factory: CheckboxFactory,
+    } as SelectWidgetType,
+    url: {
+      ...widgets.text,
+      factory: UrlFactory,
+      valuePlaceholder: "Enter URL",
+    },
+    date: {
+      ...widgets.text,
+      factory: DateFactory,
+      valuePlaceholder: "Select date",
     },
   };
   return widgetsWithFactory;

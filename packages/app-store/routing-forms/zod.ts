@@ -46,6 +46,18 @@ export const zodFieldView = z.union([zodNonRouterFieldView, zodRouterFieldView])
 
 export const zodFieldsView = z.array(zodFieldView).optional();
 
+/**
+ * Defines the possible actions a routing form route can execute when matched.
+ *
+ * Calendly parity mapping (RF-001):
+ * - CustomPageMessage     → Calendly "Display custom message"
+ * - ExternalRedirectUrl   → Calendly "Redirect to external URL"
+ * - EventTypeRedirectUrl  → Calendly "Redirect to booking page"
+ *
+ * All three Calendly routing actions are fully covered — no additional values are needed
+ * for Calendly feature parity. Cal.com's action set is a superset because the same three
+ * primitives support the routing form builder, the API v2 controller, and the UI components.
+ */
 export enum RouteActionType {
   CustomPageMessage = "customPageMessage",
   ExternalRedirectUrl = "externalRedirectUrl",
@@ -64,6 +76,24 @@ export const attributeRoutingConfigSchema = z
 export const zodNonRouterRoute = z.object({
   id: z.string(),
   name: z.string().optional(),
+  /**
+   * Human-readable description of the route's purpose, displayed in the form builder UI.
+   * Aligns with Calendly's per-rule description capability for complex routing forms (RF-001).
+   */
+  description: z.string().optional(),
+  /**
+   * Explicit ordering position for the route within the form builder.
+   * Lower values are evaluated first. When absent, routes are evaluated in array order.
+   * Supports Calendly-equivalent drag-to-reorder behavior in the builder UI (RF-001).
+   */
+  position: z.number().int().optional(),
+  /**
+   * Whether this route is active and should be evaluated during form submission.
+   * When false, the route is skipped during evaluation but preserved in the form configuration
+   * so it can be re-enabled later. Absent or true means the route is active.
+   * Aligns with Calendly's ability to toggle routing rules without deleting them (RF-001).
+   */
+  enabled: z.boolean().optional(),
   attributeIdForWeights: z.string().optional(),
   attributeRoutingConfig: attributeRoutingConfigSchema,
 

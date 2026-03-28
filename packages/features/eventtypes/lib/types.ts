@@ -727,3 +727,87 @@ export type CalVideoSettings = {
   redirectUrlOnExit?: string | null;
   requireEmailForGuests?: boolean | null;
 } | null;
+
+// ============================================================================
+// MANAGED EVENT TYPE PUSH TYPES (AG-003)
+// ============================================================================
+// These types describe the input configuration, per-member state, and
+// distribution result for managed event type push operations. They are
+// consumed by the managed event type push workflow in:
+//   - checkForEmptyAssignment.ts (validation)
+//   - managedEventTypePush.ts    (delta computation)
+//   - eventTypeParity.test.ts    (test assertions)
+// ============================================================================
+
+/**
+ * Configuration input for a managed event type push operation (AG-003).
+ *
+ * Describes the admin template configuration and target member list for
+ * distributing a managed event type template (`SchedulingType.MANAGED`)
+ * from a parent to child event types across team members.
+ *
+ * Used by `validateManagedEventTypePushPreconditions` in `checkForEmptyAssignment.ts`
+ * and `computeManagedEventTypePushDelta` in `managedEventTypePush.ts`.
+ *
+ * @see packages/features/ee/managed-event-types/lib/handleChildrenEventTypes.ts
+ */
+export type ManagedEventTypePushConfig = {
+  /** The parent managed event type ID */
+  eventTypeId: number;
+  /** Title of the managed event type template */
+  title: string;
+  /** Slug of the managed event type template */
+  slug: string;
+  /** Must be "MANAGED" for push operations */
+  schedulingType: "MANAGED" | null;
+  /** The team ID this managed event type belongs to */
+  teamId: number | null;
+  /** When true, all team members should receive the managed event type */
+  assignAllTeamMembers: boolean;
+  /** Explicit list of team member user IDs to push the event type to */
+  targetMemberIds: number[];
+  /** Optional metadata for the managed event type template */
+  metadata?: unknown;
+};
+
+/**
+ * Represents a team member's state relative to a managed event type push (AG-003).
+ *
+ * Used in `ManagedEventTypeDistributionResult` to describe the outcome
+ * for each individual team member in a push operation.
+ */
+export type ManagedEventTypePushMember = {
+  /** The team member's user ID */
+  userId: number;
+  /** The child event type ID if one exists */
+  childEventTypeId?: number;
+  /** Current status of the member's managed event type */
+  status: "new" | "existing" | "removed";
+};
+
+/**
+ * Result metadata from a managed event type push distribution operation (AG-003).
+ *
+ * Captures the distribution delta: which members received new child event types,
+ * which existing members were updated, and which were removed. This type is
+ * returned by `computeManagedEventTypePushDelta` in `managedEventTypePush.ts`.
+ *
+ * Aligns with the existing `handleChildrenEventTypes` return contract which
+ * returns `newUserIds`, `oldUserIds`, `deletedUserIds` arrays.
+ *
+ * @see packages/features/ee/managed-event-types/lib/handleChildrenEventTypes.ts
+ */
+export type ManagedEventTypeDistributionResult = {
+  /** The parent managed event type ID that was pushed */
+  parentEventTypeId: number;
+  /** User IDs of members who will receive a new child event type */
+  newMemberIds: number[];
+  /** User IDs of members who already have a child and need updates */
+  existingMemberIds: number[];
+  /** User IDs of members whose child event type should be removed */
+  removedMemberIds: number[];
+  /** Detailed per-member status */
+  members: ManagedEventTypePushMember[];
+  /** Total number of team members affected by this push */
+  totalAffected: number;
+};

@@ -457,10 +457,52 @@ async function handler(req: NextRequest) {
             ? customReplyTo
             : customReplyTo || fallbackReplyTo;
 
+          // NF-003: Construct event object for ICS calendar attachment in mandatory reminders.
+          // Calendly includes .ics calendar attachments in all reminder emails;
+          // mandatory reminders now include this attachment for Calendly parity.
+          const booking = reminder.booking;
+          const t = await getTranslation(booking.user?.locale ?? "en", "common");
+
+          const attendeePromises = [];
+          for (const attendee of booking.attendees) {
+            attendeePromises.push(
+              getTranslation(attendee.locale ?? "en", "common").then((tAttendee) => ({
+                ...attendee,
+                language: { locale: attendee.locale ?? "en", translate: tAttendee },
+              }))
+            );
+          }
+          const attendees = await Promise.all(attendeePromises);
+
+          const event = {
+            ...booking,
+            startTime: dayjs(booking.startTime).utc().format(),
+            endTime: dayjs(booking.endTime).utc().format(),
+            type: booking.eventType?.slug ?? "",
+            organizer: {
+              name: booking.user?.name ?? "",
+              email: booking.user?.email ?? "",
+              timeZone: booking.user?.timeZone ?? "",
+              language: { translate: t, locale: booking.user?.locale ?? "en" },
+            },
+            attendees,
+            location: bookingMetadataSchema.parse(booking.metadata || {})?.videoCallUrl || booking.location,
+            title: booking.title || booking.eventType?.title || "",
+          };
+
           const mailData = {
             subject: emailContent.emailSubject,
             to: [sendTo],
             html: emailContent.emailBody,
+            // NF-003: Include ICS calendar attachment in mandatory reminders for Calendly parity
+            attachments: [
+              {
+                content: generateIcsString({ event, status: "CONFIRMED" }) || "",
+                filename: "event.ics",
+                contentType: "text/calendar; charset=UTF-8; method=REQUEST",
+                disposition: "attachment",
+              },
+            ],
             sender: reminder.workflowStep?.sender,
             ...(replyTo ? { replyTo } : {}),
           };

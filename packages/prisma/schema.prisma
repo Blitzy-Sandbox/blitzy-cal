@@ -495,6 +495,7 @@ model User {
   smsLockReviewedByAdmin         Boolean                       @default(false)
   NotificationsSubscriptions     NotificationsSubscriptions[]
   activityFeedItems              ActivityFeedItem[]
+  inAppNotifications             InAppNotification[]
   referralLinkId                 String?
   features                       UserFeatures[]
   reassignedBookings             Booking[]                     @relation("reassignByUser")
@@ -553,6 +554,28 @@ model ActivityFeedItem {
 
   @@index([userId])
   @@index([userId, activityType])
+  @@index([userId, createdAt])
+}
+
+/// NF-004: In-app notification persistence for Calendly notification lifecycle parity.
+/// Stores persistent in-app notifications delivered via the IN_APP channel.
+model InAppNotification {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  type        String
+  status      String    @default("UNREAD")
+  url         String?
+  icon        String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+  dismissedAt DateTime?
+
+  @@index([userId])
+  @@index([userId, status])
   @@index([userId, createdAt])
 }
 

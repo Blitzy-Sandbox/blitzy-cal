@@ -29,7 +29,7 @@ import { getMaxHeightForModal } from "./ui-utils";
 
 // Exporting for consumption by @calcom/embed-core user
 export type { EmbedEvent } from "./sdk-action-manager";
-export type { PrefillAndIframeAttrsConfig } from "./types";
+export type { PrefillAndIframeAttrsConfig, UiConfig, EmbedStyles } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rest<T extends any[] | undefined> = T extends [any, ...infer U] ? U : never;

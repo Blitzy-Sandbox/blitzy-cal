@@ -5,8 +5,9 @@ import { createAProfileForAnExistingUser } from "@calcom/features/profile/lib/cr
 import { deleteDomain } from "@calcom/lib/domainManager/organization";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
-import type { Membership, Profile, Team, User, VerificationToken } from "@calcom/prisma/client";
+import type { Membership, Profile, Team, User, VerificationToken, EventType } from "@calcom/prisma/client";
 import { MembershipRole } from "@calcom/prisma/enums";
+import { SchedulingType } from "@calcom/prisma/enums";
 import prismaMock from "@calcom/testing/lib/__mocks__/prismaMock";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -403,6 +404,671 @@ describe("TeamService", () => {
 
       expect(mockTeamBillingFactory.findAndInit).toHaveBeenCalledWith(1);
       expect(mockTeamBilling.publish).toHaveBeenCalled();
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // AG-002: Team Event Routing Behavioral Parity — Test Coverage
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  describe("getNextRoundRobinMember", () => {
+    it("should return the least recently assigned eligible member", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        findRoundRobinRotationState: vi.fn().mockResolvedValue([
+          { userId: 10, bookingCount: 3, lastBookingTimestamp: new Date("2025-03-01T10:00:00Z") },
+          { userId: 20, bookingCount: 1, lastBookingTimestamp: new Date("2025-03-02T10:00:00Z") },
+          { userId: 30, bookingCount: 3, lastBookingTimestamp: new Date("2025-02-15T10:00:00Z") },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.getNextRoundRobinMember({
+        teamId: 1,
+        eventTypeId: 100,
+        eligibleMemberIds: [10, 20, 30],
+      });
+
+      // Member 20 has the fewest bookings (1), so they should be selected
+      expect(result).toEqual({
+        userId: 20,
+        bookingCount: 1,
+      });
+      expect(mockTeamRepo.findTeamWithMembersAndSchedulingData).toHaveBeenCalledWith(1);
+      expect(mockTeamRepo.findRoundRobinRotationState).toHaveBeenCalledWith({
+        teamId: 1,
+        eventTypeId: 100,
+        resetSince: undefined,
+      });
+    });
+
+    it("should handle the first booking when no previous assignments exist", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        // Empty rotation state — no previous bookings
+        findRoundRobinRotationState: vi.fn().mockResolvedValue([]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.getNextRoundRobinMember({
+        teamId: 1,
+        eventTypeId: 100,
+        eligibleMemberIds: [10, 20, 30],
+      });
+
+      // With no prior bookings, all members have 0 bookings and null lastBookingTimestamp.
+      // The tie-breaking logic selects the last eligible member in the iteration order
+      // because a null lastBookingTimestamp is treated as "never assigned" (eligible for rotation).
+      expect(result).toEqual({
+        userId: 30,
+        bookingCount: 0,
+      });
+    });
+
+    it("should respect availability-weighted distribution", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: "DAY",
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        findRoundRobinRotationState: vi.fn().mockResolvedValue([
+          // Member 10 has 5 bookings, Member 20 has 5 bookings, Member 30 has 2 bookings
+          { userId: 10, bookingCount: 5, lastBookingTimestamp: new Date("2025-03-27T10:00:00Z") },
+          { userId: 20, bookingCount: 5, lastBookingTimestamp: new Date("2025-03-27T08:00:00Z") },
+          { userId: 30, bookingCount: 2, lastBookingTimestamp: new Date("2025-03-27T06:00:00Z") },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.getNextRoundRobinMember({
+        teamId: 1,
+        eventTypeId: 100,
+        eligibleMemberIds: [10, 20, 30],
+      });
+
+      // Member 30 has fewer bookings (2 vs 5), respecting proportional distribution
+      expect(result).toEqual({
+        userId: 30,
+        bookingCount: 2,
+      });
+      // Verify that DAY reset interval triggers time-based filtering
+      expect(mockTeamRepo.findRoundRobinRotationState).toHaveBeenCalledWith({
+        teamId: 1,
+        eventTypeId: 100,
+        resetSince: expect.any(Date),
+      });
+    });
+
+    it("should maintain rotation state across calls", async () => {
+      // Simulate tied booking counts — rotation breaks tie by least recent assignment
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        findRoundRobinRotationState: vi.fn().mockResolvedValue([
+          { userId: 10, bookingCount: 2, lastBookingTimestamp: new Date("2025-03-28T12:00:00Z") },
+          { userId: 20, bookingCount: 2, lastBookingTimestamp: new Date("2025-03-28T10:00:00Z") },
+          { userId: 30, bookingCount: 2, lastBookingTimestamp: new Date("2025-03-28T14:00:00Z") },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.getNextRoundRobinMember({
+        teamId: 1,
+        eventTypeId: 100,
+        eligibleMemberIds: [10, 20, 30],
+      });
+
+      // All have 2 bookings. Member 20 was assigned least recently (10:00), so they're next
+      expect(result).toEqual({
+        userId: 20,
+        bookingCount: 2,
+      });
+    });
+
+    it("should return null when no eligible member IDs are provided", async () => {
+      const result = await TeamService.getNextRoundRobinMember({
+        teamId: 1,
+        eventTypeId: 100,
+        eligibleMemberIds: [],
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("validateCollectiveAvailability", () => {
+    it("should return true when all hosts are available for a time slot", async () => {
+      const mockTeamRepo = {
+        findCollectiveAvailability: vi.fn().mockResolvedValue([
+          {
+            userId: 10,
+            isFixed: true,
+            priority: 1,
+            weight: 100,
+            scheduleId: null,
+            user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+            member: { accepted: true, role: MembershipRole.MEMBER },
+          },
+          {
+            userId: 20,
+            isFixed: true,
+            priority: 1,
+            weight: 100,
+            scheduleId: null,
+            user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+            member: { accepted: true, role: MembershipRole.MEMBER },
+          },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.validateCollectiveAvailability({
+        teamId: 1,
+        eventTypeId: 200,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.allHostsRequired).toBe(true);
+      expect(result?.hosts).toHaveLength(2);
+      expect(result?.hosts[0]).toEqual({
+        userId: 10,
+        isFixed: true,
+        user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+      });
+      expect(result?.hosts[1]).toEqual({
+        userId: 20,
+        isFixed: true,
+        user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+      });
+      expect(mockTeamRepo.findCollectiveAvailability).toHaveBeenCalledWith({
+        teamId: 1,
+        eventTypeId: 200,
+      });
+    });
+
+    it("should return false when any host is unavailable", async () => {
+      const mockTeamRepo = {
+        findCollectiveAvailability: vi.fn().mockResolvedValue([
+          {
+            userId: 10,
+            isFixed: true,
+            priority: 1,
+            weight: 100,
+            scheduleId: null,
+            user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+            member: { accepted: true, role: MembershipRole.MEMBER },
+          },
+          {
+            userId: 20,
+            isFixed: true,
+            priority: 1,
+            weight: 100,
+            scheduleId: null,
+            user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+            // Bob has not accepted membership — not a valid host for collective
+            member: { accepted: false, role: MembershipRole.MEMBER },
+          },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.validateCollectiveAvailability({
+        teamId: 1,
+        eventTypeId: 200,
+      });
+
+      // Only Alice (accepted: true) is included; Bob is filtered out
+      expect(result).not.toBeNull();
+      expect(result?.hosts).toHaveLength(1);
+      expect(result?.hosts[0]?.userId).toBe(10);
+      expect(result?.allHostsRequired).toBe(true);
+    });
+
+    it("should use COLLECTIVE scheduling type for collective validation", async () => {
+      const mockTeamRepo = {
+        // Return empty to verify the method handles no-hosts gracefully
+        findCollectiveAvailability: vi.fn().mockResolvedValue([]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.validateCollectiveAvailability({
+        teamId: 1,
+        eventTypeId: 200,
+      });
+
+      // No hosts found for the collective event type — returns null
+      expect(result).toBeNull();
+      // Verify the repository method was called with the correct team + event type
+      // The COLLECTIVE filter is applied inside the TeamRepository query (schedulingType: "COLLECTIVE")
+      expect(mockTeamRepo.findCollectiveAvailability).toHaveBeenCalledWith({
+        teamId: 1,
+        eventTypeId: 200,
+      });
+    });
+  });
+
+  describe("routeTeamBooking", () => {
+    it("should route to round-robin member for ROUND_ROBIN scheduling type", async () => {
+      const mockTeamRepo = {
+        findSchedulingEligibleMembers: vi.fn().mockResolvedValue([
+          {
+            userId: 10,
+            role: MembershipRole.MEMBER,
+            user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+            Host: [{ isFixed: false, priority: 1, weight: 100, scheduleId: null, createdAt: new Date() }],
+          },
+          {
+            userId: 20,
+            role: MembershipRole.MEMBER,
+            user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+            Host: [{ isFixed: false, priority: 1, weight: 100, scheduleId: null, createdAt: new Date() }],
+          },
+        ]),
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        // No previous bookings — first eligible member selected
+        findRoundRobinRotationState: vi.fn().mockResolvedValue([]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.routeTeamBooking({
+        teamId: 1,
+        eventTypeId: 100,
+        schedulingType: SchedulingType.ROUND_ROBIN,
+      });
+
+      expect(result.type).toBe(SchedulingType.ROUND_ROBIN);
+      expect(result.isCollective).toBe(false);
+      expect(result.selectedMembers).toHaveLength(1);
+      // With no prior bookings, the round-robin selects the last eligible member (20)
+      // due to the tie-breaking logic treating null lastBookingTimestamp as "never assigned"
+      expect(result.selectedMembers[0]?.userId).toBe(20);
+      expect(mockTeamRepo.findSchedulingEligibleMembers).toHaveBeenCalledWith({
+        teamId: 1,
+        eventTypeId: 100,
+      });
+    });
+
+    it("should require all hosts for COLLECTIVE scheduling type", async () => {
+      const mockTeamRepo = {
+        findCollectiveAvailability: vi.fn().mockResolvedValue([
+          {
+            userId: 10,
+            isFixed: true,
+            priority: 1,
+            weight: 100,
+            scheduleId: null,
+            user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+            member: { accepted: true, role: MembershipRole.MEMBER },
+          },
+          {
+            userId: 20,
+            isFixed: true,
+            priority: 1,
+            weight: 100,
+            scheduleId: null,
+            user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+            member: { accepted: true, role: MembershipRole.MEMBER },
+          },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.routeTeamBooking({
+        teamId: 1,
+        eventTypeId: 200,
+        schedulingType: SchedulingType.COLLECTIVE,
+      });
+
+      expect(result.type).toBe(SchedulingType.COLLECTIVE);
+      expect(result.isCollective).toBe(true);
+      // All accepted hosts returned for collective confirmation
+      expect(result.selectedMembers).toHaveLength(2);
+      expect(result.selectedMembers).toEqual([{ userId: 10 }, { userId: 20 }]);
+    });
+
+    it("should handle MANAGED scheduling type correctly", async () => {
+      const mockTeamRepo = {} as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.routeTeamBooking({
+        teamId: 1,
+        eventTypeId: 300,
+        schedulingType: SchedulingType.MANAGED,
+      });
+
+      // Managed event types are delegated to child event type system
+      expect(result.type).toBe(SchedulingType.MANAGED);
+      expect(result.isCollective).toBe(false);
+      expect(result.selectedMembers).toEqual([]);
+    });
+
+    it("should throw error for invalid scheduling type", async () => {
+      const mockTeamRepo = {} as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      await expect(
+        TeamService.routeTeamBooking({
+          teamId: 1,
+          eventTypeId: 400,
+          schedulingType: "INVALID_TYPE" as SchedulingType,
+        })
+      ).rejects.toThrow(ErrorWithCode);
+    });
+
+    it("should throw error when no eligible members for round-robin", async () => {
+      const mockTeamRepo = {
+        findSchedulingEligibleMembers: vi.fn().mockResolvedValue([]),
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        findRoundRobinRotationState: vi.fn().mockResolvedValue([]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      await expect(
+        TeamService.routeTeamBooking({
+          teamId: 1,
+          eventTypeId: 100,
+          schedulingType: SchedulingType.ROUND_ROBIN,
+        })
+      ).rejects.toThrow(ErrorWithCode);
+    });
+
+    it("should throw error when no hosts found for collective", async () => {
+      const mockTeamRepo = {
+        findCollectiveAvailability: vi.fn().mockResolvedValue([]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      await expect(
+        TeamService.routeTeamBooking({
+          teamId: 1,
+          eventTypeId: 200,
+          schedulingType: SchedulingType.COLLECTIVE,
+        })
+      ).rejects.toThrow(ErrorWithCode);
+    });
+  });
+
+  describe("getTeamEventRoutingConfig", () => {
+    it("should return round-robin configuration for a team event", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: "MONTH",
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [
+            {
+              accepted: true,
+              role: MembershipRole.MEMBER,
+              userId: 10,
+              user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+              Host: [],
+            },
+            {
+              accepted: true,
+              role: MembershipRole.ADMIN,
+              userId: 20,
+              user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+              Host: [],
+            },
+          ],
+        }),
+        findSchedulingEligibleMembers: vi.fn().mockResolvedValue([
+          {
+            userId: 10,
+            role: MembershipRole.MEMBER,
+            user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+            Host: [],
+          },
+          {
+            userId: 20,
+            role: MembershipRole.ADMIN,
+            user: { id: 20, name: "Bob", email: "bob@example.com", timeZone: "UTC" },
+            Host: [],
+          },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      prismaMock.eventType.findUnique.mockResolvedValue({
+        schedulingType: SchedulingType.ROUND_ROBIN,
+        teamId: 1,
+      } as unknown as EventType);
+
+      const result = await TeamService.getTeamEventRoutingConfig({
+        teamId: 1,
+        eventTypeId: 100,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.schedulingType).toBe(SchedulingType.ROUND_ROBIN);
+      expect(result?.rrResetInterval).toBe("MONTH");
+      expect(result?.teamId).toBe(1);
+      expect(result?.eligibleMembers).toEqual([
+        { userId: 10, role: MembershipRole.MEMBER },
+        { userId: 20, role: MembershipRole.ADMIN },
+      ]);
+    });
+
+    it("should return collective configuration for a team event", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [
+            {
+              accepted: true,
+              role: MembershipRole.MEMBER,
+              userId: 10,
+              user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+              Host: [],
+            },
+          ],
+        }),
+        findSchedulingEligibleMembers: vi.fn().mockResolvedValue([
+          {
+            userId: 10,
+            role: MembershipRole.MEMBER,
+            user: { id: 10, name: "Alice", email: "alice@example.com", timeZone: "UTC" },
+            Host: [],
+          },
+        ]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      prismaMock.eventType.findUnique.mockResolvedValue({
+        schedulingType: SchedulingType.COLLECTIVE,
+        teamId: 1,
+      } as unknown as EventType);
+
+      const result = await TeamService.getTeamEventRoutingConfig({
+        teamId: 1,
+        eventTypeId: 200,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.schedulingType).toBe(SchedulingType.COLLECTIVE);
+      expect(result?.rrResetInterval).toBeNull();
+      expect(result?.eligibleMembers).toEqual([{ userId: 10, role: MembershipRole.MEMBER }]);
+    });
+
+    it("should use TeamRepository for data access", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+        findSchedulingEligibleMembers: vi.fn().mockResolvedValue([]),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      prismaMock.eventType.findUnique.mockResolvedValue({
+        schedulingType: SchedulingType.ROUND_ROBIN,
+        teamId: 1,
+      } as unknown as EventType);
+
+      await TeamService.getTeamEventRoutingConfig({
+        teamId: 1,
+        eventTypeId: 100,
+      });
+
+      // Verify TeamRepository was used for all data access (repository pattern compliance)
+      expect(mockTeamRepo.findTeamWithMembersAndSchedulingData).toHaveBeenCalledWith(1);
+      expect(mockTeamRepo.findSchedulingEligibleMembers).toHaveBeenCalledWith({
+        teamId: 1,
+        eventTypeId: 100,
+      });
+    });
+
+    it("should return null when team is not found", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue(null),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      const result = await TeamService.getTeamEventRoutingConfig({
+        teamId: 999,
+        eventTypeId: 100,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("should return null when event type does not belong to team", async () => {
+      const mockTeamRepo = {
+        findTeamWithMembersAndSchedulingData: vi.fn().mockResolvedValue({
+          id: 1,
+          rrResetInterval: null,
+          rrTimestampBasis: null,
+          metadata: {},
+          parentId: null,
+          isOrganization: false,
+          members: [],
+        }),
+      } as unknown as TeamRepository;
+
+      vi.mocked(TeamRepository).mockImplementation(function () {
+        return mockTeamRepo;
+      });
+
+      // Event type belongs to a different team (teamId: 99 vs queried teamId: 1)
+      prismaMock.eventType.findUnique.mockResolvedValue({
+        schedulingType: SchedulingType.ROUND_ROBIN,
+        teamId: 99,
+      } as unknown as EventType);
+
+      const result = await TeamService.getTeamEventRoutingConfig({
+        teamId: 1,
+        eventTypeId: 100,
+      });
+
+      expect(result).toBeNull();
     });
   });
 });

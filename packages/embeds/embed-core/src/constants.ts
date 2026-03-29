@@ -17,3 +17,16 @@ if (EMBED_MODAL_IFRAME_SLOT_STALE_TIME > EMBED_MODAL_IFRAME_FORCE_RELOAD_THRESHO
 // So, these classes need to be unique to us, to avoid accidental override
 export const EMBED_LIGHT_THEME_CLASS = "cal-element-embed-light";
 export const EMBED_DARK_THEME_CLASS = "cal-element-embed-dark";
+
+// ── Inline Embed Constants (EM-001: Calendly initInlineWidget() parity) ──
+
+/** Minimum width in pixels for inline embeds, matching Calendly's `initInlineWidget()` minimum container width requirement. */
+export const EMBED_INLINE_MIN_WIDTH = 320;
+
+// ── Modal Styling Constants (EM-002: Calendly initPopupWidget() parity) ──
+
+/** Default modal overlay background color. Extracted from ModalBoxHtml for configurability. */
+export const EMBED_MODAL_DEFAULT_OVERLAY_COLOR = "rgb(5, 5, 5, 0.8)";
+
+/** Default close button color for modal embed. Extracted from ModalBoxHtml for configurability. */
+export const EMBED_MODAL_DEFAULT_CLOSE_BUTTON_COLOR = "white";

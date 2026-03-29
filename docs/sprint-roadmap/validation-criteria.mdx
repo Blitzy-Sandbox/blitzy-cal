@@ -254,50 +254,50 @@ Gate 3 validation is **complete**. All validation dimensions have been verified.
 
 ### Gate 4 Validation Evidence
 
-Gate 4 validation is **complete**. All validation dimensions have been verified for Sprint 4 (Webhooks & Events).
+Gate 4 validation is **pending**. Sprint 4 (Webhooks & Events) implementation is in progress.
 
 #### Behavioral Validation Results
 
 | Criteria ID | Description | Result | Verification Method |
 |-------------|-------------|--------|---------------------|
-| **WH-VAL-001** | `BOOKING_CREATED` webhook fires correctly | **✅ Pass** | Verified via `PayloadBuilderFactory` trigger mapping tests and `BaseBookingPayloadBuilder.test.ts` (WH-001) |
-| **WH-VAL-002** | `BOOKING_CANCELLED` webhook fires correctly | **✅ Pass** | Verified via `WebhookNotificationHandler` cancellation flow tests (WH-002) |
-| **WH-VAL-003** | `BOOKING_RESCHEDULED` webhook with old/new booking details | **✅ Pass** | Verified via reschedule payload builder output tests (WH-001, WH-004) |
-| **WH-VAL-004** | `FORM_SUBMITTED` webhook fires on routing form submission | **✅ Pass** | Verified via `FormSubmittedDTO` payload construction tests (WH-003) |
-| **WH-VAL-005** | All 20 `WebhookTriggerEvents` fire correctly | **✅ Pass** | Verified via `TRIGGER_TO_BUILDER_CATEGORY` mapping completeness test |
-| **WH-VAL-006** | `PayloadBuilderFactory` routes to versioned builders correctly | **✅ Pass** | Verified via factory dispatch tests including version resolution (WH-004, WH-005) |
-| **WH-VAL-007** | `v2021-10-20` payload structure preserved exactly | **✅ Pass** | Verified via payload snapshot comparison tests; zero field removals, renames, or type changes |
-| **WH-VAL-008** | `X-Cal-Signature-256` HMAC-SHA256 signing works correctly | **✅ Pass** | Verified via `createWebhookSignature` deterministic output tests |
-| **WH-VAL-009** | `X-Cal-Webhook-Version` header included in all deliveries | **✅ Pass** | Verified via `sendPayload` HTTP header assertion tests (WH-005) |
-| **WH-VAL-010** | Handlebars template rendering produces correct output | **✅ Pass** | Verified via custom `payloadTemplate` rendering tests |
-| **WH-VAL-011** | Tasker async delivery with retry policy functions correctly | **✅ Pass** | Verified via `schedulePayload` async delivery tests |
+| **WH-VAL-001** | `BOOKING_CREATED` webhook fires correctly | **⬜ Pending** | Will verify via `PayloadBuilderFactory` trigger mapping tests and `BaseBookingPayloadBuilder.test.ts` (WH-001) |
+| **WH-VAL-002** | `BOOKING_CANCELLED` webhook fires correctly | **⬜ Pending** | Will verify via `WebhookNotificationHandler` cancellation flow tests (WH-002) |
+| **WH-VAL-003** | `BOOKING_RESCHEDULED` webhook with old/new booking details | **⬜ Pending** | Will verify via reschedule payload builder output tests (WH-001, WH-004) |
+| **WH-VAL-004** | `FORM_SUBMITTED` webhook fires on routing form submission | **⬜ Pending** | Will verify via `FormSubmittedDTO` payload construction tests (WH-003) |
+| **WH-VAL-005** | All 20 `WebhookTriggerEvents` fire correctly | **⬜ Pending** | Will verify via `TRIGGER_TO_BUILDER_CATEGORY` mapping completeness test |
+| **WH-VAL-006** | `PayloadBuilderFactory` routes to versioned builders correctly | **⬜ Pending** | Will verify via factory dispatch tests including version resolution (WH-004, WH-005) |
+| **WH-VAL-007** | `v2021-10-20` payload structure preserved exactly | **⬜ Pending** | Will verify via payload snapshot comparison tests; zero field removals, renames, or type changes |
+| **WH-VAL-008** | `X-Cal-Signature-256` HMAC-SHA256 signing works correctly | **⬜ Pending** | Will verify via `createWebhookSignature` deterministic output tests |
+| **WH-VAL-009** | `X-Cal-Webhook-Version` header included in all deliveries | **⬜ Pending** | Will verify via `sendPayload` HTTP header assertion tests (WH-005) |
+| **WH-VAL-010** | Handlebars template rendering produces correct output | **⬜ Pending** | Will verify via custom `payloadTemplate` rendering tests |
+| **WH-VAL-011** | Tasker async delivery with retry policy functions correctly | **⬜ Pending** | Will verify via `schedulePayload` async delivery tests |
 
 #### Regression Testing Results
 
-- `BaseBookingPayloadBuilder.test.ts` — **100% pass**
-- Payload snapshot tests for `v2021-10-20` — **100% pass** (zero structural changes)
-- `WebhookNotificationHandler` tests — **100% pass**
-- `PayloadBuilderFactory` factory dispatch tests — **100% pass**
-- Signature verification tests — **100% pass**
+- `BaseBookingPayloadBuilder.test.ts` — **⬜ Pending**
+- Payload snapshot tests for `v2021-10-20` — **⬜ Pending** (will verify zero structural changes)
+- `WebhookNotificationHandler` tests — **⬜ Pending**
+- `PayloadBuilderFactory` factory dispatch tests — **⬜ Pending**
+- Signature verification tests — **⬜ Pending**
 
 #### Data Preservation Results
 
-- ✅ Pass — All schema changes follow additive-only zero-downtime patterns. `WebhookTriggerEvents` enum extended with additive values only (no reordering, no removals). No destructive changes to existing `Webhook` model or related tables.
+- ⬜ Pending — Will verify all schema changes follow additive-only zero-downtime patterns. `WebhookTriggerEvents` enum must be extended with additive values only (no reordering, no removals). No destructive changes to existing `Webhook` model or related tables.
 
 #### Webhook Compatibility Results
 
-- `v2021-10-20` payload structure for `BOOKING_CREATED` — **✅ Pass** — Payload structure preserved exactly; Calendly `invitee.created` mapping adds new fields without modifying existing ones
-- `v2021-10-20` payload structure for `BOOKING_CANCELLED` — **✅ Pass** — Payload structure preserved; Calendly `invitee.canceled` mapping is additive only
-- `v2021-10-20` payload structure for `BOOKING_RESCHEDULED` — **✅ Pass** — Payload structure preserved
-- `v2021-10-20` payload structure for `FORM_SUBMITTED` — **✅ Pass** — Existing payload structure preserved; Calendly `routing_form_submission.created` alignment is additive
-- `X-Cal-Signature-256` header — **✅ Pass** — HMAC-SHA256 signing algorithm unchanged
-- `X-Cal-Webhook-Version` header — **✅ Pass** — Header value semantics unchanged
+- `v2021-10-20` payload structure for `BOOKING_CREATED` — **⬜ Pending** — Will verify payload structure preserved; Calendly `invitee.created` mapping must add new fields without modifying existing ones
+- `v2021-10-20` payload structure for `BOOKING_CANCELLED` — **⬜ Pending** — Will verify payload structure preserved; Calendly `invitee.canceled` mapping must be additive only
+- `v2021-10-20` payload structure for `BOOKING_RESCHEDULED` — **⬜ Pending** — Will verify payload structure preserved
+- `v2021-10-20` payload structure for `FORM_SUBMITTED` — **⬜ Pending** — Will verify existing payload structure preserved; Calendly `routing_form_submission.created` alignment must be additive
+- `X-Cal-Signature-256` header — **⬜ Pending** — Will verify HMAC-SHA256 signing algorithm unchanged
+- `X-Cal-Webhook-Version` header — **⬜ Pending** — Will verify header value semantics unchanged
 
 #### Cross-Domain Integration Results
 
-- Booking lifecycle → webhook trigger pipeline — **✅ Pass** (booking create, reschedule, cancel each fire correct webhook events with correct payloads)
-- Routing form submission → `FORM_SUBMITTED` webhook — **✅ Pass** (form submission triggers webhook with complete response data)
-- Calendly event mapping alignment — **✅ Pass** (`invitee.created`, `invitee.canceled`, `routing_form_submission.created` behavioral parity verified)
+- Booking lifecycle → webhook trigger pipeline — **⬜ Pending** (will verify booking create, reschedule, cancel each fire correct webhook events with correct payloads)
+- Routing form submission → `FORM_SUBMITTED` webhook — **⬜ Pending** (will verify form submission triggers webhook with complete response data)
+- Calendly event mapping alignment — **⬜ Pending** (will verify `invitee.created`, `invitee.canceled`, `routing_form_submission.created` behavioral parity)
 
 </Accordion>
 
@@ -334,41 +334,41 @@ Gate 4 validation is **complete**. All validation dimensions have been verified 
 
 ### Gate 5 Validation Evidence
 
-Gate 5 validation is **complete**. All validation dimensions have been verified for Sprint 5 (Routing Forms).
+Gate 5 validation is **pending**. Sprint 5 (Routing Forms) implementation is in progress.
 
 #### Behavioral Validation Results
 
 | Criteria ID | Description | Result | Verification Method |
 |-------------|-------------|--------|---------------------|
-| **RF-VAL-001** | Routing form builder with multiple question types | **✅ Pass** | Verified via `zodNonRouterField` schema validation and `FormInputFields` component tests (RF-001, RF-003) |
-| **RF-VAL-002** | Conditional routing via `findMatchingRoute` | **✅ Pass** | Verified via RAQB `jsonLogic` evaluation tests in `processRoute.tsx` (RF-002) |
-| **RF-VAL-003** | Attribute-based team member routing | **✅ Pass** | Verified via `findTeamMembersMatchingAttributeLogic` tests (RF-002) |
-| **RF-VAL-004** | CRM lookup integration | **✅ Pass** | Verified via `routerGetCrmContactOwnerEmail` mock integration tests |
-| **RF-VAL-005** | Form submission triggers `FORM_SUBMITTED` webhook | **✅ Pass** | Verified via `handleResponse` → webhook trigger integration tests (cross-domain: WH-VAL-004) |
-| **RF-VAL-006** | API v2 `RoutingFormsController` endpoints functional | **✅ Pass** | Verified via NestJS e2e spec tests for routing form CRUD and slot calculation (RF-004) |
-| **RF-VAL-007** | Route destination URL generation via `getRoutedUrl` | **✅ Pass** | Verified via destination type tests (event type page, external URL, custom message) |
+| **RF-VAL-001** | Routing form builder with multiple question types | **⬜ Pending** | Will verify via `zodNonRouterField` schema validation and `FormInputFields` component tests (RF-001, RF-003) |
+| **RF-VAL-002** | Conditional routing via `findMatchingRoute` | **⬜ Pending** | Will verify via RAQB `jsonLogic` evaluation tests in `processRoute.tsx` (RF-002) |
+| **RF-VAL-003** | Attribute-based team member routing | **⬜ Pending** | Will verify via `findTeamMembersMatchingAttributeLogic` tests (RF-002) |
+| **RF-VAL-004** | CRM lookup integration | **⬜ Pending** | Will verify via `routerGetCrmContactOwnerEmail` mock integration tests |
+| **RF-VAL-005** | Form submission triggers `FORM_SUBMITTED` webhook | **⬜ Pending** | Will verify via `handleResponse` → webhook trigger integration tests (cross-domain: WH-VAL-004) |
+| **RF-VAL-006** | API v2 `RoutingFormsController` endpoints functional | **⬜ Pending** | Will verify via NestJS e2e spec tests for routing form CRUD and slot calculation (RF-004) |
+| **RF-VAL-007** | Route destination URL generation via `getRoutedUrl` | **⬜ Pending** | Will verify via destination type tests (event type page, external URL, custom message) |
 
 #### Regression Testing Results
 
-- Playwright E2E tests (`basic.e2e.ts`, `attribute-routing.e2e.ts`) — **100% pass**
-- RAQB `jsonLogic` rule evaluation tests — **100% pass**
-- Route matching tests in `processRoute.tsx` — **100% pass**
-- `parseRoutingFormResponse` utility tests — **100% pass**
-- API v2 routing forms e2e spec — **100% pass**
+- Playwright E2E tests (`basic.e2e.ts`, `attribute-routing.e2e.ts`) — **⬜ Pending**
+- RAQB `jsonLogic` rule evaluation tests — **⬜ Pending**
+- Route matching tests in `processRoute.tsx` — **⬜ Pending**
+- `parseRoutingFormResponse` utility tests — **⬜ Pending**
+- API v2 routing forms e2e spec — **⬜ Pending**
 
 #### Data Preservation Results
 
-- ✅ Pass — No destructive schema changes. All routing form configurations preserved. `queryValue` structure remains compatible with existing saved form configurations.
+- ⬜ Pending — Will verify no destructive schema changes. All routing form configurations must be preserved. `queryValue` structure must remain compatible with existing saved form configurations.
 
 #### Webhook Compatibility Results
 
-- `FORM_SUBMITTED` webhook payload — **✅ Pass** — Existing payload structure preserved; response data format unchanged for existing subscribers
+- `FORM_SUBMITTED` webhook payload — **⬜ Pending** — Will verify existing payload structure preserved; response data format unchanged for existing subscribers
 
 #### Cross-Domain Integration Results
 
-- Routing forms → event type booking pages — **✅ Pass** (form submission correctly resolves to matched event type)
-- Routing form submission → `FORM_SUBMITTED` webhook (WH-VAL-004) — **✅ Pass**
-- Routed event types → availability engine — **✅ Pass** (routed event types display correct availability)
+- Routing forms → event type booking pages — **⬜ Pending** (will verify form submission correctly resolves to matched event type)
+- Routing form submission → `FORM_SUBMITTED` webhook (WH-VAL-004) — **⬜ Pending**
+- Routed event types → availability engine — **⬜ Pending** (will verify routed event types display correct availability)
 
 </Accordion>
 
@@ -408,40 +408,40 @@ Gate 5 validation is **complete**. All validation dimensions have been verified 
 
 ### Gate 6 Validation Evidence
 
-Gate 6 validation is **complete**. All validation dimensions have been verified for Sprint 6 (Embed & Share).
+Gate 6 validation is **pending**. Sprint 6 (Embed & Share) implementation is in progress. Blocked on Wave 3 gate completion.
 
 #### Behavioral Validation Results
 
 | Criteria ID | Description | Result | Verification Method |
 |-------------|-------------|--------|---------------------|
-| **EM-VAL-001** | Inline embed renders correctly | **✅ Pass** | Verified via `Cal.inline()` DOM rendering tests (EM-001) |
-| **EM-VAL-002** | Modal embed opens popup overlay | **✅ Pass** | Verified via `Cal.modal()` overlay lifecycle tests (EM-002) |
-| **EM-VAL-003** | Floating button embed displayed | **✅ Pass** | Verified via `Cal.floatingButton()` persistent button tests (EM-003) |
-| **EM-VAL-004** | React `Cal` component with `getCalApi` hook functions correctly | **✅ Pass** | Verified via `embed-react` component tests (EM-004) |
-| **EM-VAL-005** | Vanilla JS snippet auto-loads `embed-core` | **✅ Pass** | Verified via `embed-snippet` loader initialization tests (EM-004) |
-| **EM-VAL-006** | `postMessage` handshake protocol completes | **✅ Pass** | Verified via parent-iframe communication lifecycle tests |
-| **EM-VAL-007** | Prefill parameters passed correctly | **✅ Pass** | Verified via URL parameter injection tests (name, email, guests, custom fields) |
-| **EM-VAL-008** | Prerendering and preloading both functional | **✅ Pass** | Verified via embed performance mode tests |
-| **EM-VAL-009** | Skeleton loader displays during load | **✅ Pass** | Verified via visual feedback rendering tests |
+| **EM-VAL-001** | Inline embed renders correctly | **⬜ Pending** | Will verify via `Cal.inline()` DOM rendering tests (EM-001) |
+| **EM-VAL-002** | Modal embed opens popup overlay | **⬜ Pending** | Will verify via `Cal.modal()` overlay lifecycle tests (EM-002) |
+| **EM-VAL-003** | Floating button embed displayed | **⬜ Pending** | Will verify via `Cal.floatingButton()` persistent button tests (EM-003) |
+| **EM-VAL-004** | React `Cal` component with `getCalApi` hook functions correctly | **⬜ Pending** | Will verify via `embed-react` component tests (EM-004) |
+| **EM-VAL-005** | Vanilla JS snippet auto-loads `embed-core` | **⬜ Pending** | Will verify via `embed-snippet` loader initialization tests (EM-004) |
+| **EM-VAL-006** | `postMessage` handshake protocol completes | **⬜ Pending** | Will verify via parent-iframe communication lifecycle tests |
+| **EM-VAL-007** | Prefill parameters passed correctly | **⬜ Pending** | Will verify via URL parameter injection tests (name, email, guests, custom fields) |
+| **EM-VAL-008** | Prerendering and preloading both functional | **⬜ Pending** | Will verify via embed performance mode tests |
+| **EM-VAL-009** | Skeleton loader displays during load | **⬜ Pending** | Will verify via visual feedback rendering tests |
 
 #### Regression Testing Results
 
-- Embed lifecycle tests — **100% pass**
-- `postMessage` handshake tests — **100% pass**
-- Prerendering/preloading tests — **100% pass**
-- `CalApi` command queue interface tests — **100% pass**
-- Custom styling/CSS override tests — **100% pass**
+- Embed lifecycle tests — **⬜ Pending**
+- `postMessage` handshake tests — **⬜ Pending**
+- Prerendering/preloading tests — **⬜ Pending**
+- `CalApi` command queue interface tests — **⬜ Pending**
+- Custom styling/CSS override tests — **⬜ Pending**
 
 #### Data Preservation Results
 
-- ✅ Pass — No schema changes required for embed parity. Embed packages are client-side only with no database modifications.
+- ⬜ Pending — No schema changes expected for embed parity. Embed packages are client-side only with no database modifications.
 
 #### Cross-Domain Integration Results
 
-- Embeds → event type booking pages — **✅ Pass** (correct booking page loads based on `calLink` parameter)
-- Embed booking → webhook trigger — **✅ Pass** (booking through embed triggers same webhooks as direct booking)
-- Routing form prerendering in modal embeds — **✅ Pass** (forms render correctly within modal overlay)
-- Embed events (`bookingSuccessful`, `linkReady`) — **✅ Pass** (fire correctly for parent page consumption)
+- Embeds → event type booking pages — **⬜ Pending** (will verify correct booking page loads based on `calLink` parameter)
+- Embed booking → webhook trigger — **⬜ Pending** (will verify booking through embed triggers same webhooks as direct booking)
+- Routing form prerendering in modal embeds — **⬜ Pending** (will verify forms render correctly within modal overlay)
+- Embed events (`bookingSuccessful`, `linkReady`) — **⬜ Pending** (will verify they fire correctly for parent page consumption)
 
 </Accordion>
 
@@ -479,39 +479,39 @@ Gate 6 validation is **complete**. All validation dimensions have been verified 
 
 ### Gate 7 Validation Evidence
 
-Gate 7 validation is **complete**. All validation dimensions have been verified for Sprint 7 (Admin & Teams).
+Gate 7 validation is **pending**. Sprint 7 (Admin & Teams) implementation is in progress.
 
 #### Behavioral Validation Results
 
 | Criteria ID | Description | Result | Verification Method |
 |-------------|-------------|--------|---------------------|
-| **AG-VAL-001** | Organization admin/owner/member role model | **✅ Pass** | Verified via PBAC permission enforcement tests (AG-001) |
-| **AG-VAL-002** | Team creation and configuration | **✅ Pass** | Verified via `TeamRepository` CRUD and `teamService` lifecycle tests |
-| **AG-VAL-003** | Team event routing (round-robin and collective) | **✅ Pass** | Verified via `SchedulingType.ROUND_ROBIN` and `SchedulingType.COLLECTIVE` team distribution tests (AG-002) |
-| **AG-VAL-004** | Managed event type push (`SchedulingType.MANAGED`) | **✅ Pass** | Verified via admin-to-member event type template push tests (AG-003) |
-| **AG-VAL-005** | Member invitation workflow | **✅ Pass** | Verified via `inviteMemberUtils` token generation, email dispatch, and acceptance flow tests (AG-004) |
-| **AG-VAL-006** | PBAC permissions restrict actions by role | **✅ Pass** | Verified via `OrganizationPermissionService` and `checkMembership` enforcement tests (AG-001) |
-| **AG-VAL-007** | Organization branding propagation | **✅ Pass** | Verified via `OrganizationBranding` context provider propagation tests |
-| **AG-VAL-008** | Sub-team hierarchies function correctly | **✅ Pass** | Verified via nested team structure CRUD and membership inheritance tests |
+| **AG-VAL-001** | Organization admin/owner/member role model | **⬜ Pending** | Will verify via PBAC permission enforcement tests (AG-001) |
+| **AG-VAL-002** | Team creation and configuration | **⬜ Pending** | Will verify via `TeamRepository` CRUD and `teamService` lifecycle tests |
+| **AG-VAL-003** | Team event routing (round-robin and collective) | **⬜ Pending** | Will verify via `SchedulingType.ROUND_ROBIN` and `SchedulingType.COLLECTIVE` team distribution tests (AG-002) |
+| **AG-VAL-004** | Managed event type push (`SchedulingType.MANAGED`) | **⬜ Pending** | Will verify via admin-to-member event type template push tests (AG-003) |
+| **AG-VAL-005** | Member invitation workflow | **⬜ Pending** | Will verify via `inviteMemberUtils` token generation, email dispatch, and acceptance flow tests (AG-004) |
+| **AG-VAL-006** | PBAC permissions restrict actions by role | **⬜ Pending** | Will verify via `OrganizationPermissionService` and `checkMembership` enforcement tests (AG-001) |
+| **AG-VAL-007** | Organization branding propagation | **⬜ Pending** | Will verify via `OrganizationBranding` context provider propagation tests |
+| **AG-VAL-008** | Sub-team hierarchies function correctly | **⬜ Pending** | Will verify via nested team structure CRUD and membership inheritance tests |
 
 #### Regression Testing Results
 
-- Organization CRUD tests (`OrganizationRepository`) — **100% pass**
-- Membership lifecycle tests (`MembershipRepository`, `membershipService`) — **100% pass**
-- PBAC permission enforcement tests — **100% pass**
-- Team service tests (`teamService.ts`) — **100% pass**
-- `TeamEventTypeForm` component tests — **100% pass**
-- `inviteMemberUtils` tests — **100% pass**
+- Organization CRUD tests (`OrganizationRepository`) — **⬜ Pending**
+- Membership lifecycle tests (`MembershipRepository`, `membershipService`) — **⬜ Pending**
+- PBAC permission enforcement tests — **⬜ Pending**
+- Team service tests (`teamService.ts`) — **⬜ Pending**
+- `TeamEventTypeForm` component tests — **⬜ Pending**
+- `inviteMemberUtils` tests — **⬜ Pending**
 
 #### Data Preservation Results
 
-- ✅ Pass — All schema changes follow additive-only patterns. No destructive changes to `Membership`, `Team`, or organization models. Existing member roles and permissions preserved.
+- ⬜ Pending — Will verify all schema changes follow additive-only patterns. No destructive changes to `Membership`, `Team`, or organization models. Existing member roles and permissions must be preserved.
 
 #### Cross-Domain Integration Results
 
-- Team event types → availability engine — **✅ Pass** (each team member's availability respected)
-- Admin managed event type push → team members — **✅ Pass** (configuration propagates correctly)
-- Organization branding → team member booking pages — **✅ Pass**
+- Team event types → availability engine — **⬜ Pending** (will verify each team member's availability respected)
+- Admin managed event type push → team members — **⬜ Pending** (will verify configuration propagates correctly)
+- Organization branding → team member booking pages — **⬜ Pending**
 
 </Accordion>
 
@@ -551,48 +551,48 @@ Gate 7 validation is **complete**. All validation dimensions have been verified 
 
 ### Gate 8 Validation Evidence
 
-Gate 8 validation is **complete**. All validation dimensions have been verified for Sprint 8 (Notifications & Workflows).
+Gate 8 validation is **pending**. Sprint 8 (Notifications & Workflows) implementation is in progress. Blocked on Wave 3 gate completion.
 
 #### Behavioral Validation Results
 
 | Criteria ID | Description | Result | Verification Method |
 |-------------|-------------|--------|---------------------|
-| **NF-VAL-001** | Booking confirmation email to attendee | **✅ Pass** | Verified via `sendScheduledEmailsAndSMS` dispatch tests and email template rendering tests (NF-001) |
-| **NF-VAL-002** | Booking confirmation email to host | **✅ Pass** | Verified via host notification dispatch tests (NF-001) |
-| **NF-VAL-003** | Reminder emails at configured intervals | **✅ Pass** | Verified via `scheduleBookingReminders` time-based scheduling tests (NF-002) |
-| **NF-VAL-004** | SMS reminders via Twilio | **✅ Pass** | Verified via `sms-manager` Twilio delivery tests with credit gating (NF-002) |
-| **NF-VAL-005** | Cancellation notifications to all parties | **✅ Pass** | Verified via `sendCancelledEmailsAndSMS` dispatch tests (NF-004) |
-| **NF-VAL-006** | Follow-up emails via workflow automation | **✅ Pass** | Verified via `scheduleWorkflowNotifications` trigger and action tests (NF-003) |
-| **NF-VAL-007** | ICS calendar attachments in confirmation emails | **✅ Pass** | Verified via ICS generation tests in `packages/emails/lib/` |
-| **NF-VAL-008** | Email templates render with correct booking details | **✅ Pass** | Verified via template rendering tests (attendee name, event title, time, location, timezone) (NF-001) |
-| **NF-VAL-009** | `WorkflowAction` triggers scheduled notifications correctly | **✅ Pass** | Verified via workflow trigger pipeline tests including `scheduleEmailReminders` and `scheduleSMSReminders` cron handlers (NF-003) |
-| **NF-VAL-010** | Multi-provider email delivery (SMTP, SendGrid, Resend) | **✅ Pass** | Verified via `email-manager` provider failover tests |
+| **NF-VAL-001** | Booking confirmation email to attendee | **⬜ Pending** | Will verify via `sendScheduledEmailsAndSMS` dispatch tests and email template rendering tests (NF-001) |
+| **NF-VAL-002** | Booking confirmation email to host | **⬜ Pending** | Will verify via host notification dispatch tests (NF-001) |
+| **NF-VAL-003** | Reminder emails at configured intervals | **⬜ Pending** | Will verify via `scheduleBookingReminders` time-based scheduling tests (NF-002) |
+| **NF-VAL-004** | SMS reminders via Twilio | **⬜ Pending** | Will verify via `sms-manager` Twilio delivery tests with credit gating (NF-002) |
+| **NF-VAL-005** | Cancellation notifications to all parties | **⬜ Pending** | Will verify via `sendCancelledEmailsAndSMS` dispatch tests (NF-004) |
+| **NF-VAL-006** | Follow-up emails via workflow automation | **⬜ Pending** | Will verify via `scheduleWorkflowNotifications` trigger and action tests (NF-003) |
+| **NF-VAL-007** | ICS calendar attachments in confirmation emails | **⬜ Pending** | Will verify via ICS generation tests in `packages/emails/lib/` |
+| **NF-VAL-008** | Email templates render with correct booking details | **⬜ Pending** | Will verify via template rendering tests (attendee name, event title, time, location, timezone) (NF-001) |
+| **NF-VAL-009** | `WorkflowAction` triggers scheduled notifications correctly | **⬜ Pending** | Will verify via workflow trigger pipeline tests including `scheduleEmailReminders` and `scheduleSMSReminders` cron handlers (NF-003) |
+| **NF-VAL-010** | Multi-provider email delivery (SMTP, SendGrid, Resend) | **⬜ Pending** | Will verify via `email-manager` provider failover tests |
 
 #### Regression Testing Results
 
-- Email template rendering tests (`packages/emails/templates/`) — **100% pass**
-- `email-manager.ts` dispatch function tests — **100% pass**
-- SMS delivery tests (`sms-manager.ts`) — **100% pass**
-- Workflow trigger pipeline tests (`packages/features/ee/workflows/`) — **100% pass**
-- ICS generation tests — **100% pass**
-- `scheduleEmailReminders` cron handler tests — **100% pass**
-- `scheduleSMSReminders` cron handler tests — **100% pass**
+- Email template rendering tests (`packages/emails/templates/`) — **⬜ Pending**
+- `email-manager.ts` dispatch function tests — **⬜ Pending**
+- SMS delivery tests (`sms-manager.ts`) — **⬜ Pending**
+- Workflow trigger pipeline tests (`packages/features/ee/workflows/`) — **⬜ Pending**
+- ICS generation tests — **⬜ Pending**
+- `scheduleEmailReminders` cron handler tests — **⬜ Pending**
+- `scheduleSMSReminders` cron handler tests — **⬜ Pending**
 
 #### Data Preservation Results
 
-- ✅ Pass — All schema changes follow additive-only patterns. No destructive changes to `Workflow`, `WorkflowStep`, or `WorkflowsOnEventTypes` models. Existing workflow configurations preserved.
+- ⬜ Pending — Will verify all schema changes follow additive-only patterns. No destructive changes to `Workflow`, `WorkflowStep`, or `WorkflowsOnEventTypes` models. Existing workflow configurations must be preserved.
 
 #### Webhook Compatibility Results
 
-- Booking lifecycle notifications align with webhook events — **✅ Pass** — `BOOKING_CREATED` webhook and confirmation email reference identical booking data
-- Notification triggers do not modify webhook payload structure — **✅ Pass**
+- Booking lifecycle notifications align with webhook events — **⬜ Pending** — Will verify `BOOKING_CREATED` webhook and confirmation email reference identical booking data
+- Notification triggers do not modify webhook payload structure — **⬜ Pending**
 
 #### Cross-Domain Integration Results
 
-- Booking create → confirmation email + webhook — **✅ Pass** (both fire with consistent booking data)
-- Booking cancel → cancellation email + `BOOKING_CANCELLED` webhook — **✅ Pass**
-- Team/org settings → notification branding — **✅ Pass** (organization branding from AG-VAL-007 applies to notification templates)
-- Workflow automation → scheduled reminders → email/SMS delivery — **✅ Pass**
+- Booking create → confirmation email + webhook — **⬜ Pending** (will verify both fire with consistent booking data)
+- Booking cancel → cancellation email + `BOOKING_CANCELLED` webhook — **⬜ Pending**
+- Team/org settings → notification branding — **⬜ Pending** (will verify organization branding from AG-VAL-007 applies to notification templates)
+- Workflow automation → scheduled reminders → email/SMS delivery — **⬜ Pending**
 
 </Accordion>
 
@@ -693,15 +693,15 @@ The following comprehensive checklist must be completed with all items passing b
 | 1 | Availability rules match Calendly behavior | AV | All AV-VAL-001 through AV-VAL-009 criteria met | ⬜ |
 | 2 | All event type paradigms match or exceed Calendly | ET | All ET-VAL-001 through ET-VAL-009 criteria met | ⬜ |
 | 3 | Google/Outlook/iCloud calendar sync parity | CI | CI-VAL-001 through CI-VAL-006 met | ⬜ |
-| 4 | Webhook events cover Calendly's 3 core events | WH | WH-VAL-001 through WH-VAL-004 met | ✅ |
-| 5 | `v2021-10-20` webhook payloads unchanged | WH | WH-VAL-007 met — zero breaking changes to existing payload structure | ✅ |
-| 6 | Routing forms match Calendly routing workflows | RF | All RF-VAL-001 through RF-VAL-007 criteria met | ✅ |
-| 7 | Embed options match or exceed Calendly embeds | EM | EM-VAL-001 through EM-VAL-003 met (core parity); EM-VAL-004 through EM-VAL-009 documented as Cal.com advantages | ✅ |
-| 8 | Admin roles match Calendly's organizational model | AG | All AG-VAL-001 through AG-VAL-008 criteria met | ✅ |
-| 9 | Notification lifecycle matches Calendly | NF | All NF-VAL-001 through NF-VAL-010 criteria met | ✅ |
-| 10 | Zero data loss across all migrations | ALL | All data preservation checks pass at every gate (see [Data Preservation](/migration/data-preservation)) | ✅ |
-| 11 | Zero regression across all domains | ALL | All existing test suites pass at 100% (see regression test summary above) | ✅ |
-| 12 | Webhook backward compatibility guaranteed | WH | All existing webhook consumers receive unchanged payloads (see [Webhook Compatibility](/migration/webhook-compatibility)) | ✅ |
+| 4 | Webhook events cover Calendly's 3 core events | WH | WH-VAL-001 through WH-VAL-004 targeted | ⬜ |
+| 5 | `v2021-10-20` webhook payloads unchanged | WH | WH-VAL-007 targeted — zero breaking changes to existing payload structure | ⬜ |
+| 6 | Routing forms match Calendly routing workflows | RF | RF-VAL-001 through RF-VAL-007 targeted | ⬜ |
+| 7 | Embed options match or exceed Calendly embeds | EM | EM-VAL-001 through EM-VAL-003 targeted (core parity); EM-VAL-004 through EM-VAL-009 documented as Cal.com advantages | ⬜ |
+| 8 | Admin roles match Calendly's organizational model | AG | AG-VAL-001 through AG-VAL-008 targeted | ⬜ |
+| 9 | Notification lifecycle matches Calendly | NF | NF-VAL-001 through NF-VAL-010 targeted | ⬜ |
+| 10 | Zero data loss across all migrations | ALL | Data preservation checks pending at each gate (see [Data Preservation](/migration/data-preservation)) | ⬜ |
+| 11 | Zero regression across all domains | ALL | Pre-existing baseline: 24 of 618 test files fail (97% pass rate, 6896 of 6983 tests pass). Sprint changes must not increase failure count | ⬜ |
+| 12 | Webhook backward compatibility guaranteed | WH | Existing webhook consumers must continue to receive unchanged payloads (see [Webhook Compatibility](/migration/webhook-compatibility)) | ⬜ |
 
 <Info>
   **Parity declaration** requires ALL 12 items to show a passing status. Any single failure blocks the declaration until the underlying acceptance criteria are met.
@@ -710,24 +710,24 @@ The following comprehensive checklist must be completed with all items passing b
 ### Wave Gate Clearance Summary
 
 <Info>
-  **Wave 3 Gate (Sprints 4, 5, 7) — CLEARED ✅**
+  **Wave 3 Gate (Sprints 4, 5, 7) — PENDING**
 
-  All five validation dimensions passed for Webhooks & Events (Sprint 4), Routing Forms (Sprint 5), and Admin & Teams (Sprint 7):
-  - **Behavioral Testing:** All WH-VAL (11), RF-VAL (7), and AG-VAL (8) acceptance criteria met — 26 of 26 criteria passed
-  - **Regression Testing:** Zero test failures across all affected packages
-  - **Data Preservation:** Zero data loss — all schema changes additive-only
-  - **Webhook Compatibility:** `v2021-10-20` payload structure preserved exactly for all existing subscribers
-  - **Cross-Domain Integration:** All inter-domain scenarios verified (booking lifecycle → webhooks, routing forms → webhooks, team settings → permissions)
+  Validation dimensions for Webhooks & Events (Sprint 4), Routing Forms (Sprint 5), and Admin & Teams (Sprint 7) are pending implementation completion:
+  - **Behavioral Testing:** WH-VAL (11), RF-VAL (7), and AG-VAL (8) acceptance criteria defined — 26 total criteria to validate
+  - **Regression Testing:** Baseline established — 24 pre-existing test file failures (97% pass rate). Sprint changes must not increase failures
+  - **Data Preservation:** Additive-only schema changes planned per zero-downtime strategy
+  - **Webhook Compatibility:** `v2021-10-20` payload preservation mandated for all existing subscribers
+  - **Cross-Domain Integration:** Inter-domain scenarios defined (booking lifecycle → webhooks, routing forms → webhooks, team settings → permissions)
 </Info>
 
 <Info>
-  **Wave 4 Gate (Sprints 6, 8) — CLEARED ✅**
+  **Wave 4 Gate (Sprints 6, 8) — PENDING (blocked on Wave 3)**
 
-  All five validation dimensions passed for Embed & Share (Sprint 6) and Notifications & Workflows (Sprint 8):
-  - **Behavioral Testing:** All EM-VAL (9) and NF-VAL (10) acceptance criteria met — 19 of 19 criteria passed
-  - **Regression Testing:** Zero test failures across all affected packages
-  - **Data Preservation:** Zero data loss — embed packages require no schema changes; notification schema changes additive-only
-  - **Webhook Compatibility:** Notification triggers do not modify webhook payload structure
+  Validation dimensions for Embed & Share (Sprint 6) and Notifications & Workflows (Sprint 8) are pending Wave 3 gate clearance:
+  - **Behavioral Testing:** EM-VAL (9) and NF-VAL (10) acceptance criteria defined — 19 total criteria to validate
+  - **Regression Testing:** Baseline established — 24 pre-existing test file failures. Sprint changes must not increase failures
+  - **Data Preservation:** Embed packages require no schema changes; notification schema changes planned as additive-only
+  - **Webhook Compatibility:** Notification triggers must not modify webhook payload structure
   - **Cross-Domain Integration:** Embed → booking → webhooks → notifications pipeline verified end-to-end
 
   **Total in-scope validation criteria completed: 45 of 45** across WH-VAL (11), RF-VAL (7), EM-VAL (9), AG-VAL (8), NF-VAL (10)

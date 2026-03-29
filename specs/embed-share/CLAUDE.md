@@ -1,4 +1,4 @@
-# AGENTS.md — Embed & Share
+# CLAUDE.md — Embed & Share
 
 ## Project Context
 

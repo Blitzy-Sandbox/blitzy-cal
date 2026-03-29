@@ -68,6 +68,8 @@ export type PreviewState = {
       buttonPosition?: "bottom-left" | "bottom-right";
       buttonColor?: string;
       buttonTextColor?: string;
+      /** EM-003: Custom border radius for the floating button (e.g., "50%", "8px") */
+      buttonBorderRadius?: string;
     },
     "floating-popup"
   >;

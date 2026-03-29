@@ -1,10 +1,10 @@
-# AGENTS.md — Admin and Teams
+# CLAUDE.md — Admin & Teams
 
 ## Project Context
 
 Sprint 7: Admin and Teams (F-009) of the Calendly gap closure initiative. This sprint ensures behavioral parity between Cal.com's hierarchical organization model with PBAC and Calendly's admin/owner/user role model, team event routing, managed event type push, and member invitation workflows. It encompasses 4 epics (AG-001 through AG-004):
 
-- **AG-001** — Admin role model parity: align Cal.com's PBAC model with Calendly's admin/owner/user structure, including default role templates for "Group Admin" and "Team Manager" equivalents
+- **AG-001** — Admin role model parity: align Cal.com's PBAC model with Calendly's admin/owner/user structure through behavioral verification and mapping documentation (custom PBAC role templates for "Group Admin" and "Team Manager" are deferred to future work items AT-FW-001 and AT-FW-002 per `specs/admin-teams/decisions.md` ADR-001)
 - **AG-002** — Team event routing behavioral parity: round-robin and collective scheduling alignment with Calendly's team event distribution patterns
 - **AG-003** — Managed event type push behavior parity: admin-templated event types via `SchedulingType.MANAGED` pushed to team members
 - **AG-004** — Member invitation workflow parity: token-based invitation lifecycle aligned with Calendly's email-based invitation, acceptance, and rejection patterns

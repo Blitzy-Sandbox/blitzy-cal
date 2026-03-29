@@ -1,4 +1,4 @@
-# AGENTS.md — Notifications & Workflows
+# CLAUDE.md — Notifications & Workflows
 
 ## Project Context
 
@@ -8,7 +8,7 @@ Sprint 8: Notifications & Workflows (F-011) of the Calendly gap closure initiati
 
 1. Read `specs/notifications-workflows/design.md`
 2. Check `specs/notifications-workflows/implementation.md` for current progress
-3. Read the source-of-truth gap report at `docs/gap-report/notifications-workflows.mdx`
+3. Read the source-of-truth gap report at `docs/gap-report/notifications.mdx`
 4. Read the validation criteria for NF-VAL in `docs/sprint-roadmap/validation-criteria.mdx`
 5. Read the migration safety constraints at `docs/migration/zero-downtime-strategy.mdx` and `docs/migration/data-preservation.mdx`
 6. Confirm that Sprint 4 (Webhooks) and Sprint 7 (Admin/Teams) have passed their Wave 3 validation gates before starting any implementation

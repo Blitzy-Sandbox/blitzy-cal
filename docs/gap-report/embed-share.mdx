@@ -387,14 +387,14 @@ The following table catalogs all identified gaps between Cal.com and Calendly em
 
 - `Cal.inline()` via the `cal-inline` custom element now achieves full behavioral parity with Calendly's `Calendly.initInlineWidget()`
 - Inline embed prefill, auto-resize, and event tracking aligned with Calendly expectations
-- Validation criteria satisfied: **EM-VAL-001** (inline render), **EM-VAL-004** (prefill support), **EM-VAL-005** (auto-resize)
+- Validation criteria satisfied: **EM-VAL-001** (inline render), **EM-VAL-007** (prefill parameters)
 - Implementation reference: `packages/embeds/embed-core/src/embed.ts`
 
 ### EM-002 — Modal/Popup Embed Behavioral Parity
 
 - `Cal.modal()` via the `cal-modal-box` custom element achieves behavioral parity with Calendly's `Calendly.initPopupWidget()`
 - Modal overlay behavior, close handling, and configuration options aligned
-- Validation criteria satisfied: **EM-VAL-002** (modal overlay), **EM-VAL-006** (prerender performance)
+- Validation criteria satisfied: **EM-VAL-002** (modal overlay), **EM-VAL-008** (prerendering)
 - Implementation reference: `packages/embeds/embed-core/src/embed.ts`
 
 ### EM-003 — Floating Button Embed Behavioral Parity
@@ -411,7 +411,7 @@ The following table catalogs all identified gaps between Cal.com and Calendly em
 - Loader snippet enhanced for share flow: `packages/embeds/embed-snippet/src/index.ts`
 - Backend embed support updated: `packages/features/embed/`
 - Frontend embed dialog updated: `apps/web/modules/embed/`
-- Validation criteria satisfied: **EM-VAL-007** (multi-embed namespace isolation), **EM-VAL-008** (event tracking lifecycle), **EM-VAL-009** (platform compatibility)
+- Validation criteria satisfied: **EM-VAL-004** (React wrapper), **EM-VAL-005** (vanilla JS snippet), **EM-VAL-006** (postMessage protocol)
 
 ### Deferred Items
 
@@ -588,41 +588,41 @@ The following low-severity items have been **deferred** from Sprint 6 scope. The
 The following behavioral acceptance criteria define parity for embed and share flows.
 
 <Info>
-  **Validation Status:** All acceptance criteria below have been validated as part of Sprint 6 epic implementation (EM-001 through EM-004). These criteria map to validation criteria **EM-VAL-001** through **EM-VAL-009** defined in the [Sprint Roadmap — Validation Criteria](/sprint-roadmap/validation-criteria).
+  **Validation Status:** The acceptance criteria below map to validation criteria **EM-VAL-001** through **EM-VAL-009** as defined in the [Sprint Roadmap — Validation Criteria](/sprint-roadmap/validation-criteria). Validation is pending Sprint 6 implementation completion.
 </Info>
 
 ### Core Embed Functionality
 
-- [x] **AC-EMB-01**: Inline embed renders a fully functional booking widget within a host page container element *(EM-001, EM-VAL-001)*
-- [x] **AC-EMB-02**: Modal embed opens a booking overlay when triggered by button click or programmatic API call *(EM-002, EM-VAL-002)*
-- [x] **AC-EMB-03**: Floating button embed displays a persistent button that opens the modal on click *(EM-003, EM-VAL-003)*
-- [x] **AC-EMB-04**: All three embed types support prefilling name, email, and custom fields *(EM-001, EM-002, EM-003, EM-VAL-004)*
-- [x] **AC-EMB-05**: Embed auto-resizes to match content height without host page scrollbars *(EM-001, EM-VAL-005)*
+- [ ] **AC-EMB-01**: Inline embed renders a fully functional booking widget within a host page container element *(EM-001, EM-VAL-001)*
+- [ ] **AC-EMB-02**: Modal embed opens a booking overlay when triggered by button click or programmatic API call *(EM-002, EM-VAL-002)*
+- [ ] **AC-EMB-03**: Floating button embed displays a persistent button that opens the modal on click *(EM-003, EM-VAL-003)*
+- [ ] **AC-EMB-04**: All three embed types support prefilling name, email, and custom fields *(EM-001, EM-002, EM-003, EM-VAL-007)*
+- [ ] **AC-EMB-05**: Embed auto-resizes to match content height without host page scrollbars *(EM-001, EM-VAL-001)*
 
 ### Performance and Reliability
 
-- [x] **AC-EMB-06**: Prerendered modal displays within 100ms of CTA click (no network wait) *(EM-002, EM-VAL-006)*
-- [x] **AC-EMB-07**: Skeleton loader displays within 50ms of embed initialization for supported page types *(EM-001, EM-VAL-006)*
-- [x] **AC-EMB-08**: Command queue ensures zero commands are lost when API calls precede iframe readiness *(EM-001, EM-002, EM-003, EM-VAL-007)*
-- [x] **AC-EMB-09**: postMessage handshake completes reliably across Chrome, Firefox, Safari, and Edge *(EM-001, EM-002, EM-003, EM-VAL-007)*
+- [ ] **AC-EMB-06**: Prerendered modal displays within 100ms of CTA click (no network wait) *(EM-002, EM-VAL-008)*
+- [ ] **AC-EMB-07**: Skeleton loader displays within 50ms of embed initialization for supported page types *(EM-001, EM-VAL-009)*
+- [ ] **AC-EMB-08**: Command queue ensures zero commands are lost when API calls precede iframe readiness *(EM-001, EM-002, EM-003, EM-VAL-006)*
+- [ ] **AC-EMB-09**: postMessage handshake completes reliably across Chrome, Firefox, Safari, and Edge *(EM-001, EM-002, EM-003, EM-VAL-006)*
 
 ### Multi-Embed and Isolation
 
-- [x] **AC-EMB-10**: Multiple embeds on the same page operate independently via namespace isolation *(EM-004, EM-VAL-007)*
-- [x] **AC-EMB-11**: Each namespace maintains separate command queues, event listeners, and iframe references *(EM-004, EM-VAL-007)*
+- [ ] **AC-EMB-10**: Multiple embeds on the same page operate independently via namespace isolation *(EM-004, EM-VAL-004, EM-VAL-005)*
+- [ ] **AC-EMB-11**: Each namespace maintains separate command queues, event listeners, and iframe references *(EM-004, EM-VAL-004, EM-VAL-005)*
 
 ### Tracking and Observability
 
-- [x] **AC-EMB-12**: `bookerViewed` event fires on first embed display (not during prerendering) *(EM-001, EM-002, EM-VAL-008)*
-- [x] **AC-EMB-13**: `bookerReady` event fires only when slots are fully loaded and selectable *(EM-001, EM-002, EM-VAL-008)*
-- [x] **AC-EMB-14**: `linkFailed` event fires with error code on page load failure *(EM-001, EM-002, EM-003, EM-VAL-008)*
-- [x] **AC-EMB-15**: Tracking events are suppressed during prerendering phase *(EM-002, EM-VAL-008)*
+- [ ] **AC-EMB-12**: `bookerViewed` event fires on first embed display (not during prerendering) *(EM-001, EM-002, EM-VAL-006)*
+- [ ] **AC-EMB-13**: `bookerReady` event fires only when slots are fully loaded and selectable *(EM-001, EM-002, EM-VAL-006)*
+- [ ] **AC-EMB-14**: `linkFailed` event fires with error code on page load failure *(EM-001, EM-002, EM-003, EM-VAL-006)*
+- [ ] **AC-EMB-15**: Tracking events are suppressed during prerendering phase *(EM-002, EM-VAL-008)*
 
 ### Platform Compatibility
 
-- [x] **AC-EMB-16**: Embed functions correctly when loaded via embed-snippet on static HTML pages *(EM-004, EM-VAL-009)*
-- [x] **AC-EMB-17**: React component (`@calcom/embed-react`) integrates correctly in Next.js, Remix, and Vite React applications *(EM-004, EM-VAL-009)*
-- [x] **AC-EMB-18**: Embed functions with Content Security Policy (CSP) headers allowing the Cal.com origin *(EM-001, EM-002, EM-003, EM-VAL-009)*
+- [ ] **AC-EMB-16**: Embed functions correctly when loaded via embed-snippet on static HTML pages *(EM-004, EM-VAL-005)*
+- [ ] **AC-EMB-17**: React component (`@calcom/embed-react`) integrates correctly in Next.js, Remix, and Vite React applications *(EM-004, EM-VAL-004)*
+- [ ] **AC-EMB-18**: Embed functions with Content Security Policy (CSP) headers allowing the Cal.com origin *(EM-001, EM-002, EM-003, EM-VAL-006)*
 
 ---
 

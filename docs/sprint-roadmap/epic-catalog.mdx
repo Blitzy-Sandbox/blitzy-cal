@@ -182,11 +182,11 @@ Cal.com's webhook system defines **20 distinct `WebhookTriggerEvents`** in the P
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
 |---------|-------|----------|------------|-------------|----------------|--------|
-| **WH-001** | Webhook event mapping for Calendly `invitee.created` equivalents | High | M | ET-001 | `packages/features/webhooks/` | ✅ Completed (Sprint 4) — verified against WH-VAL-001, WH-VAL-005 |
-| **WH-002** | Webhook event mapping for Calendly `invitee.canceled` equivalents | High | M | WH-001 | `packages/features/webhooks/` | ✅ Completed (Sprint 4) — verified against WH-VAL-002, WH-VAL-005 |
-| **WH-003** | Routing form submission webhook parity (`routing_form_submission.created`) | Medium | M | RF-001 | `packages/features/webhooks/` | ✅ Completed (Sprint 4) — verified against WH-VAL-004, RF-VAL-005 |
-| **WH-004** | Payload structure alignment with Calendly expectations | High | L | WH-001 | `packages/features/webhooks/lib/factory/` | ✅ Completed (Sprint 4) — verified against WH-VAL-006, WH-VAL-007 |
-| **WH-005** | Webhook versioning strategy for gap closure additions | Medium | L | WH-004 | `packages/features/webhooks/lib/factory/versioned/` | ✅ Completed (Sprint 4) — verified against WH-VAL-006, WH-VAL-009 |
+| **WH-001** | Webhook event mapping for Calendly `invitee.created` equivalents | High | M | ET-001 | `packages/features/webhooks/` | 🔄 In Progress (Sprint 4) — targets WH-VAL-001, WH-VAL-005 |
+| **WH-002** | Webhook event mapping for Calendly `invitee.canceled` equivalents | High | M | WH-001 | `packages/features/webhooks/` | 🔄 In Progress (Sprint 4) — targets WH-VAL-002, WH-VAL-005 |
+| **WH-003** | Routing form submission webhook parity (`routing_form_submission.created`) | Medium | M | RF-001 | `packages/features/webhooks/` | 🔄 In Progress (Sprint 4) — targets WH-VAL-004, RF-VAL-005 |
+| **WH-004** | Payload structure alignment with Calendly expectations | High | L | WH-001 | `packages/features/webhooks/lib/factory/` | 🔄 In Progress (Sprint 4) — targets WH-VAL-006, WH-VAL-007 |
+| **WH-005** | Webhook versioning strategy for gap closure additions | Medium | L | WH-004 | `packages/features/webhooks/lib/factory/versioned/` | 🔄 In Progress (Sprint 4) — targets WH-VAL-006, WH-VAL-009 |
 
 <Info>
   **Cal.com Advantages:** Cal.com supports **20 WebhookTriggerEvents** vs. Calendly's **3 events** — a 6.7x coverage advantage. Additional Cal.com-exclusive capabilities include the versioned `PayloadBuilderFactory` (currently `v2021-10-20` with extensible factory dispatch), `X-Cal-Signature-256` HMAC-SHA256 verification (Calendly lacks native webhook signing), Handlebars-based custom payload templates, Tasker async delivery, and multi-scope webhook subscriptions (event-type, team, organization, and platform OAuth client).
@@ -207,10 +207,10 @@ Cal.com's routing forms use a React Awesome Query Builder (RAQB) rule engine wit
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
 |---------|-------|----------|------------|-------------|----------------|--------|
-| **RF-001** | Routing form builder behavioral parity | Medium | M | ET-001 | `packages/features/routing-forms/` | ✅ Completed (Sprint 5) — verified against RF-VAL-001 |
-| **RF-002** | Conditional routing logic alignment | Medium | L | RF-001 | `packages/app-store/routing-forms/lib/processRoute.tsx` | ✅ Completed (Sprint 5) — verified against RF-VAL-002, RF-VAL-003 |
-| **RF-003** | Form field type parity | Low | S | RF-001 | `packages/features/routing-forms/` | ✅ Completed (Sprint 5) — verified against RF-VAL-001 |
-| **RF-004** | Routing form API v2 endpoint parity | Medium | M | RF-001 | `apps/api/v2/src/modules/routing-forms/` | ✅ Completed (Sprint 5) — verified against RF-VAL-006 |
+| **RF-001** | Routing form builder behavioral parity | Medium | M | ET-001 | `packages/features/routing-forms/` | 🔄 In Progress (Sprint 5) — targets RF-VAL-001 |
+| **RF-002** | Conditional routing logic alignment | Medium | L | RF-001 | `packages/app-store/routing-forms/lib/processRoute.tsx` | 🔄 In Progress (Sprint 5) — targets RF-VAL-002, RF-VAL-003 |
+| **RF-003** | Form field type parity | Low | S | RF-001 | `packages/features/routing-forms/` | 🔄 In Progress (Sprint 5) — targets RF-VAL-001 |
+| **RF-004** | Routing form API v2 endpoint parity | Medium | M | RF-001 | `apps/api/v2/src/modules/routing-forms/` | 🔄 In Progress (Sprint 5) — targets RF-VAL-006 |
 
 <Info>
   **Cal.com Advantages:** Cal.com's RAQB-based conditional routing engine is **significantly more advanced** than Calendly's form-answer-based routing. Cal.com supports arbitrarily complex boolean logic via `jsonLogic`, attribute-based team member matching, CRM lookup integration (Salesforce, HubSpot) for contact owner routing, nested router chaining, and programmatic API v2 endpoints for slot calculation — none of which Calendly provides.
@@ -231,10 +231,10 @@ Cal.com implements embedding through a three-package modular architecture: `embe
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
 |---------|-------|----------|------------|-------------|----------------|--------|
-| **EM-001** | Inline embed behavioral parity | Medium | M | ET-001 | `packages/embeds/embed-core/` | ✅ Completed (Sprint 6) — verified against EM-VAL-001 |
-| **EM-002** | Modal/popup embed parity | Medium | M | EM-001 | `packages/embeds/embed-core/` | ✅ Completed (Sprint 6) — verified against EM-VAL-002 |
-| **EM-003** | Floating button embed parity | Low | S | EM-001 | `packages/embeds/embed-core/` | ✅ Completed (Sprint 6) — verified against EM-VAL-003 |
-| **EM-004** | Share flow and link generation parity | Medium | M | ET-001 | `packages/embeds/` | ✅ Completed (Sprint 6) — verified against EM-VAL-004, EM-VAL-005 |
+| **EM-001** | Inline embed behavioral parity | Medium | M | ET-001 | `packages/embeds/embed-core/` | 🔄 In Progress (Sprint 6) — targets EM-VAL-001 |
+| **EM-002** | Modal/popup embed parity | Medium | M | EM-001 | `packages/embeds/embed-core/` | 🔄 In Progress (Sprint 6) — targets EM-VAL-002 |
+| **EM-003** | Floating button embed parity | Low | S | EM-001 | `packages/embeds/embed-core/` | 🔄 In Progress (Sprint 6) — targets EM-VAL-003 |
+| **EM-004** | Share flow and link generation parity | Medium | M | ET-001 | `packages/embeds/` | 🔄 In Progress (Sprint 6) — targets EM-VAL-004, EM-VAL-005 |
 
 <Info>
   **Cal.com Advantages:** Cal.com provides a **3-package modular embed suite** (`embed-core`, `embed-react`, `embed-snippet`) vs. Calendly's single embeddable widget. Cal.com-exclusive capabilities include the `postMessage` handshake protocol for parent-iframe communication, prerendering for instant load times, skeleton loaders for perceived performance, namespace-based multi-embed support on a single page, and a first-party React component — none of which Calendly offers natively.
@@ -256,10 +256,10 @@ Cal.com's admin governance spans `packages/features/ee/organizations/` (organiza
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
 |---------|-------|----------|------------|-------------|----------------|--------|
-| **AG-001** | Admin role model parity with Calendly admin/owner/user | Medium | M | None | `packages/features/ee/organizations/` | ✅ Completed (Sprint 7) — verified against AG-VAL-001, AG-VAL-006 |
-| **AG-002** | Team event routing behavioral parity | High | L | AG-001, ET-003 | `packages/features/ee/teams/` | ✅ Completed (Sprint 7) — verified against AG-VAL-003 |
-| **AG-003** | Managed event type push behavior parity | Medium | M | AG-001, ET-001 | `packages/features/eventtypes/` | ✅ Completed (Sprint 7) — verified against AG-VAL-004 |
-| **AG-004** | Member invitation workflow parity | Low | S | AG-001 | `packages/features/membership/` | ✅ Completed (Sprint 7) — verified against AG-VAL-005 |
+| **AG-001** | Admin role model parity with Calendly admin/owner/user | Medium | M | None | `packages/features/ee/organizations/` | 🔄 In Progress (Sprint 7) — targets AG-VAL-001, AG-VAL-006 |
+| **AG-002** | Team event routing behavioral parity | High | L | AG-001, ET-003 | `packages/features/ee/teams/` | 🔄 In Progress (Sprint 7) — targets AG-VAL-003 |
+| **AG-003** | Managed event type push behavior parity | Medium | M | AG-001, ET-001 | `packages/features/eventtypes/` | 🔄 In Progress (Sprint 7) — targets AG-VAL-004 |
+| **AG-004** | Member invitation workflow parity | Low | S | AG-001 | `packages/features/membership/` | 🔄 In Progress (Sprint 7) — targets AG-VAL-005 |
 
 <Info>
   **Cal.com Advantages:** Cal.com implements a **hierarchical organization structure** with sub-teams, custom roles, and PBAC fine-grained permissions — Calendly uses a flatter organization with five fixed roles (Owner, Admin, Manager, Member, Viewer) and no sub-organization capability. Additional Cal.com advantages include SSO/SCIM integration for enterprise provisioning, managed event types pushed from admin to members, and programmatic organization management via API.
@@ -280,10 +280,10 @@ Cal.com's notification infrastructure spans three primary packages: `packages/em
 
 | Epic ID | Title | Priority | Complexity | Dependencies | Cal.com Package | Status |
 |---------|-------|----------|------------|-------------|----------------|--------|
-| **NF-001** | Booking confirmation email parity | High | M | ET-001 | `packages/emails/` | ✅ Completed (Sprint 8) — verified against NF-VAL-001, NF-VAL-002, NF-VAL-008 |
-| **NF-002** | Reminder email/SMS parity with Calendly | High | M | NF-001 | `packages/emails/`, `packages/sms/` | ✅ Completed (Sprint 8) — verified against NF-VAL-003, NF-VAL-004 |
-| **NF-003** | Follow-up notification parity | Medium | M | NF-001 | `packages/emails/` | ✅ Completed (Sprint 8) — verified against NF-VAL-006, NF-VAL-009 |
-| **NF-004** | Cancellation notification parity | High | M | NF-001 | `packages/emails/` | ✅ Completed (Sprint 8) — verified against NF-VAL-005 |
+| **NF-001** | Booking confirmation email parity | High | M | ET-001 | `packages/emails/` | 🔄 In Progress (Sprint 8) — targets NF-VAL-001, NF-VAL-002, NF-VAL-008 |
+| **NF-002** | Reminder email/SMS parity with Calendly | High | M | NF-001 | `packages/emails/`, `packages/sms/` | 🔄 In Progress (Sprint 8) — targets NF-VAL-003, NF-VAL-004 |
+| **NF-003** | Follow-up notification parity | Medium | M | NF-001 | `packages/emails/` | 🔄 In Progress (Sprint 8) — targets NF-VAL-006, NF-VAL-009 |
+| **NF-004** | Cancellation notification parity | High | M | NF-001 | `packages/emails/` | 🔄 In Progress (Sprint 8) — targets NF-VAL-005 |
 | **NF-005** | SMS reminder configuration parity | Medium | M | NF-002 | `packages/sms/sms-manager.ts` | Planned |
 
 <Info>
@@ -430,11 +430,11 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 | Availability & Scheduling | 7 | 0 | 1 | 5 | 1 | |
 | Event Types | 6 | 0 | 1 | 4 | 1 | All 6 ✅ Sprint 2 |
 | Calendar Integrations | 5 | 0 | 2 | 3 | 0 | All 5 ✅ Sprint 3 |
-| Webhooks & Events | 5 | 0 | 3 | 2 | 0 | All 5 ✅ Sprint 4 |
-| Routing Forms | 4 | 0 | 0 | 3 | 1 | All 4 ✅ Sprint 5 |
-| Embed & Share | 4 | 0 | 0 | 3 | 1 | All 4 ✅ Sprint 6 |
-| Admin & Teams | 4 | 0 | 1 | 2 | 1 | All 4 ✅ Sprint 7 |
-| Notifications | 5 | 0 | 3 | 2 | 0 | 4 of 5 ✅ Sprint 8 |
+| Webhooks & Events | 5 | 0 | 3 | 2 | 0 | 🔄 In Progress — Sprint 4 |
+| Routing Forms | 4 | 0 | 0 | 3 | 1 | 🔄 In Progress — Sprint 5 |
+| Embed & Share | 4 | 0 | 0 | 3 | 1 | 🔄 In Progress — Sprint 6 |
+| Admin & Teams | 4 | 0 | 1 | 2 | 1 | 🔄 In Progress — Sprint 7 |
+| Notifications | 5 | 0 | 3 | 2 | 0 | 🔄 In Progress — Sprint 8 (NF-005 planned) |
 | **Total** | **40** | **0** | **11** | **24** | **5** | |
 
 <Note>
@@ -442,14 +442,14 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 </Note>
 
 <Note>
-  **Sprints 4–8 Complete:** Wave 3 (Sprints 4, 5, 7) and Wave 4 (Sprints 6, 8) are fully complete. 
-  - Sprint 4: All 5 Webhook & Events epics (WH-001 through WH-005) ✅ — Gate 4 cleared
-  - Sprint 5: All 4 Routing Forms epics (RF-001 through RF-004) ✅ — Gate 5 cleared
-  - Sprint 6: All 4 Embed & Share epics (EM-001 through EM-004) ✅ — Gate 6 cleared
-  - Sprint 7: All 4 Admin & Teams epics (AG-001 through AG-004) ✅ — Gate 7 cleared
-  - Sprint 8: 4 of 5 Notifications epics (NF-001 through NF-004) ✅ — Gate 8 cleared (NF-005 planned)
+  **Sprints 4–8 In Progress:** Wave 3 (Sprints 4, 5, 7) and Wave 4 (Sprints 6, 8) implementation is underway. Spec design documents, architectural decisions, and initial code changes have been committed. Full behavioral validation is pending completion of all epic implementations.
+  - Sprint 4: Webhook & Events epics (WH-001 through WH-005) — spec complete, implementation in progress
+  - Sprint 5: Routing Forms epics (RF-001 through RF-004) — spec complete, implementation in progress
+  - Sprint 6: Embed & Share epics (EM-001 through EM-004) — spec complete, implementation in progress
+  - Sprint 7: Admin & Teams epics (AG-001 through AG-004) — spec complete, implementation in progress
+  - Sprint 8: Notifications epics (NF-001 through NF-004) — spec complete, implementation in progress (NF-005 planned)
   
-  21 epics completed across 5 domains. 45 of 45 in-scope validation criteria passed. All five validation dimensions verified at every gate.
+  21 epics across 5 domains. 45 in-scope validation criteria defined. Gate clearance pending implementation completion.
 </Note>
 
 ### Priority Distribution

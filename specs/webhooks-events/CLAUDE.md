@@ -1,4 +1,4 @@
-# AGENTS.md — Webhooks and Events
+# CLAUDE.md — Webhooks & Events
 
 ## Project Context
 

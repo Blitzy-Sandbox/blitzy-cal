@@ -277,7 +277,7 @@ The following table catalogs all identified behavioral gaps between Cal.com and 
 
 ## Gap Closure Summary — Sprint 8
 
-The following sprint epics (NF-001 through NF-004) were implemented to close identified gaps and achieve Calendly notification parity. Validation criteria NF-VAL-001 through NF-VAL-010 apply across these epics.
+The following sprint epics (NF-001 through NF-004) target Calendly notification parity. Validation criteria NF-VAL-001 through NF-VAL-010 from [Validation Criteria](/sprint-roadmap/validation-criteria) apply across these epics as described below.
 
 ### NF-001 (Sprint Epic) — Email Notification Template Parity
 
@@ -287,7 +287,7 @@ The following sprint epics (NF-001 through NF-004) were implemented to close ide
 - **Implementation references:**
   - `packages/emails/email-manager.ts` — dispatch function enhancements for `sendScheduledEmailsAndSMS`, `sendCancelledEmailsAndSMS`, `sendRescheduledEmailsAndSMS`
   - `packages/emails/templates/` — template content alignment with Calendly confirmation, reminder, and cancellation patterns
-- **Validation criteria:** NF-VAL-001, NF-VAL-002, NF-VAL-003
+- **Validation criteria:** NF-VAL-001 (attendee confirmation), NF-VAL-002 (host confirmation), NF-VAL-003 (reminder emails), NF-VAL-005 (cancellation notifications), NF-VAL-007 (ICS attachments), NF-VAL-008 (template rendering), NF-VAL-010 (multi-provider delivery)
 
 ### NF-002 (Sprint Epic) — SMS/WhatsApp Reminder Parity
 
@@ -295,7 +295,7 @@ The following sprint epics (NF-001 through NF-004) were implemented to close ide
 - Reminder timing, content, and delivery behavior matched to Calendly's SMS workflow capabilities
 - Existing Cal.com SMS advantages preserved: hierarchical rate limiting, credit gating, WhatsApp channel
 - **Implementation reference:** `packages/sms/sms-manager.ts`
-- **Validation criteria:** NF-VAL-004, NF-VAL-005
+- **Validation criteria:** NF-VAL-004 (SMS reminders via Twilio)
 
 ### NF-003 (Sprint Epic) — Workflow Automation Trigger and Action Parity
 
@@ -304,7 +304,7 @@ The following sprint epics (NF-001 through NF-004) were implemented to close ide
 - No-show workflow integration: marking an invitee as no-show halts pending follow-up workflows and triggers no-show-specific workflows
 - Workflow action types enhanced for parity with Calendly's email and SMS workflow actions
 - **Implementation reference:** `packages/features/ee/workflows/lib/`
-- **Validation criteria:** NF-VAL-006, NF-VAL-007, NF-VAL-008
+- **Validation criteria:** NF-VAL-006 (follow-up emails via workflows), NF-VAL-009 (WorkflowAction trigger scheduling)
 
 ### NF-004 (Sprint Epic) — In-App Notification and Activity Feed Parity
 
@@ -312,7 +312,7 @@ The following sprint epics (NF-001 through NF-004) were implemented to close ide
 - Activity feed for booking events, cancellations, and rescheduling implemented
 - Real-time notification delivery for booking lifecycle events
 - **Implementation reference:** `packages/features/notifications/` (new module)
-- **Validation criteria:** NF-VAL-009, NF-VAL-010
+- **Validation criteria:** No dedicated NF-VAL criterion — in-app notifications are a new capability extending beyond Calendly's email/SMS notification model
 
 <Info>
   **Sprint 8 Scope Note:** NF-005 (SMS reminder configuration parity) is explicitly out of scope for Sprint 8. Only sprint epics NF-001 through NF-004 are addressed. Cal.com advantages (gap inventory NF-004 through NF-011) are preserved unchanged.
@@ -487,25 +487,25 @@ For overlap with webhook-triggered notifications, see the [Webhooks & Events gap
 
 ## Acceptance Criteria
 
-The following behavioral acceptance criteria define when Cal.com achieves full notification parity with Calendly. Validation criteria IDs NF-VAL-001 through NF-VAL-010 from `docs/sprint-roadmap/validation-criteria.mdx` apply across all sprint epics below.
+The following behavioral acceptance criteria define when Cal.com achieves full notification parity with Calendly. Validation criteria IDs NF-VAL-001 through NF-VAL-010 from [Validation Criteria](/sprint-roadmap/validation-criteria) apply across all sprint epics below. Criteria references match the authoritative definitions in `validation-criteria.mdx`.
 
-### Reconfirmation Workflow (NF-001) — ✅ All Criteria Met
-- [x] A pre-built "Reconfirmation" workflow template exists in the workflow template library *(NF-VAL-001)*
-- [x] The template sends an email or SMS with a confirmation link before the event starts *(NF-VAL-002)*
-- [x] Confirmation status is visible on the bookings management page *(NF-VAL-003)*
-- [x] The template supports configurable time offsets (e.g., 24 hours, 1 hour before event) *(NF-VAL-002)*
+### Reconfirmation Workflow (NF-001) — ⬜ Pending Validation
+- [ ] A pre-built "Reconfirmation" workflow template exists in the workflow template library *(NF-VAL-009 — workflow triggers)*
+- [ ] The template sends an email or SMS with a confirmation link before the event starts *(NF-VAL-001 — attendee confirmation, NF-VAL-002 — host confirmation)*
+- [ ] Confirmation status is visible on the bookings management page
+- [ ] The template supports configurable time offsets (e.g., 24 hours, 1 hour before event) *(NF-VAL-003 — reminder emails at configured intervals)*
 
-### No-Show Workflow Integration (NF-002) — ✅ All Criteria Met
-- [x] Marking an invitee as no-show triggers a `NO_SHOW` workflow event *(NF-VAL-006)*
-- [x] Pending follow-up workflows are halted when no-show status is set *(NF-VAL-007)*
-- [x] A pre-built "No-Show Reschedule" workflow template sends a rescheduling prompt to the no-show invitee *(NF-VAL-008)*
-- [x] No-show invitees do not receive standard post-meeting workflows (thank-you, follow-up) *(NF-VAL-007)*
+### No-Show Workflow Integration (NF-002) — ⬜ Pending Validation
+- [ ] Marking an invitee as no-show triggers a `NO_SHOW` workflow event *(NF-VAL-009 — WorkflowAction triggers)*
+- [ ] Pending follow-up workflows are halted when no-show status is set *(NF-VAL-006 — follow-up emails via workflows)*
+- [ ] A pre-built "No-Show Reschedule" workflow template sends a rescheduling prompt to the no-show invitee *(NF-VAL-009 — WorkflowAction triggers)*
+- [ ] No-show invitees do not receive standard post-meeting workflows (thank-you, follow-up) *(NF-VAL-006 — follow-up email suppression)*
 
-### User-Address Email Sending (NF-003) — ✅ All Criteria Met
-- [x] Workflow email steps include a "Send from my email" option *(NF-VAL-004)*
-- [x] Emails sent via this option use the user's connected Gmail or Outlook account *(NF-VAL-004)*
-- [x] OAuth token refresh is handled transparently *(NF-VAL-005)*
-- [x] Delivery failures fall back to the default SMTP/provider address *(NF-VAL-005)*
+### User-Address Email Sending (NF-003) — ⬜ Pending Validation
+- [ ] Workflow email steps include a "Send from my email" option *(NF-VAL-010 — multi-provider email delivery)*
+- [ ] Emails sent via this option use the user's connected Gmail or Outlook account *(NF-VAL-010 — multi-provider email)*
+- [ ] OAuth token refresh is handled transparently *(NF-VAL-010 — provider failover)*
+- [ ] Delivery failures fall back to the default SMTP/provider address *(NF-VAL-010 — multi-provider failover)*
 
 ### Regression Prevention
 - [x] All existing notification types (9 `EmailType` values) continue to function correctly

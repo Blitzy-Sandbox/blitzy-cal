@@ -1,4 +1,4 @@
-# AGENTS.md — Routing Forms
+# CLAUDE.md — Routing Forms
 
 ## Project Context
 

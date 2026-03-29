@@ -544,17 +544,17 @@ The following items from `packages/app-store/routing-forms/TODO.md` represent kn
 
 ### Sprint 5 Validation Criteria (RF-VAL-001 through RF-VAL-007)
 
-The following validation criteria from [Validation Criteria](/sprint-roadmap/validation-criteria) have been verified as part of the Sprint 5 (RF-001 through RF-004) implementation:
+The following validation criteria from [Validation Criteria](/sprint-roadmap/validation-criteria) apply to the Sprint 5 (RF-001 through RF-004) implementation. Descriptions and IDs match the authoritative definitions in `validation-criteria.mdx`:
 
 | Criterion | Epic | Description | Validation Method | Status |
 |-----------|------|------------|-------------------|--------|
-| **RF-VAL-001** | RF-001 | Form builder supports Calendly-equivalent question types (multiple choice, dropdowns, checkboxes) | Create routing forms using each new field type. Verify fields render correctly in the form builder and accept user input. | ✅ Passing |
-| **RF-VAL-002** | RF-001 | `zodNonRouterField` schema validates all supported field types without errors | Submit forms with each field type. Verify Zod validation passes for all field type configurations. | ✅ Passing |
-| **RF-VAL-003** | RF-002 | `findMatchingRoute` evaluates Calendly-equivalent AND/OR compound conditions correctly | Create routes with compound AND/OR conditions. Submit forms with varying responses and verify correct route selection. | ✅ Passing |
-| **RF-VAL-004** | RF-002 | Routing pipeline produces correct destination for all `RouteActionType` values | Test routing to `eventTypeRedirectUrl`, `customPageMessage`, and `externalRedirectUrl` destinations. Verify correct redirect behavior for each. | ✅ Passing |
-| **RF-VAL-005** | RF-003 | New field types are properly integrated into RAQB query builder configuration | Create routing rules using new field types in the RAQB rule editor. Verify rules evaluate correctly against form submissions. | ✅ Passing |
-| **RF-VAL-006** | RF-003 | Response handling correctly processes new field types | Submit forms with new field types. Verify `handleResponse` persists responses correctly and attribute/CRM evaluation works with new field data. | ✅ Passing |
-| **RF-VAL-007** | RF-004 | API v2 routing form CRUD endpoints return correct responses | Call each new API v2 endpoint (create, read, update, delete routing forms). Verify correct HTTP status codes and response payloads. | ✅ Passing |
+| **RF-VAL-001** | RF-001, RF-003 | Routing form builder allows creating forms with multiple question types (text, select, radio, number, phone, email) | Create routing forms using each field type. Verify fields render correctly in the form builder and accept user input via `zodNonRouterField` validation. | ⬜ Pending |
+| **RF-VAL-002** | RF-002 | Conditional routing logic (`findMatchingRoute`) correctly evaluates RAQB rules and routes to the correct destination | Create routes with compound AND/OR conditions. Submit forms with varying responses and verify correct route selection via `jsonLogic` evaluation. | ⬜ Pending |
+| **RF-VAL-003** | RF-002 | Attribute-based routing matches team members based on configurable attributes | Configure attribute-based routing for a team event type. Submit forms and verify `findTeamMembersMatchingAttributeLogic` returns correct team member matches. | ⬜ Pending |
+| **RF-VAL-004** | RF-002 | CRM lookup integration routes based on contact owner data when configured (Salesforce, HubSpot) | Configure CRM-based routing with Salesforce/HubSpot. Submit form and verify `routerGetCrmContactOwnerEmail` retrieves correct owner for routing prioritization. | ⬜ Pending |
+| **RF-VAL-005** | WH-003 | Form submission triggers `FORM_SUBMITTED` webhook with correct response data | Submit a routing form. Verify `FORM_SUBMITTED` webhook fires with complete response data matching Calendly's `routing_form_submission.created` semantics. | ⬜ Pending |
+| **RF-VAL-006** | RF-004 | API v2 `RoutingFormsController` endpoints function correctly for form management and slot calculation | Call each API v2 endpoint (CRUD, slot calculation). Verify correct HTTP status codes and response payloads. | ⬜ Pending |
+| **RF-VAL-007** | RF-001, RF-002 | Route destination URLs are generated correctly via `getRoutedUrl` for all destination types (event type page, external URL, custom message) | Test routing to each `RouteActionType` destination. Verify `getRoutedUrl` produces correct URLs with required parameters. | ⬜ Pending |
 
 ### Regression Test Scenarios
 

@@ -17,6 +17,16 @@ const html = ({
 
   const themeClass = getInternalThemeClass(externalThemeClass);
   return `
+<style>
+  :host {
+    --cal-embed-bg: initial;
+    --cal-embed-text: initial;
+  }
+  #skeleton-container {
+    background: var(--cal-embed-bg, transparent);
+    color: var(--cal-embed-text, inherit);
+  }
+</style>
 <div id="skeleton-container" style="${skeletonContainerStyle}" ${themeClass ? `class="${themeClass}"` : ""}>
   <div id="skeleton" style="${skeletonStyle}" class="absolute z-highest">
     ${skeletonContent}

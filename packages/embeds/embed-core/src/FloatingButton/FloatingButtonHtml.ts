@@ -16,7 +16,7 @@ const getHtml = ({
   )} flex h-16 origin-center bg-red-50 transform cursor-pointer items-center
 rounded-full py-4 px-6 text-base outline-none drop-shadow-md transition focus:outline-none fo
 cus:ring-4 focus:ring-gray-600 focus:ring-opacity-50 active:scale-95" 
-style="background-color:${buttonColor}; color:${buttonTextColor} z-index: 10001">
+style="background-color:${buttonColor}; color:${buttonTextColor}; z-index: 10001">
 <div id="button-icon" class="flex items-center justify-center">
   <svg
 	class="h-7 w-7"

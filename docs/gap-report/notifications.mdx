@@ -59,7 +59,7 @@ Each dispatch function follows a consistent pattern: format the calendar event v
 
 **Email Type Governance — `email-types.ts`**
 
-The `EmailType` enum defines 9 notification categories that can be individually suppressed at the organization or event-type level:
+The `EmailType` enum defines 12 notification categories that can be individually suppressed at the organization or event-type level:
 
 | Email Type | Description |
 |-----------|-------------|
@@ -72,6 +72,9 @@ The `EmailType` enum defines 9 notification categories that can be individually 
 | `RESCHEDULE_REQUEST` | Reschedule request emails |
 | `LOCATION_CHANGE` | Location change emails |
 | `NEW_EVENT` | New event notification emails |
+| `REMINDER` | Booking reminder emails |
+| `FOLLOW_UP` | Post-event follow-up emails |
+| `WORKFLOW` | Workflow-triggered custom emails |
 
 Organization-level settings can disable each email type individually via `OrganizationSettingsRepository`, and event-type-level metadata can suppress all attendee or host emails globally through the `disableStandardEmails` configuration.
 
@@ -243,9 +246,9 @@ Calendly provides SMS text message delivery through Twilio integration, availabl
 | **Rate limiting** | Not documented in Calendly's public documentation | ✅ Hierarchical rate limiting: team, organizer, and phone-number scoped via `checkSMSRateLimit` | **Low** | **Cal.com advantage** — explicit rate limiting protects against SMS abuse |
 | **Credit gating** | Not applicable — SMS included in paid plan pricing | ✅ `CreditService.hasAvailableCredits()` check before SMS dispatch; fallback to email | **Low** | **Cal.com advantage** — credit-based SMS governance with email fallback |
 | **Attendee-specific messaging** | Workflow variable insertion for invitee-specific details | ✅ Localized per-attendee SMS and email with timezone, language, and name personalization | **Low** | Both support personalized attendee messaging |
-| **Reconfirmation requests** | Dedicated reconfirmation Workflow template (paid plans) | ✅ Pre-built "Reconfirmation" workflow template added to workflow template library | **Low** | Gap closed (Sprint 8 — NF-001). Template sends email or SMS with confirmation link before event starts |
-| **No-show workflow handling** | Mark as no-show halts follow-ups; triggers no-show-specific workflows | ✅ `INVITEE_NO_SHOW` workflow trigger event added; no-show detection integrated with workflow engine | **Low** | Gap closed (Sprint 8 — NF-003). Follow-up workflow halting implemented when no-show status set |
-| **Email sending from user's address** | Can send Workflow emails from connected Gmail/Outlook accounts | ✅ Workflow email steps support "Send from my email" option using connected Gmail/Outlook OAuth tokens | **Low** | Gap closed (Sprint 8 — NF-001). Delegated email sending via calendar provider APIs |
+| **Reconfirmation requests** | Dedicated reconfirmation Workflow template (paid plans) | ⬜ Not yet implemented — can be achieved via custom workflows but lacks a first-class template | **Medium** | Future enhancement: Add pre-built reconfirmation workflow template to template library |
+| **No-show workflow handling** | Mark as no-show halts follow-ups; triggers no-show-specific workflows | ⬜ No `INVITEE_NO_SHOW` trigger event exists; no-show detection is via `BOOKING_NO_SHOW_UPDATED` webhook event, not workflow trigger | **Medium** | Future enhancement: Add no-show workflow trigger integration |
+| **Email sending from user's address** | Can send Workflow emails from connected Gmail/Outlook accounts | ⬜ Not yet implemented — emails send from configured SMTP/provider address | **Medium** | Future enhancement: OAuth-based delegated email sending |
 | **Organization-level email governance** | Limited: notification types chosen per event type; cannot globally suppress categories | ✅ `OrganizationSettingsRepository` with per-category suppression (9 email types independently controllable) | **Low** | **Cal.com advantage** — granular org-level email suppression |
 | **Booking request notifications** | Implicit via confirmation flow | ✅ Dedicated `sendOrganizerRequestEmail` + `sendAttendeeRequestEmailAndSMS` for approval-required event types | **Low** | **Cal.com advantage** — explicit request/approval notification flow |
 | **Location change notifications** | Calendar invitations auto-update (email confirmations do not) | ✅ Dedicated `sendLocationChangeEmailsAndSMS` with `AttendeeLocationChangeEmail` | **Low** | **Cal.com advantage** — explicit location change emails regardless of calendar type |
@@ -261,9 +264,9 @@ The following table catalogs all identified behavioral gaps between Cal.com and 
 
 | Gap ID | Description | Severity | Status | Cal.com Module | Calendly Reference | Recommendation |
 |--------|-------------|----------|--------|---------------|-------------------|----------------|
-| NF-001 | **Reconfirmation workflow template** — Calendly provides a dedicated reconfirmation Workflow template that requests invitees to confirm attendance; Cal.com can achieve this via custom workflows but lacks a first-class reconfirmation template | Medium | ✅ Closed | `packages/features/ee/workflows/` | [Workflows Overview](https://help.calendly.com/hc/en-us/articles/360051017814-Workflows-overview) | Pre-built "Reconfirmation" workflow template added to workflow template library. Template sends email or SMS with confirmation link before event starts. Implementation: `packages/features/ee/workflows/lib/` |
-| NF-002 | **No-show workflow integration** — Calendly allows marking invitees as no-shows, which halts follow-up workflows and triggers no-show-specific workflows; Cal.com detects no-shows (via webhook events) but lacks integrated no-show workflow management | Medium | ✅ Closed | `packages/features/ee/workflows/` | [Workflows Overview](https://help.calendly.com/hc/en-us/articles/360051017814-Workflows-overview) | `INVITEE_NO_SHOW` added as workflow trigger event. No-show detection integrated with workflow engine. Follow-up workflow halting implemented. Implementation: `packages/features/ee/workflows/lib/` |
-| NF-003 | **User-address email sending** — Calendly Workflows can send emails from the user's connected Gmail or Outlook account; Cal.com sends from the configured SMTP/provider address | Medium | ✅ Closed | `packages/emails/` | [Calendly Workflows Blog](https://calendly.com/blog/3-new-workflows-improvements) | Workflow email steps now support "Send from my email" option using connected Gmail/Outlook OAuth tokens. Implementation: `packages/emails/email-manager.ts` |
+| NF-001 | **Reconfirmation workflow template** — Calendly provides a dedicated reconfirmation Workflow template that requests invitees to confirm attendance; Cal.com can achieve this via custom workflows but lacks a first-class reconfirmation template | Medium | ⬜ Open | `packages/features/ee/workflows/` | [Workflows Overview](https://help.calendly.com/hc/en-us/articles/360051017814-Workflows-overview) | Not yet implemented. Reconfirmation can be achieved by creating a custom workflow with a timed email action, but no pre-built template exists in the workflow template library. |
+| NF-002 | **No-show workflow integration** — Calendly allows marking invitees as no-shows, which halts follow-up workflows and triggers no-show-specific workflows; Cal.com detects no-shows (via webhook events) but lacks integrated no-show workflow management | Medium | ⬜ Open | `packages/features/ee/workflows/` | [Workflows Overview](https://help.calendly.com/hc/en-us/articles/360051017814-Workflows-overview) | Not yet implemented. No `INVITEE_NO_SHOW` value exists in the `WorkflowTriggerEvents` enum. No-show detection uses the `BOOKING_NO_SHOW_UPDATED` webhook event, which is not integrated as a workflow trigger. |
+| NF-003 | **User-address email sending** — Calendly Workflows can send emails from the user's connected Gmail or Outlook account; Cal.com sends from the configured SMTP/provider address | Medium | ⬜ Open | `packages/emails/` | [Calendly Workflows Blog](https://calendly.com/blog/3-new-workflows-improvements) | Not yet implemented. No "Send from my email" option exists in workflow email step configuration. Emails are sent from the configured SMTP/provider address. |
 | NF-004 | **Cal.com advantage: WhatsApp channel** — Cal.com supports WhatsApp delivery via `WHATSAPP_ATTENDEE` and `WHATSAPP_NUMBER` workflow actions; Calendly does not offer WhatsApp | Low | ✅ Advantage | `packages/features/ee/workflows/` | N/A | Maintain and document this advantage |
 | NF-005 | **Cal.com advantage: Multi-provider email** — Cal.com supports SMTP, SendGrid, and Resend as email providers; Calendly uses a single managed email delivery system | Low | ✅ Advantage | `packages/emails/` | N/A | Maintain and document this advantage |
 | NF-006 | **Cal.com advantage: Credit gating with SMS fallback** — Cal.com enforces credit-based SMS governance with automatic email fallback via `sendSmsOrFallbackEmail`; Calendly includes SMS in plan pricing | Low | ✅ Advantage | `packages/sms/sms-manager.ts` | N/A | Maintain and document this advantage |
@@ -283,7 +286,7 @@ The following sprint epics (NF-001 through NF-004) target Calendly notification 
 
 - Confirmation, reminder, and cancellation email templates aligned with Calendly's email format
 - Templates include attendee name, event title, date/time, location, timezone matching Calendly's notification content
-- Pre-built "Reconfirmation" workflow template added to the workflow template library (closes gap inventory NF-001)
+- Reconfirmation workflow template not yet implemented — remains an open gap (NF-001)
 - **Implementation references:**
   - `packages/emails/email-manager.ts` — dispatch function enhancements for `sendScheduledEmailsAndSMS`, `sendCancelledEmailsAndSMS`, `sendRescheduledEmailsAndSMS`
   - `packages/emails/templates/` — template content alignment with Calendly confirmation, reminder, and cancellation patterns
@@ -300,7 +303,7 @@ The following sprint epics (NF-001 through NF-004) target Calendly notification 
 ### NF-003 (Sprint Epic) — Workflow Automation Trigger and Action Parity
 
 - Workflow trigger events expanded to match Calendly's workflow trigger set
-- `INVITEE_NO_SHOW` added as a workflow trigger event (closes gap inventory NF-002)
+- No-show workflow trigger integration not yet implemented — `INVITEE_NO_SHOW` does not exist in `WorkflowTriggerEvents` (NF-002 remains open)
 - No-show workflow integration: marking an invitee as no-show halts pending follow-up workflows and triggers no-show-specific workflows
 - Workflow action types enhanced for parity with Calendly's email and SMS workflow actions
 - **Implementation reference:** `packages/features/ee/workflows/lib/`
@@ -431,41 +434,41 @@ flowchart TD
 
 ## Recommendations
 
-### Priority 1: Reconfirmation Workflow Template (NF-001) — ✅ Implemented
+### Priority 1: Reconfirmation Workflow Template (NF-001) — ⬜ Not Yet Implemented
 
-~~Add a pre-built "Reconfirmation" workflow template to Cal.com's workflow template library.~~ This template has been implemented:
+Add a pre-built "Reconfirmation" workflow template to Cal.com's workflow template library. This template is planned but not yet implemented:
 
-- ✅ Triggers before event starts (configurable time offset, e.g., 24 hours)
-- ✅ Sends an email or SMS requesting the attendee to confirm attendance
-- ✅ Includes a one-click confirmation link, plus reschedule and cancel links
-- ✅ Confirmation status is visible on the bookings management page
+- ⬜ Triggers before event starts (configurable time offset, e.g., 24 hours)
+- ⬜ Sends an email or SMS requesting the attendee to confirm attendance
+- ⬜ Includes a one-click confirmation link, plus reschedule and cancel links
+- ⬜ Confirmation status is visible on the bookings management page
 
-Pre-built "Reconfirmation" workflow template added to the workflow template library, aligning Cal.com with Calendly's dedicated reconfirmation workflow feature. Leverages the existing workflow engine infrastructure in `packages/features/ee/workflows/`.
-
-`Source: packages/features/ee/workflows/lib/`
-
-### Priority 2: No-Show Workflow Integration (NF-002) — ✅ Implemented
-
-~~Integrate no-show detection with the workflow engine.~~ No-show workflow integration has been completed:
-
-- ✅ `INVITEE_NO_SHOW` added as a `WorkflowTriggerEvents` enum value
-- ✅ No-show workflow template fires when an invitee is marked as no-show
-- ✅ Pending follow-up workflows are halted when no-show status is set
-- ✅ "Reschedule prompt" action included in the no-show workflow template
-
-Cal.com's existing no-show detection via the `NO_SHOW_HOST` webhook trigger event has been extended to the workflow engine, providing a streamlined no-show management experience matching Calendly's behavior.
+When implemented, a pre-built "Reconfirmation" workflow template will be added to the workflow template library, aligning Cal.com with Calendly's dedicated reconfirmation workflow feature. Will leverage the existing workflow engine infrastructure in `packages/features/ee/workflows/`.
 
 `Source: packages/features/ee/workflows/lib/`
 
-### Priority 3: User-Address Email Sending (NF-003) — ✅ Implemented
+### Priority 2: No-Show Workflow Integration (NF-002) — ⬜ Not Yet Implemented
 
-~~Evaluate allowing workflow emails to be sent from the user's connected calendar email address.~~ User-address email sending has been implemented:
+Integrate no-show detection with the workflow engine. This is planned but not yet implemented:
 
-- ✅ Leverages existing OAuth tokens from connected calendars in `packages/app-store/googlecalendar/` and `packages/app-store/office365calendar/`
-- ✅ "Send from my email" option added in workflow step configuration
-- ✅ Delegated email sending implemented through the calendar provider's API (Gmail API `users.messages.send` or Microsoft Graph `sendMail`)
+- ⬜ `INVITEE_NO_SHOW` does not exist in `WorkflowTriggerEvents` — planned for future implementation
+- ⬜ No-show workflow template planned to fire when an invitee is marked as no-show
+- ⬜ Pending follow-up workflow halting planned when no-show status is set
+- ⬜ "Reschedule prompt" action planned for the no-show workflow template
 
-OAuth scope handling and token refresh are managed transparently. Delivery failures fall back to the default SMTP/provider address.
+Cal.com's existing no-show detection uses the `BOOKING_NO_SHOW_UPDATED` webhook trigger event. Extending this to the workflow engine as an `INVITEE_NO_SHOW` workflow trigger is a future enhancement.
+
+`Source: packages/features/ee/workflows/lib/`
+
+### Priority 3: User-Address Email Sending (NF-003) — ⬜ Not Yet Implemented
+
+Evaluate allowing workflow emails to be sent from the user's connected calendar email address. This is planned but not yet implemented:
+
+- ⬜ Would leverage existing OAuth tokens from connected calendars in `packages/app-store/googlecalendar/` and `packages/app-store/office365calendar/`
+- ⬜ "Send from my email" option not yet implemented — planned for future enhancement
+- ⬜ Delegated email sending planned through the calendar provider's API (Gmail API `users.messages.send` or Microsoft Graph `sendMail`)
+
+Currently, all workflow emails send from the configured SMTP/provider address. OAuth-based delegated email sending is a future enhancement.
 
 `Source: packages/emails/email-manager.ts, packages/app-store/googlecalendar/, packages/app-store/office365calendar/`
 

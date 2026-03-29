@@ -1,10 +1,18 @@
 # Routing Forms Implementation
 
-## Status: not-started
+## Status: in-progress
 
 ## Completed
 
+- Spec artifacts created: `specs/routing-forms/` folder with design.md, implementation.md, decisions.md, CLAUDE.md, prompts.md, future-work.md, and docs/README.md
+- RF-001/RF-003: `zodNonRouterField` extended with `fieldType` enum (9 types: text, email, phone, number, textarea, select, multiselect, radio, checkbox) plus `validation`, `defaultValue`, and `description` properties in `packages/features/routing-forms/lib/zod.ts`
+- RF-004: API v2 controller has full CRUD endpoints — GET /, GET /:id, POST /, PATCH /:id, DELETE /:id, POST /:id/submit, POST /:id/calculate-slots
+
 ## In Progress
+
+- RF-002: Conditional routing logic alignment — enhancing `findMatchingRoute` in `packages/app-store/routing-forms/lib/processRoute.tsx`
+- RF-001: Form builder UI components update in `packages/app-store/routing-forms/components/FormInputFields.tsx`
+- Validation criteria RF-VAL-001 through RF-VAL-007 — pending formal verification
 
 ## Blocked
 

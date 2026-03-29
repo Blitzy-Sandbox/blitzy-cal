@@ -1,10 +1,27 @@
 # Notifications & Workflows Implementation
 
-## Status: not-started
+## Status: in-progress
 
-Sprint 8 is Wave 4 — cannot begin until Sprint 4 (Webhooks & Events) and Sprint 7 (Admin & Teams) pass their Wave 3 validation gates.
+Sprint 8 is Wave 4 — formally blocked on Wave 3 gate. Implementation has begun in parallel.
 
 ## Completed
+
+- Spec artifacts created: `specs/notifications-workflows/` folder with design.md, implementation.md, decisions.md, CLAUDE.md, prompts.md, future-work.md, and docs/README.md
+- NF-004: In-app notification infrastructure created at `packages/features/notifications/` — `InAppNotification` Prisma model, `InAppNotificationRepository.ts`, `ActivityFeedRepository.ts`, `InAppNotificationService.ts`, DI tokens, types
+- NF-001: Email template infrastructure exists at `packages/emails/templates/` with 12 EmailType categories (CONFIRMATION, CANCELLATION, RESCHEDULED, REQUEST, REASSIGNED, AWAITING_PAYMENT, RESCHEDULE_REQUEST, LOCATION_CHANGE, NEW_EVENT, REMINDER, FOLLOW_UP, WORKFLOW)
+- NF-002: SMS/WhatsApp infrastructure exists at `packages/sms/sms-manager.ts` with Twilio integration
+
+## In Progress
+
+- NF-001: Email template content alignment with Calendly confirmation/reminder patterns
+- NF-002: SMS/WhatsApp reminder behavior alignment
+- NF-003: Workflow automation trigger and action expansion
+
+## Open Gaps (Not Yet Implemented)
+
+- NF-001 gap: Reconfirmation workflow template — no pre-built template exists in workflow template library
+- NF-002 gap: `INVITEE_NO_SHOW` does not exist in `WorkflowTriggerEvents` enum — no-show workflow trigger integration pending
+- NF-003 gap: "Send from my email" OAuth-based delegated email sending not yet implemented
 
 ## In Progress
 

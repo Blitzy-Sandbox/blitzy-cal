@@ -35,7 +35,7 @@ The Sprint 5 epics focus on the in-scope work that closes behavioral parity gaps
 
 - As a Cal.com form builder, I want all Calendly-supported field types available in the routing form builder — including explicit radio button rendering for single-select questions — so that I can create forms with full visual and functional parity.
 
-- As a developer integrating with Cal.com's API, I want API v2 endpoints for listing routing forms (`GET /v2/routing-forms`), retrieving a single form (`GET /v2/routing-forms/:routingFormId`), and listing submissions (`GET /v2/routing-forms/:routingFormId/submissions`) so that I can programmatically manage routing forms with parity to Calendly's read-only API surface.
+- As a developer integrating with Cal.com's API, I want full CRUD API v2 endpoints for routing forms — including `GET /v2/routing-forms`, `GET /v2/routing-forms/:routingFormId`, `POST /v2/routing-forms`, `PATCH /v2/routing-forms/:routingFormId`, `DELETE /v2/routing-forms/:routingFormId`, `POST /v2/routing-forms/:routingFormId/submit`, and `POST /v2/routing-forms/:routingFormId/calculate-slots` — so that I can programmatically manage routing forms with full parity beyond Calendly's read-only API surface.
 
 ## Technical Design
 
@@ -48,12 +48,16 @@ All schema changes follow zero-downtime-safe patterns defined in `docs/migration
 | Calendly Question Type | Cal.com Field Type | Already Supported |
 |-----------------------|-------------------|-------------------|
 | Text field | `text` | Yes |
-| Multiple choice (radio buttons) | `select` (with display variant) | Functionally yes; display variant enhancement is a UI-layer concern |
+| Email | `email` | Yes |
+| Phone | `phone` | Yes |
+| Number | `number` | Yes |
+| Multiple choice (radio buttons) | `radio` | Yes |
 | Dropdown | `select` | Yes |
-| Checkboxes | `multiselect` | Yes |
+| Multi-select dropdown | `multiselect` | Yes |
+| Checkboxes | `checkbox` | Yes |
 | Long text | `textarea` | Yes |
 
-The `select` field type already stores options as an array of `{ label, id }` objects via the `zodNonRouterField` schema. Adding a radio button display variant does not require a schema change — the rendering mode is determined at the UI layer based on field configuration metadata. If a `displayAs` property is needed to distinguish dropdown vs. radio rendering, it can be added as an optional property to the `zodNonRouterField` Zod schema without any Prisma model changes, since form fields are stored as JSON in the `App_RoutingForms_Form.fields` column.
+The `zodNonRouterField` schema defines a `fieldType` enum with 9 typed values: `text`, `email`, `phone`, `number`, `textarea`, `select`, `multiselect`, `radio`, and `checkbox`. Each field type is a distinct value — radio buttons and checkboxes are first-class field types rather than display variants. The schema also supports `validation`, `defaultValue`, and `description` as optional properties on each field. Since form fields are stored as JSON in the `App_RoutingForms_Form.fields` column, no Prisma model changes are needed for field type extensions.
 
 #### Data Preservation Guarantee
 
@@ -70,34 +74,33 @@ All existing routing form records remain intact and unmodified:
 
 **File**: `packages/app-store/routing-forms/zod.ts`
 
-Review and optionally extend `zodNonRouterField` with a `displayAs` property to support explicit display variant selection for `select` fields:
-
-```typescript
-// Optional extension to zodNonRouterField (additive only)
-displayAs: z.enum(["dropdown", "radio"]).optional(),
-```
-
-- When `displayAs` is `"radio"`, the `select` field renders as a radio button group instead of a dropdown — matching Calendly's "Multiple choice" question type
-- When `displayAs` is omitted or `"dropdown"`, the existing dropdown rendering is preserved (backward compatible)
-- This is an optional field addition to the Zod schema only — no Prisma migration needed since fields are stored as JSON
-
-**File**: `packages/features/routing-forms/lib/zod.ts`
-
-The canonical `zodNonRouterField` definition lives here. The `displayAs` property is added to this base schema:
+The `zodNonRouterField` schema uses a `fieldType` enum to determine the rendering and validation behavior of each form field:
 
 ```typescript
 export const zodNonRouterField = z.object({
-  // ... existing fields ...
-  displayAs: z.enum(["dropdown", "radio"]).optional(),
+  // ... existing fields (id, label, type, options, required) ...
+  fieldType: z.enum(["text", "email", "phone", "number", "textarea", "select", "multiselect", "radio", "checkbox"]),
+  validation: z.object({ /* field-type-specific validation rules */ }).optional(),
+  defaultValue: z.string().optional(),
+  description: z.string().optional(),
 });
 ```
 
+- The `fieldType` property determines both rendering and validation — `radio` renders as a radio button group, `checkbox` renders as a checkbox group, `select` renders as a dropdown, `multiselect` renders as a multi-select dropdown
+- `radio` and `checkbox` are first-class field types matching Calendly's "Multiple choice" and "Checkboxes" question types
+- `validation`, `defaultValue`, and `description` are optional properties available on all field types
+- No Prisma migration needed since fields are stored as JSON
+
+**File**: `packages/features/routing-forms/lib/zod.ts`
+
+The canonical `zodNonRouterField` definition with the `fieldType` enum lives in this file.
+
 **File**: `packages/app-store/routing-forms/components/FormInputFields.tsx`
 
-Update the form builder UI to support the new display variant:
+The form builder UI renders each field according to its `fieldType` value:
 
-- Add a rendering branch for `select` fields where `displayAs === "radio"` renders a radio button group instead of the default dropdown
-- The radio button group uses the same `options` array structure already defined in `zodNonRouterField`
+- `radio` renders a radio button group using the same `options` array structure defined in `zodNonRouterField`
+- `checkbox` renders a checkbox group with multi-selection support
 - Form builder field type selector must expose the display variant option when the `select` type is chosen
 
 **Form customization verification**: Verify that headline, description, and custom submission button text configuration matches Calendly's form builder. The existing form builder already supports title and description fields on the `App_RoutingForms_Form` model.
@@ -131,17 +134,21 @@ Ensure the RAQB configuration for each field type includes all required operator
 
 The field type mapping between Calendly and Cal.com is as follows:
 
-| Calendly Question Type | Cal.com Field Type | Display Variant | Routing Operators |
-|-----------------------|-------------------|-----------------|-------------------|
-| Multiple choice (radio) | `select` | `displayAs: "radio"` | equals, not equals, is one of |
-| Dropdown | `select` | `displayAs: "dropdown"` (default) | equals, not equals, is one of |
-| Checkboxes | `multiselect` | default (checkboxes) | contains, is one of |
-| Text field | `text` | default | equals, not equals, contains |
-| Long text | `textarea` | default | equals, not equals, contains |
+| Calendly Question Type | Cal.com `fieldType` Value | Routing Operators |
+|-----------------------|--------------------------|-------------------|
+| Multiple choice (radio) | `radio` | equals, not equals, is one of |
+| Dropdown | `select` | equals, not equals, is one of |
+| Checkboxes | `checkbox` | contains, is one of |
+| Multi-select dropdown | `multiselect` | contains, is one of |
+| Text field | `text` | equals, not equals, contains |
+| Email | `email` | equals, not equals, contains |
+| Phone | `phone` | equals, not equals, contains |
+| Number | `number` | equals, not equals, greater than, less than |
+| Long text | `textarea` | equals, not equals, contains |
 
 **File**: `packages/features/routing-forms/lib/zod.ts`
 
-The existing `zodNonRouterField` schema already supports all required field types. The `type` property is typed as `z.string()` which accepts any field type identifier. The `options` array is already defined for `select` and `multiselect` types. The only extension needed is the optional `displayAs` property documented above in RF-001.
+The `zodNonRouterField` schema defines all 9 field types via the `fieldType` enum. The `options` array is defined for `select`, `multiselect`, `radio`, and `checkbox` types. Additional optional properties include `validation`, `defaultValue`, and `description`.
 
 **File**: `packages/features/routing-forms/lib/parseRoutingFormResponse.ts`
 
@@ -178,37 +185,16 @@ Calendly's routing form API provides three read-only endpoints:
 - `GET /routing_forms/:uuid` — Get a single routing form by UUID
 - `GET /routing_form_submissions` — List submissions for a specific routing form
 
-Cal.com's current API v2 surface only provides `POST /v2/routing-forms/:routingFormId/calculate-slots`. To achieve parity, three new read-only endpoints must be added.
-
-**File**: `apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts`
-
-Extend `RoutingFormsController` with new endpoints:
+Cal.com's API v2 `RoutingFormsController` provides full CRUD endpoints plus slot calculation and form submission. The actual controller at `apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts` exposes 7 endpoints:
 
 ```typescript
-@Get("/")
-@ApiOperation({ summary: "List routing forms" })
-@HttpCode(HttpStatus.OK)
-async listRoutingForms(
-  @Query() query: PaginationInput,
-  @GetUser() user: UserWithProfile
-): Promise<RoutingFormsListOutput> { ... }
-
-@Get("/:routingFormId")
-@ApiOperation({ summary: "Get a routing form by ID" })
-@HttpCode(HttpStatus.OK)
-async getRoutingForm(
-  @Param("routingFormId") routingFormId: string,
-  @GetUser() user: UserWithProfile
-): Promise<RoutingFormOutput> { ... }
-
-@Get("/:routingFormId/submissions")
-@ApiOperation({ summary: "List routing form submissions" })
-@HttpCode(HttpStatus.OK)
-async listRoutingFormSubmissions(
-  @Param("routingFormId") routingFormId: string,
-  @Query() query: PaginationInput,
-  @GetUser() user: UserWithProfile
-): Promise<RoutingFormSubmissionsOutput> { ... }
+@Get("/")                                    // List routing forms
+@Get("/:routingFormId")                      // Get a single routing form
+@Post("/")                                   // Create a new routing form
+@Patch("/:routingFormId")                    // Update a routing form
+@Delete("/:routingFormId")                   // Delete a routing form
+@Post("/:routingFormId/submit")              // Submit a routing form response
+@Post("/:routingFormId/calculate-slots")     // Calculate available slots based on routing
 ```
 
 These endpoints follow existing API v2 patterns:
@@ -251,28 +237,30 @@ The existing `ResponseSlotsOutput` DTO is preserved unchanged. New output DTOs a
 
 ### UI Changes
 
-Sprint 5 has limited UI surface. The primary UI change is adding radio button rendering support for the `select` field type in the form builder.
+Sprint 5 has limited UI surface. The primary UI change is ensuring all 9 `fieldType` values render correctly in the form builder.
 
 #### 1. Form Input Field Rendering (RF-001, RF-003)
 
 **File**: `packages/app-store/routing-forms/components/FormInputFields.tsx`
 
-- Add a rendering branch for `select` fields with `displayAs === "radio"` that renders a radio button group using Cal.com's `@calcom/ui` radio components
-- Radio button groups display each option from the field's `options` array as a labeled radio input
-- Selection updates the field value identically to the dropdown — the response stores the selected `option.id` (or `option.label` for legacy options with null IDs)
-- The form builder field type configuration panel must expose a "Display as" toggle (Dropdown / Radio buttons) when the `select` type is chosen
+- The `fieldType` enum value determines the rendering component for each field
+- `radio` renders a radio button group using Cal.com's `@calcom/ui` radio components, displaying each option from the field's `options` array as a labeled radio input
+- `checkbox` renders a checkbox group with multi-selection support
+- `select` renders a dropdown, `multiselect` renders a multi-select dropdown
+- Selection updates the field value — for radio/select the response stores a single `option.id`, for checkbox/multiselect it stores an array of `option.id` values
 
 #### 2. Form Builder Field Type Selector
 
-- Ensure the field type selector dropdown includes all Calendly-equivalent labels for clarity:
-  - "Short text" → maps to `text` type
-  - "Long text" → maps to `textarea` type
-  - "Number" → maps to `number` type
-  - "Email" → maps to `email` type
-  - "Phone" → maps to `phone` type
-  - "Single select (dropdown)" → maps to `select` type with `displayAs: "dropdown"`
-  - "Single select (radio)" → maps to `select` type with `displayAs: "radio"`
-  - "Multi select (checkboxes)" → maps to `multiselect` type
+- The field type selector dropdown exposes all 9 `fieldType` values with clear labels:
+  - "Short text" → `text`
+  - "Long text" → `textarea`
+  - "Number" → `number`
+  - "Email" → `email`
+  - "Phone" → `phone`
+  - "Dropdown" → `select`
+  - "Radio buttons" → `radio`
+  - "Multi-select" → `multiselect`
+  - "Checkboxes" → `checkbox`
 - Existing field type behavior remains unchanged for backward compatibility
 
 #### 3. Form Preview and Test Mode
@@ -295,7 +283,7 @@ The following UI components require no modifications:
 
 ### 1. Existing Form Backward Compatibility
 
-When extending `zodNonRouterField` with the optional `displayAs` property, all existing forms with current field types must continue to parse and evaluate correctly. The Zod schema extension uses an optional property (`displayAs: z.enum(["dropdown", "radio"]).optional()`) that defaults to `undefined` when not present, which is treated as `"dropdown"` behavior. No migration of existing form data is required — existing `select` fields without `displayAs` render as dropdowns, maintaining identical behavior to the current implementation.
+The `fieldType` enum in `zodNonRouterField` includes all 9 field types as first-class values. All existing forms with current field types continue to parse and evaluate correctly — the `fieldType` values `text`, `email`, `phone`, `number`, `textarea`, `select`, and `multiselect` are preserved unchanged. The addition of `radio` and `checkbox` as new `fieldType` values does not affect existing form data. No migration of existing form data is required.
 
 ### 2. RAQB Configuration Backward Compatibility
 
@@ -307,7 +295,7 @@ If a route's `queryValue` references a field type or operator that wasn't availa
 
 ### 4. API v2 Pagination for Large Form Lists
 
-The new `GET /v2/routing-forms` and `GET /v2/routing-forms/:routingFormId/submissions` endpoints must support pagination to handle organizations with hundreds of routing forms or thousands of submissions. Follow existing API v2 pagination patterns: `take` and `skip` query parameters with a default page size (e.g., 20) and maximum page size (e.g., 100). Total count should be returned in the response metadata for client-side pagination controls.
+The `GET /v2/routing-forms` list endpoint must support pagination to handle organizations with hundreds of routing forms or thousands of submissions. Follow existing API v2 pagination patterns: `take` and `skip` query parameters with a default page size (e.g., 20) and maximum page size (e.g., 100). Total count should be returned in the response metadata for client-side pagination controls.
 
 ### 5. Rate Limiting for API v2 Endpoints
 
@@ -319,7 +307,7 @@ If a form is being edited while submissions are being processed, the `findMatchi
 
 ### 7. Field Type Migration for Display Variants
 
-If the new `displayAs: "radio"` variant is added for the `select` field type, all existing `select` fields must default to the current dropdown rendering without requiring manual migration. The Zod schema's `.optional()` modifier on `displayAs` ensures that existing field JSON objects without the property parse successfully and render as dropdowns. Form administrators can opt into radio button rendering on a per-field basis through the form builder UI.
+The `radio` and `checkbox` field types are distinct `fieldType` values, not display variants of `select`. All existing `select` fields continue to render as dropdowns. New fields created with `fieldType: "radio"` or `fieldType: "checkbox"` render as their respective input groups. No migration of existing form data is needed — only newly created fields use the new field types.
 
 ### 8. API v2 Authorization for Cross-Team Forms
 

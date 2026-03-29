@@ -10,17 +10,13 @@ Sprint 7: Admin and Teams (F-009) ensures behavioral parity between Cal.com's hi
 
 Navigate to **Settings → Organizations** to manage organization-level roles and permissions. Organization OWNER and ADMIN memberships provide cascading management access to all child teams, matching Calendly's admin scope where admins have full organizational control. The PBAC permission system (`packages/features/pbac/`) allows creating custom roles with granular permissions (e.g., `team.listMembers`, `booking.read`, `eventType.create`) to replicate Calendly's Group Admin and Team Manager roles. The `RoleManagementFactory` pattern supports gradual PBAC adoption with a `LegacyRoleManager` fallback for organizations not yet ready for custom roles. Cal.com's existing three roles map directly to Calendly's core roles: Owner → OWNER, Admin → ADMIN, User → MEMBER.
 
-*Screenshot: Navigate to Settings → Organizations to view role assignments and PBAC permission configuration. Capture this screenshot when the admin settings UI is available and save as ./screenshots/step-1.png.*
-
-![Step 1 Screenshot](./screenshots/step-1.png)
+*Screenshot placeholder: Navigate to Settings → Organizations to view role assignments and PBAC permission configuration. Capture this screenshot when the admin settings UI is available and save as `./screenshots/step-1.png`.*
 
 ### Step 2: Set Up Team Event Types and Member Invitations
 
 Create team event types with round-robin (`SchedulingType.ROUND_ROBIN`) for even or priority-based booking distribution, or collective (`SchedulingType.COLLECTIVE`) for multi-host meetings requiring all members' availability. Use managed event types (`SchedulingType.MANAGED`) as an admin to push standardized event type templates to team members with locked settings that only admins can adjust. Invite new members through team settings with email-based invitations supporting batch operations (up to 100 at a time), 7-day token expiration, and automatic seat accounting. The invitation acceptance and rejection lifecycle aligns with Calendly's invitation workflow, including automatic resend behavior.
 
-*Screenshot: Navigate to team settings to view team event type configuration, managed event push options, and member invitation workflow. Capture this screenshot when the feature is available and save as ./screenshots/step-2.png.*
-
-![Step 2 Screenshot](./screenshots/step-2.png)
+*Screenshot placeholder: Navigate to team settings to view team event type configuration, managed event push options, and member invitation workflow. Capture this screenshot when the feature is available and save as `./screenshots/step-2.png`.*
 
 ## Configuration Options
 

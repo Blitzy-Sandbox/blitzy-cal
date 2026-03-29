@@ -46,13 +46,14 @@ Sprint 4 requires minimal database changes — primarily verification of existin
 
 **WebhookTriggerEvents Enum (Additive Only)**
 
-The `WebhookTriggerEvents` Prisma enum at `packages/prisma/schema.prisma` currently defines 20 trigger events:
+The `WebhookTriggerEvents` Prisma enum at `packages/prisma/schema.prisma` currently defines 21 trigger events:
 
-- **Booking lifecycle (8):** `BOOKING_CREATED`, `BOOKING_PAID`, `BOOKING_PAYMENT_INITIATED`, `BOOKING_RESCHEDULED`, `BOOKING_REQUESTED`, `BOOKING_CANCELLED`, `BOOKING_REJECTED`, `BOOKING_NO_SHOW_UPDATED`
+- **Booking lifecycle (9):** `BOOKING_CREATED`, `BOOKING_PAID`, `BOOKING_PAYMENT_INITIATED`, `BOOKING_RESCHEDULED`, `BOOKING_REQUESTED`, `BOOKING_CANCELLED`, `BOOKING_REJECTED`, `BOOKING_NO_SHOW_UPDATED`, `BOOKING_RESCHEDULED_BY_ATTENDEE`
 - **Form events (2):** `FORM_SUBMITTED`, `FORM_SUBMITTED_NO_EVENT`
-- **Meeting events (4):** `MEETING_ENDED`, `MEETING_STARTED`, `MEETING_URL_ADDED`, `INSTANT_MEETING`
+- **Meeting events (2):** `MEETING_ENDED`, `MEETING_STARTED`
 - **Recording events (2):** `RECORDING_READY`, `RECORDING_TRANSCRIPTION_GENERATED`
-- **Other events (4):** `OOO_CREATED`, `BOOKING_REOPENED`, `BOOKING_DELEGATED`, `BOOKING_REASSIGNED`
+- **Instant meeting (1):** `INSTANT_MEETING`
+- **Other events (5):** `OOO_CREATED`, `AFTER_HOSTS_CAL_VIDEO_NO_SHOW`, `AFTER_GUESTS_CAL_VIDEO_NO_SHOW`, `DELEGATION_CREDENTIAL_ERROR`, `WRONG_ASSIGNMENT_REPORT`
 
 Sprint 4 change: **Likely NO new enum values are needed.** The existing trigger events already map to all 3 Calendly events:
 
@@ -94,6 +95,7 @@ The `TRIGGER_TO_BUILDER_CATEGORY` exhaustive mapping ensures every `WebhookTrigg
 | `BOOKING_CREATED` | `booking` | `invitee.created` |
 | `BOOKING_CANCELLED` | `booking` | `invitee.canceled` |
 | `BOOKING_RESCHEDULED` | `booking` | `invitee.created` (with reschedule context) |
+| `BOOKING_RESCHEDULED_BY_ATTENDEE` | `booking` | `invitee.created` (attendee-initiated reschedule variant) |
 | `FORM_SUBMITTED` | `form` | `routing_form_submission.created` |
 | `BOOKING_PAID` | `booking` | Cal.com advantage (no Calendly equivalent) |
 | `BOOKING_PAYMENT_INITIATED` | `booking` | Cal.com advantage |
@@ -103,14 +105,14 @@ The `TRIGGER_TO_BUILDER_CATEGORY` exhaustive mapping ensures every `WebhookTrigg
 | `FORM_SUBMITTED_NO_EVENT` | `form` | Cal.com advantage |
 | `MEETING_ENDED` | `meeting` | Cal.com advantage |
 | `MEETING_STARTED` | `meeting` | Cal.com advantage |
-| `MEETING_URL_ADDED` | `meeting` | Cal.com advantage |
 | `INSTANT_MEETING` | `instantMeeting` | Cal.com advantage |
 | `RECORDING_READY` | `recording` | Cal.com advantage |
 | `RECORDING_TRANSCRIPTION_GENERATED` | `recording` | Cal.com advantage |
 | `OOO_CREATED` | `ooo` | Cal.com advantage |
-| `BOOKING_REOPENED` | `booking` | Cal.com advantage |
-| `BOOKING_DELEGATED` | `delegation` | Cal.com advantage |
-| `BOOKING_REASSIGNED` | `booking` | Cal.com advantage |
+| `AFTER_HOSTS_CAL_VIDEO_NO_SHOW` | `meeting` | Cal.com advantage |
+| `AFTER_GUESTS_CAL_VIDEO_NO_SHOW` | `meeting` | Cal.com advantage |
+| `DELEGATION_CREDENTIAL_ERROR` | `delegation` | Cal.com advantage |
+| `WRONG_ASSIGNMENT_REPORT` | `booking` | Cal.com advantage |
 
 The `PayloadBuilderFactory` class exposes:
 
@@ -131,22 +133,24 @@ Additive field extensions to existing DTOs for Calendly payload parity. **All ne
 
 ```typescript
 // Additive fields for Calendly invitee.created parity
-utmSource?: string;                      // UTM source parameter from booking link
-utmMedium?: string;                      // UTM medium parameter
-utmCampaign?: string;                    // UTM campaign parameter
-utmTerm?: string;                        // UTM search term parameter
-utmContent?: string;                     // UTM content identifier
-rescheduleUrl?: string;                  // Direct URL to reschedule this booking
-cancelUrl?: string;                      // Direct URL to cancel this booking
-eventMetadata?: Record<string, unknown>; // Additional event context
+utmParams?: {
+  utmSource?: string;                    // UTM source parameter from booking link
+  utmMedium?: string;                    // UTM medium parameter
+  utmCampaign?: string;                  // UTM campaign parameter
+  utmTerm?: string;                      // UTM search term parameter
+  utmContent?: string;                   // UTM content identifier
+};
+inviteeUri?: string;                     // URI identifying the invitee resource
+eventUri?: string;                       // URI identifying the event resource
+schedulingUrl?: string;                  // Direct URL for scheduling
 ```
 
 **BookingCancelledDTO extensions:**
 
 ```typescript
 // Additive fields for Calendly invitee.canceled parity
-isReschedule?: boolean;            // True if cancellation was triggered by a reschedule
-rescheduledToBookingUid?: string;  // UID of the new booking if reschedule-induced cancellation
+rescheduleUri?: string;            // URI to reschedule the cancelled booking
+cancellationTimestamp?: string;    // ISO-8601 timestamp of when the cancellation occurred
 ```
 
 **Existing fields preserved (non-exhaustive):**
@@ -167,7 +171,7 @@ rescheduledToBookingUid?: string;  // UID of the new booking if reschedule-induc
 
 The v2021-10-20 builder set contains 7 typed builders implementing the `PayloadBuilderSet` interface. Sprint 4 modifications are limited to:
 
-- **Booking builders** (`IBookingPayloadBuilder` implementations): Populate new optional fields (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`, `rescheduleUrl`, `cancelUrl`, `eventMetadata`) in the payload output when source data is available in the DTO. When source data is absent, these fields must be omitted entirely (not set to `null` or empty string).
+- **Booking builders** (`IBookingPayloadBuilder` implementations): Populate new optional fields (`utmParams` nested object with `utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`; plus `inviteeUri`, `eventUri`, `schedulingUrl`, `rescheduleUri`, `cancellationTimestamp`) in the payload output when source data is available in the DTO. When source data is absent, these fields must be omitted entirely (not set to `null` or empty string).
 - **Form builders** (`IFormPayloadBuilder` implementations): Verify the `FORM_SUBMITTED` payload shape includes form fields, routing decisions, and submission metadata matching Calendly's `routing_form_submission.created` structure.
 - **All other builders** (OOO, recording, meeting, instant meeting, delegation): No modifications needed — these trigger events are Cal.com advantages with no Calendly equivalent.
 
@@ -242,7 +246,7 @@ Both files require **no changes** for Sprint 4:
 
 **File:** `packages/features/webhooks/lib/service/WebhookService.ts`
 
-The `WebhookService.getSubscribers()` method discovers webhook subscribers by trigger event and scope (user, team, org, platform). Sprint 4 requires **no changes** to subscriber discovery — the existing multi-level scoping correctly identifies subscribers for all 20 trigger events including `BOOKING_CREATED`, `BOOKING_CANCELLED`, and `FORM_SUBMITTED`.
+The `WebhookService.getSubscribers()` method discovers webhook subscribers by trigger event and scope (user, team, org, platform). Sprint 4 requires **no changes** to subscriber discovery — the existing multi-level scoping correctly identifies subscribers for all 21 trigger events including `BOOKING_CREATED`, `BOOKING_CANCELLED`, and `FORM_SUBMITTED`.
 
 #### Base Booking Payload Builder (WH-004)
 
@@ -258,7 +262,7 @@ Sprint 4 extends the existing test suite with Calendly-mapping regression tests:
 - Verification that new optional fields appear when source data is present in the DTO
 - Verification that new optional fields are absent (not set to `null` or empty string) when source data is missing
 - Backward compatibility assertion: all existing payload fields are present and unchanged after Sprint 4 modifications
-- Type-safety tests confirming the `TRIGGER_TO_BUILDER_CATEGORY` map correctly routes all 20 events
+- Type-safety tests confirming the `TRIGGER_TO_BUILDER_CATEGORY` map correctly routes all 21 events
 
 ### UI Changes
 
@@ -267,7 +271,7 @@ Sprint 4 has **minimal to no UI changes**:
 - **Webhook subscription creation UI**: May show updated documentation links referencing Calendly-equivalent event descriptions to aid migrating users. This is a content update to existing help text, not a structural UI change.
 - **No new pages, dialogs, or components** are required.
 - **Existing webhook configuration UI** at admin settings pages is sufficient for all Sprint 4 functionality.
-- **Webhook trigger event selector**: The existing event selection dropdown/checkbox list already displays all 20 trigger events grouped by application (`core`: 18 events, `routing-forms`: 2 events) as defined in `WEBHOOK_TRIGGER_EVENTS_GROUPED_BY_APP` in `constants.ts`. No new events are expected to be added.
+- **Webhook trigger event selector**: The existing event selection dropdown/checkbox list already displays all 21 trigger events grouped by application (`core`: 19 events, `routing-forms`: 2 events) as defined in `WEBHOOK_TRIGGER_EVENTS_GROUPED_BY_APP` in `constants.ts`.
 
 ## Edge Cases
 

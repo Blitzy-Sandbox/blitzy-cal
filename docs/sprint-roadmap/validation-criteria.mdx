@@ -226,7 +226,7 @@ Gate 3 validation is **complete**. All validation dimensions have been verified.
 | **WH-VAL-002** | `BOOKING_CANCELLED` webhook fires with correct payload when a booking is canceled | Maps to Calendly's `invitee.canceled` webhook event |
 | **WH-VAL-003** | `BOOKING_RESCHEDULED` webhook fires with correct payload including old and new booking details | Calendly delivers reschedule data through `invitee.created` with `old_invitee` and `new_invitee` URIs |
 | **WH-VAL-004** | `FORM_SUBMITTED` webhook fires when a routing form is submitted with correct response data | Maps to Calendly's `routing_form_submission.created` webhook event |
-| **WH-VAL-005** | All 20 `WebhookTriggerEvents` fire correctly for their respective lifecycle events | Cal.com supports: BOOKING_CREATED, BOOKING_PAYMENT_INITIATED, BOOKING_PAID, BOOKING_RESCHEDULED, BOOKING_REQUESTED, BOOKING_CANCELLED, BOOKING_REJECTED, BOOKING_NO_SHOW_UPDATED, FORM_SUBMITTED, MEETING_ENDED, MEETING_STARTED, RECORDING_READY, INSTANT_MEETING, RECORDING_TRANSCRIPTION_GENERATED, OOO_CREATED, AFTER_HOSTS_CAL_VIDEO_NO_SHOW, AFTER_GUESTS_CAL_VIDEO_NO_SHOW, FORM_SUBMITTED_NO_EVENT, DELEGATION_CREDENTIAL_ERROR, WRONG_ASSIGNMENT_REPORT |
+| **WH-VAL-005** | All 21 `WebhookTriggerEvents` fire correctly for their respective lifecycle events | Cal.com supports: BOOKING_CREATED, BOOKING_PAYMENT_INITIATED, BOOKING_PAID, BOOKING_RESCHEDULED, BOOKING_RESCHEDULED_BY_ATTENDEE, BOOKING_REQUESTED, BOOKING_CANCELLED, BOOKING_REJECTED, BOOKING_NO_SHOW_UPDATED, FORM_SUBMITTED, MEETING_ENDED, MEETING_STARTED, RECORDING_READY, INSTANT_MEETING, RECORDING_TRANSCRIPTION_GENERATED, OOO_CREATED, AFTER_HOSTS_CAL_VIDEO_NO_SHOW, AFTER_GUESTS_CAL_VIDEO_NO_SHOW, FORM_SUBMITTED_NO_EVENT, DELEGATION_CREDENTIAL_ERROR, WRONG_ASSIGNMENT_REPORT |
 | **WH-VAL-006** | `PayloadBuilderFactory` correctly routes to versioned builders based on subscriber's webhook version | Factory dispatches to `v2021-10-20` builder set or future version sets based on the subscriber's configured version |
 | **WH-VAL-007** | `v2021-10-20` payload structure is preserved EXACTLY for all existing subscribers — no breaking changes | `V20211020BookingEventPayload` uses `Omit<EventPayloadType, "assignmentReason">` with legacy `assignmentReason` format. No fields may be removed, renamed, or have types changed |
 | **WH-VAL-008** | `X-Cal-Signature-256` HMAC-SHA256 signature verification works correctly | `createWebhookSignature` computes `createHmac("sha256", secret).update(body).digest("hex")`. If no secret, header defaults to `"no-secret-provided"` |
@@ -241,7 +241,7 @@ Gate 3 validation is **complete**. All validation dimensions have been verified.
 - All existing `BaseBookingPayloadBuilder.test.ts` tests continue to pass — zero failures permitted
 - Existing webhook subscriptions receive unchanged payloads — snapshot comparison of `v2021-10-20` payload output must match pre-change baseline
 - No signature verification failures for existing consumers — `X-Cal-Signature-256` computation must remain deterministic
-- `PayloadBuilderFactory` continues to correctly route all 20 trigger events to their assigned builder categories (booking, form, ooo, recording, meeting, instantMeeting, delegation)
+- `PayloadBuilderFactory` continues to correctly route all 21 trigger events to their assigned builder categories (booking, form, ooo, recording, meeting, instantMeeting, delegation)
 
 ### Integration Verification
 
@@ -264,7 +264,7 @@ Gate 4 validation is **pending**. Sprint 4 (Webhooks & Events) implementation is
 | **WH-VAL-002** | `BOOKING_CANCELLED` webhook fires correctly | **⬜ Pending** | Will verify via `WebhookNotificationHandler` cancellation flow tests (WH-002) |
 | **WH-VAL-003** | `BOOKING_RESCHEDULED` webhook with old/new booking details | **⬜ Pending** | Will verify via reschedule payload builder output tests (WH-001, WH-004) |
 | **WH-VAL-004** | `FORM_SUBMITTED` webhook fires on routing form submission | **⬜ Pending** | Will verify via `FormSubmittedDTO` payload construction tests (WH-003) |
-| **WH-VAL-005** | All 20 `WebhookTriggerEvents` fire correctly | **⬜ Pending** | Will verify via `TRIGGER_TO_BUILDER_CATEGORY` mapping completeness test |
+| **WH-VAL-005** | All 21 `WebhookTriggerEvents` fire correctly | **⬜ Pending** | Will verify via `TRIGGER_TO_BUILDER_CATEGORY` mapping completeness test |
 | **WH-VAL-006** | `PayloadBuilderFactory` routes to versioned builders correctly | **⬜ Pending** | Will verify via factory dispatch tests including version resolution (WH-004, WH-005) |
 | **WH-VAL-007** | `v2021-10-20` payload structure preserved exactly | **⬜ Pending** | Will verify via payload snapshot comparison tests; zero field removals, renames, or type changes |
 | **WH-VAL-008** | `X-Cal-Signature-256` HMAC-SHA256 signing works correctly | **⬜ Pending** | Will verify via `createWebhookSignature` deterministic output tests |

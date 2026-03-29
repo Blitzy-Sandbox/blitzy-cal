@@ -1,10 +1,23 @@
 # Webhooks and Events Implementation
 
-## Status: not-started
+## Status: in-progress
 
 ## Completed
 
+- Spec artifacts created: `specs/webhooks-events/` folder with design.md, implementation.md, decisions.md, CLAUDE.md, prompts.md, future-work.md, and docs/README.md
+- WH-005: New `v2025-01-01` versioned builder set created at `packages/features/webhooks/lib/factory/versioned/v2025-01-01/` (10 files: BookingPayloadBuilder, DelegationPayloadBuilder, FormPayloadBuilder, InstantMeetingBuilder, MeetingPayloadBuilder, OOOPayloadBuilder, RecordingPayloadBuilder, types, index, test)
+- WH-005: Version registered in `packages/features/webhooks/lib/factory/versioned/registry.ts` and `constants.ts`
+- WH-001/WH-002: Calendly event mapping utilities created at `packages/features/webhooks/lib/mapping/calendlyEventMap.ts` (with test)
+- WH-004: `BookingCreatedDTO` extended with `utmParams` (nested object), `inviteeUri`, `eventUri`, `schedulingUrl`
+- WH-004: `BookingCancelledDTO` extended with `rescheduleUri`, `cancellationTimestamp`
+- ADR-001 recorded in `decisions.md` — decision to create v2025-01-01 version
+
 ## In Progress
+
+- WH-001: Verify `BOOKING_CREATED` → `invitee.created` semantic alignment in payload builders
+- WH-002: Verify `BOOKING_CANCELLED` → `invitee.canceled` semantic alignment in payload builders
+- WH-003: Verify `FORM_SUBMITTED` → `routing_form_submission.created` payload alignment
+- Validation criteria WH-VAL-001 through WH-VAL-011 — pending formal verification
 
 ## Blocked
 

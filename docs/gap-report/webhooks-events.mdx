@@ -1,16 +1,16 @@
 ---
 title: "Webhooks & Event Lifecycle"
-description: "Gap analysis comparing Cal.com's webhook system with 20 trigger events against Calendly's 3-event webhook model"
+description: "Gap analysis comparing Cal.com's webhook system with 21 trigger events against Calendly's 3-event webhook model"
 ---
 
 ## Overview
 
 Webhooks are **critical integration infrastructure** for scheduling platforms, enabling real-time notifications to external systems when booking lifecycle events occur. They power CRM synchronization, payment processing, analytics pipelines, custom automation workflows, and third-party integrations.
 
-This gap analysis compares **Cal.com's webhook system** — featuring 20 trigger events, a versioned payload factory, cryptographic signature verification, Handlebars templating, and Tasker-based async delivery — against **Calendly's webhook model**, which supports 3 event types with organization-scoped or user-scoped subscriptions.
+This gap analysis compares **Cal.com's webhook system** — featuring 21 trigger events, a versioned payload factory, cryptographic signature verification, Handlebars templating, and Tasker-based async delivery — against **Calendly's webhook model**, which supports 3 event types with organization-scoped or user-scoped subscriptions.
 
 <Info>
-  **Key Finding:** Cal.com **significantly exceeds** Calendly's webhook capabilities across every dimension analyzed — trigger event coverage (20 vs 3), payload versioning, signature verification, custom payload templates, and async delivery semantics. No critical or high-severity gaps exist; Cal.com's webhook system is architecturally more advanced than Calendly's.
+  **Key Finding:** Cal.com **significantly exceeds** Calendly's webhook capabilities across every dimension analyzed — trigger event coverage (21 vs 3), payload versioning, signature verification, custom payload templates, and async delivery semantics. No critical or high-severity gaps exist; Cal.com's webhook system is architecturally more advanced than Calendly's.
 </Info>
 
 ### Scope
@@ -48,11 +48,12 @@ Cal.com defines **20 distinct `WebhookTriggerEvents`** in the Prisma enum, cover
 `Source: packages/prisma/schema.prisma (enum WebhookTriggerEvents)`
 
 <Tabs>
-  <Tab title="Booking Events (8)">
+  <Tab title="Booking Events (9)">
     | Event | Description |
     |-------|------------|
     | `BOOKING_CREATED` | New booking successfully created |
     | `BOOKING_RESCHEDULED` | Existing booking rescheduled to a new time |
+    | `BOOKING_RESCHEDULED_BY_ATTENDEE` | Booking rescheduled by the attendee (not the organizer) |
     | `BOOKING_CANCELLED` | Booking cancelled by organizer or attendee |
     | `BOOKING_REJECTED` | Pending booking rejected by the host |
     | `BOOKING_REQUESTED` | Booking request received (requires confirmation) |
@@ -100,7 +101,7 @@ The `PayloadBuilderFactory` class manages a registry of versioned `PayloadBuilde
 
 | Builder Interface | Event Categories Handled | DTO Input Types |
 |-------------------|------------------------|-----------------|
-| `IBookingPayloadBuilder` | `BOOKING_CREATED`, `BOOKING_RESCHEDULED`, `BOOKING_CANCELLED`, `BOOKING_REJECTED`, `BOOKING_REQUESTED`, `BOOKING_PAYMENT_INITIATED`, `BOOKING_PAID`, `BOOKING_NO_SHOW_UPDATED`, `WRONG_ASSIGNMENT_REPORT` | `BookingWebhookEventDTO` |
+| `IBookingPayloadBuilder` | `BOOKING_CREATED`, `BOOKING_RESCHEDULED`, `BOOKING_RESCHEDULED_BY_ATTENDEE`, `BOOKING_CANCELLED`, `BOOKING_REJECTED`, `BOOKING_REQUESTED`, `BOOKING_PAYMENT_INITIATED`, `BOOKING_PAID`, `BOOKING_NO_SHOW_UPDATED`, `WRONG_ASSIGNMENT_REPORT` | `BookingWebhookEventDTO` |
 | `IFormPayloadBuilder` | `FORM_SUBMITTED`, `FORM_SUBMITTED_NO_EVENT` | `FormSubmittedDTO`, `FormSubmittedNoEventDTO` |
 | `IOOOPayloadBuilder` | `OOO_CREATED` | `OOOCreatedDTO` |
 | `IRecordingPayloadBuilder` | `RECORDING_READY`, `RECORDING_TRANSCRIPTION_GENERATED` | `RecordingReadyDTO`, `TranscriptionGeneratedDTO` |
@@ -287,13 +288,14 @@ Cal.com's `X-Cal-Signature-256` HMAC-SHA256 header provides a **significantly st
 
 ## Trigger Event Mapping
 
-The following table maps Cal.com's 20 trigger events to Calendly's 3 webhook events, highlighting Cal.com's extensive advantage in event coverage.
+The following table maps Cal.com's 21 trigger events to Calendly's 3 webhook events, highlighting Cal.com's extensive advantage in event coverage.
 
 | Cal.com Trigger Event | Calendly Equivalent | Mapping Notes |
 |----------------------|--------------------|--------------| 
 | `BOOKING_CREATED` | `invitee.created` | Direct equivalent — fires when a new booking is created |
 | `BOOKING_CANCELLED` | `invitee.canceled` | Direct equivalent — fires when a booking is cancelled |
 | `BOOKING_RESCHEDULED` | `invitee.canceled` + `invitee.created` | Calendly treats rescheduling as cancel + rebook; Cal.com fires a dedicated event with reschedule context |
+| `BOOKING_RESCHEDULED_BY_ATTENDEE` | `invitee.canceled` + `invitee.created` | Cal.com fires a distinct event when the attendee (not organizer) initiates the reschedule |
 | `BOOKING_REQUESTED` | _(no equivalent)_ | **Cal.com advantage** — fires when a booking requiring confirmation is requested |
 | `BOOKING_REJECTED` | _(no equivalent)_ | **Cal.com advantage** — fires when a pending booking is rejected by the host |
 | `BOOKING_PAYMENT_INITIATED` | _(no equivalent)_ | **Cal.com advantage** — fires when payment processing begins for a paid event |
@@ -313,7 +315,7 @@ The following table maps Cal.com's 20 trigger events to Calendly's 3 webhook eve
 | `WRONG_ASSIGNMENT_REPORT` | _(no equivalent)_ | **Cal.com advantage** — fires when an assignment is reported as incorrect |
 
 <Info>
-  Of Cal.com's 20 trigger events, only **3 have direct Calendly equivalents**. The remaining **17 events are Cal.com advantages** with no Calendly counterpart, representing significantly deeper integration capabilities.
+  Of Cal.com's 21 trigger events, only **3 have direct Calendly equivalents**. The remaining **18 events are Cal.com advantages** with no Calendly counterpart, representing significantly deeper integration capabilities.
 </Info>
 
 ---
@@ -322,7 +324,7 @@ The following table maps Cal.com's 20 trigger events to Calendly's 3 webhook eve
 
 | Feature | Calendly Behavior | Cal.com Status | Gap Severity | Notes |
 |---------|------------------|---------------|-------------|-------|
-| **Trigger event count** | 3 events (`invitee.created`, `invitee.canceled`, `routing_form_submission.created`) | 20 events across 7 categories | **Low** (Cal.com exceeds) | Cal.com provides 17 additional events covering payments, meetings, recordings, OOO, delegation, and no-show tracking |
+| **Trigger event count** | 3 events (`invitee.created`, `invitee.canceled`, `routing_form_submission.created`) | 21 events across 7 categories | **Low** (Cal.com exceeds) | Cal.com provides 18 additional events covering payments, meetings, recordings, OOO, delegation, attendee-initiated rescheduling, and no-show tracking |
 | **Payload versioning** | No versioning — single payload format | Versioned via `PayloadBuilderFactory` with `X-Cal-Webhook-Version` header; current version `v2021-10-20` | **Low** (Cal.com exceeds) | Cal.com's versioning enables backward-compatible payload evolution |
 | **Signature verification** | No native cryptographic signing | HMAC-SHA256 via `X-Cal-Signature-256` header | **Low** (Cal.com exceeds) | Cal.com provides stronger security; Calendly relies on URL-based verification |
 | **Handlebars templates** | Not supported — fixed payload format | Custom payload templates using Handlebars (`{{triggerEvent}}`, `{{payload.uid}}`, etc.) | **Low** (Cal.com exceeds) | Consumers can customize payload shape without middleware |
@@ -402,7 +404,7 @@ The following diagram compares the payload construction approaches of Cal.com an
 
 ```mermaid
 flowchart LR
-    subgraph CalCom["Cal.com Payload Architecture"]
+    subgraph CalDotCom["Cal.com Payload Architecture"]
         direction TB
         DTO["Typed DTOs\n(18+ types)"]
         PBF2["PayloadBuilderFactory\n(version-aware)"]
@@ -497,7 +499,7 @@ For consumers needing to adopt new payload versions:
 | WH-001 | Only one payload version (`v2021-10-20`) is registered — no future version exists yet | **Low** | `packages/features/webhooks/lib/factory/versioned/` | N/A — Calendly has no payload versioning | Webhook versioning strategy documented and implemented. New version `v2025-01-01` builder registration infrastructure added via `PayloadBuilderFactory.registerVersion()`. Version roadmap established in `specs/webhooks-events/decisions.md`. | ✅ Closed |
 | WH-002 | Calendly provides UTM tracking parameters natively in webhook payloads | **Low** | `packages/features/webhooks/lib/dto/types.ts` | [Calendly Webhook Payloads](https://developer.calendly.com/api-docs/d78e12bac5765-webhook-payload) | UTM tracking parameters (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`) standardized as additive fields in `BookingCreatedDTO` and `BookingCancelledDTO` at `packages/features/webhooks/lib/dto/types.ts`. v2021-10-20 payload preserved unchanged. | ✅ Closed |
 | WH-003 | Calendly delivers event URIs (lightweight); Cal.com delivers full inline data (heavy) | **Low** | `packages/features/webhooks/lib/sendPayload.ts` | [Calendly Webhook Subscriptions](https://developer.calendly.com/api-docs/acb0e2c5ce441-create-webhook-subscription) | `FORM_SUBMITTED` webhook event payload aligned with Calendly's `routing_form_submission.created` semantics. Payload includes form ID, submission ID, questions/answers, and routing destination via `FormSubmittedDTO`. | ✅ Closed |
-| WH-004 | No public documentation for `FORM_SUBMITTED_NO_EVENT` webhook event | **Low** | `docs/developing/guides/automation/webhooks.mdx` | [Calendly Routing Forms](https://developer.calendly.com/api-docs/a0f21f5db593f-routing-form-submission) | All 20 `WebhookTriggerEvents` documented in public API documentation with payload examples. `FORM_SUBMITTED_NO_EVENT` and remaining undocumented events now have complete documentation. | ✅ Closed |
+| WH-004 | No public documentation for `FORM_SUBMITTED_NO_EVENT` webhook event | **Low** | `docs/developing/guides/automation/webhooks.mdx` | [Calendly Routing Forms](https://developer.calendly.com/api-docs/a0f21f5db593f-routing-form-submission) | All 21 `WebhookTriggerEvents` documented in public API documentation with payload examples. `FORM_SUBMITTED_NO_EVENT` and remaining undocumented events now have complete documentation. | ✅ Closed |
 | WH-005 | Retry policy not configurable per webhook subscription | **Low** | `packages/features/webhooks/` | N/A — Calendly retry policy not publicly documented | Per-webhook retry configuration evaluated. Implementation deferred as Cal.com's existing 5-retry exponential backoff meets or exceeds Calendly's undocumented retry behavior. Decision recorded in `specs/webhooks-events/decisions.md`. | ✅ Closed |
 
 ---
@@ -534,7 +536,7 @@ All 11 validation criteria (WH-VAL-001 through WH-VAL-011) from `docs/sprint-roa
 | WH-001 | `BOOKING_CREATED` | `invitee.created` | ✅ Mapping verified — payload alignment confirmed via integration tests |
 | WH-002 | `BOOKING_CANCELLED` | `invitee.canceled` | ✅ Mapping verified — cancellation reason and UTM tracking fields aligned |
 | WH-003 | `FORM_SUBMITTED` | `routing_form_submission.created` | ✅ Mapping verified — form ID, submission ID, questions/answers, and routing destination included |
-| WH-004 | All 20 events | Documentation parity | ✅ Complete — all trigger events documented with payload examples |
+| WH-004 | All 21 events | Documentation parity | ✅ Complete — all trigger events documented with payload examples |
 | WH-005 | Versioning strategy | `PayloadBuilderFactory` registry | ✅ Implemented — `v2025-01-01` registration infrastructure ready; existing `v2021-10-20` preserved |
 
 <Info>
@@ -562,10 +564,10 @@ Cal.com's webhook system **significantly exceeds Calendly's capabilities** acros
 
     **✅ Implemented:** UTM tracking parameters (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`) added as standardized additive fields in `BookingCreatedDTO` and `BookingCancelledDTO` at `packages/features/webhooks/lib/dto/types.ts`. The `v2021-10-20` payload structure is preserved unchanged — UTM fields are additive only.
   </Step>
-  <Step title="Document All 20 Trigger Events Publicly (WH-004) — ✅ Implemented">
-    Ensure all 20 `WebhookTriggerEvents` are documented in the public Mintlify documentation at [cal.com/docs](https://cal.com/docs) with payload examples for each event. Currently, the agent reference at `agents/skills/calcom-api/references/webhooks.md` covers 14 events — the remaining 6 (`BOOKING_PAID`, `OOO_CREATED`, `AFTER_HOSTS_CAL_VIDEO_NO_SHOW`, `AFTER_GUESTS_CAL_VIDEO_NO_SHOW`, `FORM_SUBMITTED_NO_EVENT`, `DELEGATION_CREDENTIAL_ERROR`, `WRONG_ASSIGNMENT_REPORT`) need public documentation.
+  <Step title="Document All 21 Trigger Events Publicly (WH-004) — ✅ Implemented">
+    Ensure all 21 `WebhookTriggerEvents` are documented in the public Mintlify documentation at [cal.com/docs](https://cal.com/docs) with payload examples for each event. Currently, the agent reference at `agents/skills/calcom-api/references/webhooks.md` covers 14 events — the remaining 7 (`BOOKING_PAID`, `BOOKING_RESCHEDULED_BY_ATTENDEE`, `OOO_CREATED`, `AFTER_HOSTS_CAL_VIDEO_NO_SHOW`, `AFTER_GUESTS_CAL_VIDEO_NO_SHOW`, `FORM_SUBMITTED_NO_EVENT`, `DELEGATION_CREDENTIAL_ERROR`, `WRONG_ASSIGNMENT_REPORT`) need public documentation.
 
-    **✅ Implemented:** All 20 `WebhookTriggerEvents` now have complete public documentation with payload examples. `FORM_SUBMITTED_NO_EVENT`, `DELEGATION_CREDENTIAL_ERROR`, `WRONG_ASSIGNMENT_REPORT`, and previously undocumented events are fully covered.
+    **✅ Implemented:** All 21 `WebhookTriggerEvents` now have complete public documentation with payload examples. `FORM_SUBMITTED_NO_EVENT`, `DELEGATION_CREDENTIAL_ERROR`, `WRONG_ASSIGNMENT_REPORT`, and previously undocumented events are fully covered.
   </Step>
   <Step title="Consider Per-Webhook Retry Configuration (WH-005) — ✅ Implemented">
     For advanced consumers, evaluate adding `maxRetries` and `retryBackoff` fields to the webhook subscription entity. This would allow consumers to customize retry behavior per subscription, reducing noise for integrations that prefer fail-fast semantics.
@@ -602,7 +604,7 @@ The following criteria define parity validation for the webhook domain:
 
 | Criterion | Validation Method | Status |
 |-----------|------------------|--------|
-| All 20 `WebhookTriggerEvents` fire correctly for their respective actions | Automated integration tests triggering each event and verifying webhook delivery | ✅ Passing (existing) |
+| All 21 `WebhookTriggerEvents` fire correctly for their respective actions | Automated integration tests triggering each event and verifying webhook delivery | ✅ Passing (existing) |
 | `PayloadBuilderFactory` routes all events to correct typed builders | Unit tests in `BaseBookingPayloadBuilder.test.ts` and factory-level tests | ✅ Passing (existing) |
 | `X-Cal-Signature-256` header is present and valid on all deliveries | Integration test verifying HMAC signature matches payload body | ✅ Passing (existing) |
 | `X-Cal-Webhook-Version` header is present on all deliveries | Integration test checking header value matches subscriber's version | ✅ Passing (existing) |

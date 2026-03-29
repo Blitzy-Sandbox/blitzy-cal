@@ -67,25 +67,28 @@ ALTER TYPE "WorkflowActions" ADD VALUE 'IN_APP_NOTIFICATION';
 - **Pattern**: Pattern 1 — Additive enum value addition
 - **Purpose**: Support the new in-app notification delivery channel for NF-004
 - **Constraint**: No removal or reordering of existing enum values (`EMAIL_HOST`, `EMAIL_ATTENDEE`, `EMAIL_ADDRESS`, `SMS_ATTENDEE`, `SMS_NUMBER`, `WHATSAPP_ATTENDEE`, `WHATSAPP_NUMBER`, `CAL_AI_PHONE_CALL`)
-- **Behavior**: When a workflow step uses `IN_APP_NOTIFICATION`, the system creates a `Notification` record instead of dispatching an external message
+- **Behavior**: When a workflow step uses `IN_APP_NOTIFICATION`, the system creates an `InAppNotification` record instead of dispatching an external message
 
-#### 3. Notification Model — New Table for NF-004
+#### 3. InAppNotification Model — Table for NF-004
 
 ```prisma
-model Notification {
-  id          Int      @id @default(autoincrement())
-  uid         String   @unique @default(uuid())
+model InAppNotification {
+  id          Int       @id @default(autoincrement())
   userId      Int
-  type        String   // "booking_created", "booking_cancelled", "booking_rescheduled", "team_invitation", etc.
   title       String
-  message     String?
-  actionUrl   String?
-  read        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body        String
+  type        String
+  status      String    @default("UNREAD")
+  url         String?
+  icon        String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+  dismissedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, read])
+  @@index([userId])
+  @@index([userId, status])
   @@index([userId, createdAt])
 }
 ```
@@ -93,34 +96,46 @@ model Notification {
 - **Pattern**: New table creation (fully additive)
 - **Purpose**: Store in-app notifications for the activity feed (NF-004)
 - **No modifications to existing tables** — the `User` model gains only a new back-relation
-- **Indexes**: Composite index on `(userId, read)` for efficient unread count queries; composite index on `(userId, createdAt)` for chronological feed pagination
+- **Key design choices**:
+  - `body` (not `message`) — stores the notification body content
+  - `status` as `String` (not `Boolean read`) — supports multiple states (e.g., `"UNREAD"`, `"READ"`, `"DISMISSED"`) with default `"UNREAD"`
+  - `url` (not `actionUrl`) — URL to navigate to when the notification is clicked
+  - `icon` — optional icon identifier for visual differentiation
+  - `metadata` as `Json` — flexible key-value storage for notification-specific context
+  - `readAt` and `dismissedAt` as optional `DateTime` — track when notifications were read or dismissed, replacing a simple boolean flag
+  - No `uid` field — notifications are identified by auto-incremented `id`
+  - No `updatedAt` field — state changes are tracked via `readAt` and `dismissedAt` timestamps
+- **Related model**: `ActivityFeedItem` — a separate model for the activity feed, also present in the Prisma schema
+- **Indexes**: Index on `(userId)` for user-scoped queries; composite index on `(userId, status)` for efficient unread count queries; composite index on `(userId, createdAt)` for chronological feed pagination
 - **Migration SQL**:
   ```sql
-  CREATE TABLE "Notification" (
+  CREATE TABLE "InAppNotification" (
     "id" SERIAL NOT NULL,
-    "uid" TEXT NOT NULL,
     "userId" INTEGER NOT NULL,
-    "type" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "message" TEXT,
-    "actionUrl" TEXT,
-    "read" BOOLEAN NOT NULL DEFAULT false,
+    "body" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'UNREAD',
+    "url" TEXT,
+    "icon" TEXT,
+    "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+    "readAt" TIMESTAMP(3),
+    "dismissedAt" TIMESTAMP(3),
+    CONSTRAINT "InAppNotification_pkey" PRIMARY KEY ("id")
   );
-  CREATE UNIQUE INDEX "Notification_uid_key" ON "Notification"("uid");
-  CREATE INDEX "Notification_userId_read_idx" ON "Notification"("userId", "read");
-  CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");
-  ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey"
+  CREATE INDEX "InAppNotification_userId_idx" ON "InAppNotification"("userId");
+  CREATE INDEX "InAppNotification_userId_status_idx" ON "InAppNotification"("userId", "status");
+  CREATE INDEX "InAppNotification_userId_createdAt_idx" ON "InAppNotification"("userId", "createdAt");
+  ALTER TABLE "InAppNotification" ADD CONSTRAINT "InAppNotification_userId_fkey"
     FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   ```
 
 #### 4. Migration File
 
 - **Path**: `packages/prisma/migrations/[timestamp]_notifications_workflows_parity/migration.sql`
-- **Contents**: The `WorkflowActions` enum addition, `Notification` table creation, and index creation statements above
-- **Schema file**: `packages/prisma/schema.prisma` — add `Notification` model and `IN_APP_NOTIFICATION` to `WorkflowActions`
+- **Contents**: The `WorkflowActions` enum addition, `InAppNotification` table creation, and index creation statements above
+- **Schema file**: `packages/prisma/schema.prisma` — `InAppNotification` model and `IN_APP_NOTIFICATION` in `WorkflowActions`
 - **Rollback strategy**: New table can be dropped; new enum value can be left in place (unused values cause no harm). No data loss on rollback.
 
 #### 5. Data Preservation Guarantee
@@ -257,26 +272,29 @@ The abstract `SMSManager` class (lines 75–156) is enhanced:
 
 A new feature module for in-app notifications and activity feed:
 
-- **`repositories/NotificationRepository.ts`** — Prisma-based CRUD repository following the existing repository pattern:
-  - `create(data)` — Create a new notification
+- **`repositories/InAppNotificationRepository.ts`** — Prisma-based CRUD repository following the existing repository pattern:
+  - `create(data)` — Create a new in-app notification
   - `findByUserId(userId, options)` — Paginated query with cursor-based pagination, sorted by `createdAt` descending
-  - `countUnread(userId)` — Count unread notifications for badge display
-  - `markAsRead(id, userId)` — Mark a single notification as read with ownership verification
+  - `countUnread(userId)` — Count notifications with `status: "UNREAD"` for badge display
+  - `markAsRead(id, userId)` — Set `status` to `"READ"` and `readAt` to current timestamp with ownership verification
   - `markAllAsRead(userId)` — Mark all notifications as read for a user
+  - `dismiss(id, userId)` — Set `dismissedAt` timestamp
   - `deleteOlderThan(days)` — TTL-based cleanup for notifications older than the specified threshold (default: 90 days)
 
-- **`services/notificationService.ts`** — Business logic service:
+- **`services/InAppNotificationService.ts`** — Business logic service:
   - `createBookingNotification(userId, bookingData, type)` — Create a notification for booking lifecycle events
   - `createTeamNotification(userId, teamData, type)` — Create a notification for team-related events
   - `getNotificationFeed(userId, cursor?, limit?)` — Retrieve paginated notification feed
-  - `getUnreadCount(userId)` — Get unread notification count
-  - `markRead(notificationId, userId)` — Mark notification as read
+  - `getUnreadCount(userId)` — Get count of notifications with `status: "UNREAD"`
+  - `markRead(notificationId, userId)` — Mark notification as read (sets `readAt` and updates `status`)
   - `markAllRead(userId)` — Mark all notifications as read
   - `cleanupExpired()` — Remove notifications older than 90 days (designed for cron job invocation)
 
 - **`di/tokens.ts`** — DI token definitions following existing patterns in `packages/features/routing-forms/di/tokens.ts` and `packages/features/ee/organizations/di/`:
-  - `NOTIFICATION_DI_TOKENS.NOTIFICATION_REPOSITORY` — Symbol token for repository injection
-  - `NOTIFICATION_DI_TOKENS.NOTIFICATION_SERVICE` — Symbol token for service injection
+  - `NOTIFICATION_DI_TOKENS.IN_APP_NOTIFICATION_REPOSITORY` — Symbol token for repository injection
+  - `NOTIFICATION_DI_TOKENS.ACTIVITY_FEED_REPOSITORY` — Symbol token for activity feed repository injection
+  - `NOTIFICATION_DI_TOKENS.IN_APP_NOTIFICATION_SERVICE` — Symbol token for service injection
+  - `NOTIFICATION_DI_TOKENS.IN_APP_NOTIFICATION_SERVICE_MODULE` — Symbol token for service module injection
 
 - **`types/index.ts`** — TypeScript interfaces:
   - `NotificationType` — String union type for notification categories
@@ -306,8 +324,8 @@ A new UI component in the Cal.com web application:
 
 - **Notification bell icon** in the navigation header with an unread count badge
 - **Dropdown feed** showing recent notifications, sorted chronologically (newest first)
-- **Each notification item** displays: type icon, title, message preview, timestamp (relative — e.g., "2 hours ago"), and a link to the relevant booking or page
-- **Mark as read** — clicking a notification marks it as read and navigates to the `actionUrl`
+- **Each notification item** displays: icon, title, body preview, timestamp (relative — e.g., "2 hours ago"), and a link (`url`) to the relevant booking or page
+- **Mark as read** — clicking a notification sets `status` to `"READ"` (recording `readAt` timestamp) and navigates to the `url`
 - **Mark all as read** — bulk action to clear unread state for all notifications
 - **Empty state** — friendly message when no notifications exist
 - Implementation details deferred to the NF-004 epic implementation phase

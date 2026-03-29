@@ -10,11 +10,11 @@ Architecture Decision Records (ADRs) for Sprint 4: Webhooks and Events (F-010) o
 
 Sprint 4 (WH-004, WH-005) requires aligning webhook payloads with Calendly's event semantics — specifically ensuring that `BOOKING_CREATED`, `BOOKING_CANCELLED`, `BOOKING_RESCHEDULED`, and `FORM_SUBMITTED` trigger events produce payloads that map correctly to Calendly's `invitee.created`, `invitee.canceled`, and `routing_form_submission.created` expectations. This alignment includes adding Calendly-equivalent data such as UTM tracking parameters, reschedule URI references, and cancellation context to Cal.com's webhook payloads.
 
-The existing `PayloadBuilderFactory` at `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts` routes trigger events to versioned builders via `TRIGGER_TO_BUILDER_CATEGORY` — a `Record<WebhookTriggerEvents, BuilderCategory>` typed constant that provides compile-time validation ensuring every one of Cal.com's 20 trigger events maps to exactly one of the 7 builder categories (booking, form, ooo, recording, meeting, instantMeeting, delegation).
+The existing `PayloadBuilderFactory` at `packages/features/webhooks/lib/factory/versioned/PayloadBuilderFactory.ts` routes trigger events to versioned builders via `TRIGGER_TO_BUILDER_CATEGORY` — a `Record<WebhookTriggerEvents, BuilderCategory>` typed constant that provides compile-time validation ensuring every one of Cal.com's 21 trigger events maps to exactly one of the 7 builder categories (booking, form, ooo, recording, meeting, instantMeeting, delegation).
 
-Currently only one version exists: `v2021-10-20`, defined in the `WebhookVersion` const object in `packages/features/webhooks/lib/interface/IWebhookRepository.ts`. It is both the default and the only registered version. The `PayloadBuilderFactory` constructor takes this default version and its `PayloadBuilderSet`, and the `registry.ts` composition root registers it as the sole entry in the internal `Map<WebhookVersion, PayloadBuilderSet>`.
+At the start of Sprint 4, only one version existed: `v2021-10-20`, defined in the `WebhookVersion` const object in `packages/features/webhooks/lib/interface/IWebhookRepository.ts`. It was both the default and the only registered version. The `PayloadBuilderFactory` constructor takes a default version and its `PayloadBuilderSet`, and the `registry.ts` composition root registers versions in the internal `Map<WebhookVersion, PayloadBuilderSet>`.
 
-The AAP mandates that the `v2021-10-20` payload structure is preserved exactly — no field removals, renames, or type changes — per the rules documented in `docs/migration/webhook-compatibility.mdx`. New Calendly-equivalent fields (UTM tracking parameters, reschedule URI references, cancel URL, event metadata) need to be added to booking payloads to achieve parity with Calendly's inline payload data.
+The AAP mandates that the `v2021-10-20` payload structure is preserved exactly — no field removals, renames, or type changes — per the rules documented in `docs/migration/webhook-compatibility.mdx`. New Calendly-equivalent fields (nested `utmParams` object, URI references such as `inviteeUri`/`eventUri`/`schedulingUrl`/`rescheduleUri`, and `cancellationTimestamp`) need to be added to booking payloads to achieve parity with Calendly's inline payload data.
 
 ### Options Considered
 
@@ -47,21 +47,21 @@ The AAP mandates that the `v2021-10-20` payload structure is preserved exactly �
 
 ### Decision
 
-Use **additive-only changes to v2021-10-20** as the primary approach for Sprint 4. The Calendly-equivalent fields (UTM tracking, reschedule URI references, cancel URL, event metadata) are purely additive and do not require payload restructuring. Since v2021-10-20 already covers all necessary trigger event mappings through `TRIGGER_TO_BUILDER_CATEGORY` — with `BOOKING_CREATED` mapping to Calendly's `invitee.created`, `BOOKING_CANCELLED` mapping to `invitee.canceled`, and `FORM_SUBMITTED` mapping to `routing_form_submission.created` — adding optional fields preserves backward compatibility while achieving parity.
+Create a **new `v2025-01-01` versioned builder set** alongside the existing `v2021-10-20`. The Calendly-equivalent fields (UTM tracking via nested `utmParams`, URI references such as `inviteeUri`, `eventUri`, `schedulingUrl`, `rescheduleUri`, and `cancellationTimestamp`) are added to the shared DTOs as optional fields, while v2025-01-01 provides a clean builder set that fully implements Calendly-aligned payload construction. The v2021-10-20 builder set is preserved unchanged for backward compatibility.
 
-A new `v2025-01-01` version is documented in `future-work.md` for a future sprint if structural payload changes (field renaming, type changes, reorganization) are needed beyond additive extensions. The `PayloadBuilderFactory` architecture fully supports this evolution path via `registerVersion()` and the fallback mechanism.
+This approach future-proofs the versioning system by establishing the pattern for multi-version support — validating that the `PayloadBuilderFactory.registerVersion()` and `getBuilderSet()` fallback mechanisms work with multiple registered versions. Consumers can explicitly opt into the new version by updating their webhook subscription's `payloadVersion` field.
 
 ### Consequences
 
-- v2021-10-20 builders in `packages/features/webhooks/lib/factory/versioned/v2021-10-20/` receive additive field population for Calendly-equivalent data — specifically the `BookingPayloadBuilder` and `FormPayloadBuilder`
-- No changes to the `WebhookVersion` const object in `IWebhookRepository.ts` — it remains single-version with only `V_2021_10_20: "2021-10-20"`
-- `DEFAULT_WEBHOOK_VERSION` remains `WebhookVersion.V_2021_10_20` — no default version change
-- `WEBHOOK_VERSION_LABELS`, `WEBHOOK_VERSION_OPTIONS`, and `WEBHOOK_VERSION_DOCS` in `constants.ts` remain unchanged
-- `VALID_WEBHOOK_VERSIONS` set and `isValidWebhookVersion()` / `parseWebhookVersion()` validation functions require no modification
-- The `registry.ts` composition root (`createPayloadBuilderFactory()`) requires no changes — it continues to register only v2021-10-20
-- All existing webhook subscribers receive the enhanced payloads automatically without any subscription update
-- DTOs in `packages/features/webhooks/lib/dto/types.ts` gain new optional fields on `BookingCreatedDTO`, `BookingCancelledDTO`, and related types (e.g., `utmSource?: string`, `utmMedium?: string`, `rescheduleUrl?: string`, `cancelUrl?: string`)
-- The `V20211020BookingEventPayload` type in `packages/features/webhooks/lib/factory/versioned/v2021-10-20/types.ts` may need to be extended with the new optional fields while preserving the legacy `assignmentReason` format override
+- A new v2025-01-01 builder set is created at `packages/features/webhooks/lib/factory/versioned/v2025-01-01/` with all 7 builder interfaces implemented plus types and index files (10 files total)
+- The `WebhookVersion` const object in `IWebhookRepository.ts` is extended with `V_2025_01_01: "2025-01-01"` alongside the existing `V_2021_10_20: "2021-10-20"`
+- `DEFAULT_WEBHOOK_VERSION` remains `WebhookVersion.V_2021_10_20` — existing subscribers are unaffected
+- `WEBHOOK_VERSION_LABELS` in `constants.ts` is extended to include the `V_2025_01_01` label
+- The `registry.ts` composition root (`createPayloadBuilderFactory()`) registers both v2021-10-20 and v2025-01-01 builder sets
+- v2021-10-20 builders remain unchanged — no modifications to any files in the `v2021-10-20/` directory
+- DTOs in `packages/features/webhooks/lib/dto/types.ts` gain new optional fields on `BookingCreatedDTO` (nested `utmParams` object, `inviteeUri`, `eventUri`, `schedulingUrl`) and `BookingCancelledDTO` (`rescheduleUri`, `cancellationTimestamp`)
+- Existing webhook subscribers on `v2021-10-20` continue to receive unchanged payload shapes — no automatic migration
+- Per-subscriber version override is supported via the `Webhook.payloadVersion` field in the Prisma schema
 
 ---
 
@@ -71,7 +71,7 @@ A new `v2025-01-01` version is documented in `future-work.md` for a future sprin
 
 Cal.com signs every webhook delivery with an HMAC-SHA256 signature using the webhook subscriber's configured secret key. The `sendPayload.ts` module at `packages/features/webhooks/lib/sendPayload.ts` computes the signature via `createHmac("sha256", secret).update(body).digest("hex")` and attaches it as the `X-Cal-Signature-256` header (formatted as `sha256=<hex_digest>`). Every delivery also includes the `X-Cal-Webhook-Version` header identifying the payload format version. If no secret is configured, the header defaults to `"no-secret-provided"`.
 
-Sprint 4 adds new optional fields to webhook payloads (UTM tracking, reschedule URI references, cancel URL, event metadata). These additive fields change the JSON serialization of the payload body, which means the HMAC-SHA256 digest will be different from what it would have been without the new fields. Consumers verifying HMAC signatures must compute the digest over the full received body — which they already do per standard webhook verification practice.
+Sprint 4 adds new optional fields to webhook payloads (nested `utmParams`, URI references, `cancellationTimestamp`). These additive fields change the JSON serialization of the payload body, which means the HMAC-SHA256 digest will be different from what it would have been without the new fields. Consumers verifying HMAC signatures must compute the digest over the full received body — which they already do per standard webhook verification practice.
 
 The question is whether the signing infrastructure needs any modifications to accommodate the expanded payload bodies.
 
@@ -121,7 +121,7 @@ Consumers already compute HMAC-SHA256 over the full received body using their st
 
 ### Context
 
-The `WebhookTriggerEvents` Prisma enum at `packages/prisma/schema.prisma` defines all valid webhook trigger events — currently 20 events across 7 categories (booking, form, OOO, recording, meeting, instant meeting, delegation). These 20 events are exhaustively mapped in the `TRIGGER_TO_BUILDER_CATEGORY` constant in `PayloadBuilderFactory.ts`, which is typed as `Record<WebhookTriggerEvents, BuilderCategory>` to provide compile-time validation that every enum value has a mapping.
+The `WebhookTriggerEvents` Prisma enum at `packages/prisma/schema.prisma` defines all valid webhook trigger events — currently 21 events across 7 categories (booking, form, OOO, recording, meeting, instant meeting, delegation). These 21 events are exhaustively mapped in the `TRIGGER_TO_BUILDER_CATEGORY` constant in `PayloadBuilderFactory.ts`, which is typed as `Record<WebhookTriggerEvents, BuilderCategory>` to provide compile-time validation that every enum value has a mapping.
 
 Sprint 4 requires verifying that Cal.com's existing trigger events map correctly to Calendly's 3 webhook events:
 - `BOOKING_CREATED` → Calendly's `invitee.created` (WH-001)
@@ -164,13 +164,13 @@ Per `docs/migration/zero-downtime-strategy.mdx`, only additive-only changes to P
 
 Use **additive enum extension only** (option 1). Any new `WebhookTriggerEvents` values must be appended at the end of the Prisma enum definition in `packages/prisma/schema.prisma`. No reordering, no removal of existing values. This follows the mandatory constraints from `docs/migration/zero-downtime-strategy.mdx` and `docs/migration/webhook-compatibility.mdx`.
 
-For Sprint 4, the existing 20 trigger events already cover the Calendly mapping without needing new enum values:
+For Sprint 4, the existing 21 trigger events already cover the Calendly mapping without needing new enum values:
 - `BOOKING_CREATED` → Calendly's `invitee.created` (direct equivalent)
 - `BOOKING_CANCELLED` → Calendly's `invitee.canceled` (direct equivalent)
 - `BOOKING_RESCHEDULED` → Calendly's `invitee.canceled` + `invitee.created` (Cal.com advantage: dedicated reschedule event)
 - `FORM_SUBMITTED` → Calendly's `routing_form_submission.created` (direct equivalent)
 
-New enum values are only added if a Calendly event has no existing Cal.com equivalent — which is not the case for Sprint 4, since Cal.com's 20 events are a superset of Calendly's 3.
+New enum values are only added if a Calendly event has no existing Cal.com equivalent — which is not the case for Sprint 4, since Cal.com's 21 events are a superset of Calendly's 3.
 
 ### Consequences
 

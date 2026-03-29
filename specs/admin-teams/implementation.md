@@ -1,10 +1,22 @@
 # Admin and Teams Implementation
 
-## Status: not-started
+## Status: in-progress
 
 ## Completed
 
+- Spec artifacts created: `specs/admin-teams/` folder with design.md, implementation.md, decisions.md, CLAUDE.md, prompts.md, future-work.md, and docs/README.md
+- AG-001: `OrganizationPermissionService` created at `packages/features/ee/organizations/lib/OrganizationPermissionService.ts` with Calendly-equivalent permission methods (with test)
+- AG-001: PBAC infrastructure implemented at `packages/features/pbac/` — client, domain, infrastructure, lib, services, utils layers
+- AG-002: Team event routing via `SchedulingType.ROUND_ROBIN` and `SchedulingType.COLLECTIVE` in team services
+- AG-003: Managed event type push via `SchedulingType.MANAGED` in team event type configuration
+- AG-004: Member invitation utilities in `packages/features/ee/teams/lib/inviteMemberUtils.ts`
+
 ## In Progress
+
+- AG-001: PBAC role model alignment with Calendly's admin/owner/user structure — refactoring guide in progress
+- AG-002: Team event routing behavioral parity verification
+- AG-004: Member invitation lifecycle alignment with Calendly's acceptance/rejection flow
+- Validation criteria AG-VAL-001 through AG-VAL-008 — pending formal verification
 
 ## Blocked
 

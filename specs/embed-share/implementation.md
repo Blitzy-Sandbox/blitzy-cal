@@ -1,10 +1,21 @@
 # Embed & Share Implementation
 
-## Status: not-started
+## Status: in-progress
 
 ## Completed
 
+- Spec artifacts created: `specs/embed-share/` folder with design.md, implementation.md, decisions.md, CLAUDE.md, prompts.md, future-work.md, and docs/README.md
+- EM-001/EM-002/EM-003: Embed core runtime has `Cal.inline()`, `Cal.modal()`, `Cal.floatingButton()` with custom elements (`cal-inline`, `cal-modal-box`, `cal-floating-button`) in `packages/embeds/embed-core/src/embed.ts`
+- Customization options implemented: `hideEventTypeDetails`, `buttonColor`, `buttonTextColor`, `backgroundColor`, `textColor`, `theme`, `layout`
+- Three-package architecture in place: `embed-core`, `embed-react`, `embed-snippet`
+
 ## In Progress
+
+- EM-001: Inline embed behavioral parity alignment with Calendly's `initInlineWidget()`
+- EM-002: Modal/popup parity alignment with Calendly's `initPopupWidget()`
+- EM-003: Floating button parity alignment with Calendly's `initBadgeWidget()`
+- EM-004: Share flow and link generation parity across the embed suite
+- Validation criteria EM-VAL-001 through EM-VAL-009 — pending formal verification
 
 ## Blocked
 

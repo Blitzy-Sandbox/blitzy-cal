@@ -196,14 +196,16 @@ Cal.com routing forms support the following field types, defined by the `zodNonR
 | Field Type | Description | Routing Support |
 |-----------|-------------|-----------------|
 | `text` | Short text input | Route on exact/contains match |
-| `textarea` | Long text input | Route on exact/contains match |
-| `number` | Numeric input | Route on numeric comparisons |
 | `email` | Email address input (validated) | Route on domain match, CRM lookup |
 | `phone` | Phone number input | Route on value match |
+| `number` | Numeric input | Route on numeric comparisons |
+| `textarea` | Long text input | Route on exact/contains match |
 | `select` | Single-select dropdown | Route on selected option |
 | `multiselect` | Multi-select checkboxes | Route on selected options |
+| `radio` | Radio button single-select | Route on selected option |
+| `checkbox` | Checkbox multi-select | Route on selected options |
 
-Each field has properties: `id`, `label`, `identifier`, `placeholder`, `type`, `required`, `deleted`, and `options` (array of `{ label, id }` for select/multiselect fields).
+Each field has properties: `id`, `label`, `identifier`, `placeholder`, `type`, `required`, `deleted`, `options` (array of `{ label, id }` for select/multiselect/radio/checkbox fields), and optional `fieldType`, `validation`, `defaultValue`, and `description` extensions.
 
 `Source: packages/features/routing-forms/lib/zod.ts`
 

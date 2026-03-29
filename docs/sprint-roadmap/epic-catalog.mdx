@@ -472,19 +472,19 @@ The following table aggregates all 40 epics across the eight gap analysis domain
 </Info>
 
 <Info>
-  **Wave 3 Status (Sprints 4, 5, 7):** All Wave 3 sprints are complete. Sprint 4 (Webhooks & Events — WH-001 through WH-005), Sprint 5 (Routing Forms — RF-001 through RF-004), and Sprint 7 (Admin & Teams — AG-001 through AG-004) have all passed their validation gates. All five validation dimensions verified: behavioral testing, regression testing, data preservation, webhook compatibility, and cross-domain integration.
+  **Wave 3 Status (Sprints 4, 5, 7):** All Wave 3 sprints are in progress. Sprint 4 (Webhooks & Events — WH-001 through WH-005), Sprint 5 (Routing Forms — RF-001 through RF-004), and Sprint 7 (Admin & Teams — AG-001 through AG-004) have implementation code but validation gates are pending. See [Validation Criteria](/sprint-roadmap/validation-criteria) for gate status.
 </Info>
 
 <Info>
-  **Wave 4 Status (Sprints 6, 8):** All Wave 4 sprints are complete. Sprint 6 (Embed & Share — EM-001 through EM-004) and Sprint 8 (Notifications & Workflows — NF-001 through NF-004) have passed their validation gates. 45 of 45 in-scope validation criteria across 5 domains are verified.
+  **Wave 4 Status (Sprints 6, 8):** Wave 4 sprints are in progress, blocked on Wave 3 gate clearance. Sprint 6 (Embed & Share — EM-001 through EM-004) and Sprint 8 (Notifications & Workflows — NF-001 through NF-004) have implementation code in progress. Three NF gaps remain open (NF-001 reconfirmation, NF-002 no-show workflow, NF-003 user-address email). Validation criteria remain pending.
 </Info>
 
 1. **Sprint Planning**: Use the [Sprint Roadmap Overview](/sprint-roadmap/overview) to understand how these epics are sequenced into sprints based on their dependency relationships and priority classifications.
 2. **Validation**: Refer to the [Validation Criteria](/sprint-roadmap/validation-criteria) for the behavioral acceptance criteria that each epic must satisfy before its sprint gate can be cleared.
 3. **Implementation**: Each epic should begin with a design spec following the [spec-first workflow](https://github.com/calcom/cal.com/tree/main/specs/README.md), then proceed through implementation, testing, and validation gate clearance.
 4. **Migration**: For epics requiring schema changes, consult the [Zero-Downtime Migration Strategy](/migration/zero-downtime-strategy) and [Data Preservation Guide](/migration/data-preservation) before implementing any database modifications.
-5. **Gate 4 (Webhooks) Cleared:** All WH-VAL-001 through WH-VAL-011 criteria verified. `v2021-10-20` payload structure preserved exactly. Calendly event mapping (`invitee.created`, `invitee.canceled`, `routing_form_submission.created`) verified.
-6. **Gate 5 (Routing Forms) Cleared:** All RF-VAL-001 through RF-VAL-007 criteria verified. RAQB-based conditional routing aligned with Calendly's routing workflows.
-7. **Gate 7 (Admin & Teams) Cleared:** All AG-VAL-001 through AG-VAL-008 criteria verified. PBAC role model aligned with Calendly's admin/owner/user structure.
-8. **Gate 6 (Embed & Share) Cleared:** All EM-VAL-001 through EM-VAL-009 criteria verified. Three-package embed suite (`embed-core`, `embed-react`, `embed-snippet`) at full Calendly parity.
-9. **Gate 8 (Notifications) Cleared:** All NF-VAL-001 through NF-VAL-010 criteria verified. Multi-channel notification lifecycle (email, SMS, workflow automation) at Calendly parity. NF-005 (SMS reminder configuration parity) remains planned.
+5. **Gate 4 (Webhooks) — ⬜ Pending:** WH-VAL-001 through WH-VAL-011 criteria awaiting validation. Implementation targets `v2021-10-20` payload preservation and Calendly event mapping (`invitee.created`, `invitee.canceled`, `routing_form_submission.created`).
+6. **Gate 5 (Routing Forms) — ⬜ Pending:** RF-VAL-001 through RF-VAL-007 criteria awaiting validation. RAQB-based conditional routing targeting alignment with Calendly's routing workflows.
+7. **Gate 7 (Admin & Teams) — ⬜ Pending:** AG-VAL-001 through AG-VAL-008 criteria awaiting validation. PBAC role model targeting alignment with Calendly's admin/owner/user structure.
+8. **Gate 6 (Embed & Share) — ⬜ Pending (blocked on Wave 3 gate):** EM-VAL-001 through EM-VAL-009 criteria awaiting validation. Three-package embed suite (`embed-core`, `embed-react`, `embed-snippet`) targeting Calendly parity.
+9. **Gate 8 (Notifications) — ⬜ Pending (blocked on Wave 3 gate):** NF-VAL-001 through NF-VAL-010 criteria awaiting validation. Three notification gaps remain open (NF-001, NF-002, NF-003). NF-005 (SMS reminder configuration parity) remains out of scope for Sprint 8.

@@ -10,17 +10,13 @@ Sprint 6: Embed & Share (F-008) achieves behavioral parity between Cal.com's thr
 
 Use `Cal("inline", { elementOrSelector: "#my-cal-inline", calLink: "user/event-type" })` to embed a fully functional booking widget directly within your page. The `elementOrSelector` parameter targets a container `<div>` on the host page, and the `calLink` parameter points to the user or team event-type URL. Customize the appearance through the `config` object: set `hideEventTypeDetails: true` to hide the avatar, event name, location, and description; apply `backgroundColor` and `textColor` for brand-consistent color customization; and choose a `theme` of `light`, `dark`, or `auto` (which auto-detects the host page's CSS `color-scheme` property). Inline embeds automatically resize to fit their content height via the `__dimensionChanged` postMessage event, eliminating the need for manual height management.
 
-![Step 1 Screenshot](./screenshots/step-1.png)
-
-*Screenshot: Navigate to the Embed dialog's Inline tab to see the inline embed configuration with customization options. Capture and save as `./screenshots/step-1.png`.*
+*Screenshot placeholder: Navigate to the Embed dialog's Inline tab to see the inline embed configuration with customization options. Capture and save as `./screenshots/step-1.png`.*
 
 ### Step 2: Generate and Customize Embed Code
 
 Open the embed dialog in Cal.com — accessible from event type settings or the share button — to generate ready-to-copy code snippets for any of three embed types: Inline (an HTML `<div>` container with a `<script>` tag), Modal/Popup (a JavaScript trigger that opens a booking overlay), or Floating Button (a persistent floating action button anchored to the page corner). The dialog provides a live preview reflecting your selected customization options including background color, text color, button color, and the hide event details toggle. All generated snippets use the `@calcom/embed-snippet` loader under the hood, which queues commands before the core library loads to prevent race conditions. For React applications, install the `@calcom/embed-react` package and use the `Cal` component with `calLink`, `namespace`, and `config` props for a declarative integration.
 
-![Step 2 Screenshot](./screenshots/step-2.png)
-
-*Screenshot: View the embed code generation dialog showing customization preview and copy-to-clipboard options for inline, modal, and floating button embed types. Capture and save as `./screenshots/step-2.png`.*
+*Screenshot placeholder: View the embed code generation dialog showing customization preview and copy-to-clipboard options for inline, modal, and floating button embed types. Capture and save as `./screenshots/step-2.png`.*
 
 ## Configuration Options
 

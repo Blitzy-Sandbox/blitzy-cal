@@ -423,12 +423,15 @@ export class TeamService {
     });
 
     // Build a map of userId -> { bookingCount, lastBookingTimestamp }
+    // Filter out entries with null userId (bookings without an assigned user are irrelevant for rotation)
     const rotationMap = new Map<number, { bookingCount: number; lastBookingTimestamp: Date | null }>();
     for (const entry of rotationState) {
-      rotationMap.set(entry.userId, {
-        bookingCount: entry.bookingCount,
-        lastBookingTimestamp: entry.lastBookingTimestamp,
-      });
+      if (entry.userId != null) {
+        rotationMap.set(entry.userId, {
+          bookingCount: entry.bookingCount,
+          lastBookingTimestamp: entry.lastBookingTimestamp,
+        });
+      }
     }
 
     // Find the eligible member with the fewest bookings (fair rotation)

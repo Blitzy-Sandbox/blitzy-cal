@@ -8,6 +8,9 @@ import type { Prisma, PrismaClient } from "@calcom/prisma/client";
 import { orgSettingsSchema, teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
 import { z } from "zod";
 
+import type { OrganizationPermissionService } from "@calcom/features/ee/organizations/lib/OrganizationPermissionService";
+import type { MembershipRole } from "@calcom/prisma/enums";
+
 export const ZAdminUpdate = z.object({
   id: z.number(),
   name: z.string().optional(),
@@ -20,12 +23,27 @@ export type TAdminUpdate = z.infer<typeof ZAdminUpdate>;
 type AdminOrganizationUpdateServiceDeps = {
   prismaClient: PrismaClient;
   organizationRepository: OrganizationRepository;
+  permissionService?: OrganizationPermissionService;
 };
 
 export class AdminOrganizationUpdateService {
   constructor(private readonly deps: AdminOrganizationUpdateServiceDeps) {}
 
-  async updateOrganization(input: TAdminUpdate) {
+  async updateOrganization(input: TAdminUpdate, actorRole?: MembershipRole) {
+    // AG-001: Role-based permission check for Calendly admin/owner/user parity.
+    // When actorRole is provided and a permissionService is injected, verify the
+    // actor has sufficient privileges (OWNER or ADMIN) to manage organization settings.
+    // When actorRole is omitted, the check is skipped entirely for backward compatibility.
+    if (actorRole !== undefined) {
+      const permissionService = this.deps.permissionService;
+      if (permissionService && !permissionService.canManageOrganizationSettings(actorRole)) {
+        throw new HttpError({
+          message: "You do not have permission to manage organization settings",
+          statusCode: 403,
+        });
+      }
+    }
+
     const { id, organizationSettings, ...restInput } = input;
     const { organizationRepository } = this.deps;
 

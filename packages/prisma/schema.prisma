@@ -494,6 +494,7 @@ model User {
   smsLockState                   SMSLockState                  @default(UNLOCKED)
   smsLockReviewedByAdmin         Boolean                       @default(false)
   NotificationsSubscriptions     NotificationsSubscriptions[]
+  activityFeedItems              ActivityFeedItem[]
   referralLinkId                 String?
   features                       UserFeatures[]
   reassignedBookings             Booking[]                     @relation("reassignByUser")
@@ -536,6 +537,23 @@ model NotificationsSubscriptions {
   subscription String
 
   @@index([userId, subscription])
+}
+
+model ActivityFeedItem {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityType String
+  title        String
+  description  String?
+  resourceId   String?
+  resourceType String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, activityType])
+  @@index([userId, createdAt])
 }
 
 // It holds Organization Profiles as well as User Profiles for users that have been added to an organization

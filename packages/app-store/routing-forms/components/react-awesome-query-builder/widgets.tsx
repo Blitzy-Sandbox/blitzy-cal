@@ -12,6 +12,7 @@ import type {
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button as CalButton } from "@calcom/ui/components/button";
+import { Checkbox } from "@calcom/ui/components/form";
 import { TextArea } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
@@ -198,9 +199,11 @@ const MultiSelectWidget = ({
 /**
  * CheckboxGroupWidget — Calendly-parity "Checkboxes" question type (RF-001, RF-003).
  *
- * Renders a group of native checkbox inputs, one per listValue option. Follows the same
- * stale-value-clearing pattern as MultiSelectWidget: if the current value array contains
- * entries that no longer exist in listValues, the widget resets by calling setValue([]).
+ * Renders a group of Cal.com Radix-based Checkbox components, one per listValue option.
+ * Provides an alternative to MultiSelectWidget (dropdown) for multi-value selection.
+ * Follows the same stale-value-clearing pattern as MultiSelectWidget: if the current
+ * value array contains entries that no longer exist in listValues, the widget resets
+ * by calling setValue([]).
  */
 const CheckboxGroupWidget = ({
   listValues,
@@ -212,34 +215,48 @@ const CheckboxGroupWidget = ({
     return null;
   }
 
-  const validValues = listValues.filter((item) => value?.includes(item.value));
+  // Same stale value clearing logic as MultiSelectWidget — filter value entries against available listValues
+  const validValues = (value || []).filter((v) => listValues.some((item) => item.value === v));
 
-  // If no value could be found in the list, reset to empty array.
-  // Same stale-value-clearing pattern as MultiSelectWidget to keep outside state in sync.
-  // Only reset when value is non-empty to avoid infinite state updates.
+  // If no value could be found in the list, clear stale selections.
+  // Same pattern as MultiSelectWidget: only clear when not already empty to avoid infinite state updates.
+  // NOTE: value is sometimes sent as undefined even though the type will tell you that it can't be
   if (validValues.length === 0 && value?.length) {
     setValue([]);
   }
 
+  const handleCheckboxChange = (itemValue: string, checked: boolean) => {
+    const currentValues = value || [];
+    if (checked) {
+      // Add value if not already present to prevent duplicates
+      if (!currentValues.includes(itemValue)) {
+        setValue([...currentValues, itemValue]);
+      }
+    } else {
+      // Remove value from the array
+      setValue(currentValues.filter((v) => v !== itemValue));
+    }
+  };
+
   return (
-    <div role="group" aria-label="checkbox-group" className="mb-2">
-      {listValues.map((item) => (
-        <label key={item.value} className="mb-1 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={value?.includes(item.value) ?? false}
-            disabled={remainingProps.readOnly}
-            onChange={(e) => {
-              if (e.target.checked) {
-                setValue([...(value || []), item.value]);
-              } else {
-                setValue((value || []).filter((v) => v !== item.value));
-              }
-            }}
-          />
-          <span>{item.title}</span>
-        </label>
-      ))}
+    <div className="mb-2 flex flex-col gap-2" aria-label="checkbox-group">
+      {listValues.map((item) => {
+        const isChecked = (value || []).includes(item.value);
+        return (
+          <label
+            key={item.value}
+            className="flex items-center gap-2 text-sm"
+            data-testid={`checkbox-option-${item.value}`}>
+            <Checkbox
+              checked={isChecked}
+              onCheckedChange={(checked) => handleCheckboxChange(item.value, !!checked)}
+              disabled={remainingProps.readOnly}
+              id={`checkbox-${item.value}`}
+            />
+            <span className="text-default">{item.title}</span>
+          </label>
+        );
+      })}
     </div>
   );
 };

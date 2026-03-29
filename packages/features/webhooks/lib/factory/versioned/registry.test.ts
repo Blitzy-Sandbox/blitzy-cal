@@ -79,9 +79,10 @@ describe("Payload Builder Registry", () => {
     it("should be the single source of truth for version registration", () => {
       const factory = createPayloadBuilderFactory();
 
-      // Should only have default version initially
-      expect(factory.getRegisteredVersions()).toHaveLength(1);
-      expect(factory.getRegisteredVersions()[0]).toBe(DEFAULT_WEBHOOK_VERSION);
+      // Should have both v2021-10-20 (default) and v2025-01-01 (Calendly-aligned) registered
+      expect(factory.getRegisteredVersions()).toHaveLength(2);
+      expect(factory.getRegisteredVersions()).toContain(DEFAULT_WEBHOOK_VERSION);
+      expect(factory.getRegisteredVersions()).toContain(WebhookVersion.V_2025_01_01);
     });
 
     it("should allow extending with new versions", () => {
@@ -102,7 +103,8 @@ describe("Payload Builder Registry", () => {
       factory.registerVersion(NEW_VERSION, newVersionBuilders);
 
       expect(factory.getRegisteredVersions()).toContain(NEW_VERSION);
-      expect(factory.getRegisteredVersions()).toHaveLength(2);
+      // 3 versions: v2021-10-20 (default) + v2025-01-01 (Calendly-aligned) + newly registered
+      expect(factory.getRegisteredVersions()).toHaveLength(3);
     });
 
     it("should maintain independence of builder instances per version", () => {

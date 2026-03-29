@@ -1,6 +1,7 @@
-import { DEFAULT_WEBHOOK_VERSION } from "../../interface/IWebhookRepository";
+import { DEFAULT_WEBHOOK_VERSION, WebhookVersion } from "../../interface/IWebhookRepository";
 import { PayloadBuilderFactory } from "./PayloadBuilderFactory";
 import * as V2021_10_20 from "./v2021-10-20";
+import * as V2025_01_01 from "./v2025-01-01";
 
 // Re-export for consumers
 export { DEFAULT_WEBHOOK_VERSION } from "../../interface/IWebhookRepository";
@@ -44,6 +45,17 @@ export function createPayloadBuilderFactory(): PayloadBuilderFactory {
   };
 
   const factory = new PayloadBuilderFactory(DEFAULT_WEBHOOK_VERSION, defaultBuilders);
+
+  // Register Calendly-aligned payload version (WH-005)
+  factory.registerVersion(WebhookVersion.V_2025_01_01, {
+    booking: new V2025_01_01.BookingPayloadBuilder(),
+    form: new V2025_01_01.FormPayloadBuilder(),
+    ooo: new V2025_01_01.OOOPayloadBuilder(),
+    recording: new V2025_01_01.RecordingPayloadBuilder(),
+    meeting: new V2025_01_01.MeetingPayloadBuilder(),
+    instantMeeting: new V2025_01_01.InstantMeetingBuilder(),
+    delegation: new V2025_01_01.DelegationPayloadBuilder(),
+  });
 
   return factory;
 }

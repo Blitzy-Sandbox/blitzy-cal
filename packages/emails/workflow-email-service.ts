@@ -36,10 +36,18 @@ const sendEmail = (prepare: () => BaseEmail) => {
 const _sendWorkflowReminderEmail = async (emailData: WorkflowEmailData) => {
   log.debug("Dispatching workflow reminder email", {
     to: emailData.to,
-    reminderInterval: emailData.reminderInterval,
-    eventTitle: emailData.eventTitle,
+    subject: emailData.subject,
   });
-  await sendEmail(() => new WorkflowEmail(emailData));
+  try {
+    await sendEmail(() => new WorkflowEmail(emailData));
+  } catch (error) {
+    log.error("Failed to dispatch workflow reminder email", {
+      to: emailData.to,
+      subject: emailData.subject,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 /**
@@ -53,9 +61,18 @@ const _sendWorkflowReminderEmail = async (emailData: WorkflowEmailData) => {
 const _sendWorkflowConfirmationEmail = async (emailData: WorkflowEmailData) => {
   log.debug("Dispatching workflow confirmation email", {
     to: emailData.to,
-    eventTitle: emailData.eventTitle,
+    subject: emailData.subject,
   });
-  await sendEmail(() => new WorkflowEmail(emailData));
+  try {
+    await sendEmail(() => new WorkflowEmail(emailData));
+  } catch (error) {
+    log.error("Failed to dispatch workflow confirmation email", {
+      to: emailData.to,
+      subject: emailData.subject,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 /**
@@ -69,9 +86,18 @@ const _sendWorkflowConfirmationEmail = async (emailData: WorkflowEmailData) => {
 const _sendWorkflowCancellationEmail = async (emailData: WorkflowEmailData) => {
   log.debug("Dispatching workflow cancellation follow-up email", {
     to: emailData.to,
-    eventTitle: emailData.eventTitle,
+    subject: emailData.subject,
   });
-  await sendEmail(() => new WorkflowEmail(emailData));
+  try {
+    await sendEmail(() => new WorkflowEmail(emailData));
+  } catch (error) {
+    log.error("Failed to dispatch workflow cancellation follow-up email", {
+      to: emailData.to,
+      subject: emailData.subject,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 /**
@@ -85,9 +111,18 @@ const _sendWorkflowCancellationEmail = async (emailData: WorkflowEmailData) => {
 const _sendWorkflowFollowUpEmail = async (emailData: WorkflowEmailData) => {
   log.debug("Dispatching workflow follow-up email", {
     to: emailData.to,
-    eventTitle: emailData.eventTitle,
+    subject: emailData.subject,
   });
-  await sendEmail(() => new WorkflowEmail(emailData));
+  try {
+    await sendEmail(() => new WorkflowEmail(emailData));
+  } catch (error) {
+    log.error("Failed to dispatch workflow follow-up email", {
+      to: emailData.to,
+      subject: emailData.subject,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 /**

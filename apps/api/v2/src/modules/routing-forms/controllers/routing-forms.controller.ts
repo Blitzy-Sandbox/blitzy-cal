@@ -1,3 +1,20 @@
+import { SUCCESS_STATUS } from "@calcom/platform-constants";
+import { GetAvailableSlotsInput_2024_09_04 } from "@calcom/platform-types";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
+import { ApiHeader, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
 import { API_KEY_HEADER } from "@/lib/docs/headers";
 import { CreateRoutingFormInput } from "@/modules/routing-forms/inputs/create-routing-form.input";
@@ -12,33 +29,25 @@ import {
   RoutingFormSubmissionOutputData,
 } from "@/modules/routing-forms/outputs/response-slots.output";
 import { RoutingFormsService } from "@/modules/routing-forms/services/routing-forms.service";
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req } from "@nestjs/common";
-import { ApiHeader, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
-import { Request } from "express";
-
-import { SUCCESS_STATUS } from "@calcom/platform-constants";
-import { GetAvailableSlotsInput_2024_09_04 } from "@calcom/platform-types";
 
 /**
  * Maps a Prisma App_RoutingForms_Form record to the API output DTO shape.
  * Handles null→undefined conversions for optional fields and JsonValue→typed casts.
  */
-function toFormOutputData(
-  form: {
-    id: string;
-    name: string;
-    description: string | null;
-    fields: unknown;
-    routes: unknown;
-    settings: unknown;
-    teamId: number | null;
-    userId: number;
-    disabled: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    [key: string]: unknown;
-  }
-): RoutingFormOutputData {
+function toFormOutputData(form: {
+  id: string;
+  name: string;
+  description: string | null;
+  fields: unknown;
+  routes: unknown;
+  settings: unknown;
+  teamId: number | null;
+  userId: number;
+  disabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  [key: string]: unknown;
+}): RoutingFormOutputData {
   return {
     id: form.id,
     name: form.name,
@@ -108,8 +117,7 @@ export class RoutingFormsController {
   @Get("/")
   @ApiOperation({
     summary: "List routing forms",
-    description:
-      "Retrieve a list of routing forms for the authenticated user, optionally filtered by team.",
+    description: "Retrieve a list of routing forms for the authenticated user, optionally filtered by team.",
   })
   @HttpCode(HttpStatus.OK)
   async listRoutingForms(
@@ -135,9 +143,7 @@ export class RoutingFormsController {
   })
   @ApiParam({ name: "routingFormId", description: "The ID of the routing form", type: String })
   @HttpCode(HttpStatus.OK)
-  async getRoutingForm(
-    @Param("routingFormId") routingFormId: string
-  ): Promise<RoutingFormOutput> {
+  async getRoutingForm(@Param("routingFormId") routingFormId: string): Promise<RoutingFormOutput> {
     const form = await this.routingFormsService.getRoutingForm(routingFormId);
     return {
       status: SUCCESS_STATUS,
@@ -152,8 +158,7 @@ export class RoutingFormsController {
   @Post("/")
   @ApiOperation({
     summary: "Create a routing form",
-    description:
-      "Create a new routing form with field definitions and optional route configurations.",
+    description: "Create a new routing form with field definitions and optional route configurations.",
   })
   @HttpCode(HttpStatus.CREATED)
   async createRoutingForm(
@@ -177,8 +182,7 @@ export class RoutingFormsController {
   @Patch("/:routingFormId")
   @ApiOperation({
     summary: "Update a routing form",
-    description:
-      "Partially update an existing routing form. Only provided fields will be modified.",
+    description: "Partially update an existing routing form. Only provided fields will be modified.",
   })
   @ApiParam({
     name: "routingFormId",
@@ -212,9 +216,7 @@ export class RoutingFormsController {
     type: String,
   })
   @HttpCode(HttpStatus.OK)
-  async deleteRoutingForm(
-    @Param("routingFormId") routingFormId: string
-  ): Promise<RoutingFormOutput> {
+  async deleteRoutingForm(@Param("routingFormId") routingFormId: string): Promise<RoutingFormOutput> {
     const form = await this.routingFormsService.deleteRoutingForm(routingFormId);
     return {
       status: SUCCESS_STATUS,
@@ -243,10 +245,7 @@ export class RoutingFormsController {
     @Param("routingFormId") routingFormId: string,
     @Body() body: SubmitRoutingFormInput
   ): Promise<RoutingFormSubmissionOutput> {
-    const submission = await this.routingFormsService.submitRoutingFormResponse(
-      routingFormId,
-      body
-    );
+    const submission = await this.routingFormsService.submitRoutingFormResponse(routingFormId, body);
     const submissionData: RoutingFormSubmissionOutputData = {
       formId: submission.formId,
       responseId: submission.responseId,

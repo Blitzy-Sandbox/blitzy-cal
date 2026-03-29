@@ -240,6 +240,32 @@ export type EventDataMap = {
    */
   navigatedToBooker: Record<string, never>;
   /**
+   * Fired when the embed is fully initialized and ready for user interaction.
+   * Purpose: Provide a Calendly-compatible initialization callback that signals the embed
+   * system is fully set up, including configuration, styling, and iframe content.
+   * Triggers: After embed initialization is complete, configuration is applied, and iframe is ready.
+   * Note: This is a higher-level readiness signal compared to `linkReady`. While `linkReady` signals
+   * that the iframe content is loaded, `embedReady` signals the entire embed system (configuration,
+   * styling, and iframe) is ready for interaction. Maps to Calendly's widget initialization callback.
+   */
+  embedReady: {
+    /** The type of embed that is ready. */
+    embedType: "inline" | "modal" | "floatingButton";
+  };
+  /**
+   * Fired when embed customization styles have been applied to the iframe content.
+   * Purpose: Signal that user-specified style customizations (background color, text color,
+   * button color) have been applied to the embedded content.
+   * Triggers: After the embed processes and applies style configuration from the parent page
+   * via the `ui` command.
+   * Note: Maps to Calendly's embed customization callback behavior. Useful for parent pages
+   * that need to synchronize their UI state with the embed's appearance.
+   */
+  embedStylesApplied: {
+    /** Whether the styles were successfully applied. */
+    stylesApplied: boolean;
+  };
+  /**
    * Wildcard event that fires for all events.
    * Purpose: Allow listening to all events with a single handler.
    */

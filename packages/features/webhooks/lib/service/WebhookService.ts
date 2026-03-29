@@ -93,15 +93,20 @@ export class WebhookService implements IWebhookService {
 
     const signature = subscriber.secret
       ? createHmac("sha256", subscriber.secret).update(body).digest("hex")
-      : "no-secret-provided";
+      : "";
+
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "X-Cal-Webhook-Version": subscriber.version,
+    };
+
+    if (signature) {
+      headers["X-Cal-Signature-256"] = signature;
+    }
 
     const response = await fetch(subscriberUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": contentType,
-        "X-Cal-Signature-256": signature,
-        "X-Cal-Webhook-Version": subscriber.version,
-      },
+      headers,
       redirect: "manual",
       body,
     });

@@ -320,7 +320,7 @@ export const sendGenericWebhookPayload = async ({
 export const createWebhookSignature = (params: { secret?: string | null; body: string }) =>
   params.secret
     ? createHmac("sha256", params.secret).update(`${params.body}`).digest("hex")
-    : "no-secret-provided";
+    : "";
 
 const _sendPayload = async (
   secretKey: string | null,
@@ -333,13 +333,19 @@ const _sendPayload = async (
     throw new Error("Missing required elements to send webhook payload.");
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "X-Cal-Webhook-Version": version,
+  };
+
+  const signature = createWebhookSignature({ secret: secretKey, body });
+  if (signature) {
+    headers["X-Cal-Signature-256"] = signature;
+  }
+
   const response = await fetch(subscriberUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": contentType,
-      "X-Cal-Signature-256": createWebhookSignature({ secret: secretKey, body }),
-      "X-Cal-Webhook-Version": version,
-    },
+    headers,
     redirect: "manual",
     body,
   });

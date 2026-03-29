@@ -1,15 +1,15 @@
+import { z } from "zod";
+
 import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
+import type { OrganizationPermissionService } from "@calcom/features/ee/organizations/lib/OrganizationPermissionService";
 import type { OrganizationRepository } from "@calcom/features/ee/organizations/repositories/OrganizationRepository";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import { renameDomain } from "@calcom/lib/domainManager/organization";
 import { getMetadataHelpers } from "@calcom/lib/getMetadataHelpers";
 import { HttpError } from "@calcom/lib/http-error";
 import type { Prisma, PrismaClient } from "@calcom/prisma/client";
-import { orgSettingsSchema, teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
-import { z } from "zod";
-
-import type { OrganizationPermissionService } from "@calcom/features/ee/organizations/lib/OrganizationPermissionService";
 import type { MembershipRole } from "@calcom/prisma/enums";
+import { orgSettingsSchema, teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
 
 export const ZAdminUpdate = z.object({
   id: z.number(),
@@ -29,11 +29,22 @@ type AdminOrganizationUpdateServiceDeps = {
 export class AdminOrganizationUpdateService {
   constructor(private readonly deps: AdminOrganizationUpdateServiceDeps) {}
 
+  /**
+   * Update organization settings with optional role-based permission enforcement.
+   *
+   * AG-001: The `actorRole` parameter is intentionally optional during the migration period
+   * to maintain backward compatibility with existing callers that do not yet pass role
+   * information. This opt-in design ensures zero breaking changes for existing admin API
+   * routes while allowing incremental adoption of role-based permission checks. Once all
+   * callers are updated to provide actorRole, it should be made required to enforce
+   * security guarantees unconditionally.
+   *
+   * @param input - The organization update payload (id, optional name, slug, settings)
+   * @param actorRole - The MembershipRole of the actor performing the update. When provided,
+   *                    permission is checked via OrganizationPermissionService. When omitted,
+   *                    the permission check is skipped for backward compatibility.
+   */
   async updateOrganization(input: TAdminUpdate, actorRole?: MembershipRole) {
-    // AG-001: Role-based permission check for Calendly admin/owner/user parity.
-    // When actorRole is provided and a permissionService is injected, verify the
-    // actor has sufficient privileges (OWNER or ADMIN) to manage organization settings.
-    // When actorRole is omitted, the check is skipped entirely for backward compatibility.
     if (actorRole !== undefined) {
       const permissionService = this.deps.permissionService;
       if (permissionService && !permissionService.canManageOrganizationSettings(actorRole)) {

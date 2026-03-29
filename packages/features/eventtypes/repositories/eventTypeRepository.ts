@@ -2198,4 +2198,23 @@ export class EventTypeRepository implements IEventTypesRepository {
 
     return membersWithoutChild;
   }
+
+  /**
+   * Find the scheduling type and team association for a given event type.
+   *
+   * Used by TeamService.getTeamEventRoutingConfig (AG-002) to determine
+   * the routing strategy for team event types without bypassing the repository pattern.
+   *
+   * @param params - Object containing the event type `id`
+   * @returns The scheduling type and teamId, or null if the event type does not exist
+   */
+  async findSchedulingTypeWithTeamId({ id }: { id: number }) {
+    return await this.prismaClient.eventType.findUnique({
+      where: { id },
+      select: {
+        schedulingType: true,
+        teamId: true,
+      },
+    });
+  }
 }

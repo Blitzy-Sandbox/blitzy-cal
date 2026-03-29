@@ -2,6 +2,7 @@ import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
 import type { Prisma, PrismaClient } from "@calcom/prisma/client";
 
+import { NotificationStatus } from "../types";
 import type { InAppNotificationCreateInput, InAppNotificationListOptions } from "../types";
 
 const log = logger.getSubLogger({
@@ -64,7 +65,7 @@ export class InAppNotificationRepository {
         title: input.title,
         body: input.body,
         type: input.type,
-        status: "UNREAD",
+        status: NotificationStatus.UNREAD,
         url: input.url ?? null,
         icon: input.icon ?? null,
         metadata: input.metadata !== undefined ? (input.metadata as Prisma.InputJsonValue) : undefined,
@@ -135,7 +136,7 @@ export class InAppNotificationRepository {
       return await this.prismaClient.inAppNotification.update({
         where: { id, userId },
         data: {
-          status: "READ",
+          status: NotificationStatus.READ,
           readAt: new Date(),
         },
         select: notificationSelect,
@@ -164,7 +165,7 @@ export class InAppNotificationRepository {
       return await this.prismaClient.inAppNotification.update({
         where: { id, userId },
         data: {
-          status: "DISMISSED",
+          status: NotificationStatus.DISMISSED,
           dismissedAt: new Date(),
         },
         select: notificationSelect,
@@ -187,7 +188,7 @@ export class InAppNotificationRepository {
     return this.prismaClient.inAppNotification.count({
       where: {
         userId,
-        status: "UNREAD",
+        status: NotificationStatus.UNREAD,
       },
     });
   }
@@ -207,10 +208,10 @@ export class InAppNotificationRepository {
     return this.prismaClient.inAppNotification.updateMany({
       where: {
         userId,
-        status: "UNREAD",
+        status: NotificationStatus.UNREAD,
       },
       data: {
-        status: "READ",
+        status: NotificationStatus.READ,
         readAt: new Date(),
       },
     });

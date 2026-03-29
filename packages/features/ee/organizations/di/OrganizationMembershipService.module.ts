@@ -4,10 +4,24 @@ import { OrganizationMembershipService } from "@calcom/features/ee/organizations
 import { moduleLoader as organizationRepositoryModuleLoader } from "./OrganizationRepository.module";
 import { ORGANIZATION_DI_TOKENS } from "./tokens";
 
-// AG-001: Create a null module loader for the optional permissionService dependency.
-// OrganizationPermissionService requires runtime user context and cannot be statically
-// DI'd. When resolved, this provides undefined — the OrganizationMembershipService
-// gracefully handles the absence by guarding with `if (!permissionService)`.
+/**
+ * Null-loader pattern for optional DI dependencies (AG-001).
+ *
+ * OrganizationPermissionService requires runtime user context (the actor's MembershipRole)
+ * that is only available during HTTP request handling — it cannot be resolved at static DI
+ * wiring time. To satisfy the DI container's requirement that every dependency token resolves
+ * to a value, we bind a NullObject (undefined) to the permissionService token. The
+ * OrganizationMembershipService handles this gracefully: when permissionService is absent,
+ * role transition and role assignment operations throw HttpError(500) to signal that the
+ * caller must provide a fully-wired instance with runtime dependencies.
+ *
+ * This pattern is consistent with Cal.com's DI conventions (see OrganizationRepository.container.ts
+ * for similar optional dependency handling) and avoids introducing a NullObject class that would
+ * need to implement the full OrganizationPermissionService interface with no-op methods.
+ *
+ * @see specs/admin-teams/decisions.md — ADR-004 for AG-001 scope file strategy
+ * @see OrganizationMembershipService.transitionRole — guards with `if (!permissionService)`
+ */
 const nullPermissionServiceToken = Symbol("NullPermissionService");
 const nullPermissionServiceModule = createModule();
 nullPermissionServiceModule.bind(nullPermissionServiceToken).toValue(undefined);

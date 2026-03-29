@@ -4,6 +4,7 @@ import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/s
 import { deleteWorkfowRemindersOfRemovedMember } from "@calcom/features/ee/teams/lib/deleteWorkflowRemindersOfRemovedMember";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
+import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
 import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/WorkflowService";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
 import { createAProfileForAnExistingUser } from "@calcom/features/profile/lib/createAProfileForAnExistingUser";
@@ -434,8 +435,17 @@ export class TeamService {
       }
     }
 
-    // Find the eligible member with the fewest bookings (fair rotation)
-    // If tied, select the one least recently assigned (or not yet assigned)
+    // Find the eligible member with the fewest bookings (fair rotation).
+    // Tie-breaking strategy (deterministic ordering):
+    //   1. Primary: lowest bookingCount wins
+    //   2. Secondary: earliest lastBookingTimestamp wins (least recently assigned)
+    //   3. Tertiary: members with no prior assignments (lastBookingTimestamp === null)
+    //      take priority over members with any timestamp
+    //   4. Final fallback: if all candidates have identical bookingCount AND
+    //      identical lastBookingTimestamp (including all-null for a cold-start team),
+    //      the first member in the eligibleMemberIds array wins. This is intentional —
+    //      the array order is determined by the team membership list, providing a
+    //      stable tiebreak without introducing randomness.
     let bestCandidate: {
       userId: number;
       bookingCount: number;
@@ -740,19 +750,14 @@ export class TeamService {
     teamId: number;
   } | null> {
     const teamRepo = new TeamRepository(prisma);
+    const eventTypeRepo = new EventTypeRepository(prisma);
 
     // Get team data with scheduling configuration
     const teamData = await teamRepo.findTeamWithMembersAndSchedulingData(teamId);
     if (!teamData) return null;
 
-    // Get the event type to determine scheduling type
-    const eventType = await prisma.eventType.findUnique({
-      where: { id: eventTypeId },
-      select: {
-        schedulingType: true,
-        teamId: true,
-      },
-    });
+    // Get the event type to determine scheduling type via repository pattern
+    const eventType = await eventTypeRepo.findSchedulingTypeWithTeamId({ id: eventTypeId });
 
     if (!eventType || eventType.teamId !== teamId) return null;
 

@@ -219,3 +219,79 @@ The implementation approach for Sprint 7 is:
 - Calendly users migrating to Cal.com encounter a familiar admin experience at the organization level — their org-level admin role grants full visibility and management over all teams, matching Calendly's Admin Center behavior
 - No `Membership` data duplication: org admin access to child teams is derived at runtime through the service layer rather than materialized as redundant membership records, keeping the data model clean and avoiding cascading create/delete synchronization overhead
 - The cascading permission pattern integrates naturally with PBAC: if an org-level admin has PBAC custom permissions scoped to the organization, those permissions can be evaluated against child team resources through the same cascading resolution path in `PermissionCheckService`
+
+---
+
+## ADR-004: AG-001 Scope File Strategy — Extending Existing Infrastructure vs. Creating Parallel Services
+
+### Context
+
+The Agent Action Plan for AG-001 (admin role model parity) identified four expected new files as part of the organization infrastructure scope:
+
+1. **`OrganizationDomainService.ts`** — Domain management logic for organizations
+2. **`OrganizationOnboardingService.ts`** — Onboarding workflow for new organizations
+3. **`OrgBrandingProvider.tsx`** — React context provider for organization branding
+4. **`di/container.ts`** — Unified DI container for organization services
+
+During implementation analysis, the existing codebase was found to already contain comprehensive implementations for all four capabilities:
+
+- **Domain management:** `packages/features/ee/organizations/lib/orgDomains.ts` with companion test file `orgDomains.test.ts` implements domain validation, subdomain resolution, and organization-to-domain mapping. Additional domain utilities exist in `getBookerBaseUrlSync.ts`, `getBookerUrlServer.ts`, and `getTeamUrlSync.ts`.
+
+- **Onboarding:** A complete onboarding service infrastructure exists at `packages/features/ee/organizations/lib/service/onboarding/` comprising: `IOrganizationOnboardingService.ts` (interface), `BaseOnboardingService.ts` (abstract base), `BillingEnabledOrgOnboardingService.ts` (billing variant), `SelfHostedOnboardingService.ts` (self-hosted variant), `OrganizationOnboardingFactory.ts` (factory), `types.ts`, `index.ts` (barrel), and full test coverage in `__tests__/`.
+
+- **Branding provider:** `packages/features/ee/organizations/context/provider.ts` exports an `OrgBrandingProvider` React context with `useOrgBranding()` hook, used by downstream components for organization-scoped theming.
+
+- **DI containers:** Organization DI wiring is distributed across `OrganizationRepository.container.ts`, `OrganizationRepository.module.ts`, `OrganizationMembershipService.module.ts`, and six `tasker/` DI files, following Cal.com's established pattern of per-service container and module files rather than a monolithic container.
+
+`Source: packages/features/ee/organizations/lib/, packages/features/ee/organizations/context/, packages/features/ee/organizations/di/`
+
+### Options Considered
+
+1. **Create the four named files as new wrappers/facades** — Create `OrganizationDomainService.ts`, `OrganizationOnboardingService.ts`, `OrgBrandingProvider.tsx`, and `di/container.ts` as new files that delegate to or re-export the existing implementations.
+
+   - Pros:
+     - Literal compliance with the AAP file list
+     - Clear entry points with names matching the scope document
+   - Cons:
+     - Creates duplicate indirection layers that add complexity without functionality
+     - The onboarding service already has a complete factory pattern with interface, two concrete implementations, and tests — wrapping it adds no value
+     - A monolithic `di/container.ts` contradicts Cal.com's established per-service DI pattern (`*.container.ts`, `*.module.ts`)
+     - New `OrgBrandingProvider.tsx` would duplicate `context/provider.ts` functionality
+     - Increases maintenance burden with no behavioral improvement
+
+2. **Extend the existing implementations and document the architectural rationale** — Enhance the existing services with any missing Calendly-parity behaviors and record an ADR explaining why the existing infrastructure satisfies AG-001 requirements without creating parallel files.
+
+   - Pros:
+     - Follows the codebase's established patterns and conventions
+     - Zero duplicate code or unnecessary indirection
+     - The existing onboarding infrastructure is more comprehensive than what was scoped (factory pattern with billing/self-hosted variants)
+     - DI wiring follows the per-service pattern used consistently across the organizations module
+     - Behavioral enhancements (role-based permission checking, role transition, org-level cascading) are implemented in `AdminOrganizationUpdateService.ts` and `OrganizationMembershipService.ts` where they naturally belong
+   - Cons:
+     - File names in the codebase do not match the AAP scope document exactly
+     - Requires ADR documentation to explain the divergence
+
+### Decision
+
+Choose **Option 2**: Extend existing implementations rather than creating parallel wrapper services.
+
+The existing organization infrastructure already provides complete implementations for all four scoped capabilities:
+
+| Expected File | Existing Implementation | Rationale |
+|---|---|---|
+| `OrganizationDomainService.ts` | `lib/orgDomains.ts` + `getBookerBaseUrlSync.ts` + `getBookerUrlServer.ts` + `getTeamUrlSync.ts` | Domain validation, subdomain resolution, and URL generation are already implemented with test coverage. Creating a new service class would be a wrapper with no additional logic. |
+| `OrganizationOnboardingService.ts` | `lib/service/onboarding/` (6 files + 4 test files) | A full factory pattern with `IOrganizationOnboardingService` interface, `BaseOnboardingService` abstract class, billing-enabled and self-hosted concrete implementations, and `OrganizationOnboardingFactory` already exceeds the scoped requirement. |
+| `OrgBrandingProvider.tsx` | `context/provider.ts` | The `OrgBrandingProvider` context with `useOrgBranding()` hook is fully implemented. The `.ts` extension (not `.tsx`) is consistent with Cal.com's pattern for context providers that use `createContext`. |
+| `di/container.ts` | `di/OrganizationRepository.container.ts` + `di/OrganizationMembershipService.module.ts` + 6 `tasker/*.module.ts` files | Cal.com's DI pattern uses per-service container and module files rather than monolithic containers. A unified `container.ts` would contradict this established convention. |
+
+AG-001 behavioral parity is achieved through enhancements to `AdminOrganizationUpdateService.ts` (role-based permission checking for organization updates) and `OrganizationMembershipService.ts` (role transition with permission validation, member role querying), which integrate with the existing infrastructure.
+
+### Consequences
+
+- No new wrapper or facade files are created — the organization module retains its current structure without adding indirection
+- AG-001 behavioral parity (role-based admin operations, role transitions, permission enforcement) is delivered through targeted enhancements to existing service files
+- The onboarding infrastructure (`lib/service/onboarding/`) remains the authoritative implementation for organization onboarding workflows, available for Sprint 7 behavioral enhancements if needed
+- Domain management continues through `orgDomains.ts` and URL generation utilities
+- Organization branding context continues through `context/provider.ts`
+- DI wiring follows the per-service pattern with separate `*.container.ts` and `*.module.ts` files
+- This ADR serves as the authoritative reference for why the four named files were not created as separate entities

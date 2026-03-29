@@ -95,16 +95,20 @@ export class ActivityFeedRepository {
   }
 
   /**
-   * Finds a single activity feed item by its unique ID.
+   * Finds a single activity feed item by its unique ID, scoped to the owning user.
    *
-   * @param params - Object containing the activity feed item ID.
-   * @returns The activity feed item if found, or null if no item exists with the given ID.
+   * The `userId` parameter enforces ownership validation at the data-access layer,
+   * preventing any authenticated user from reading another user's activity feed items
+   * by enumerating IDs.
+   *
+   * @param params - Object containing the activity feed item `id` and owning `userId`.
+   * @returns The activity feed item if found and owned by the user, or `null` otherwise.
    */
-  async findById({ id }: { id: number }) {
-    log.debug("Finding activity feed item by id", { id });
+  async findById({ id, userId }: { id: number; userId: number }) {
+    log.debug("Finding activity feed item by id", { id, userId });
 
-    return this.prismaClient.activityFeedItem.findUnique({
-      where: { id },
+    return this.prismaClient.activityFeedItem.findFirst({
+      where: { id, userId },
       select: activityFeedItemSelect,
     });
   }

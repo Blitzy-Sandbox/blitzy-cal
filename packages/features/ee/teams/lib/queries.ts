@@ -11,7 +11,7 @@ import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { Team } from "@calcom/prisma/client";
-import { MembershipRole, SchedulingType } from "@calcom/prisma/enums";
+import { BookingStatus, MembershipRole, SchedulingType } from "@calcom/prisma/enums";
 import { baseEventTypeSelect } from "@calcom/prisma/selects";
 import {
   EventTypeMetaDataSchema,
@@ -588,19 +588,13 @@ export function generateNewChildEventTypeDataForDB({
   // When pushSettings is provided, selectively strip fields that should NOT propagate
   // from the admin template to child instances. If a field's inherit flag is false,
   // the child event type will use its own default rather than the parent's value.
-  const pushOverrides: Record<string, undefined> = {};
-  if (pushSettings) {
-    if (pushSettings.inheritSchedule === false) {
-      pushOverrides.scheduleId = undefined;
-    }
-    if (pushSettings.inheritBufferTime === false) {
-      pushOverrides.beforeEventBuffer = undefined;
-      pushOverrides.afterEventBuffer = undefined;
-    }
-    if (pushSettings.inheritMinNotice === false) {
-      pushOverrides.minimumBookingNotice = undefined;
-    }
-  }
+  // Uses conditional spreading to cleanly omit keys rather than setting them to undefined,
+  // which avoids accidentally overriding non-undefined values from earlier object spreads.
+  const pushOverrides = {
+    ...(pushSettings?.inheritSchedule === false && { scheduleId: null }),
+    ...(pushSettings?.inheritBufferTime === false && { beforeEventBuffer: null, afterEventBuffer: null }),
+    ...(pushSettings?.inheritMinNotice === false && { minimumBookingNotice: null }),
+  };
 
   return {
     ...managedEventTypeValues,
@@ -626,7 +620,8 @@ export function generateNewChildEventTypeDataForDB({
         create: currentWorkflowIds.map((wfId) => ({ workflowId: wfId })),
       },
     }),
-    // AG-003: Apply push settings overrides — fields set to undefined will use child defaults
+    // AG-003: Apply push settings overrides — fields set to null will clear child values,
+    // and keys that are not present in pushOverrides are left untouched.
     ...pushOverrides,
   };
 }
@@ -892,7 +887,7 @@ export async function getNextRoundRobinAssignee({
           in: eligibleMemberIds,
         },
         status: {
-          not: "CANCELLED",
+          not: BookingStatus.CANCELLED,
         },
       },
       select: {

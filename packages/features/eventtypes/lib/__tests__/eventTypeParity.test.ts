@@ -18,8 +18,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { SchedulingType } from "@calcom/prisma/enums";
 
-import { checkForEmptyAssignment } from "../checkForEmptyAssignment";
+import { checkForEmptyAssignment, validateManagedEventTypePushPreconditions } from "../checkForEmptyAssignment";
+import { computeManagedEventTypePushDelta, isManagedEventTypePushEligible } from "../managedEventTypePush";
 import { createEventTypeInput } from "../schemas";
+import type { ManagedEventTypePushConfig } from "../types";
 
 // ---------------------------------------------------------------------------
 // Shared Fixtures — Realistic event type shapes matching Prisma schema fields
@@ -170,6 +172,47 @@ const mockCollectiveEventType = {
   isRRWeightsEnabled: false,
   bookingFields: [] as unknown[],
   metadata: {},
+};
+
+/**
+ * Managed event type fixture.
+ * Identified by `schedulingType: SchedulingType.MANAGED`. Must be a
+ * team event (`teamId` set). The admin creates a template that is pushed
+ * as child event types to team members. The `children` array tracks the
+ * existing child event types created from this managed template.
+ */
+const mockManagedEventType = {
+  id: 5,
+  title: "Managed Team Meeting",
+  slug: "managed-team-meeting",
+  length: 30,
+  schedulingType: SchedulingType.MANAGED,
+  seatsPerTimeSlot: null as number | null,
+  teamId: 10,
+  userId: null as number | null,
+  hosts: [] as Array<{
+    userId: number;
+    isFixed: boolean;
+    priority: number;
+    weight: number;
+    scheduleId: number | null;
+    groupId: string | null;
+  }>,
+  users: [] as Array<{
+    id: number;
+    name: string;
+    email: string;
+    username: string;
+    timeZone: string;
+  }>,
+  assignAllTeamMembers: false,
+  isRRWeightsEnabled: false,
+  bookingFields: [] as unknown[],
+  metadata: {},
+  children: [
+    { userId: 201, childEventTypeId: 50 },
+    { userId: 202, childEventTypeId: 51 },
+  ],
 };
 
 // ---------------------------------------------------------------------------
@@ -637,6 +680,192 @@ describe("Event Type Parity — Scheduling Paradigms", () => {
 
       // Verify enum covers the 3 stored types (1:1 is null, dynamic is URL-based)
       expect(Object.values(SchedulingType)).toHaveLength(3);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // AG-003: Managed Event Type Push Parity
+  // -------------------------------------------------------------------------
+  describe("AG-003: Managed Event Type Push Parity", () => {
+    it("should identify managed events by SchedulingType.MANAGED", () => {
+      // Managed events use the MANAGED enum value for schedulingType
+      expect(mockManagedEventType.schedulingType).toBe(SchedulingType.MANAGED);
+    });
+
+    it("should be a team event type", () => {
+      // Managed event types must be associated with a team
+      expect(mockManagedEventType.teamId).not.toBeNull();
+      expect(mockManagedEventType.teamId).toBe(10);
+    });
+
+    it("should validate managed event type push preconditions — valid config", () => {
+      // A valid managed event type push config should pass all preconditions
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: mockManagedEventType.id,
+        title: mockManagedEventType.title,
+        slug: mockManagedEventType.slug,
+        schedulingType: "MANAGED",
+        teamId: mockManagedEventType.teamId,
+        assignAllTeamMembers: false,
+        targetMemberIds: [201, 202, 203],
+      };
+      const result = validateManagedEventTypePushPreconditions(config);
+      expect(result.isValid).toBe(true);
+      expect(result.reason).toBeUndefined();
+    });
+
+    it("should reject push for non-MANAGED scheduling type", () => {
+      // A push config with null schedulingType should fail validation
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: 99,
+        title: "Invalid Push",
+        slug: "invalid-push",
+        schedulingType: null,
+        teamId: 10,
+        assignAllTeamMembers: false,
+        targetMemberIds: [201],
+      };
+      const result = validateManagedEventTypePushPreconditions(config);
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBeDefined();
+      expect(result.reason).toContain("MANAGED");
+    });
+
+    it("should reject push without team association", () => {
+      // A push config without a teamId should fail validation
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: 99,
+        title: "No Team",
+        slug: "no-team",
+        schedulingType: "MANAGED",
+        teamId: null,
+        assignAllTeamMembers: false,
+        targetMemberIds: [201],
+      };
+      const result = validateManagedEventTypePushPreconditions(config);
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBeDefined();
+      expect(result.reason).toContain("team");
+    });
+
+    it("should reject push with empty target members", () => {
+      // A push config with no target members should fail validation
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: 99,
+        title: "Empty Targets",
+        slug: "empty-targets",
+        schedulingType: "MANAGED",
+        teamId: 10,
+        assignAllTeamMembers: false,
+        targetMemberIds: [],
+      };
+      const result = validateManagedEventTypePushPreconditions(config);
+      expect(result.isValid).toBe(false);
+      expect(result.reason).toBeDefined();
+    });
+
+    it("should compute correct push delta for new members", () => {
+      // Target [101, 102, 103], existing children for [101] only
+      // Expected: newMemberIds [102, 103], existingMemberIds [101], removedMemberIds []
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: mockManagedEventType.id,
+        title: mockManagedEventType.title,
+        slug: mockManagedEventType.slug,
+        schedulingType: "MANAGED",
+        teamId: 10,
+        assignAllTeamMembers: false,
+        targetMemberIds: [101, 102, 103],
+      };
+      const existingChildren = [{ userId: 101, childEventTypeId: 50 }];
+      const delta = computeManagedEventTypePushDelta(config, existingChildren);
+      expect(delta.newMemberIds).toEqual([102, 103]);
+      expect(delta.existingMemberIds).toEqual([101]);
+      expect(delta.removedMemberIds).toEqual([]);
+      expect(delta.totalAffected).toBe(3);
+    });
+
+    it("should compute correct push delta for removed members", () => {
+      // Target [101], existing children for [101, 102]
+      // Expected: removedMemberIds [102]
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: mockManagedEventType.id,
+        title: mockManagedEventType.title,
+        slug: mockManagedEventType.slug,
+        schedulingType: "MANAGED",
+        teamId: 10,
+        assignAllTeamMembers: false,
+        targetMemberIds: [101],
+      };
+      const existingChildren = [
+        { userId: 101, childEventTypeId: 50 },
+        { userId: 102, childEventTypeId: 51 },
+      ];
+      const delta = computeManagedEventTypePushDelta(config, existingChildren);
+      expect(delta.existingMemberIds).toEqual([101]);
+      expect(delta.removedMemberIds).toEqual([102]);
+      expect(delta.newMemberIds).toEqual([]);
+      expect(delta.totalAffected).toBe(2);
+    });
+
+    it("should compute empty delta when no changes needed", () => {
+      // Targets match existing exactly → no changes
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: mockManagedEventType.id,
+        title: mockManagedEventType.title,
+        slug: mockManagedEventType.slug,
+        schedulingType: "MANAGED",
+        teamId: 10,
+        assignAllTeamMembers: false,
+        targetMemberIds: [201, 202],
+      };
+      const existingChildren = [
+        { userId: 201, childEventTypeId: 50 },
+        { userId: 202, childEventTypeId: 51 },
+      ];
+      const delta = computeManagedEventTypePushDelta(config, existingChildren);
+      expect(delta.newMemberIds).toEqual([]);
+      expect(delta.removedMemberIds).toEqual([]);
+      expect(delta.existingMemberIds).toEqual([201, 202]);
+      expect(delta.totalAffected).toBe(2);
+    });
+
+    it("should validate managed event creation with team via createEventTypeInput schema", () => {
+      // A valid managed event type creation payload should pass Zod schema parsing
+      const result = createEventTypeInput.safeParse({
+        title: "Managed Event",
+        slug: "managed-event",
+        length: 30,
+        teamId: 10,
+        schedulingType: SchedulingType.MANAGED,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should correctly identify empty assignment for managed event type via checkForEmptyAssignment", () => {
+      // A managed event type with isManagedEventType: true and empty assignedUsers is empty
+      const isEmpty = checkForEmptyAssignment({
+        assignedUsers: [],
+        hosts: [],
+        isManagedEventType: true,
+        assignAllTeamMembers: false,
+      });
+      expect(isEmpty).toBe(true);
+    });
+
+    it("should determine push eligibility correctly", () => {
+      // A valid config with existing children should be eligible for push
+      const config: ManagedEventTypePushConfig = {
+        eventTypeId: mockManagedEventType.id,
+        title: mockManagedEventType.title,
+        slug: mockManagedEventType.slug,
+        schedulingType: "MANAGED",
+        teamId: 10,
+        assignAllTeamMembers: false,
+        targetMemberIds: [201, 202, 203],
+      };
+      const existingChildren = mockManagedEventType.children;
+      const eligible = isManagedEventTypePushEligible(config, existingChildren);
+      expect(eligible).toBe(true);
     });
   });
 });

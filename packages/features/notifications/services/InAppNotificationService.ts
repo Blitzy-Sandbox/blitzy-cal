@@ -75,14 +75,21 @@ export class InAppNotificationService {
 	/**
 	 * Retrieve a single notification by its unique identifier.
 	 *
-	 * Simple read delegation — Prisma returns `null` for non-existent records,
-	 * so no try/catch wrapper is needed.
+	 * When `userId` is provided, the method performs an ownership check after fetching
+	 * the notification — if the notification does not belong to the specified user,
+	 * `null` is returned. This provides defense-in-depth against cross-user notification
+	 * access when called from potentially unguarded endpoints.
 	 *
-	 * @param params - Object containing the notification `id`
-	 * @returns The notification record or `null` if not found
+	 * @param params - Object containing the notification `id` and optional `userId` for ownership verification
+	 * @returns The notification record or `null` if not found or ownership check fails
 	 */
-	async getNotification({ id }: { id: number }) {
-		return this.notificationRepository.findById({ id });
+	async getNotification({ id, userId }: { id: number; userId?: number }) {
+		const notification = await this.notificationRepository.findById({ id });
+		if (notification && userId !== undefined && notification.userId !== userId) {
+			log.debug("Notification ownership check failed", { id, userId, ownerId: notification.userId });
+			return null;
+		}
+		return notification;
 	}
 
 	/**
@@ -182,20 +189,24 @@ export class InAppNotificationService {
 	 * `NotificationCountSummary` object for dashboard widgets and notification
 	 * center headers.
 	 *
+	 * Uses a dedicated `countTotal()` query for the total count instead of fetching
+	 * records and measuring array length — this ensures accuracy regardless of the
+	 * user's notification volume (the previous `findByUser({ limit: 100 })` approach
+	 * would cap `total` at 100 for users with more notifications).
+	 *
 	 * @param params - Object containing the `userId`
 	 * @returns Aggregated notification count summary
 	 */
 	async getNotificationSummary({ userId }: { userId: number }): Promise<NotificationCountSummary> {
 		try {
-			const unread = await this.notificationRepository.countUnread({ userId });
-			const allNotifications = await this.notificationRepository.findByUser({
-				userId,
-				limit: 100,
-			});
-			const total = allNotifications.length;
+			const [total, unread, recentNotifications] = await Promise.all([
+				this.notificationRepository.countTotal({ userId }),
+				this.notificationRepository.countUnread({ userId }),
+				this.notificationRepository.findByUser({ userId, limit: 100 }),
+			]);
 
 			const byType: Partial<Record<NotificationType, number>> = {};
-			for (const notification of allNotifications) {
+			for (const notification of recentNotifications) {
 				const notifType = notification.type as NotificationType;
 				byType[notifType] = (byType[notifType] ?? 0) + 1;
 			}

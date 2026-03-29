@@ -27,10 +27,20 @@ export class RoutingFormsRepository {
     });
   }
 
-  /** Retrieves a single routing form by its ID, including all stored fields and routes. */
-  async getRoutingFormById(routingFormId: string) {
+  /**
+   * Retrieves a single routing form by its ID, including all stored fields and routes.
+   * When userId is provided, adds ownership scoping to the query for authorization.
+   * @param routingFormId - The unique identifier of the routing form
+   * @param userId - Optional user ID for ownership verification. When provided, only returns
+   *                 the form if it belongs to the specified user.
+   */
+  async getRoutingFormById(routingFormId: string, userId?: number) {
+    const where: Prisma.App_RoutingForms_FormWhereInput = { id: routingFormId };
+    if (userId !== undefined) {
+      where.userId = userId;
+    }
     return this.dbRead.prisma.app_RoutingForms_Form.findFirst({
-      where: { id: routingFormId },
+      where,
     });
   }
 

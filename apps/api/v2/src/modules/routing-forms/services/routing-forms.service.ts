@@ -63,12 +63,14 @@ export class RoutingFormsService {
   }
 
   /**
-   * Retrieves a single routing form by its ID.
-   * Throws NotFoundException if the form does not exist.
+   * Retrieves a single routing form by its ID, scoped to the authenticated user.
+   * Throws NotFoundException if the form does not exist or is not owned by the user.
+   * @param routingFormId - The unique identifier of the routing form
+   * @param userId - The authenticated user's ID for ownership verification
    * @see RF-004 — GET /v2/routing-forms/:routingFormId
    */
-  async getRoutingForm(routingFormId: string) {
-    const form = await this.routingFormsRepository.getRoutingFormById(routingFormId);
+  async getRoutingForm(routingFormId: string, userId: number) {
+    const form = await this.routingFormsRepository.getRoutingFormById(routingFormId, userId);
     if (!form) {
       throw new NotFoundException(`Routing form with id ${routingFormId} not found.`);
     }
@@ -76,20 +78,28 @@ export class RoutingFormsService {
   }
 
   /**
-   * Lists routing forms filtered by optional userId and/or teamId parameters.
+   * Lists routing forms for the authenticated user, optionally filtered by teamId.
+   * The userId is always derived from the authenticated user context to prevent
+   * cross-user form enumeration.
+   * @param userId - The authenticated user's ID (required, derived from auth context)
+   * @param teamId - Optional team ID filter
    * @see RF-004 — GET /v2/routing-forms
    */
-  async listRoutingForms(userId?: number, teamId?: number) {
+  async listRoutingForms(userId: number, teamId?: number) {
     return this.routingFormsRepository.listRoutingForms({ userId, teamId });
   }
 
   /**
    * Partially updates an existing routing form. Only provided fields are modified.
-   * Throws NotFoundException if the form does not exist.
+   * Verifies ownership via userId before applying updates.
+   * Throws NotFoundException if the form does not exist or is not owned by the user.
+   * @param routingFormId - The unique identifier of the routing form
+   * @param data - Partial update payload
+   * @param userId - The authenticated user's ID for ownership verification
    * @see RF-004 — PATCH /v2/routing-forms/:routingFormId
    */
-  async updateRoutingForm(routingFormId: string, data: UpdateRoutingFormInput) {
-    const existingForm = await this.routingFormsRepository.getRoutingFormById(routingFormId);
+  async updateRoutingForm(routingFormId: string, data: UpdateRoutingFormInput, userId: number) {
+    const existingForm = await this.routingFormsRepository.getRoutingFormById(routingFormId, userId);
     if (!existingForm) {
       throw new NotFoundException(`Routing form with id ${routingFormId} not found.`);
     }
@@ -112,11 +122,14 @@ export class RoutingFormsService {
 
   /**
    * Permanently deletes a routing form and its associated configuration.
-   * Throws NotFoundException if the form does not exist.
+   * Verifies ownership via userId before deletion.
+   * Throws NotFoundException if the form does not exist or is not owned by the user.
+   * @param routingFormId - The unique identifier of the routing form
+   * @param userId - The authenticated user's ID for ownership verification
    * @see RF-004 — DELETE /v2/routing-forms/:routingFormId
    */
-  async deleteRoutingForm(routingFormId: string) {
-    const existingForm = await this.routingFormsRepository.getRoutingFormById(routingFormId);
+  async deleteRoutingForm(routingFormId: string, userId: number) {
+    const existingForm = await this.routingFormsRepository.getRoutingFormById(routingFormId, userId);
     if (!existingForm) {
       throw new NotFoundException(`Routing form with id ${routingFormId} not found.`);
     }

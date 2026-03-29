@@ -194,6 +194,23 @@ export class InAppNotificationRepository {
   }
 
   /**
+   * Count the total number of notifications for a specific user (all statuses).
+   *
+   * Used by `getNotificationSummary` to provide an accurate total count without
+   * the limit constraints of `findByUser`. Unlike fetching records and counting
+   * them (which is capped by the limit parameter), this performs a dedicated
+   * COUNT query at the database level for accuracy regardless of notification volume.
+   *
+   * @param params - Object containing the `userId` to count total notifications for
+   * @returns The total number of notifications for the user
+   */
+  async countTotal({ userId }: { userId: number }) {
+    return this.prismaClient.inAppNotification.count({
+      where: { userId },
+    });
+  }
+
+  /**
    * Bulk-mark all unread notifications as read for a specific user.
    *
    * Only notifications with `status: "UNREAD"` are affected. Already-read or

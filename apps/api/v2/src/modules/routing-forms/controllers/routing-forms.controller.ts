@@ -12,11 +12,14 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from "@nestjs/common";
 import { ApiHeader, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
 import { API_KEY_HEADER } from "@/lib/docs/headers";
+import { GetUser } from "@/modules/auth/decorators/get-user/get-user.decorator";
+import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 import { CreateRoutingFormInput } from "@/modules/routing-forms/inputs/create-routing-form.input";
 import { SubmitRoutingFormInput } from "@/modules/routing-forms/inputs/submit-routing-form.input";
 import { UpdateRoutingFormInput } from "@/modules/routing-forms/inputs/update-routing-form.input";
@@ -74,6 +77,7 @@ function toFormOutputData(form: {
   path: "/v2/routing-forms",
   version: API_VERSIONS_VALUES,
 })
+@UseGuards(ApiAuthGuard)
 @ApiTags("Routing forms")
 @ApiHeader(API_KEY_HEADER)
 export class RoutingFormsController {
@@ -112,6 +116,8 @@ export class RoutingFormsController {
 
   /**
    * List routing forms for the authenticated user, optionally filtered by team.
+   * userId is derived from the authenticated user context — never accepted as a query parameter
+   * to prevent cross-user form enumeration.
    * @see RF-004 — GET /v2/routing-forms
    */
   @Get("/")
@@ -121,7 +127,7 @@ export class RoutingFormsController {
   })
   @HttpCode(HttpStatus.OK)
   async listRoutingForms(
-    @Query("userId") userId?: number,
+    @GetUser("id") userId: number,
     @Query("teamId") teamId?: number
   ): Promise<RoutingFormListOutput> {
     const forms = await this.routingFormsService.listRoutingForms(userId, teamId);
@@ -143,8 +149,11 @@ export class RoutingFormsController {
   })
   @ApiParam({ name: "routingFormId", description: "The ID of the routing form", type: String })
   @HttpCode(HttpStatus.OK)
-  async getRoutingForm(@Param("routingFormId") routingFormId: string): Promise<RoutingFormOutput> {
-    const form = await this.routingFormsService.getRoutingForm(routingFormId);
+  async getRoutingForm(
+    @GetUser("id") userId: number,
+    @Param("routingFormId") routingFormId: string
+  ): Promise<RoutingFormOutput> {
+    const form = await this.routingFormsService.getRoutingForm(routingFormId, userId);
     return {
       status: SUCCESS_STATUS,
       data: toFormOutputData(form),
@@ -162,12 +171,9 @@ export class RoutingFormsController {
   })
   @HttpCode(HttpStatus.CREATED)
   async createRoutingForm(
-    @Body() body: CreateRoutingFormInput,
-    @Req() request: Request
+    @GetUser("id") userId: number,
+    @Body() body: CreateRoutingFormInput
   ): Promise<RoutingFormOutput> {
-    // Extract userId from the authenticated request context.
-    // The API key authentication middleware populates request headers or user context.
-    const userId = (request as Request & { userId?: number }).userId ?? 0;
     const form = await this.routingFormsService.createRoutingForm(userId, body);
     return {
       status: SUCCESS_STATUS,
@@ -191,10 +197,11 @@ export class RoutingFormsController {
   })
   @HttpCode(HttpStatus.OK)
   async updateRoutingForm(
+    @GetUser("id") userId: number,
     @Param("routingFormId") routingFormId: string,
     @Body() body: UpdateRoutingFormInput
   ): Promise<RoutingFormOutput> {
-    const form = await this.routingFormsService.updateRoutingForm(routingFormId, body);
+    const form = await this.routingFormsService.updateRoutingForm(routingFormId, body, userId);
     return {
       status: SUCCESS_STATUS,
       data: toFormOutputData(form),
@@ -216,8 +223,11 @@ export class RoutingFormsController {
     type: String,
   })
   @HttpCode(HttpStatus.OK)
-  async deleteRoutingForm(@Param("routingFormId") routingFormId: string): Promise<RoutingFormOutput> {
-    const form = await this.routingFormsService.deleteRoutingForm(routingFormId);
+  async deleteRoutingForm(
+    @GetUser("id") userId: number,
+    @Param("routingFormId") routingFormId: string
+  ): Promise<RoutingFormOutput> {
+    const form = await this.routingFormsService.deleteRoutingForm(routingFormId, userId);
     return {
       status: SUCCESS_STATUS,
       data: toFormOutputData(form),

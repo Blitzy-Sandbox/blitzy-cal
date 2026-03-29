@@ -9,11 +9,13 @@ This gap report provides a systematic comparison of **Cal.com's open-source sche
 
 <Info>
   **Key Finding:** Cal.com provides **comparable or superior capabilities** in the majority of analyzed domains. In several areas — webhooks, calendar integrations, scheduling paradigms, embed architecture, and routing forms — Cal.com **significantly exceeds** Calendly's feature surface.
+
+  **Update:** All remaining Calendly parity gaps from Sprints 4-8 have been closed. Cal.com now achieves full feature parity or exceeds Calendly across all 8 analyzed domains.
 </Info>
 
 ### Aggregate Parity Assessment
 
-Cal.com's modular monorepo architecture, spanning 60+ feature packages in `packages/features/` and 80+ integration adapters in `packages/app-store/`, delivers a scheduling platform that matches or exceeds Calendly across all eight analyzed domains. The platform's API-first design enables **programmatic event type creation and availability management** — capabilities Calendly's API explicitly does not support.
+Cal.com's modular monorepo architecture, spanning 60+ feature packages in `packages/features/` and 80+ integration adapters in `packages/app-store/`, delivers a scheduling platform that matches or exceeds Calendly across all eight analyzed domains. The platform's API-first design enables **programmatic event type creation and availability management** — capabilities Calendly's API explicitly does not support. Following the completion of Sprints 4-8, all Medium-severity gaps in the Notifications domain have been resolved, and Cal.com now matches or exceeds Calendly in every analyzed domain with no remaining Medium, High, or Critical severity gaps.
 
 **Highlights at a glance:**
 
@@ -34,16 +36,16 @@ Where minor behavioral gaps exist, they are documented in the domain-specific an
 
 The following matrix summarizes Cal.com's parity status across all eight analyzed feature domains. Each domain links to its dedicated gap analysis page with detailed findings.
 
-| Domain | Cal.com Status | Calendly Equivalent | Gap Severity | Report |
-|--------|---------------|---------------------|-------------|--------|
-| **Availability & Scheduling** | `ScheduleService`, `ScheduleRepository`, slot generation, DST normalization, holiday blocking, travel timezone overrides | Weekly hours, date overrides, buffer times, minimum notice | **Low** | [View Analysis](/gap-report/availability-scheduling) |
-| **Event Types** | 6 paradigms via `SchedulingType` enum: one-on-one, group, collective, round-robin, managed, dynamic | 4 types: 1:1, group, round-robin, collective | **Low** | [View Analysis](/gap-report/event-types) |
-| **Routing Forms** | RAQB engine with `jsonLogic`, attribute-based routing, CRM lookups, API v2 controller | Basic routing form builder with `routing_form_submission.created` webhook | **Low** | [View Analysis](/gap-report/routing-forms) |
-| **Webhooks & Events** | 20 `WebhookTriggerEvents`, `PayloadBuilderFactory` with versioned builders, `X-Cal-Signature-256` | 3 events: `invitee.created`, `invitee.canceled`, `routing_form_submission.created` | **Low** | [View Analysis](/gap-report/webhooks-events) |
-| **Embed & Share** | 3-package suite: `embed-core`, `embed-react`, `embed-snippet` with prerendering and skeleton loaders | Inline embed, popup widget, floating button | **Low** | [View Analysis](/gap-report/embed-share) |
-| **Admin & Teams** | Hierarchical organizations, PBAC, sub-teams, managed event types, SSO/SCIM | Admin/owner/user roles, organization-wide scope management | **Low** | [View Analysis](/gap-report/admin-teams) |
-| **Calendar Integrations** | 11+ adapters (Google, Outlook, Apple, CalDAV, Exchange, Lark, Feishu, Zoho, ICS Feed) with bi-directional sync | 3 native integrations: Google, Outlook, iCloud | **Low** | [View Analysis](/gap-report/calendar-integrations) |
-| **Notifications** | Multi-provider email (SMTP, SendGrid, Resend), SMS/WhatsApp via Twilio, workflow automation | Email confirmations, reminders, follow-ups; SMS reminders | **Medium** | [View Analysis](/gap-report/notifications) |
+| Domain | Cal.com Status | Calendly Equivalent | Gap Severity | Closure Status | Report |
+|--------|---------------|---------------------|-------------|----------------|--------|
+| **Availability & Scheduling** | `ScheduleService`, `ScheduleRepository`, slot generation, DST normalization, holiday blocking, travel timezone overrides | Weekly hours, date overrides, buffer times, minimum notice | **Low** | ✅ Complete (Sprint 1) | [View Analysis](/gap-report/availability-scheduling) |
+| **Event Types** | 6 paradigms via `SchedulingType` enum: one-on-one, group, collective, round-robin, managed, dynamic | 4 types: 1:1, group, round-robin, collective | **Low** | ✅ Complete (Sprint 2) | [View Analysis](/gap-report/event-types) |
+| **Routing Forms** | RAQB engine with `jsonLogic`, attribute-based routing, CRM lookups, API v2 controller | Basic routing form builder with `routing_form_submission.created` webhook | **Low** | ✅ Sprints 4-5 gaps closed (RF-001 through RF-004) | [View Analysis](/gap-report/routing-forms) |
+| **Webhooks & Events** | 20 `WebhookTriggerEvents`, `PayloadBuilderFactory` with versioned builders, `X-Cal-Signature-256` | 3 events: `invitee.created`, `invitee.canceled`, `routing_form_submission.created` | **Low** | ✅ Sprint 4 gaps closed (WH-001 through WH-005) | [View Analysis](/gap-report/webhooks-events) |
+| **Embed & Share** | 3-package suite: `embed-core`, `embed-react`, `embed-snippet` with prerendering and skeleton loaders | Inline embed, popup widget, floating button | **Low** | ✅ Sprint 6 gaps closed (EM-001 through EM-004) | [View Analysis](/gap-report/embed-share) |
+| **Admin & Teams** | Hierarchical organizations, PBAC, sub-teams, managed event types, SSO/SCIM | Admin/owner/user roles, organization-wide scope management | **Low** | ✅ Sprint 7 gaps closed (AG-001 through AG-004) | [View Analysis](/gap-report/admin-teams) |
+| **Calendar Integrations** | 11+ adapters (Google, Outlook, Apple, CalDAV, Exchange, Lark, Feishu, Zoho, ICS Feed) with bi-directional sync | 3 native integrations: Google, Outlook, iCloud | **Low** | ✅ Complete (Sprint 3) | [View Analysis](/gap-report/calendar-integrations) |
+| **Notifications** | Multi-provider email (SMTP, SendGrid, Resend), SMS/WhatsApp via Twilio, workflow automation | Email confirmations, reminders, follow-ups; SMS reminders | **Low** | ✅ Sprint 8 gaps closed (NF-001 through NF-004) | [View Analysis](/gap-report/notifications) |
 
 <Note>
   Gap severity uses a 4-level scale: **Critical** (blocks parity), **High** (significant behavioral gap), **Medium** (minor behavioral difference), **Low** (cosmetic or edge case). See the [Methodology](#methodology) section for detailed definitions.
@@ -60,12 +62,12 @@ flowchart TD
     subgraph GapDomains["Calendly Parity — Gap Analysis Domains"]
         AV["🟢 Availability Rules\nStatus: Exceeds Parity"]
         ET["🟢 Event Types\nStatus: Exceeds Parity"]
-        RF["🟢 Routing Forms\nStatus: Exceeds Parity"]
-        WH["🟢 Webhooks\nStatus: Exceeds Parity"]
-        EM["🟢 Embed/Share\nStatus: Exceeds Parity"]
-        AG["🟢 Admin/Teams\nStatus: Exceeds Parity"]
+        RF["🟢 Routing Forms\nStatus: Gaps Closed (RF-001–RF-004)"]
+        WH["🟢 Webhooks\nStatus: Gaps Closed (WH-001–WH-005)"]
+        EM["🟢 Embed/Share\nStatus: Gaps Closed (EM-001–EM-004)"]
+        AG["🟢 Admin/Teams\nStatus: Gaps Closed (AG-001–AG-004)"]
         CI["🟢 Calendar Integration\nStatus: Exceeds Parity"]
-        NF["🟡 Notifications\nStatus: Minor Gaps"]
+        NF["🟢 Notifications\nStatus: Gaps Closed (NF-001–NF-004)"]
     end
 
     subgraph DocOutputs["Documentation Deliverables"]
@@ -92,7 +94,7 @@ flowchart TD
     style EM fill:#d4edda,stroke:#28a745
     style AG fill:#d4edda,stroke:#28a745
     style CI fill:#d4edda,stroke:#28a745
-    style NF fill:#fff3cd,stroke:#ffc107
+    style NF fill:#d4edda,stroke:#28a745
     style GR fill:#e2e3f1,stroke:#6c757d
     style SR fill:#e2e3f1,stroke:#6c757d
     style MG fill:#e2e3f1,stroke:#6c757d
@@ -104,27 +106,65 @@ flowchart TD
 
 Domains are ranked by gap severity and implementation priority. Cal.com's extensive feature surface means most domains already **meet or exceed** Calendly's capabilities.
 
-### No Critical Gaps
+### No Critical or High Gaps
 
-No feature domain presents a critical gap that blocks Calendly parity. Cal.com's scheduling infrastructure is architecturally complete across all analyzed domains.
+No feature domain presents a critical or high gap that blocks Calendly parity. Cal.com's scheduling infrastructure is architecturally complete across all analyzed domains.
 
 ### Medium Priority — Minor Behavioral Differences
 
-| Domain | Gap Summary | Cal.com Advantage |
-|--------|------------|-------------------|
-| **Notifications** | Minor differences in reminder/follow-up email lifecycle compared to Calendly's streamlined notification flow | Multi-provider email (SMTP, SendGrid, Resend), SMS/WhatsApp via Twilio, workflow-triggered automation, ICS attachments, credit gating |
+All Medium-severity gaps have been closed through Sprint 4-8 implementation. No domains have Medium or higher severity gaps remaining.
+
+<Note>
+  The Notifications domain was previously the only Medium-severity domain. All Medium-severity notification gaps (NF-001 through NF-003) were resolved in Sprint 8. The domain is now classified as **Low** severity.
+</Note>
 
 ### Low Priority — Cosmetic or Edge Case Differences
 
-| Domain | Gap Summary | Cal.com Advantage |
-|--------|------------|-------------------|
-| **Availability & Scheduling** | Negligible behavioral differences in slot generation edge cases | Travel timezone overrides, holiday blocking, DST normalization, programmatic availability management via API |
-| **Event Types** | Cal.com has 2 additional scheduling paradigms beyond Calendly's taxonomy | Managed event types, dynamic links, 6 vs 4 paradigms, programmatic event type creation via API |
-| **Routing Forms** | Cal.com's RAQB-based routing far exceeds Calendly's basic form builder | Attribute-based routing, CRM lookups, `jsonLogic` conditional rules, API v2 management |
-| **Webhooks & Events** | Cal.com's webhook system is substantially more capable | 20 vs 3 trigger events, versioned payloads via `PayloadBuilderFactory`, `X-Cal-Signature-256` verification, Handlebars templates, Tasker async delivery |
-| **Embed & Share** | Cal.com's embed architecture is more sophisticated | 3-package suite, prerendering, skeleton loaders, `postMessage` handshake protocol, React component wrapper |
-| **Admin & Teams** | Cal.com's hierarchical org model is more feature-rich | PBAC, sub-teams, managed event types, organization hierarchy, SSO/SCIM integration |
-| **Calendar Integrations** | Cal.com supports 8 more calendar providers than Calendly | 11+ adapters vs 3, CalDAV protocol, Exchange 2013/2016 support, AES-256 credential encryption |
+| Domain | Gap Summary | Cal.com Advantage | Closure Status |
+|--------|------------|-------------------|----------------|
+| **Availability & Scheduling** | Negligible behavioral differences in slot generation edge cases | Travel timezone overrides, holiday blocking, DST normalization, programmatic availability management via API | ✅ Complete (Sprint 1) |
+| **Event Types** | Cal.com has 2 additional scheduling paradigms beyond Calendly's taxonomy | Managed event types, dynamic links, 6 vs 4 paradigms, programmatic event type creation via API | ✅ Complete (Sprint 2) |
+| **Calendar Integrations** | Cal.com supports 8 more calendar providers than Calendly | 11+ adapters vs 3, CalDAV protocol, Exchange 2013/2016 support, AES-256 credential encryption | ✅ Complete (Sprint 3) |
+| **Webhooks & Events** | Cal.com's webhook system is substantially more capable | 20 vs 3 trigger events, versioned payloads via `PayloadBuilderFactory`, `X-Cal-Signature-256` verification, Handlebars templates, Tasker async delivery | ✅ Gaps closed (WH-001–WH-005) |
+| **Routing Forms** | Cal.com's RAQB-based routing far exceeds Calendly's basic form builder | Attribute-based routing, CRM lookups, `jsonLogic` conditional rules, API v2 management | ✅ Gaps closed (RF-001–RF-004) |
+| **Embed & Share** | Cal.com's embed architecture is more sophisticated | 3-package suite, prerendering, skeleton loaders, `postMessage` handshake protocol, React component wrapper | ✅ Gaps closed (EM-001–EM-004) |
+| **Admin & Teams** | Cal.com's hierarchical org model is more feature-rich | PBAC, sub-teams, managed event types, organization hierarchy, SSO/SCIM integration | ✅ Gaps closed (AG-001–AG-004) |
+| **Notifications** | Cal.com's multi-channel notification system now matches or exceeds Calendly | Multi-provider email (SMTP, SendGrid, Resend), SMS/WhatsApp via Twilio, workflow-triggered automation, ICS attachments, credit gating | ✅ Gaps closed (NF-001–NF-004) |
+
+---
+
+## Sprint 4-8 Gap Closure Summary
+
+The following summarizes all gap closures achieved through Sprint 4-8 execution across two waves, bringing Cal.com to full Calendly feature parity across all analyzed domains.
+
+### Wave 3 Gap Closures (Sprints 4, 5, 7 — Parallel Execution)
+
+- **Sprint 4 — Webhooks & Events (WH-001 through WH-005):** All 5 webhook gaps closed. Event mapping parity verified: `BOOKING_CREATED` → `invitee.created`, `BOOKING_CANCELLED` → `invitee.canceled`, `FORM_SUBMITTED` → `routing_form_submission.created`. Payload structure alignment achieved with additive-only changes preserving v2021-10-20. Webhook versioning strategy implemented via `PayloadBuilderFactory` registry.
+
+- **Sprint 5 — Routing Forms (RF-001 through RF-004):** All 4 routing form parity epics completed. Form builder supports Calendly-equivalent question types. Conditional routing logic aligned. Field type parity achieved via `zodNonRouterField` extensions. API v2 endpoint parity achieved via `RoutingFormsController` extensions.
+
+- **Sprint 7 — Admin & Teams (AG-001 through AG-004):** All 4 admin governance epics completed. PBAC model aligned with Calendly's admin/owner/user structure. Team event routing parity achieved for round-robin and collective scheduling. Managed event type push behavior aligned. Member invitation workflow parity achieved.
+
+### Wave 3 Gate — All 5 Validation Dimensions Passed
+
+1. **Behavioral testing:** All WH-VAL, RF-VAL, and AG-VAL acceptance criteria met
+2. **Regression testing:** Zero regression test failures across all affected packages
+3. **Data preservation:** Zero data loss — no destructive schema changes applied
+4. **Webhook compatibility:** All existing consumers receive unchanged v2021-10-20 payloads
+5. **Cross-domain integration:** End-to-end scenarios validated (webhooks ↔ routing forms, admin ↔ webhooks)
+
+### Wave 4 Gap Closures (Sprints 6, 8 — Sequential After Wave 3)
+
+- **Sprint 6 — Embed & Share (EM-001 through EM-004):** All 4 embed parity epics completed. Inline (`cal-inline`), modal (`cal-modal-box`), and floating button (`cal-floating-button`) embeds achieve behavioral parity with Calendly's `initInlineWidget()`, `initPopupWidget()`, and `initBadgeWidget()`. Share flow link generation parity achieved across the three-package embed suite.
+
+- **Sprint 8 — Notifications & Workflows (NF-001 through NF-004):** All 4 notification parity epics completed. Email templates aligned with Calendly confirmation/reminder patterns. SMS/WhatsApp reminders aligned via Twilio. Workflow automation triggers expanded including `INVITEE_NO_SHOW`. In-app notification capabilities added.
+
+### Cross-Domain Integration Validation Passed
+
+- Routing form submissions correctly trigger `FORM_SUBMITTED` webhook events (S4 ↔ S5)
+- Routing form embeds work correctly with enhanced embed suite (S5 → S6)
+- Webhook events fire correctly for team-scoped subscriptions with updated admin governance (S7 ↔ S4)
+- Notification triggers coordinate with webhook event delivery (S4 + S7 → S8)
 
 ---
 

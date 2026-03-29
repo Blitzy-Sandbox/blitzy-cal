@@ -20,7 +20,7 @@ export const RoutingFormEmbedDialog = () => {
     subtitle: t("use_our_headless_routing_api"),
     type: "headless",
     /** Share flow description for the headless routing API option (EM-004 parity) */
-    shareDescription: "Use your own custom form with the Cal.com headless routing API",
+    shareDescription: t("routing_form_headless_share_description"),
     illustration: (
       <svg
         width="100%"

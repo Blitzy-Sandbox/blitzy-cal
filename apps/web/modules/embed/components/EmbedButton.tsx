@@ -25,6 +25,7 @@
 import type React from "react";
 import { useCallback } from "react";
 
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { showToast } from "@calcom/ui/components/toast";
 
@@ -77,13 +78,15 @@ export function ShareEmbedButton({
   children,
   className = "",
 }: ShareEmbedButtonProps): React.ReactElement {
+  const { t } = useLocale();
+
   const handleCopyLink = useCallback(async (): Promise<void> => {
     const origin = resolveOrigin(calOrigin);
     const shareLink = `${origin}/${embedUrl.replace(/^\//, "")}`;
 
     try {
       await navigator.clipboard.writeText(shareLink);
-      showToast("Link copied to clipboard", "success");
+      showToast(t("link_copied"), "success");
     } catch {
       // Fallback for older browsers or restricted contexts
       const textArea = document.createElement("textarea");
@@ -94,14 +97,14 @@ export function ShareEmbedButton({
       textArea.select();
       try {
         document.execCommand("copy");
-        showToast("Link copied to clipboard", "success");
+        showToast(t("link_copied"), "success");
       } catch {
-        showToast("Failed to copy link", "error");
+        showToast(t("failed_to_copy_link"), "error");
       } finally {
         document.body.removeChild(textArea);
       }
     }
-  }, [embedUrl, calOrigin]);
+  }, [embedUrl, calOrigin, t]);
 
   return (
     <Button
@@ -111,7 +114,7 @@ export function ShareEmbedButton({
       data-cal-namespace={namespace}
       data-testid="share-embed"
       onClick={handleCopyLink}>
-      {children ?? "Copy link"}
+      {children ?? t("copy_link")}
     </Button>
   );
 }

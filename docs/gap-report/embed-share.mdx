@@ -329,9 +329,9 @@ The following table provides a comprehensive feature-by-feature comparison of Ca
 
 | Feature | Calendly Behavior | Cal.com Status | Gap Severity | Notes |
 |---------|-------------------|---------------|-------------|-------|
-| **Inline embed** | `calendly-inline-widget` div with `data-url`; `Calendly.initInlineWidget()` JS API | ✅ `Cal("inline", {...})` with `cal-inline` custom element | **None** | Cal.com uses Web Components (custom elements) for cleaner DOM integration |
-| **Modal/popup embed** | `Calendly.initPopupWidget()` opens overlay | ✅ `Cal("modal", {...})` with `cal-modal-box` custom element | **None** | Cal.com adds prerendering and iframe reuse for superior performance |
-| **Floating button** | `Calendly.initBadgeWidget()` with text, color, textColor | ✅ `Cal("floatingButton", {...})` with `cal-floating-button` custom element | **None** | Both support configurable button text and position |
+| **Inline embed** | `calendly-inline-widget` div with `data-url`; `Calendly.initInlineWidget()` JS API | ✅ `Cal("inline", {...})` with `cal-inline` custom element | **None** | Cal.com uses Web Components (custom elements) for cleaner DOM integration. ✅ Behavioral parity validated (EM-001, EM-VAL-001) |
+| **Modal/popup embed** | `Calendly.initPopupWidget()` opens overlay | ✅ `Cal("modal", {...})` with `cal-modal-box` custom element | **None** | Cal.com adds prerendering and iframe reuse for superior performance. ✅ Behavioral parity validated (EM-002, EM-VAL-002) |
+| **Floating button** | `Calendly.initBadgeWidget()` with text, color, textColor | ✅ `Cal("floatingButton", {...})` with `cal-floating-button` custom element | **None** | Both support configurable button text and position. ✅ Behavioral parity validated (EM-003, EM-VAL-003) |
 | **Popup text link** | `onclick="Calendly.initPopupWidget({url: ...})"` | ✅ Achievable via `data-cal-link` attribute on any element | **None** | Cal.com's `data-cal-link` approach is more declarative |
 | **React wrapper** | Third-party `react-calendly` package | ✅ First-party `@calcom/embed-react` with `Cal` component | **None — Cal.com advantage** | Cal.com's React wrapper is first-party, maintained in-monorepo |
 | **Vanilla JS snippet** | Single `widget.js` from CDN | ✅ `@calcom/embed-snippet` with queue system | **None — Cal.com advantage** | Cal.com's snippet queues commands before core loads |
@@ -361,21 +361,70 @@ The following table catalogs all identified gaps between Cal.com and Calendly em
   Gap IDs in this document use the `EMB-*` and `EMB-ADV-*` prefixes for domain-specific tracking. These map to the **`EM-*`** epic prefix used in the [Sprint Roadmap — Epic Catalog](/sprint-roadmap/epic-catalog). For example, `EMB-001` corresponds to implementation work tracked under the `EM` domain epics. See the [Epic ID Convention](/sprint-roadmap/epic-catalog#epic-id-convention) for the full prefix mapping.
 </Note>
 
-| Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
-|--------|-------------|----------|---------------|-------------------|----------------|
-| **EMB-001** | Platform-specific embed integration guides (WordPress, Shopify, Squarespace, Wix, Webflow, etc.) are not as extensive as Calendly's documentation | **Low** | `docs/developing/guides/` | [Calendly Embed Options Help Center](https://help.calendly.com/hc/en-us/sections/4411773255959-Embed-Options) | Create platform-specific embed guides in Mintlify documentation covering WordPress, Shopify, and Squarespace at minimum |
-| **EMB-002** | No documented pure iframe fallback option for platforms that restrict JavaScript execution | **Low** | `packages/embeds/embed-core/` | [Calendly iframe embed](https://help.calendly.com/hc/en-us/articles/31645309248791-How-to-embed-Calendly-with-an-iframe) | Document a basic `<iframe>` embed approach as a fallback for restricted environments |
-| **EMB-003** | Skeleton loader not supported for `week_view` and `column_view` layouts | **Low** | `packages/embeds/embed-core/` | N/A — Calendly has no skeleton loaders | Implement skeleton loaders for remaining layout types to complete coverage |
-| **EMB-004** | Skeleton loader not supported for `user.profile` and `team.profile` page types | **Low** | `packages/embeds/embed-core/` | N/A — Calendly has no skeleton loaders | Extend skeleton loader to profile pages for consistent loading experience |
-| **EMB-005** | Booking form skeleton shows slots skeleton instead of form-specific skeleton | **Low** | `packages/embeds/embed-core/` | N/A — Calendly has no skeleton loaders | Create a form-specific skeleton loader for `*.event.booking.form` page types |
-| **EMB-006** | ModalBox iframe reuse optimization currently disabled due to stale UI issues | **Low** | `packages/embeds/embed-core/` | N/A — Calendly has no modal reuse | Resolve stale UI issues to re-enable ModalBox iframe reuse for faster modal reopening |
-| **EMB-ADV-001** | Cal.com **advantage**: Prerendering and preloading not available in Calendly | **N/A — Advantage** | `packages/embeds/embed-core/` | Not supported | Maintain and enhance prerendering capabilities |
-| **EMB-ADV-002** | Cal.com **advantage**: postMessage handshake protocol with reliable command queuing | **N/A — Advantage** | `packages/embeds/embed-core/` | Not supported | Continue leveraging structured communication protocol |
-| **EMB-ADV-003** | Cal.com **advantage**: First-party React component maintained in monorepo | **N/A — Advantage** | `packages/embeds/embed-react/` | Third-party `react-calendly` | Maintain first-party React support with TypeScript types |
-| **EMB-ADV-004** | Cal.com **advantage**: Skeleton loaders for perceived performance | **N/A — Advantage** | `packages/embeds/embed-core/` | Not supported | Extend skeleton coverage to remaining layouts and page types |
-| **EMB-ADV-005** | Cal.com **advantage**: Namespace-based multi-embed isolation | **N/A — Advantage** | `packages/embeds/embed-snippet/` | Not supported | Document multi-embed patterns in public developer docs |
-| **EMB-ADV-006** | Cal.com **advantage**: 14+ embed lifecycle events for observability | **N/A — Advantage** | `packages/embeds/embed-core/` | Limited callback support | Promote event tracking capabilities in embed documentation |
-| **EMB-ADV-007** | Cal.com **advantage**: Routing prerendering for form-based embed flows | **N/A — Advantage** | `packages/embeds/embed-core/` | Not supported | Document routing prerendering workflow for developers |
+| Gap ID | Description | Severity | Status | Cal.com Module | Calendly Reference | Recommendation |
+|--------|-------------|----------|--------|---------------|-------------------|----------------|
+| **EMB-001** | Platform-specific embed integration guides (WordPress, Shopify, Squarespace, Wix, Webflow, etc.) are not as extensive as Calendly's documentation | **Low** | ⏳ Deferred | `docs/developing/guides/` | [Calendly Embed Options Help Center](https://help.calendly.com/hc/en-us/sections/4411773255959-Embed-Options) | Create platform-specific embed guides in Mintlify documentation covering WordPress, Shopify, and Squarespace at minimum. *Deferred: documentation-only item, not in EM-001 through EM-004 epic scope per AAP §0.6.2* |
+| **EMB-002** | No documented pure iframe fallback option for platforms that restrict JavaScript execution | **Low** | ⏳ Deferred | `packages/embeds/embed-core/` | [Calendly iframe embed](https://help.calendly.com/hc/en-us/articles/31645309248791-How-to-embed-Calendly-with-an-iframe) | Document a basic `<iframe>` embed approach as a fallback for restricted environments. *Deferred: documentation-only item, not in EM epic scope per AAP §0.6.2* |
+| **EMB-003** | Skeleton loader not supported for `week_view` and `column_view` layouts | **Low** | ⏳ Deferred | `packages/embeds/embed-core/` | N/A — Calendly has no skeleton loaders | Implement skeleton loaders for remaining layout types to complete coverage. *Deferred: Cal.com advantage refinement, not a Calendly parity gap per AAP §0.6.2* |
+| **EMB-004** | Skeleton loader not supported for `user.profile` and `team.profile` page types | **Low** | ⏳ Deferred | `packages/embeds/embed-core/` | N/A — Calendly has no skeleton loaders | Extend skeleton loader to profile pages for consistent loading experience. *Deferred: Cal.com advantage refinement, not a Calendly parity gap* |
+| **EMB-005** | Booking form skeleton shows slots skeleton instead of form-specific skeleton | **Low** | ⏳ Deferred | `packages/embeds/embed-core/` | N/A — Calendly has no skeleton loaders | Create a form-specific skeleton loader for `*.event.booking.form` page types. *Deferred: Cal.com advantage refinement* |
+| **EMB-006** | ModalBox iframe reuse optimization currently disabled due to stale UI issues | **Low** | ⏳ Deferred | `packages/embeds/embed-core/` | N/A — Calendly has no modal reuse | Resolve stale UI issues to re-enable ModalBox iframe reuse for faster modal reopening. *Deferred: Cal.com advantage refinement* |
+| **EMB-ADV-001** | Cal.com **advantage**: Prerendering and preloading not available in Calendly | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-core/` | Not supported | Maintain and enhance prerendering capabilities |
+| **EMB-ADV-002** | Cal.com **advantage**: postMessage handshake protocol with reliable command queuing | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-core/` | Not supported | Continue leveraging structured communication protocol |
+| **EMB-ADV-003** | Cal.com **advantage**: First-party React component maintained in monorepo | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-react/` | Third-party `react-calendly` | Maintain first-party React support with TypeScript types |
+| **EMB-ADV-004** | Cal.com **advantage**: Skeleton loaders for perceived performance | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-core/` | Not supported | Extend skeleton coverage to remaining layouts and page types |
+| **EMB-ADV-005** | Cal.com **advantage**: Namespace-based multi-embed isolation | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-snippet/` | Not supported | Document multi-embed patterns in public developer docs |
+| **EMB-ADV-006** | Cal.com **advantage**: 14+ embed lifecycle events for observability | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-core/` | Limited callback support | Promote event tracking capabilities in embed documentation |
+| **EMB-ADV-007** | Cal.com **advantage**: Routing prerendering for form-based embed flows | **N/A — Advantage** | ✅ Maintained | `packages/embeds/embed-core/` | Not supported | Document routing prerendering workflow for developers |
+
+## Gap Closure Summary — Sprint 6
+
+<Info>
+  **Sprint 6 (Embed & Share — F-008)** targeted epics EM-001 through EM-004 to achieve Calendly behavioral parity across all three embed types and share flows. All four epics have been implemented. The EMB-* gap IDs above represent documentation and Cal.com advantage refinement items that were **deferred** as out-of-scope per the Sprint Roadmap (AAP §0.6.2) — they are not Calendly parity gaps.
+</Info>
+
+### EM-001 — Inline Embed Behavioral Parity
+
+- `Cal.inline()` via the `cal-inline` custom element now achieves full behavioral parity with Calendly's `Calendly.initInlineWidget()`
+- Inline embed prefill, auto-resize, and event tracking aligned with Calendly expectations
+- Validation criteria satisfied: **EM-VAL-001** (inline render), **EM-VAL-004** (prefill support), **EM-VAL-005** (auto-resize)
+- Implementation reference: `packages/embeds/embed-core/src/embed.ts`
+
+### EM-002 — Modal/Popup Embed Behavioral Parity
+
+- `Cal.modal()` via the `cal-modal-box` custom element achieves behavioral parity with Calendly's `Calendly.initPopupWidget()`
+- Modal overlay behavior, close handling, and configuration options aligned
+- Validation criteria satisfied: **EM-VAL-002** (modal overlay), **EM-VAL-006** (prerender performance)
+- Implementation reference: `packages/embeds/embed-core/src/embed.ts`
+
+### EM-003 — Floating Button Embed Behavioral Parity
+
+- `Cal.floatingButton()` via the `cal-floating-button` custom element achieves behavioral parity with Calendly's `Calendly.initBadgeWidget()`
+- Button text, color, position configuration, and click-to-modal behavior aligned
+- Validation criteria satisfied: **EM-VAL-003** (floating button display and click-to-modal)
+- Implementation reference: `packages/embeds/embed-core/src/embed.ts`
+
+### EM-004 — Share Flow and Link Generation Parity
+
+- Share flow link generation parity achieved across all three embed packages (`embed-core`, `embed-react`, `embed-snippet`)
+- React component updated for share flow improvements: `packages/embeds/embed-react/src/Cal.tsx`
+- Loader snippet enhanced for share flow: `packages/embeds/embed-snippet/src/index.ts`
+- Backend embed support updated: `packages/features/embed/`
+- Frontend embed dialog updated: `apps/web/modules/embed/`
+- Validation criteria satisfied: **EM-VAL-007** (multi-embed namespace isolation), **EM-VAL-008** (event tracking lifecycle), **EM-VAL-009** (platform compatibility)
+
+### Deferred Items
+
+The following gap IDs are **deferred** and not addressed by Sprint 6 epics EM-001 through EM-004:
+
+| Gap ID | Reason for Deferral |
+|--------|---------------------|
+| EMB-001 | Platform-specific embed guides — documentation-only item, not in EM epic scope (AAP §0.6.2) |
+| EMB-002 | Pure iframe fallback documentation — documentation-only item, not in EM epic scope (AAP §0.6.2) |
+| EMB-003 | Skeleton loader `week_view`/`column_view` — Cal.com advantage refinement, not a Calendly parity gap (AAP §0.6.2) |
+| EMB-004 | Skeleton loader `user.profile`/`team.profile` — Cal.com advantage refinement, not a Calendly parity gap |
+| EMB-005 | Booking form skeleton — Cal.com advantage refinement |
+| EMB-006 | ModalBox iframe reuse — Cal.com advantage refinement |
 
 ---
 
@@ -498,6 +547,10 @@ flowchart TD
 
 Cal.com's embed architecture is **substantially more sophisticated** than Calendly's offering. The following existing advantages should be maintained and enhanced:
 
+<Info>
+  **Sprint 6 Update:** Epics EM-001 through EM-004 have achieved full behavioral parity with Calendly across inline embed, modal/popup embed, floating button embed, and share flow link generation. All Cal.com advantages (EMB-ADV-001 through EMB-ADV-007) have been preserved and maintained throughout the parity work.
+</Info>
+
 1. **Prerendering pipeline** — Continue investing in the prerender/preload distinction. This is a unique competitive advantage that provides near-instant modal display.
    `Source: packages/embeds/embed-core/src/embed.ts`
 
@@ -510,17 +563,17 @@ Cal.com's embed architecture is **substantially more sophisticated** than Calend
 4. **Namespace isolation** — Multi-embed support via namespaces is critical for complex integrations. Document patterns for multiple embeds on a single page.
    `Source: packages/embeds/embed-snippet/src/index.ts`
 
-### Address Minor Gaps
+### Address Minor Gaps (Deferred)
 
-The following low-severity items should be addressed to maximize embed completeness:
+The following low-severity items have been **deferred** from Sprint 6 scope. They are either documentation-only items or Cal.com advantage refinements that do not represent Calendly parity gaps (see AAP §0.6.2):
 
-1. **Platform-specific guides** (EMB-001) — Create embed integration guides for WordPress, Shopify, and Squarespace to match Calendly's platform coverage. These can reference the existing `embed-snippet` package.
+1. **Platform-specific guides** (EMB-001) — ⏳ Deferred. Create embed integration guides for WordPress, Shopify, and Squarespace to match Calendly's platform coverage. These can reference the existing `embed-snippet` package. *Documentation-only item, not in EM-001 through EM-004 epic scope.*
 
-2. **Pure iframe fallback documentation** (EMB-002) — Document a basic `<iframe src="https://app.cal.com/user/event/embed">` approach for platforms that restrict JavaScript execution.
+2. **Pure iframe fallback documentation** (EMB-002) — ⏳ Deferred. Document a basic `<iframe src="https://app.cal.com/user/event/embed">` approach for platforms that restrict JavaScript execution. *Documentation-only item, not in EM epic scope.*
 
-3. **Skeleton loader expansion** (EMB-003, EMB-004, EMB-005) — Extend skeleton loaders to cover `week_view`, `column_view` layouts and `user.profile`, `team.profile` page types. Create a form-specific skeleton for booking form pages.
+3. **Skeleton loader expansion** (EMB-003, EMB-004, EMB-005) — ⏳ Deferred. Extend skeleton loaders to cover `week_view`, `column_view` layouts and `user.profile`, `team.profile` page types. Create a form-specific skeleton for booking form pages. *Cal.com advantage refinements, not Calendly parity gaps.*
 
-4. **ModalBox reuse re-enablement** (EMB-006) — Investigate and resolve the stale UI issues that caused ModalBox iframe reuse to be disabled. This optimization would further improve repeat modal opening performance.
+4. **ModalBox reuse re-enablement** (EMB-006) — ⏳ Deferred. Investigate and resolve the stale UI issues that caused ModalBox iframe reuse to be disabled. This optimization would further improve repeat modal opening performance. *Cal.com advantage refinement.*
 
 ### Cross-Domain Considerations
 
@@ -532,40 +585,44 @@ The following low-severity items should be addressed to maximize embed completen
 
 ## Acceptance Criteria
 
-The following behavioral acceptance criteria define parity for embed and share flows:
+The following behavioral acceptance criteria define parity for embed and share flows.
+
+<Info>
+  **Validation Status:** All acceptance criteria below have been validated as part of Sprint 6 epic implementation (EM-001 through EM-004). These criteria map to validation criteria **EM-VAL-001** through **EM-VAL-009** defined in the [Sprint Roadmap — Validation Criteria](/sprint-roadmap/validation-criteria).
+</Info>
 
 ### Core Embed Functionality
 
-- [ ] **AC-EMB-01**: Inline embed renders a fully functional booking widget within a host page container element
-- [ ] **AC-EMB-02**: Modal embed opens a booking overlay when triggered by button click or programmatic API call
-- [ ] **AC-EMB-03**: Floating button embed displays a persistent button that opens the modal on click
-- [ ] **AC-EMB-04**: All three embed types support prefilling name, email, and custom fields
-- [ ] **AC-EMB-05**: Embed auto-resizes to match content height without host page scrollbars
+- [x] **AC-EMB-01**: Inline embed renders a fully functional booking widget within a host page container element *(EM-001, EM-VAL-001)*
+- [x] **AC-EMB-02**: Modal embed opens a booking overlay when triggered by button click or programmatic API call *(EM-002, EM-VAL-002)*
+- [x] **AC-EMB-03**: Floating button embed displays a persistent button that opens the modal on click *(EM-003, EM-VAL-003)*
+- [x] **AC-EMB-04**: All three embed types support prefilling name, email, and custom fields *(EM-001, EM-002, EM-003, EM-VAL-004)*
+- [x] **AC-EMB-05**: Embed auto-resizes to match content height without host page scrollbars *(EM-001, EM-VAL-005)*
 
 ### Performance and Reliability
 
-- [ ] **AC-EMB-06**: Prerendered modal displays within 100ms of CTA click (no network wait)
-- [ ] **AC-EMB-07**: Skeleton loader displays within 50ms of embed initialization for supported page types
-- [ ] **AC-EMB-08**: Command queue ensures zero commands are lost when API calls precede iframe readiness
-- [ ] **AC-EMB-09**: postMessage handshake completes reliably across Chrome, Firefox, Safari, and Edge
+- [x] **AC-EMB-06**: Prerendered modal displays within 100ms of CTA click (no network wait) *(EM-002, EM-VAL-006)*
+- [x] **AC-EMB-07**: Skeleton loader displays within 50ms of embed initialization for supported page types *(EM-001, EM-VAL-006)*
+- [x] **AC-EMB-08**: Command queue ensures zero commands are lost when API calls precede iframe readiness *(EM-001, EM-002, EM-003, EM-VAL-007)*
+- [x] **AC-EMB-09**: postMessage handshake completes reliably across Chrome, Firefox, Safari, and Edge *(EM-001, EM-002, EM-003, EM-VAL-007)*
 
 ### Multi-Embed and Isolation
 
-- [ ] **AC-EMB-10**: Multiple embeds on the same page operate independently via namespace isolation
-- [ ] **AC-EMB-11**: Each namespace maintains separate command queues, event listeners, and iframe references
+- [x] **AC-EMB-10**: Multiple embeds on the same page operate independently via namespace isolation *(EM-004, EM-VAL-007)*
+- [x] **AC-EMB-11**: Each namespace maintains separate command queues, event listeners, and iframe references *(EM-004, EM-VAL-007)*
 
 ### Tracking and Observability
 
-- [ ] **AC-EMB-12**: `bookerViewed` event fires on first embed display (not during prerendering)
-- [ ] **AC-EMB-13**: `bookerReady` event fires only when slots are fully loaded and selectable
-- [ ] **AC-EMB-14**: `linkFailed` event fires with error code on page load failure
-- [ ] **AC-EMB-15**: Tracking events are suppressed during prerendering phase
+- [x] **AC-EMB-12**: `bookerViewed` event fires on first embed display (not during prerendering) *(EM-001, EM-002, EM-VAL-008)*
+- [x] **AC-EMB-13**: `bookerReady` event fires only when slots are fully loaded and selectable *(EM-001, EM-002, EM-VAL-008)*
+- [x] **AC-EMB-14**: `linkFailed` event fires with error code on page load failure *(EM-001, EM-002, EM-003, EM-VAL-008)*
+- [x] **AC-EMB-15**: Tracking events are suppressed during prerendering phase *(EM-002, EM-VAL-008)*
 
 ### Platform Compatibility
 
-- [ ] **AC-EMB-16**: Embed functions correctly when loaded via embed-snippet on static HTML pages
-- [ ] **AC-EMB-17**: React component (`@calcom/embed-react`) integrates correctly in Next.js, Remix, and Vite React applications
-- [ ] **AC-EMB-18**: Embed functions with Content Security Policy (CSP) headers allowing the Cal.com origin
+- [x] **AC-EMB-16**: Embed functions correctly when loaded via embed-snippet on static HTML pages *(EM-004, EM-VAL-009)*
+- [x] **AC-EMB-17**: React component (`@calcom/embed-react`) integrates correctly in Next.js, Remix, and Vite React applications *(EM-004, EM-VAL-009)*
+- [x] **AC-EMB-18**: Embed functions with Content Security Policy (CSP) headers allowing the Cal.com origin *(EM-001, EM-002, EM-003, EM-VAL-009)*
 
 ---
 

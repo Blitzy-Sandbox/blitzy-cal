@@ -14,6 +14,7 @@ import {
   MembershipRole,
   WorkflowType as PrismaWorkflowType,
   type TimeUnit,
+  type WorkflowActions,
   WorkflowMethods,
   type WorkflowTriggerEvents,
 } from "@calcom/prisma/enums";
@@ -48,6 +49,18 @@ const excludeFormTriggersWhereClause = {
   },
 };
 
+/**
+ * Maps a workflow trigger event to its corresponding workflow type.
+ *
+ * Form-related triggers (FORM_SUBMITTED, FORM_SUBMITTED_NO_EVENT) map to ROUTING_FORM type.
+ * All other triggers — including booking lifecycle events (NEW_EVENT, EVENT_CANCELLED,
+ * RESCHEDULE_EVENT, BEFORE_EVENT, AFTER_EVENT, etc.), no-show triggers, payment triggers,
+ * and attendee-initiated reschedule triggers — map to EVENT_TYPE.
+ *
+ * This mapping is driven by the FORM_TRIGGER_WORKFLOW_EVENTS constant; any new
+ * form-related trigger added to that constant will automatically be classified
+ * as ROUTING_FORM without requiring changes here.
+ */
 const getWorkflowType = (trigger: WorkflowTriggerEvents): PrismaWorkflowType => {
   if (FORM_TRIGGER_WORKFLOW_EVENTS.includes(trigger)) {
     return PrismaWorkflowType.ROUTING_FORM;
@@ -859,6 +872,180 @@ export class WorkflowRepository {
     });
   }
 
+  /**
+   * Finds all workflows matching a specific trigger type.
+   *
+   * Useful for Calendly-equivalent notification dispatch to discover all workflows
+   * triggered by a specific event (e.g., NEW_EVENT, BEFORE_EVENT, EVENT_CANCELLED,
+   * AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE) for parity validation and audit.
+   *
+   * @param triggerType - The workflow trigger event to filter by
+   * @param userId - Optional user ID to scope results to a specific user
+   * @param teamId - Optional team ID to scope results to a specific team
+   * @param isActiveOnly - When true, only returns workflows with isEnabled=true
+   * @returns Workflows matching the trigger type with steps, activeOn, activeOnTeams, and team relations
+   */
+  static async findWorkflowsByTriggerType({
+    triggerType,
+    userId,
+    teamId,
+    isActiveOnly,
+  }: {
+    triggerType: WorkflowTriggerEvents;
+    userId?: number;
+    teamId?: number;
+    isActiveOnly?: boolean;
+  }) {
+    const whereClause: Prisma.WorkflowWhereInput = {
+      trigger: triggerType,
+      ...(isActiveOnly ? { isEnabled: true } : {}),
+    };
+
+    // Scope to user and/or team when provided
+    if (userId !== undefined && teamId !== undefined) {
+      whereClause.OR = [{ userId }, { teamId }];
+    } else if (userId !== undefined) {
+      whereClause.userId = userId;
+    } else if (teamId !== undefined) {
+      whereClause.teamId = teamId;
+    }
+
+    return await prisma.workflow.findMany({
+      where: whereClause,
+      include: {
+        steps: {
+          orderBy: {
+            stepNumber: "asc",
+          },
+        },
+        activeOn: {
+          select: {
+            eventType: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
+        activeOnTeams: {
+          select: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        team: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+  }
+
+  /**
+   * Finds all workflows containing at least one step with the specified action type.
+   *
+   * Useful for notification channel parity auditing (NF-003) — e.g., discovering all
+   * workflows that use EMAIL_HOST, SMS_ATTENDEE, WHATSAPP_ATTENDEE, or the new
+   * IN_APP_NOTIFICATION action to verify that all Calendly-equivalent notification
+   * channels are wired up correctly.
+   *
+   * @param actionType - The workflow action to filter steps by (e.g., WorkflowActions.IN_APP_NOTIFICATION)
+   * @param userId - Optional user ID to scope results to a specific user
+   * @param teamId - Optional team ID to scope results to a specific team
+   * @param isActiveOnly - When true, only returns workflows with isEnabled=true
+   * @returns Workflows that have at least one step matching the action type, including full step details and team relations
+   */
+  static async findWorkflowsWithActionType({
+    actionType,
+    userId,
+    teamId,
+    isActiveOnly,
+  }: {
+    actionType: WorkflowActions;
+    userId?: number;
+    teamId?: number;
+    isActiveOnly?: boolean;
+  }) {
+    const whereClause: Prisma.WorkflowWhereInput = {
+      steps: {
+        some: {
+          action: actionType,
+        },
+      },
+      ...(isActiveOnly ? { isEnabled: true } : {}),
+    };
+
+    // Scope to user and/or team when provided
+    if (userId !== undefined && teamId !== undefined) {
+      whereClause.OR = [{ userId }, { teamId }];
+    } else if (userId !== undefined) {
+      whereClause.userId = userId;
+    } else if (teamId !== undefined) {
+      whereClause.teamId = teamId;
+    }
+
+    return await prisma.workflow.findMany({
+      where: whereClause,
+      include: {
+        steps: {
+          orderBy: {
+            stepNumber: "asc",
+          },
+        },
+        activeOn: {
+          select: {
+            eventType: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
+        activeOnTeams: {
+          select: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        team: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+  }
+
+  /**
+   * Prisma select clause for booking data needed by workflow reminder handlers.
+   *
+   * NF-003: Extended with Calendly-parity fields — location, description,
+   * cancellationReason, and fromReschedule on bookings; title and length on
+   * eventType — so that reminder templates can render location details, event
+   * descriptions, cancellation reasons, reschedule context, event type names,
+   * and event durations matching Calendly notification content.
+   */
   static bookingSelectForReminders = {
     userPrimaryEmail: true,
     startTime: true,
@@ -868,6 +1055,14 @@ export class WorkflowRepository {
     metadata: true,
     smsReminderNumber: true,
     responses: true,
+    /** NF-003: Calendly reminder notifications include meeting location */
+    location: true,
+    /** NF-003: Calendly reminder notifications include event description */
+    description: true,
+    /** NF-003: Calendly cancellation notifications include the cancellation reason */
+    cancellationReason: true,
+    /** NF-003: Calendly reminders reference rescheduling context (original booking UID) */
+    fromReschedule: true,
     attendees: {
       select: {
         name: true,
@@ -880,6 +1075,10 @@ export class WorkflowRepository {
       select: {
         slug: true,
         id: true,
+        /** NF-003: Calendly-equivalent notification content shows the event type name */
+        title: true,
+        /** NF-003: Calendly reminders show event duration */
+        length: true,
         schedulingType: true,
         hideOrganizerEmail: true,
         customReplyToEmail: true,

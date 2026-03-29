@@ -1,28 +1,20 @@
 /**
- * v2025-01-01 Webhook Payload Builder Set
+ * Webhook Payload Builders for Version v2025-01-01
  *
- * Barrel export for all versioned payload builders in the v2025-01-01 webhook version.
- * This file enables the PayloadBuilderFactory registry to import and wire the complete
- * builder set for this version.
+ * Calendly-aligned webhook payload version (WH-005).
+ * BookingPayloadBuilder and FormPayloadBuilder include Calendly-parity fields
+ * (UTM params, invitee/event URIs, scheduling URLs, submission timestamps,
+ * routing results) as prominent payload fields.
  *
- * Builder inventory (7 builders):
- * - BookingPayloadBuilder   — BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED, etc.
- * - FormPayloadBuilder      — FORM_SUBMITTED, FORM_SUBMITTED_NO_EVENT
- * - MeetingPayloadBuilder   — MEETING_STARTED, MEETING_ENDED, AFTER_*_NO_SHOW
- * - InstantMeetingBuilder   — INSTANT_MEETING
- * - DelegationPayloadBuilder — DELEGATION_CREDENTIAL_ERROR
- * - OOOPayloadBuilder       — OOO_CREATED
- * - RecordingPayloadBuilder — RECORDING_READY, RECORDING_TRANSCRIPTION_GENERATED
+ * Other builders delegate to base implementations initially.
  *
- * @see PayloadBuilderFactory — Consumer that imports and registers these builders
- * @see v2021-10-20/index.ts  — Sibling version barrel for the legacy builder set
+ * This version is opt-in only — v2021-10-20 remains the default.
  */
+
 export { BookingPayloadBuilder } from "./BookingPayloadBuilder";
 export { FormPayloadBuilder } from "./FormPayloadBuilder";
 export { MeetingPayloadBuilder } from "./MeetingPayloadBuilder";
+export { RecordingPayloadBuilder } from "./RecordingPayloadBuilder";
+export { OOOPayloadBuilder } from "./OOOPayloadBuilder";
 export { InstantMeetingBuilder } from "./InstantMeetingBuilder";
 export { DelegationPayloadBuilder } from "./DelegationPayloadBuilder";
-export { OOOPayloadBuilder } from "./OOOPayloadBuilder";
-export { RecordingPayloadBuilder } from "./RecordingPayloadBuilder";
-
-export type { V20250101BookingEventPayload } from "./types";

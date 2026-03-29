@@ -28,7 +28,7 @@ ALTER TABLE "Membership" ADD COLUMN "declinedAt" TIMESTAMP(3);
 CREATE INDEX "Membership_invitedByUserId_idx" ON "Membership"("invitedByUserId");
 
 -- AddForeignKey: Link invitation sender to User
-ALTER TABLE "Membership" ADD CONSTRAINT "Membership_invitedByUserId_fkey" FOREIGN KEY ("invitedByUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Membership" ADD CONSTRAINT "Membership_invitedByUserId_fkey" FOREIGN KEY ("invitedByUserId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AlterTable: Add default scheduling type for team event routing
 ALTER TABLE "Team" ADD COLUMN "schedulingDefault" TEXT;

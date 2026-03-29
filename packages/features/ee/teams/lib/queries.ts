@@ -588,12 +588,13 @@ export function generateNewChildEventTypeDataForDB({
   // When pushSettings is provided, selectively strip fields that should NOT propagate
   // from the admin template to child instances. If a field's inherit flag is false,
   // the child event type will use its own default rather than the parent's value.
-  // Uses conditional spreading to cleanly omit keys rather than setting them to undefined,
-  // which avoids accidentally overriding non-undefined values from earlier object spreads.
+  // Uses `undefined` for non-nullable Int columns (minimumBookingNotice, beforeEventBuffer,
+  // afterEventBuffer) so the spread omits these keys and Prisma applies column defaults
+  // (120, 0, 0 respectively). Only scheduleId uses `null` because it is a nullable Int? column.
   const pushOverrides = {
     ...(pushSettings?.inheritSchedule === false && { scheduleId: null }),
-    ...(pushSettings?.inheritBufferTime === false && { beforeEventBuffer: null, afterEventBuffer: null }),
-    ...(pushSettings?.inheritMinNotice === false && { minimumBookingNotice: null }),
+    ...(pushSettings?.inheritBufferTime === false && { beforeEventBuffer: undefined, afterEventBuffer: undefined }),
+    ...(pushSettings?.inheritMinNotice === false && { minimumBookingNotice: undefined }),
   };
 
   return {
@@ -620,8 +621,9 @@ export function generateNewChildEventTypeDataForDB({
         create: currentWorkflowIds.map((wfId) => ({ workflowId: wfId })),
       },
     }),
-    // AG-003: Apply push settings overrides — fields set to null will clear child values,
-    // and keys that are not present in pushOverrides are left untouched.
+    // AG-003: Apply push settings overrides — nullable fields (scheduleId) are set to null
+    // to clear child values, non-nullable fields use undefined to omit the key and let
+    // Prisma apply column defaults. Keys not present in pushOverrides are left untouched.
     ...pushOverrides,
   };
 }

@@ -2,7 +2,7 @@ import dayjs from "@calcom/dayjs";
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
 import { getSenderId } from "@calcom/features/ee/workflows/lib/alphanumericSenderIdSupport";
 import { sendSmsOrFallbackEmail } from "@calcom/features/ee/workflows/lib/reminders/messageDispatcher";
-import { SENDER_ID } from "@calcom/lib/constants";
+import { SENDER_ID, WEBAPP_URL } from "@calcom/lib/constants";
 import isSmsCalEmail from "@calcom/lib/isSmsCalEmail";
 import { piiHasher } from "@calcom/lib/server/PiiHasher";
 import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
@@ -10,6 +10,14 @@ import { TimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
+/**
+ * Centralized SMS/WhatsApp dispatcher with rate limiting, credit checks, and Twilio delivery.
+ * Supports both SMS (default) and WhatsApp channels via the optional `channel` parameter.
+ * WhatsApp messages are routed through Twilio's WhatsApp Business API by prefixing
+ * the phone number with "whatsapp:" per Twilio conventions.
+ *
+ * @see NF-002 — WhatsApp channel support for Calendly parity
+ */
 const handleSendingSMS = async ({
   reminderPhone,
   smsMessage,
@@ -17,6 +25,7 @@ const handleSendingSMS = async ({
   teamId,
   bookingUid,
   organizerUserId,
+  channel = "sms",
 }: {
   reminderPhone: string;
   smsMessage: string;
@@ -24,6 +33,8 @@ const handleSendingSMS = async ({
   teamId?: number;
   bookingUid?: string | null;
   organizerUserId?: number;
+  /** Delivery channel — 'sms' (default) or 'whatsapp' for WhatsApp Business API via Twilio. */
+  channel?: "sms" | "whatsapp";
 }) => {
   try {
     // If teamId is provided, we check the rate limit for the team.
@@ -40,9 +51,13 @@ const handleSendingSMS = async ({
 
     const creditService = new CreditService();
 
+    // For WhatsApp, prefix the phone number with "whatsapp:" per Twilio conventions (NF-002)
+    const deliveryPhoneNumber =
+      channel === "whatsapp" ? `whatsapp:${reminderPhone}` : reminderPhone;
+
     const smsOrFallbackEmail = await sendSmsOrFallbackEmail({
       twilioData: {
-        phoneNumber: reminderPhone,
+        phoneNumber: deliveryPhoneNumber,
         body: smsMessage,
         sender: senderID,
         ...(teamId ? { teamId } : { userId: organizerUserId }),
@@ -71,6 +86,23 @@ const getTeamWithOrganizationSettings = async (teamId: number) => {
     },
   });
 };
+
+/**
+ * Categorizes SMS notification types for Calendly parity.
+ * Used to classify SMS messages by purpose for analytics, logging, and delivery routing.
+ *
+ * @see NF-002 — SMS/WhatsApp reminder parity with Calendly
+ */
+export enum SMSNotificationType {
+  /** Sent immediately after a booking is confirmed. */
+  CONFIRMATION = "CONFIRMATION",
+  /** Sent at configurable intervals before the event as a reminder. */
+  REMINDER = "REMINDER",
+  /** Sent when a booking is cancelled. */
+  CANCELLATION = "CANCELLATION",
+  /** Sent when a booking is rescheduled. */
+  RESCHEDULE = "RESCHEDULE",
+}
 
 export default abstract class SMSManager {
   calEvent: CalendarEvent;
@@ -119,6 +151,37 @@ export default abstract class SMSManager {
       locale,
       this.calEvent.endTime
     )} (${timezone})`;
+  }
+
+  /**
+   * Generates a booking cancellation URL for inclusion in SMS messages.
+   * Follows the same URL pattern used in attendee SMS templates (NF-002 Calendly parity).
+   *
+   * @param bookingUid - The unique identifier of the booking
+   * @param seatReferenceUid - Optional seat reference UID for seated events
+   * @returns The full cancellation URL
+   *
+   * @see NF-002 — getCancelUrl helper for SMS Calendly parity
+   */
+  getCancelUrl(bookingUid: string, seatReferenceUid?: string): string {
+    const baseUrl = `${this.calEvent.bookerUrl ?? WEBAPP_URL}/booking/${bookingUid}`;
+    if (seatReferenceUid) {
+      return `${baseUrl}?seatReferenceUid=${seatReferenceUid}&cancel=true`;
+    }
+    return `${baseUrl}?cancel=true`;
+  }
+
+  /**
+   * Generates a booking reschedule URL for inclusion in SMS messages.
+   * Follows the same URL pattern used in attendee SMS templates (NF-002 Calendly parity).
+   *
+   * @param bookingUid - The unique identifier of the booking
+   * @returns The full reschedule URL
+   *
+   * @see NF-002 — getRescheduleUrl helper for SMS Calendly parity
+   */
+  getRescheduleUrl(bookingUid: string): string {
+    return `${this.calEvent.bookerUrl ?? WEBAPP_URL}/booking/${bookingUid}?reschedule=true`;
   }
 
   abstract getMessage(attendee: Person): string;

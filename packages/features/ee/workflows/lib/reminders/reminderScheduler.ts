@@ -6,6 +6,7 @@ import {
   isSMSOrWhatsappAction,
   isWhatsappAction,
   isCalAIAction,
+  isInAppNotificationAction,
 } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import { isEmailAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import { EmailWorkflowService } from "@calcom/features/ee/workflows/lib/service/EmailWorkflowService";
@@ -201,6 +202,48 @@ const processWorkflowStep = async (
       routedEventTypeId: formData ? formData.routedEventTypeId : null,
       ...contextData,
     });
+  } else if (isInAppNotificationAction(step.action)) {
+    // IN_APP_NOTIFICATION action: delegate to the InAppNotificationService implemented in NF-004.
+    // Only booking-context notifications are supported (not form submissions).
+    if (!evt) return;
+
+    const { InAppNotificationService } = await import(
+      "@calcom/features/notifications/services/InAppNotificationService"
+    );
+    const { NotificationType } = await import("@calcom/features/notifications/types");
+    const inAppService = new InAppNotificationService();
+
+    // Map the workflow trigger to the appropriate notification type for categorisation.
+    // Use a plain record with string values and cast the result to satisfy the enum-typed
+    // `type` field on `InAppNotificationCreateInput`.  The dynamic import returns
+    // `NotificationType` as a *value* so it cannot be used in a TS type-position directly.
+    const triggerToNotificationType: Record<string, string> = {
+      [WorkflowTriggerEvents.NEW_EVENT]: NotificationType.BOOKING_CREATED,
+      [WorkflowTriggerEvents.EVENT_CANCELLED]: NotificationType.BOOKING_CANCELLED,
+      [WorkflowTriggerEvents.RESCHEDULE_EVENT]: NotificationType.BOOKING_RESCHEDULED,
+      [WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE]: NotificationType.BOOKING_RESCHEDULED,
+      [WorkflowTriggerEvents.BOOKING_REQUESTED]: NotificationType.BOOKING_REQUESTED,
+      [WorkflowTriggerEvents.BOOKING_REJECTED]: NotificationType.BOOKING_REJECTED,
+    };
+    const notifType = (triggerToNotificationType[workflow.trigger] ||
+      NotificationType.WORKFLOW_TRIGGERED) as typeof NotificationType[keyof typeof NotificationType];
+
+    // Send notification to the organizer (workflow owner)
+    if (workflow.userId) {
+      await inAppService.createNotification({
+        userId: workflow.userId,
+        title: step.reminderBody || evt.title || "Booking notification",
+        body: step.reminderBody || `Booking: ${evt.title}`,
+        type: notifType,
+        url: evt.bookerUrl || undefined,
+        metadata: {
+          workflowId: workflow.id,
+          workflowStepId: step.id,
+          trigger: workflow.trigger,
+          bookingUid: evt.uid,
+        },
+      });
+    }
   }
 };
 

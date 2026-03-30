@@ -248,6 +248,7 @@ const CheckboxGroupWidget = ({
             className="flex items-center gap-2 text-sm"
             data-testid={`checkbox-option-${item.value}`}>
             <Checkbox
+              className="data-[state=checked]:text-brand-accent"
               checked={isChecked}
               onCheckedChange={(checked) => handleCheckboxChange(item.value, !!checked)}
               disabled={remainingProps.readOnly}

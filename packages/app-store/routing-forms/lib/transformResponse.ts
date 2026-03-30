@@ -82,7 +82,10 @@ export function getFieldResponseForJsonLogic({
 
   // RF-003: Checkbox field type — Calendly "Checkboxes" question parity.
   // Checkbox fields with options produce arrays of selected values (similar to multiselect).
-  // Single-toggle checkboxes produce boolean values for RAQB jsonLogic boolean operators.
+  // Single-toggle checkboxes produce string "true"/"false" for storage compatibility.
+  // FormResponse["value"] is typed as `string | number | string[]`, so we return string
+  // representations rather than native booleans. RAQB jsonLogic evaluates string equality
+  // operators ("equal", "not_equal") against "true"/"false" strings for checkbox toggle fields.
   if (field.type === "checkbox") {
     // Multiple checkboxes with options — handle array values like multiselect
     if (Array.isArray(value)) {
@@ -90,14 +93,13 @@ export function getFieldResponseForJsonLogic({
         return transformSelectValue({ field, idOrLabel });
       });
     }
-    // Single checkbox (boolean toggle) — coerce to boolean for RAQB jsonLogic evaluation.
-    // Form response values arrive as strings since FormResponse["value"] is string | number | string[].
+    // Single checkbox (boolean toggle) — coerce to a string representation for storage and RAQB evaluation.
     const stringValue = String(value).toLowerCase().trim();
     if (stringValue === "true" || stringValue === "1") {
-      return true;
+      return "true";
     }
-    // "false", "0", and any other non-truthy string representations coerce to false
-    return false;
+    // "false", "0", and any other non-truthy string representations
+    return "false";
   }
 
   // RF-003: Date field type — Calendly "Date" question parity.

@@ -96,7 +96,7 @@ const DateFactory = (props: WidgetProps | undefined) => {
   if (!props) {
     return <div />;
   }
-  return <TextWidget type="text" {...props} />;
+  return <TextWidget type="date" {...props} />;
 };
 
 // react-query-builder types have missing type property on Widget

@@ -52,7 +52,7 @@ const attributeTypesMap = new Map<keyof typeof AttributeType, RoutingFormFieldTy
 const FIELD_TYPE_WIDGET_FALLBACK: Partial<Record<RoutingFormFieldType, string>> = {
   [RoutingFormFieldType.CHECKBOX]: "text",
   [RoutingFormFieldType.URL]: "text",
-  [RoutingFormFieldType.DATE]: "text",
+  [RoutingFormFieldType.DATE]: "date",
 };
 
 /**

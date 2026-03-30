@@ -4,6 +4,7 @@ import { scheduleSMSReminder } from "@calcom/ee/workflows/lib/reminders/smsRemin
 import { scheduleWhatsappReminder } from "@calcom/ee/workflows/lib/reminders/whatsappReminderManager";
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
+import logger from "@calcom/lib/logger";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import type { WorkflowStep } from "@calcom/prisma/client";
 import type { TimeUnit } from "@calcom/prisma/enums";
@@ -222,7 +223,23 @@ export async function scheduleBookingReminders(
         });
       }
     });
-    await Promise.all(promiseScheduleReminders);
+    // Use Promise.allSettled so a single booking reminder failure (e.g., SMS delivery
+    // error, email verification issue) does not cascade-reject all remaining bookings.
+    const reminderResults = await Promise.allSettled(promiseScheduleReminders);
+    for (const result of reminderResults) {
+      if (result.status === "rejected") {
+        logger.error("Failed to schedule booking reminder", { reason: result.reason });
+      }
+    }
   });
-  return Promise.all(promiseSteps);
+
+  // Use Promise.allSettled so one failed workflow step does not block scheduling
+  // for all other steps. Each step is independent and should be processed fully.
+  const stepResults = await Promise.allSettled(promiseSteps);
+  for (const result of stepResults) {
+    if (result.status === "rejected") {
+      logger.error("Failed to process workflow step reminders", { reason: result.reason });
+    }
+  }
+  return stepResults;
 }

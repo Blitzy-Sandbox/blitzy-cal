@@ -9,7 +9,34 @@ import type {
 import { getUTCOffsetByTimezone } from "@calcom/lib/dayjs";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 import { compile } from "handlebars";
+import type { TemplateDelegate } from "handlebars";
 import { z } from "zod";
+
+/**
+ * Module-level cache for compiled Handlebars templates.
+ * Avoids re-parsing and re-compiling the same template AST on every webhook
+ * delivery. Keyed by the raw template string; bounded to 500 entries to
+ * prevent unbounded memory growth in long-running processes.
+ */
+const TEMPLATE_CACHE_MAX_SIZE = 500;
+const templateCache = new Map<string, TemplateDelegate>();
+
+function getCompiledTemplate(template: string): TemplateDelegate {
+  const cached = templateCache.get(template);
+  if (cached) return cached;
+
+  const compiled = compile(template);
+
+  // Evict oldest entry when cache reaches max size (simple FIFO eviction)
+  if (templateCache.size >= TEMPLATE_CACHE_MAX_SIZE) {
+    const firstKey = templateCache.keys().next().value;
+    if (firstKey !== undefined) {
+      templateCache.delete(firstKey);
+    }
+  }
+  templateCache.set(template, compiled);
+  return compiled;
+}
 
 // Minimal webhook shape for sending payloads (subset of WebhookSubscriber)
 type WebhookForPayload = Pick<WebhookSubscriber, "subscriberUrl" | "appId" | "payloadTemplate" | "version">;
@@ -186,7 +213,7 @@ function applyTemplate(
   data: WebhookDataType | Record<string, unknown>,
   contentType: ContentType
 ) {
-  const compiled = compile(template)(data).replace(/&quot;/g, '"');
+  const compiled = getCompiledTemplate(template)(data).replace(/&quot;/g, '"');
 
   if (contentType === "application/json") {
     return JSON.stringify(jsonParse(compiled));

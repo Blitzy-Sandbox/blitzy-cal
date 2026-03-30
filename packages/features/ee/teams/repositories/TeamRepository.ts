@@ -597,6 +597,7 @@ export class TeamRepository {
           -- Scenario 2 & 3: Legacy role ADMIN/OWNER (works for both PBAC and non-PBAC teams)
           (m."role"::text = ANY(${fallbackRoles}))
         )
+      LIMIT 1000
     `;
 
     return users;
@@ -655,23 +656,44 @@ export class TeamRepository {
   // ──────────────────────────────────────────────────────────────────────────────
 
   /**
-   * Query booking history for team members of a given event type.
+   * Query recent booking history for team members of a given event type.
    * Used for round-robin last-assigned tracking per team member (AG-002 / Calendly parity).
    * Returns booking records joined through EventType → teamId and Booking → eventTypeId + userId,
    * filtering only bookings by accepted team members, ordered by most recent first.
+   *
+   * Bounded by default to the last 100 bookings and recent 30-day window for round-robin
+   * distribution decisions — high-traffic teams may have thousands of bookings per event type
+   * but only recent history is relevant for scheduling fairness.
+   *
+   * @param teamId - The team whose booking history is being queried
+   * @param eventTypeId - The event type to scope the history to
+   * @param limit - Maximum number of booking records to return (default 100)
+   * @param since - Optional cutoff date; when provided, only bookings created on or after this date
+   *               are returned. Defaults to 30 days ago when not specified.
    */
   async findMemberSchedulingHistory({
     teamId,
     eventTypeId,
+    limit = 100,
+    since,
   }: {
     teamId: number;
     eventTypeId: number;
+    limit?: number;
+    since?: Date;
   }) {
+    const defaultSince = new Date();
+    defaultSince.setDate(defaultSince.getDate() - 30);
+    const effectiveSince = since ?? defaultSince;
+
     return await this.prismaClient.booking.findMany({
       where: {
         eventTypeId,
         eventType: {
           teamId,
+        },
+        createdAt: {
+          gte: effectiveSince,
         },
         user: {
           teams: {
@@ -692,6 +714,7 @@ export class TeamRepository {
       orderBy: {
         createdAt: "desc",
       },
+      take: limit,
     });
   }
 

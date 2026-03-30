@@ -123,17 +123,26 @@ export class RoutingFormsController {
   @Get("/")
   @ApiOperation({
     summary: "List routing forms",
-    description: "Retrieve a list of routing forms for the authenticated user, optionally filtered by team.",
+    description:
+      "Retrieve a paginated list of routing forms for the authenticated user, optionally filtered by team. " +
+      "Use `limit` and `cursor` query parameters for pagination.",
   })
   @HttpCode(HttpStatus.OK)
   async listRoutingForms(
     @GetUser("id") userId: number,
-    @Query("teamId") teamId?: number
+    @Query("teamId") teamId?: number,
+    @Query("limit") limit?: number,
+    @Query("cursor") cursor?: string
   ): Promise<RoutingFormListOutput> {
-    const forms = await this.routingFormsService.listRoutingForms(userId, teamId);
+    const result = await this.routingFormsService.listRoutingForms(userId, teamId, {
+      limit: limit ? Number(limit) : undefined,
+      cursor,
+    });
     return {
       status: SUCCESS_STATUS,
-      data: forms.map(toFormOutputData),
+      data: result.data.map(toFormOutputData),
+      hasMore: result.hasMore,
+      nextCursor: result.nextCursor,
     };
   }
 

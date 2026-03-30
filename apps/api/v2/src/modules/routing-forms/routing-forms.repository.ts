@@ -46,9 +46,18 @@ export class RoutingFormsRepository {
 
   /**
    * Lists routing forms with optional filtering by userId and/or teamId.
-   * Returns all forms matching the provided criteria.
+   * Supports cursor-based pagination with bounded result sets.
+   * Uses over-fetch (limit + 1) to detect hasMore without a separate count query.
+   *
+   * @param where - Filter criteria (userId, teamId)
+   * @param limit - Maximum number of records to return (default 20)
+   * @param cursor - Cursor string (form ID) to start after for pagination
+   * @returns Paginated result with data, hasMore flag, and nextCursor
    */
-  async listRoutingForms(where: { userId?: number; teamId?: number }) {
+  async listRoutingForms(
+    where: { userId?: number; teamId?: number },
+    { limit = 20, cursor }: { limit?: number; cursor?: string } = {}
+  ) {
     const prismaWhere: Prisma.App_RoutingForms_FormWhereInput = {};
     if (where.userId !== undefined) {
       prismaWhere.userId = where.userId;
@@ -56,10 +65,22 @@ export class RoutingFormsRepository {
     if (where.teamId !== undefined) {
       prismaWhere.teamId = where.teamId;
     }
-    return this.dbRead.prisma.app_RoutingForms_Form.findMany({
+    // Fetch limit + 1 to determine hasMore without a separate count query
+    const forms = await this.dbRead.prisma.app_RoutingForms_Form.findMany({
       where: prismaWhere,
       orderBy: { createdAt: "desc" },
+      take: limit + 1,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
     });
+
+    const hasMore = forms.length > limit;
+    const results = hasMore ? forms.slice(0, limit) : forms;
+    const nextCursor = hasMore && results.length > 0 ? results[results.length - 1].id : undefined;
+
+    return { data: results, hasMore, nextCursor };
   }
 
   /**
@@ -116,12 +137,33 @@ export class RoutingFormsRepository {
     });
   }
 
-  /** Retrieves all form responses for a given routing form, ordered by creation date. */
-  async getRoutingFormResponses(routingFormId: string) {
-    return this.dbRead.prisma.app_RoutingForms_FormResponse.findMany({
+  /**
+   * Retrieves form responses for a given routing form with cursor-based pagination.
+   *
+   * @param routingFormId - The routing form ID to fetch responses for
+   * @param limit - Maximum number of responses to return (default 20)
+   * @param cursor - Cursor number (response ID) to start after for pagination
+   */
+  async getRoutingFormResponses(
+    routingFormId: string,
+    { limit = 20, cursor }: { limit?: number; cursor?: number } = {}
+  ) {
+    // Fetch limit + 1 to determine hasMore without a separate count query
+    const responses = await this.dbRead.prisma.app_RoutingForms_FormResponse.findMany({
       where: { formId: routingFormId },
       orderBy: { createdAt: "desc" },
+      take: limit + 1,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
     });
+
+    const hasMore = responses.length > limit;
+    const results = hasMore ? responses.slice(0, limit) : responses;
+    const nextCursor = hasMore && results.length > 0 ? results[results.length - 1].id : undefined;
+
+    return { data: results, hasMore, nextCursor };
   }
 
   /**

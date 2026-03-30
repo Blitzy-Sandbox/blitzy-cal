@@ -78,15 +78,21 @@ export class RoutingFormsService {
   }
 
   /**
-   * Lists routing forms for the authenticated user, optionally filtered by teamId.
+   * Lists routing forms for the authenticated user with cursor-based pagination.
    * The userId is always derived from the authenticated user context to prevent
    * cross-user form enumeration.
+   *
    * @param userId - The authenticated user's ID (required, derived from auth context)
    * @param teamId - Optional team ID filter
+   * @param pagination - Optional pagination parameters (limit and cursor)
    * @see RF-004 — GET /v2/routing-forms
    */
-  async listRoutingForms(userId: number, teamId?: number) {
-    return this.routingFormsRepository.listRoutingForms({ userId, teamId });
+  async listRoutingForms(
+    userId: number,
+    teamId?: number,
+    pagination?: { limit?: number; cursor?: string }
+  ) {
+    return this.routingFormsRepository.listRoutingForms({ userId, teamId }, pagination);
   }
 
   /**

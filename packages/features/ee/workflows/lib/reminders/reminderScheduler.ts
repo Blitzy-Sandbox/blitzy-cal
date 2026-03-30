@@ -13,6 +13,7 @@ import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/Workf
 import type { Workflow, WorkflowStep } from "@calcom/features/ee/workflows/lib/types";
 import { WorkflowReminderRepository } from "@calcom/features/ee/workflows/repositories/WorkflowReminderRepository";
 import { formatCalEventExtended } from "@calcom/lib/formatCalendarEvent";
+import logger from "@calcom/lib/logger";
 import { withReporting } from "@calcom/lib/sentryWrapper";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
@@ -217,39 +218,51 @@ const _scheduleWorkflowReminders = async (args: ScheduleWorkflowRemindersArgs) =
   } = args;
   if (isDryRun || !workflows.length) return;
 
-  for (const workflow of workflows) {
-    if (workflow.steps.length === 0) continue;
+  // Parallelize across independent workflows using Promise.allSettled.
+  // Steps within a single workflow are processed sequentially (ordering may matter),
+  // but separate workflows are independent and can execute concurrently.
+  const workflowResults = await Promise.allSettled(
+    workflows.map(async (workflow) => {
+      if (workflow.steps.length === 0) return;
 
-    for (const step of workflow.steps) {
-      if (
-        // These tasks currently write the entire payload in the task
-        (workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT ||
-          workflow.trigger === WorkflowTriggerEvents.AFTER_EVENT) &&
-        isEmailAction(step.action) &&
-        evt
-      ) {
-        await WorkflowService.scheduleLazyEmailWorkflow({
-          evt,
-          workflowStepId: step.id,
-          workflowTriggerEvent: workflow.trigger,
+      for (const step of workflow.steps) {
+        if (
+          // These tasks currently write the entire payload in the task
+          (workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT ||
+            workflow.trigger === WorkflowTriggerEvents.AFTER_EVENT) &&
+          isEmailAction(step.action) &&
+          evt
+        ) {
+          await WorkflowService.scheduleLazyEmailWorkflow({
+            evt,
+            workflowStepId: step.id,
+            workflowTriggerEvent: workflow.trigger,
+            workflow,
+            seatReferenceId: args.seatReferenceUid,
+          });
+          continue;
+        }
+
+        await processWorkflowStep(
           workflow,
-          seatReferenceId: args.seatReferenceUid,
-        });
-        continue;
+          step,
+          {
+            emailAttendeeSendToOverride,
+            smsReminderNumber,
+            hideBranding,
+            seatReferenceUid,
+            ...(evt ? { calendarEvent: evt } : { formData }),
+          },
+          creditCheckFn
+        );
       }
+    })
+  );
 
-      await processWorkflowStep(
-        workflow,
-        step,
-        {
-          emailAttendeeSendToOverride,
-          smsReminderNumber,
-          hideBranding,
-          seatReferenceUid,
-          ...(evt ? { calendarEvent: evt } : { formData }),
-        },
-        creditCheckFn
-      );
+  // Log any per-workflow failures without blocking other workflows
+  for (const result of workflowResults) {
+    if (result.status === "rejected") {
+      logger.error("Failed to schedule workflow reminders", { reason: result.reason });
     }
   }
 };

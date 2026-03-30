@@ -89,10 +89,26 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
     });
   }
 
-  async findResponsesForSlotCalculation(formId: string) {
+  /**
+   * Fetches responses for slot calculation with a bounded result set.
+   * Only recent responses are typically relevant for slot availability,
+   * so a default limit and optional date-based filter are applied to prevent
+   * loading thousands of responses into memory for popular routing forms.
+   *
+   * @param formId - The routing form ID to fetch responses for
+   * @param limit - Maximum number of responses to return (default 500)
+   * @param since - Optional date filter: only responses created after this date (default: last 90 days)
+   */
+  async findResponsesForSlotCalculation(
+    formId: string,
+    { limit = 500, since }: { limit?: number; since?: Date } = {}
+  ) {
+    const effectiveSince = since ?? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
     return this.prismaClient.app_RoutingForms_FormResponse.findMany({
       where: {
         formId,
+        createdAt: { gte: effectiveSince },
       },
       select: {
         id: true,
@@ -108,6 +124,7 @@ export class PrismaRoutingFormResponseRepository implements RoutingFormResponseR
         },
       },
       orderBy: { createdAt: "desc" },
+      take: limit,
     });
   }
 

@@ -170,6 +170,21 @@ export class RoutingFormListOutput extends ApiResponseWithoutData {
   @ValidateNested({ each: true })
   @Type(() => RoutingFormOutputData)
   data!: RoutingFormOutputData[];
+
+  @IsBoolean()
+  @ApiProperty({
+    description: "Whether more results are available beyond this page",
+    example: true,
+  })
+  hasMore!: boolean;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({
+    description: "Cursor to pass as the 'cursor' query parameter to fetch the next page",
+    example: "clxxxxxxxxxxxxxxxxx",
+  })
+  nextCursor?: string;
 }
 
 export class RoutingFormSubmissionOutputData {

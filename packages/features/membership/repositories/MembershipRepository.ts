@@ -375,7 +375,24 @@ export class MembershipRepository {
     });
   }
 
-  static async findByTeamIdForAvailability({ teamId }: { teamId: number }) {
+  /**
+   * Retrieves team memberships with user availability data.
+   * Supports pagination to prevent loading all members with heavy includes
+   * (credentials + availability) at once for large teams.
+   *
+   * @param teamId - The team ID to query memberships for
+   * @param limit - Maximum number of records to return (default 200, covers most teams)
+   * @param cursor - Cursor-based pagination: membership ID to start after
+   */
+  static async findByTeamIdForAvailability({
+    teamId,
+    limit = 200,
+    cursor,
+  }: {
+    teamId: number;
+    limit?: number;
+    cursor?: number;
+  }) {
     const memberships = await prisma.membership.findMany({
       where: { teamId },
       include: {
@@ -388,6 +405,12 @@ export class MembershipRepository {
           },
         },
       },
+      take: limit,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { id: "asc" },
     });
 
     const membershipsWithSelectedCalendars = memberships.map((m) => {
@@ -449,14 +472,24 @@ export class MembershipRepository {
   }
 
   /**
-   * Returns members who joined after the given time
+   * Returns members who joined after the given time, with pagination support.
+   * Bounded to prevent unbounded result sets for organizations with rapid member growth.
+   *
+   * @param organizationId - The organization ID to query
+   * @param time - Only memberships created after this time are returned
+   * @param limit - Maximum number of records to return (default 200)
+   * @param cursor - Cursor-based pagination: membership ID to start after
    */
   static async findMembershipsCreatedAfterTimeIncludeUser({
     organizationId,
     time,
+    limit = 200,
+    cursor,
   }: {
     organizationId: number;
     time: Date;
+    limit?: number;
+    cursor?: number;
   }) {
     return prisma.membership.findMany({
       where: {
@@ -473,15 +506,32 @@ export class MembershipRepository {
           },
         },
       },
+      take: limit,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { id: "asc" },
     });
   }
 
+  /**
+   * Find accepted memberships across multiple teams.
+   * Bounded with a default limit to prevent unbounded result sets when querying
+   * across many teams with large membership counts.
+   *
+   * @param teamIds - Array of team IDs to query
+   * @param select - Optional Prisma select to narrow returned fields (default: { userId: true })
+   * @param limit - Maximum number of records to return (default 500, covers multi-team queries)
+   */
   static async findAllByTeamIds<TSelect extends MembershipPartialSelect = { userId: true }>({
     teamIds,
     select,
+    limit = 500,
   }: {
     teamIds: number[];
     select?: TSelect;
+    limit?: number;
   }): Promise<MembershipDTOFromSelect<TSelect>[]> {
     return (await prisma.membership.findMany({
       where: {
@@ -490,6 +540,7 @@ export class MembershipRepository {
       },
       // this is explicit, and typed in TSelect default typings
       select: select ?? { userId: true },
+      take: limit,
     })) as unknown as Promise<MembershipDTOFromSelect<TSelect>[]>;
   }
 

@@ -339,6 +339,9 @@ describe("TeamRepository", () => {
           eventType: {
             teamId: 1,
           },
+          createdAt: {
+            gte: expect.any(Date),
+          },
           user: {
             teams: {
               some: {
@@ -358,6 +361,7 @@ describe("TeamRepository", () => {
         orderBy: {
           createdAt: "desc",
         },
+        take: 100,
       });
       expect(result).toEqual(mockBookings);
       expect(result).toHaveLength(2);

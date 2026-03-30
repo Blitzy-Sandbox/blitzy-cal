@@ -195,69 +195,95 @@ export const sendNotification = async ({
   // Resolve effective channels — default to PUSH-only for backward compatibility
   const effectiveChannels = channels ?? [NotificationChannel.PUSH];
 
-  // === Web Push channel (existing logic preserved exactly) ===
+  // Preserve original early-return behavior for PUSH-only calls when VAPID is not configured
+  if (
+    effectiveChannels.length === 1 &&
+    effectiveChannels.includes(NotificationChannel.PUSH) &&
+    !isVapidConfigured
+  ) {
+    logger.error("Cannot send notification. VAPID keys not configured.");
+    return;
+  }
+
+  // Collect independent channel dispatches for parallel execution via Promise.allSettled.
+  // Each channel has its own error handling so one channel failure does not block others.
+  // Total latency = max(channel_times) instead of sum(channel_times).
+  const channelPromises: Promise<void>[] = [];
+
+  // === Web Push channel ===
   if (effectiveChannels.includes(NotificationChannel.PUSH)) {
     if (!isVapidConfigured) {
       logger.error("Cannot send notification. VAPID keys not configured.");
-      // Preserve original early-return behavior for PUSH-only calls.
-      // When additional channels are requested, continue processing them
-      // even if VAPID is unavailable.
-      if (effectiveChannels.length === 1) {
-        return;
-      }
     } else {
-      try {
-        const payload = JSON.stringify({
-          title,
-          body,
-          icon,
-          data: {
-            url,
-            type,
-          },
-          actions,
-          requireInteraction,
-          tag: `cal-notification-${Date.now()}`,
-        });
-        await webpush.sendNotification(subscription, payload);
-      } catch (error) {
-        logger.error("Error sending notification", error);
-      }
+      channelPromises.push(
+        (async () => {
+          try {
+            const payload = JSON.stringify({
+              title,
+              body,
+              icon,
+              data: {
+                url,
+                type,
+              },
+              actions,
+              requireInteraction,
+              tag: `cal-notification-${Date.now()}`,
+            });
+            await webpush.sendNotification(subscription, payload);
+          } catch (error) {
+            logger.error("Error sending notification", error);
+          }
+        })()
+      );
     }
   }
 
   // === NF-004: In-app notification channel ===
   if (effectiveChannels.includes(NotificationChannel.IN_APP) && userId !== undefined) {
-    try {
-      await inAppNotificationService.createNotification({
-        userId,
-        title,
-        body,
-        type: notificationType ?? NotificationType.INSTANT_MEETING,
-        url,
-        icon,
-      });
-    } catch (error) {
-      inAppLogger.error("Error creating in-app notification", error);
-    }
+    channelPromises.push(
+      (async () => {
+        try {
+          await inAppNotificationService.createNotification({
+            userId,
+            title,
+            body,
+            type: notificationType ?? NotificationType.INSTANT_MEETING,
+            url,
+            icon,
+          });
+        } catch (error) {
+          inAppLogger.error("Error creating in-app notification", error);
+        }
+      })()
+    );
   }
 
   // === NF-004: Activity feed channel ===
   if (effectiveChannels.includes(NotificationChannel.ACTIVITY_FEED) && userId !== undefined) {
-    try {
-      const derivedActivityType = notificationType
-        ? mapNotificationTypeToActivityType(notificationType)
-        : ActivityType.SYSTEM_ACTIVITY;
+    channelPromises.push(
+      (async () => {
+        try {
+          const derivedActivityType = notificationType
+            ? mapNotificationTypeToActivityType(notificationType)
+            : ActivityType.SYSTEM_ACTIVITY;
 
-      await inAppNotificationService.createActivityFeedItem({
-        userId,
-        activityType: derivedActivityType,
-        title,
-        description: body,
-      });
-    } catch (error) {
-      inAppLogger.error("Error recording activity feed item", error);
-    }
+          await inAppNotificationService.createActivityFeedItem({
+            userId,
+            activityType: derivedActivityType,
+            title,
+            description: body,
+          });
+        } catch (error) {
+          inAppLogger.error("Error recording activity feed item", error);
+        }
+      })()
+    );
+  }
+
+  // Dispatch all channels in parallel — individual errors are already caught above
+  if (channelPromises.length > 0) {
+    await Promise.allSettled(channelPromises);
   }
 };
 

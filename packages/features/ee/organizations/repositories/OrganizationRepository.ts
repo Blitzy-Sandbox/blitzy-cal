@@ -551,11 +551,26 @@ export class OrganizationRepository {
   }
 
   /**
-   * Finds all organization members with a specific role.
+   * Finds organization members with a specific role, with pagination support.
    * Supports Calendly-equivalent admin panel "list members by role" functionality (AG-001).
    * Scoped to organization memberships only via the `isOrganization: true` filter.
+   *
+   * @param orgId - The organization ID to query
+   * @param role - The membership role to filter by
+   * @param limit - Maximum number of records to return (default 100, safety bound for large orgs)
+   * @param cursor - Cursor-based pagination: membership ID to start after
    */
-  async findMembersByRole({ orgId, role }: { orgId: number; role: MembershipRole }) {
+  async findMembersByRole({
+    orgId,
+    role,
+    limit = 100,
+    cursor,
+  }: {
+    orgId: number;
+    role: MembershipRole;
+    limit?: number;
+    cursor?: number;
+  }) {
     return this.prismaClient.membership.findMany({
       where: {
         teamId: orgId,
@@ -573,6 +588,12 @@ export class OrganizationRepository {
           },
         },
       },
+      take: limit,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { id: "asc" },
     });
   }
 
@@ -626,21 +647,30 @@ export class OrganizationRepository {
   }
 
   /**
-   * Finds all organization members whose role is at or above a given minimum role
-   * in the hierarchy: OWNER > ADMIN > MEMBER.
+   * Finds organization members whose role is at or above a given minimum role
+   * in the hierarchy: OWNER > ADMIN > MEMBER, with pagination support.
    * Supports permission checks that need "all admins and above" queries (AG-001).
    *
    * Role hierarchy mapping:
    * - minimumRole: OWNER  → returns only [OWNER]
    * - minimumRole: ADMIN  → returns [ADMIN, OWNER]
    * - minimumRole: MEMBER → returns [MEMBER, ADMIN, OWNER] (all members)
+   *
+   * @param orgId - The organization ID to query
+   * @param minimumRole - The minimum role level to include
+   * @param limit - Maximum number of records to return (default 100, safety bound for large orgs)
+   * @param cursor - Cursor-based pagination: membership ID to start after
    */
   async findMembersWithRoleAtOrAbove({
     orgId,
     minimumRole,
+    limit = 100,
+    cursor,
   }: {
     orgId: number;
     minimumRole: MembershipRole;
+    limit?: number;
+    cursor?: number;
   }) {
     const roleHierarchy: Record<MembershipRole, MembershipRole[]> = {
       [MembershipRole.OWNER]: [MembershipRole.OWNER],
@@ -669,6 +699,12 @@ export class OrganizationRepository {
           },
         },
       },
+      take: limit,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { id: "asc" },
     });
   }
 }

@@ -40,12 +40,22 @@ export class PrismaRoutingFormRepository {
     })) as SelectedFields<T> | null;
   }
 
+  /**
+   * Find active (non-disabled) routing forms for a user or team.
+   * Bounded with an optional limit to prevent unbounded result sets.
+   *
+   * @param userId - Optional user ID filter
+   * @param teamId - Optional team ID filter
+   * @param limit - Maximum number of forms to return (default 200)
+   */
   static async findActiveFormsForUserOrTeam({
     userId,
     teamId,
+    limit = 200,
   }: {
     userId?: number;
     teamId?: number;
+    limit?: number;
   }): Promise<{ id: string; name: string }[]> {
     if (!userId && !teamId) return [];
 
@@ -59,6 +69,7 @@ export class PrismaRoutingFormRepository {
           name: "asc" as const,
         },
       ],
+      take: limit,
     };
 
     if (teamId) {
@@ -90,17 +101,22 @@ export class PrismaRoutingFormRepository {
   }
 
   /**
-   * Retrieve all routing forms belonging to a specific team.
-   * Returns all forms (including disabled) ordered alphabetically by name.
+   * Retrieve routing forms belonging to a specific team.
+   * Bounded with an optional limit to prevent unbounded result sets.
+   * Returns forms (including disabled) ordered alphabetically by name.
    * Used by team-scoped API v2 listing endpoint (RF-004).
+   *
+   * @param teamId - The team ID to query forms for
+   * @param limit - Maximum number of forms to return (default 200)
    */
-  static async findAllByTeamId(teamId: number): Promise<RoutingForm[]> {
+  static async findAllByTeamId(teamId: number, { limit = 200 }: { limit?: number } = {}): Promise<RoutingForm[]> {
     return await prisma.app_RoutingForms_Form.findMany({
       where: {
         teamId,
       },
       select: defaultSelect,
       orderBy: [{ name: "asc" as const }],
+      take: limit,
     });
   }
 

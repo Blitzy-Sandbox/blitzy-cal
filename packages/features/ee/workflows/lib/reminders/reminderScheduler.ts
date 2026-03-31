@@ -101,7 +101,9 @@ const processWorkflowStep = async (
   }: ProcessWorkflowStepParams,
   creditCheckFn: CreditCheckFn
 ) => {
-  if (!step?.verifiedAt) return;
+  // IN_APP_NOTIFICATION actions don't require sender verification (no phone/email needed),
+  // so we skip the verifiedAt check for them. All other actions (SMS, email, WhatsApp) must be verified.
+  if (!step?.verifiedAt && !isInAppNotificationAction(step.action)) return;
 
   const evt = calendarEvent ? formatCalEventExtended(calendarEvent) : undefined;
 
@@ -178,7 +180,7 @@ const processWorkflowStep = async (
 
     await scheduleWhatsappReminder({
       ...scheduleFunctionParams,
-      verifiedAt: step.verifiedAt,
+      verifiedAt: step.verifiedAt ?? null,
       reminderPhone: sendTo,
       action: step.action as ScheduleTextReminderAction,
       message: step.reminderBody || "",
@@ -198,7 +200,7 @@ const processWorkflowStep = async (
       teamId: workflow.teamId,
       seatReferenceUid,
       submittedPhoneNumber: smsReminderNumber,
-      verifiedAt: step.verifiedAt,
+      verifiedAt: step.verifiedAt ?? null,
       routedEventTypeId: formData ? formData.routedEventTypeId : null,
       ...contextData,
     });

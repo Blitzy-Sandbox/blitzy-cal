@@ -151,6 +151,8 @@ export const inviteMembersWithNoInviterPermissionCheck = async (
      * Whether invitation is a direct user action or not i.e. we need to show them User based errors like inviting existing users or not.
      */
     isDirectUserAction?: boolean;
+    /** AG-004: The user ID of the person sending the invitation, for audit trail */
+    invitedByUserId?: number;
   } & TargetTeam
 ) => {
   const { inviterName, orgSlug, invitations, language, creationSource, isDirectUserAction = true } = data;
@@ -201,6 +203,7 @@ export const inviteMembersWithNoInviterPermissionCheck = async (
       inviter,
       autoAcceptEmailDomain: orgState.autoAcceptEmailDomain,
       creationSource,
+      invitedByUserId: data.invitedByUserId,
     });
   }
 
@@ -230,6 +233,7 @@ export const inviteMembersWithNoInviterPermissionCheck = async (
       isOrg: isTeamAnOrg,
       inviter,
       orgSlug,
+      invitedByUserId: data.invitedByUserId,
     });
   }
 
@@ -327,6 +331,7 @@ const inviteMembers = async ({ ctx, input }: InviteMemberOptions) => {
     creationSource,
     orgSlug,
     invitations,
+    invitedByUserId: inviter.id,
   });
   return result;
 

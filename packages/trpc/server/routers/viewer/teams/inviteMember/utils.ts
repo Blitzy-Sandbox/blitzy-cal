@@ -274,6 +274,7 @@ export async function createNewUsersConnectToOrgIfExists({
   timeZone,
   language,
   creationSource,
+  invitedByUserId,
 }: {
   invitations: Invitation[];
   isOrg: boolean;
@@ -287,6 +288,8 @@ export async function createNewUsersConnectToOrgIfExists({
   timeZone?: string;
   language: string;
   creationSource: CreationSource;
+  /** AG-004: The user ID of the person sending the invitation, for audit trail */
+  invitedByUserId?: number;
 }) {
   // fail if we have invalid emails
   invitations.forEach((invitation) => checkInputEmailIsValid(invitation.usernameOrEmail));
@@ -346,6 +349,9 @@ export async function createNewUsersConnectToOrgIfExists({
                 teamId: teamId,
                 role: invitation.role,
                 accepted: autoAccept, // If the user is invited to a child team, they are automatically accepted
+                // AG-004: Populate invitation tracking columns for audit trail
+                ...(invitedByUserId !== undefined && { invitedByUserId }),
+                invitedAt: new Date(),
               },
             },
             ...(!isPlatformManaged
@@ -378,6 +384,9 @@ export async function createNewUsersConnectToOrgIfExists({
               userId: createdUser.id,
               role: MembershipRole.MEMBER,
               accepted: autoAccept,
+              // AG-004: Populate invitation tracking columns for audit trail
+              ...(invitedByUserId !== undefined && { invitedByUserId }),
+              invitedAt: new Date(),
             },
           });
         }
@@ -540,6 +549,7 @@ export async function handleExistingUsersInvites({
   inviter,
   orgSlug,
   isOrg,
+  invitedByUserId,
 }: {
   invitableExistingUsers: InvitableExistingUser[];
   team: TeamWithParent;
@@ -551,6 +561,8 @@ export async function handleExistingUsersInvites({
   };
   isOrg: boolean;
   orgSlug: string | null;
+  /** AG-004: The user ID of the person sending the invitation, for audit trail */
+  invitedByUserId?: number;
 }) {
   const translation = await getTranslation(language, "common");
   if (!team.isOrganization) {
@@ -581,6 +593,7 @@ export async function handleExistingUsersInvites({
         invitees: autoJoinUsers,
         parentId: team.parentId,
         accepted: true,
+        invitedByUserId,
       });
 
       await Promise.all(
@@ -610,6 +623,7 @@ export async function handleExistingUsersInvites({
         invitees: regularUsers,
         parentId: team.parentId,
         accepted: false,
+        invitedByUserId,
       });
       await sendExistingUserTeamInviteEmails({
         currentUserName: inviter.name,
@@ -675,6 +689,9 @@ export async function handleExistingUsersInvites({
             teamId: team.id,
             accepted: shouldAutoAccept,
             role: user.newRole,
+            // AG-004: Populate invitation tracking columns for audit trail
+            ...(invitedByUserId !== undefined && { invitedByUserId }),
+            invitedAt: new Date(),
           },
         });
 
@@ -754,6 +771,7 @@ export async function handleNewUsersInvites({
   autoAcceptEmailDomain,
   inviter,
   creationSource,
+  invitedByUserId,
 }: {
   invitationsForNewUsers: Invitation[];
   teamId: number;
@@ -766,6 +784,8 @@ export async function handleNewUsersInvites({
   };
   isOrg: boolean;
   creationSource: CreationSource;
+  /** AG-004: The user ID of the person sending the invitation, for audit trail */
+  invitedByUserId?: number;
 }) {
   const translation = await getTranslation(language, "common");
 
@@ -778,6 +798,7 @@ export async function handleNewUsersInvites({
     parentId: team.parentId,
     language,
     creationSource,
+    invitedByUserId,
   });
 
   // Add auto-accepted users to team event types with assignAllTeamMembers immediately

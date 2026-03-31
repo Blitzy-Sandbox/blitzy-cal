@@ -8,6 +8,7 @@ import { SettingsIcon } from "@coss/ui/icons";
 import { Logo } from "@calcom/ui/components/logo";
 
 import { KBarTrigger } from "./Kbar";
+import { NotificationBell } from "./NotificationBell";
 import { UserDropdown } from "./user-dropdown/UserDropdown";
 
 export function TopNavContainer() {
@@ -38,6 +39,7 @@ function TopNav() {
               <SettingsIcon className="text-default h-4 w-4" />
             </Link>
           </button>
+          <NotificationBell />
           <UserDropdown small />
         </div>
       </nav>

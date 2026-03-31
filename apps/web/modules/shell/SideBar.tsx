@@ -22,6 +22,7 @@ import { SkeletonText } from "@calcom/ui/components/skeleton";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 
 import { KBarTrigger } from "./Kbar";
+import { NotificationBell } from "./NotificationBell";
 import { Navigation } from "./navigation/Navigation";
 import { useBottomNavItems } from "./useBottomNavItems";
 import { ProfileDropdown } from "./user-dropdown/ProfileDropdown";
@@ -131,6 +132,7 @@ export function SideBar({ bannersHeight, user }: SideBarProps) {
                   <UserDropdown small />
                 </div>
               )}
+              <NotificationBell />
               <KBarTrigger />
             </div>
           </header>

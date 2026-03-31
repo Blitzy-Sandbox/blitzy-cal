@@ -271,6 +271,7 @@ export async function createMemberships({
   invitees,
   parentId,
   accepted,
+  invitedByUserId,
 }: {
   teamId: number;
   language: string;
@@ -280,9 +281,12 @@ export async function createMemberships({
   })[];
   parentId: number | null;
   accepted: boolean;
+  /** AG-004: The user ID of the person sending the invitation, for audit trail */
+  invitedByUserId?: number;
 }) {
-  log.debug("Creating memberships for", safeStringify({ teamId, language, invitees, parentId, accepted }));
+  log.debug("Creating memberships for", safeStringify({ teamId, language, invitees, parentId, accepted, invitedByUserId }));
   try {
+    const invitedAt = new Date();
     await prisma.membership.createMany({
       data: invitees.flatMap((invitee) => {
         const organizationRole = parentId
@@ -297,6 +301,9 @@ export async function createMemberships({
           userId: invitee.id,
           accepted,
           role: checkAdminOrOwner(organizationRole) ? organizationRole : invitee.newRole,
+          // AG-004: Populate invitation tracking columns for audit trail
+          ...(invitedByUserId !== undefined && { invitedByUserId }),
+          invitedAt,
         });
 
         // membership for the org
@@ -307,6 +314,9 @@ export async function createMemberships({
             teamId: parentId,
             userId: invitee.id,
             role: MembershipRole.MEMBER,
+            // AG-004: Populate invitation tracking columns for org membership too
+            ...(invitedByUserId !== undefined && { invitedByUserId }),
+            invitedAt,
           });
         }
         return data;

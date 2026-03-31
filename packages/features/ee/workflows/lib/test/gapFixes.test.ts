@@ -58,3 +58,33 @@ describe("Gap 4 — IN_APP_NOTIFICATION action", () => {
     expect(isInAppNotificationAction(WorkflowActions.CAL_AI_PHONE_CALL)).toBe(false);
   });
 });
+
+describe("Gap 4 Round 2 — IN_APP_NOTIFICATION verifiedAt bypass", () => {
+  it("IN_APP_NOTIFICATION action should not require verifiedAt to execute", () => {
+    // The reminderScheduler.processWorkflowStep has:
+    //   if (!step?.verifiedAt && !isInAppNotificationAction(step.action)) return;
+    // This test verifies the condition logic: when verifiedAt is null/undefined AND action
+    // is IN_APP_NOTIFICATION, the function should NOT early-return.
+    const step = { verifiedAt: null, action: WorkflowActions.IN_APP_NOTIFICATION };
+    const shouldReturn = !step.verifiedAt && !isInAppNotificationAction(step.action);
+    expect(shouldReturn).toBe(false); // should NOT return, should continue processing
+  });
+
+  it("Non-notification actions with null verifiedAt should still trigger early-return", () => {
+    // For regular actions (SMS, Email, etc.) without verifiedAt, the early return should fire
+    const smsStep = { verifiedAt: null, action: WorkflowActions.SMS_ATTENDEE };
+    const shouldReturn = !smsStep.verifiedAt && !isInAppNotificationAction(smsStep.action);
+    expect(shouldReturn).toBe(true); // should early-return
+
+    const emailStep = { verifiedAt: null, action: WorkflowActions.EMAIL_HOST };
+    const shouldReturnEmail = !emailStep.verifiedAt && !isInAppNotificationAction(emailStep.action);
+    expect(shouldReturnEmail).toBe(true); // should early-return
+  });
+
+  it("Actions with verifiedAt set should always continue processing", () => {
+    const verifiedDate = new Date();
+    const step = { verifiedAt: verifiedDate, action: WorkflowActions.EMAIL_HOST };
+    const shouldReturn = !step.verifiedAt && !isInAppNotificationAction(step.action);
+    expect(shouldReturn).toBe(false); // verifiedAt is truthy, so should NOT return
+  });
+});

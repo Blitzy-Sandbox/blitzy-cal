@@ -437,11 +437,48 @@ const nextConfig = (phase: string): NextConfig => {
         },
         {
           source: "/embed/embed.js",
-          headers: [CORP_CROSS_ORIGIN_HEADER],
+          headers: [
+            CORP_CROSS_ORIGIN_HEADER,
+            {
+              key: "Content-Security-Policy",
+              value:
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors *; base-uri 'self'; form-action 'self'",
+            },
+            {
+              key: "X-Frame-Options",
+              value: "ALLOWALL",
+            },
+          ],
+        },
+        {
+          source: "/embed/embed.css",
+          headers: [
+            CORP_CROSS_ORIGIN_HEADER,
+            {
+              key: "Content-Security-Policy",
+              value:
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors *; base-uri 'self'; form-action 'self'",
+            },
+            {
+              key: "X-Frame-Options",
+              value: "ALLOWALL",
+            },
+          ],
         },
         {
           source: "/:path*/embed",
-          headers: [CORP_CROSS_ORIGIN_HEADER],
+          headers: [
+            CORP_CROSS_ORIGIN_HEADER,
+            {
+              key: "Content-Security-Policy",
+              value:
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors *; base-uri 'self'; form-action 'self'",
+            },
+            {
+              key: "X-Frame-Options",
+              value: "ALLOWALL",
+            },
+          ],
         },
         {
           source: "/:path*",

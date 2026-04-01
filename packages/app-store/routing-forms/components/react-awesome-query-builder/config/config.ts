@@ -17,6 +17,7 @@ function getWidgetsWithoutFactory(_configFor: ConfigFor) {
     },
     checkbox: {
       ...BasicConfig.widgets.multiselect, // checkboxes behave like multiselect (string[] values with jsType: "array")
+      type: "checkbox", // Explicit type so resolveWidgetType returns "checkbox" (not inherited "multiselect")
     },
     url: {
       ...BasicConfig.widgets.text, // URLs are text-like string values (jsType: "string")
@@ -64,8 +65,7 @@ function getTypes(configFor: ConfigFor) {
     checkbox: {
       ...BasicConfig.types.multiselect, // checkboxes use multiselect-like operators (multiselect_equals, multiselect_not_equals, etc.)
       widgets: {
-        ...BasicConfig.types.multiselect.widgets,
-        multiselect: {
+        checkbox: {
           ...BasicConfig.types.multiselect.widgets.multiselect,
           operators: [...multiSelectOperators],
         },

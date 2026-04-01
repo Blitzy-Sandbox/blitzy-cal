@@ -209,41 +209,55 @@ const processWorkflowStep = async (
     // Only booking-context notifications are supported (not form submissions).
     if (!evt) return;
 
-    const { InAppNotificationService } = await import(
-      "@calcom/features/notifications/services/InAppNotificationService"
-    );
-    const { NotificationType } = await import("@calcom/features/notifications/types");
-    const inAppService = new InAppNotificationService();
+    // NF-004 fix: Wrap the entire IN_APP_NOTIFICATION branch in try-catch to prevent
+    // errors (dynamic import failures, DB write failures, type mismatches) from propagating
+    // out of processWorkflowStep and breaking the surrounding booking flow (reschedule,
+    // cancel, buffer sync). Errors are logged but never re-thrown.
+    try {
+      const { InAppNotificationService } = await import(
+        "@calcom/features/notifications/services/InAppNotificationService"
+      );
+      const { NotificationType } = await import("@calcom/features/notifications/types");
+      const inAppService = new InAppNotificationService();
 
-    // Map the workflow trigger to the appropriate notification type for categorisation.
-    // Use a plain record with string values and cast the result to satisfy the enum-typed
-    // `type` field on `InAppNotificationCreateInput`.  The dynamic import returns
-    // `NotificationType` as a *value* so it cannot be used in a TS type-position directly.
-    const triggerToNotificationType: Record<string, string> = {
-      [WorkflowTriggerEvents.NEW_EVENT]: NotificationType.BOOKING_CREATED,
-      [WorkflowTriggerEvents.EVENT_CANCELLED]: NotificationType.BOOKING_CANCELLED,
-      [WorkflowTriggerEvents.RESCHEDULE_EVENT]: NotificationType.BOOKING_RESCHEDULED,
-      [WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE]: NotificationType.BOOKING_RESCHEDULED,
-      [WorkflowTriggerEvents.BOOKING_REQUESTED]: NotificationType.BOOKING_REQUESTED,
-      [WorkflowTriggerEvents.BOOKING_REJECTED]: NotificationType.BOOKING_REJECTED,
-    };
-    const notifType = (triggerToNotificationType[workflow.trigger] ||
-      NotificationType.WORKFLOW_TRIGGERED) as typeof NotificationType[keyof typeof NotificationType];
+      // Map the workflow trigger to the appropriate notification type for categorisation.
+      // Use a plain record with string values and cast the result to satisfy the enum-typed
+      // `type` field on `InAppNotificationCreateInput`.  The dynamic import returns
+      // `NotificationType` as a *value* so it cannot be used in a TS type-position directly.
+      const triggerToNotificationType: Record<string, string> = {
+        [WorkflowTriggerEvents.NEW_EVENT]: NotificationType.BOOKING_CREATED,
+        [WorkflowTriggerEvents.EVENT_CANCELLED]: NotificationType.BOOKING_CANCELLED,
+        [WorkflowTriggerEvents.RESCHEDULE_EVENT]: NotificationType.BOOKING_RESCHEDULED,
+        [WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE]: NotificationType.BOOKING_RESCHEDULED,
+        [WorkflowTriggerEvents.BOOKING_REQUESTED]: NotificationType.BOOKING_REQUESTED,
+        [WorkflowTriggerEvents.BOOKING_REJECTED]: NotificationType.BOOKING_REJECTED,
+      };
+      const notifType = (triggerToNotificationType[workflow.trigger] ||
+        NotificationType.WORKFLOW_TRIGGERED) as (typeof NotificationType)[keyof typeof NotificationType];
 
-    // Send notification to the organizer (workflow owner)
-    if (workflow.userId) {
-      await inAppService.createNotification({
-        userId: workflow.userId,
-        title: step.reminderBody || evt.title || "Booking notification",
-        body: step.reminderBody || `Booking: ${evt.title}`,
-        type: notifType,
-        url: evt.bookerUrl || undefined,
-        metadata: {
-          workflowId: workflow.id,
-          workflowStepId: step.id,
-          trigger: workflow.trigger,
-          bookingUid: evt.uid,
-        },
+      // Send notification to the organizer (workflow owner)
+      if (workflow.userId) {
+        await inAppService.createNotification({
+          userId: workflow.userId,
+          title: step.reminderBody || evt.title || "Booking notification",
+          body: step.reminderBody || `Booking: ${evt.title}`,
+          type: notifType,
+          url: evt.bookerUrl || undefined,
+          metadata: {
+            workflowId: workflow.id,
+            workflowStepId: step.id,
+            trigger: workflow.trigger,
+            bookingUid: evt.uid,
+          },
+        });
+      }
+    } catch (inAppError) {
+      // Log but never re-throw — IN_APP_NOTIFICATION failures must not disrupt the booking flow
+      logger.error("IN_APP_NOTIFICATION workflow step failed", {
+        workflowId: workflow.id,
+        stepId: step.id,
+        trigger: workflow.trigger,
+        error: inAppError,
       });
     }
   }
@@ -329,16 +343,28 @@ const _sendCancelledReminders = async (args: SendCancelledRemindersArgs) => {
     if (workflow.trigger !== WorkflowTriggerEvents.EVENT_CANCELLED) continue;
 
     for (const step of workflow.steps) {
-      await processWorkflowStep(
-        workflow,
-        step,
-        {
-          smsReminderNumber,
-          hideBranding,
-          calendarEvent: evt,
-        },
-        creditCheckFn
-      );
+      // NF-004 fix: Wrap each step in try-catch so that a failure in one step
+      // (particularly IN_APP_NOTIFICATION) does not abort remaining steps or
+      // break the cancellation flow that calls sendCancelledReminders.
+      try {
+        await processWorkflowStep(
+          workflow,
+          step,
+          {
+            smsReminderNumber,
+            hideBranding,
+            calendarEvent: evt,
+          },
+          creditCheckFn
+        );
+      } catch (stepError) {
+        logger.error("Failed to process workflow step during cancellation", {
+          workflowId: workflow.id,
+          stepId: step.id,
+          action: step.action,
+          error: stepError,
+        });
+      }
     }
   }
 };

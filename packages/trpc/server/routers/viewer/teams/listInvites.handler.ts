@@ -15,6 +15,9 @@ export const listInvitesHandler = async ({ ctx }: ListInvitesOptions) => {
         id: userId,
       },
       accepted: false,
+      // AG-004: Exclude declined invitations from the pending list.
+      // Declined invitations have declinedAt set and should no longer appear as pending.
+      declinedAt: null,
     },
   });
 };

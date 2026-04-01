@@ -12,7 +12,7 @@ vi.mock("../InitialConfig", () => ({
       text: { type: "text" },
       select: { type: "select" },
       multiselect: { type: "multiselect" },
-      checkbox: { type: "boolean" },
+      checkbox: { type: "checkbox" },
       url: { type: "text" },
       date: { type: "date" },
     },
@@ -190,15 +190,45 @@ describe("getQueryBuilderConfig", () => {
   // RF-003: Calendly-parity field type tests (checkbox, url, date)
   // ---------------------------------------------------------------------------
 
-  it("should generate correct config for checkbox field type", () => {
+  it("should generate correct config for checkbox field type (no options)", () => {
     const config = getQueryBuilderConfigForFormFields(mockFormWithNewFieldTypes);
 
     expect(config.fields).toHaveProperty("checkboxField");
     expect(config.fields.checkboxField).toEqual({
       label: "Checkbox Field",
-      type: "boolean",
+      type: "checkbox",
       valueSources: ["value"],
-      fieldSettings: {},
+      fieldSettings: {
+        listValues: [],
+      },
+    });
+  });
+
+  it("should generate correct config for checkbox field with options (RF-003 parity)", () => {
+    const formWithCheckboxOptions: MockedForm = {
+      fields: [
+        {
+          id: "checkboxWithOpts",
+          label: "Interest Areas",
+          type: "checkbox",
+          selectText: "Marketing\nEngineering\nDesign",
+        },
+      ],
+    };
+    const config = getQueryBuilderConfigForFormFields(formWithCheckboxOptions);
+
+    expect(config.fields).toHaveProperty("checkboxWithOpts");
+    expect(config.fields.checkboxWithOpts).toEqual({
+      label: "Interest Areas",
+      type: "checkbox",
+      valueSources: ["value"],
+      fieldSettings: {
+        listValues: [
+          { value: "Marketing", title: "Marketing" },
+          { value: "Engineering", title: "Engineering" },
+          { value: "Design", title: "Design" },
+        ],
+      },
     });
   });
 
@@ -308,12 +338,14 @@ describe("getQueryBuilderConfig", () => {
       },
     });
 
-    // New checkbox field — listValues undefined (not select/multiselect)
+    // Checkbox field — listValues populated (empty when no options, RF-003)
     expect(config.fields.checkboxField).toEqual({
       label: "Checkbox Field",
-      type: "boolean",
+      type: "checkbox",
       valueSources: ["value"],
-      fieldSettings: {},
+      fieldSettings: {
+        listValues: [],
+      },
     });
 
     // New url field — listValues undefined
@@ -355,9 +387,11 @@ describe("getQueryBuilderConfig", () => {
     expect(config.fields).toHaveProperty("innerCheckbox");
     expect(config.fields.innerCheckbox).toEqual({
       label: "Inner Checkbox",
-      type: "boolean",
+      type: "checkbox",
       valueSources: ["value"],
-      fieldSettings: {},
+      fieldSettings: {
+        listValues: [],
+      },
     });
   });
 });

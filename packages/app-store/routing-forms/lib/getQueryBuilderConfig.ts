@@ -40,17 +40,14 @@ const attributeTypesMap = new Map<keyof typeof AttributeType, RoutingFormFieldTy
  * Fallback RAQB widget type mapping for Calendly-parity field types (RF-003) that do not yet
  * have a dedicated widget registered in FormFieldsInitialConfig / AttributesInitialConfig.
  *
- * - "checkbox": Calendly "Checkboxes" question type — compared as text (equal/not_equal)
- *   until a dedicated boolean or multiselect widget is registered upstream.
  * - "url": Calendly "Website URL" question type — URL values are compared as strings.
  * - "date": Calendly "Date" question type — date values are compared as text strings
  *   until a dedicated RAQB date widget is configured.
  *
- * None of these types require `listValues` — see the IMPORTANT comment on the listValues
- * conditional for why non-select types must leave listValues undefined.
+ * Note: "checkbox" is NOT in this fallback map because it now has a proper widget registered
+ * in the RAQB config (config.ts) with type "checkbox" and uses listValues like select/multiselect.
  */
 const FIELD_TYPE_WIDGET_FALLBACK: Partial<Record<RoutingFormFieldType, string>> = {
-  [RoutingFormFieldType.CHECKBOX]: "text",
   [RoutingFormFieldType.URL]: "text",
   [RoutingFormFieldType.DATE]: "date",
 };
@@ -105,8 +102,11 @@ export function getQueryBuilderConfigForFormFields(form: Pick<RoutingForm, "fiel
         type: widgetType,
         valueSources: ["value"],
         fieldSettings: {
-          // IMPORTANT: listValues must be undefined for non-select/multiselect fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
-          listValues: fieldType === "select" || fieldType === "multiselect" ? options : undefined,
+          // IMPORTANT: listValues must be undefined for non-select/multiselect/checkbox fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
+          listValues:
+            fieldType === "select" || fieldType === "multiselect" || fieldType === "checkbox"
+              ? options
+              : undefined,
         },
       };
     } else {
@@ -197,9 +197,11 @@ export function getQueryBuilderConfigForAttributes({
         type: widgetType,
         valueSources: ["value"],
         fieldSettings: {
-          // IMPORTANT: listValues must be undefined for non-select/multiselect fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
+          // IMPORTANT: listValues must be undefined for non-select/multiselect/checkbox fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
           listValues:
-            attributeType === "select" || attributeType === "multiselect" ? attributeOptions : undefined,
+            attributeType === "select" || attributeType === "multiselect" || attributeType === "checkbox"
+              ? attributeOptions
+              : undefined,
         },
       };
     } else {

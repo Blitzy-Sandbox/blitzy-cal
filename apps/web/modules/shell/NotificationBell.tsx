@@ -151,7 +151,7 @@ export function NotificationBell(): JSX.Element {
         ref={buttonRef}
         data-testid="notification-bell"
         onClick={handleToggle}
-        className="relative rounded-full p-1 text-muted transition hover:bg-cal-muted hover:text-subtle focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+        className="relative rounded-full p-1 text-default transition hover:bg-muted hover:text-emphasis focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
         aria-label={buildAriaLabel(unreadCount)}>
         <Icon name="bell" size={16} className="h-4 w-4 text-default" />
         {/* Unread count badge */}

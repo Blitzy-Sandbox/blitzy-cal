@@ -36,15 +36,21 @@ export const ServerTeamsListing = async ({
   const autoAccept = Array.isArray(searchParams?.autoAccept)
     ? searchParams.autoAccept[0]
     : searchParams?.autoAccept;
+  const action = Array.isArray(searchParams?.action) ? searchParams.action[0] : searchParams?.action;
   const userId = session.user.id;
   let invitationAccepted = false;
+  let invitationDeclined = false;
 
   let teamNameFromInvite,
     errorMsgFromInvite = null;
 
   if (token) {
     try {
-      if (autoAccept === "true") {
+      if (action === "decline") {
+        // AG-004: Handle invitation decline via email Decline button
+        teamNameFromInvite = await TeamService.declineInvitationByToken(token, userId);
+        invitationDeclined = true;
+      } else if (autoAccept === "true") {
         await TeamService.acceptInvitationByToken(token, userId);
         invitationAccepted = true;
       } else {
@@ -74,6 +80,7 @@ export const ServerTeamsListing = async ({
     Main: (
       <TeamsListing
         invitationAccepted={invitationAccepted}
+        invitationDeclined={invitationDeclined}
         teams={teams}
         orgId={orgId ?? null}
         permissions={{

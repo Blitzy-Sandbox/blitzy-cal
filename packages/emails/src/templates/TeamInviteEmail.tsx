@@ -12,6 +12,8 @@ type TeamInvite = {
   to: string;
   teamName: string;
   joinLink: string;
+  /** Optional link to decline the invitation (AG-004) */
+  declineLink?: string;
   isCalcomMember: boolean;
   isAutoJoin: boolean;
   isOrg: boolean;
@@ -58,7 +60,7 @@ export const TeamInviteEmail = (
         }}>
         <>{content}</>
       </p>
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
         <CallToAction
           label={props.language(
             props.isCalcomMember ? (props.isAutoJoin ? "login" : "accept_invite") : "join_now"
@@ -66,6 +68,13 @@ export const TeamInviteEmail = (
           href={props.joinLink}
           endIconName="linkIcon"
         />
+        {props.declineLink && !props.isAutoJoin && (
+          <CallToAction
+            label={props.language("decline")}
+            href={props.declineLink}
+            endIconName="linkIcon"
+          />
+        )}
       </div>
       <p
         style={{

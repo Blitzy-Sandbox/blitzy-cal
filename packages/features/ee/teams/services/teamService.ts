@@ -367,6 +367,62 @@ export class TeamService {
     });
   }
 
+  /**
+   * Decline a team invitation using the verification token from the email (AG-004).
+   * Resolves the token → user/team pair → calls rejectTeamInvitation to set declinedAt.
+   *
+   * @param declineToken - The verification token from the decline link in the invitation email
+   * @param userId - The currently authenticated user's ID
+   * @returns The team name for display in the confirmation UI
+   * @throws ErrorWithCode if token not found, expired, or not associated with a team
+   */
+  static async declineInvitationByToken(declineToken: string, userId: number): Promise<string> {
+    const verificationToken = await prisma.verificationToken.findFirst({
+      where: {
+        token: declineToken,
+        expires: { gte: new Date() },
+      },
+      select: {
+        identifier: true,
+        teamId: true,
+        team: { select: { name: true } },
+      },
+    });
+
+    if (!verificationToken) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "Invite not found");
+    }
+
+    if (!verificationToken.teamId || !verificationToken.team) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "Invite token is not associated with any team");
+    }
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, username: true },
+    });
+
+    if (!currentUser) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "User not found");
+    }
+
+    if (
+      currentUser.email !== verificationToken.identifier &&
+      currentUser.username !== verificationToken.identifier
+    ) {
+      throw new ErrorWithCode(ErrorCode.Forbidden, "This invitation is not for your account");
+    }
+
+    // Mark the membership as declined (sets declinedAt) and clean up verification tokens
+    const { rejectTeamInvitation } = await import("../lib/inviteMemberUtils");
+    await rejectTeamInvitation({
+      userId,
+      teamId: verificationToken.teamId,
+    });
+
+    return verificationToken.team.name;
+  }
+
   static async publish(teamId: number) {
     const teamBillingServiceFactory = getTeamBillingServiceFactory();
     const teamBillingService = await teamBillingServiceFactory.findAndInit(teamId);

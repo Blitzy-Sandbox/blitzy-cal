@@ -114,7 +114,7 @@ export function SideBar({ bannersHeight, user }: SideBarProps) {
                 </span>
               </div>
             )}
-            <div className="flex w-full justify-end rtl:space-x-reverse">
+            <div className="flex w-full items-center justify-end gap-2 rtl:space-x-reverse">
               <button
                 color="minimal"
                 onClick={() => window.history.back()}

@@ -145,13 +145,13 @@ export function NotificationBell(): JSX.Element {
   }, [markAllAsReadMutation]);
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center">
       {/* Bell button */}
       <button
         ref={buttonRef}
         data-testid="notification-bell"
         onClick={handleToggle}
-        className="relative rounded-full p-1 text-default transition hover:bg-muted hover:text-emphasis focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+        className="hover:bg-muted hover:text-emphasis text-default relative flex h-8 w-8 items-center justify-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
         aria-label={buildAriaLabel(unreadCount)}>
         <Icon name="bell" size={16} className="h-4 w-4 text-default" />
         {/* Unread count badge */}

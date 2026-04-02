@@ -23,8 +23,17 @@ vi.mock("@calcom/lib/logger", () => ({
   },
 }));
 
+// Configurable mock for Prisma user lookup (NF-004 organizer resolution)
+let mockPrismaUserFindFirst: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(null);
+
 vi.mock("@calcom/prisma", () => ({
-  prisma: {},
+  prisma: {
+    user: {
+      get findFirst() {
+        return mockPrismaUserFindFirst;
+      },
+    },
+  },
 }));
 
 vi.mock("@calcom/prisma/enums", () => ({
@@ -185,6 +194,8 @@ describe("IN_APP_NOTIFICATION error isolation (NF-004)", () => {
     createNotificationError = null;
     loggedErrors.length = 0;
     noopCreditCheck.mockClear();
+    // Default: organizer email lookup returns null (not found)
+    mockPrismaUserFindFirst = vi.fn().mockResolvedValue(null);
   });
 
   it("should catch and log errors from createNotification without throwing", async () => {
@@ -318,5 +329,79 @@ describe("IN_APP_NOTIFICATION error isolation (NF-004)", () => {
 
     expect(createNotificationCalls.length).toBe(1);
     expect((createNotificationCalls[0] as any).type).toBe("BOOKING_CANCELLED");
+  });
+
+  // --- NF-004 organizer resolution tests ---
+
+  it("should also notify the booking organizer when their userId differs from workflow.userId", async () => {
+    // Organizer email resolves to a DIFFERENT user than the workflow owner
+    mockPrismaUserFindFirst = vi.fn().mockResolvedValue({ id: 200 });
+
+    await scheduleWorkflowReminders({
+      workflows: [makeWorkflow({ userId: 100 })],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    // Should have 2 notifications: one for workflow owner (100), one for organizer (200)
+    expect(createNotificationCalls.length).toBe(2);
+    const userIds = createNotificationCalls.map((c: any) => c.userId);
+    expect(userIds).toContain(100);
+    expect(userIds).toContain(200);
+  });
+
+  it("should deduplicate when organizer userId matches workflow.userId", async () => {
+    // Organizer resolves to the SAME user as the workflow owner
+    mockPrismaUserFindFirst = vi.fn().mockResolvedValue({ id: 100 });
+
+    await scheduleWorkflowReminders({
+      workflows: [makeWorkflow({ userId: 100 })],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    // Should have exactly 1 notification (deduplicated via Set)
+    expect(createNotificationCalls.length).toBe(1);
+    expect((createNotificationCalls[0] as any).userId).toBe(100);
+  });
+
+  it("should notify the organizer when workflow.userId is null (team workflow)", async () => {
+    // Team workflow: userId is null, only organizer should be notified
+    mockPrismaUserFindFirst = vi.fn().mockResolvedValue({ id: 300 });
+
+    await scheduleWorkflowReminders({
+      workflows: [makeWorkflow({ userId: null, teamId: 5 })],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    // Should have 1 notification for the organizer
+    expect(createNotificationCalls.length).toBe(1);
+    expect((createNotificationCalls[0] as any).userId).toBe(300);
+  });
+
+  it("should gracefully handle organizer lookup failure and still notify workflow owner", async () => {
+    // Organizer lookup throws an error
+    mockPrismaUserFindFirst = vi.fn().mockRejectedValue(new Error("DB timeout"));
+
+    await scheduleWorkflowReminders({
+      workflows: [makeWorkflow({ userId: 100 })],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    // Should still notify workflow owner despite organizer lookup failure
+    expect(createNotificationCalls.length).toBe(1);
+    expect((createNotificationCalls[0] as any).userId).toBe(100);
+
+    // No fatal error logged (only a warn)
+    const fatalErrors = loggedErrors.filter(
+      (e) => e.message === "IN_APP_NOTIFICATION workflow step failed"
+    );
+    expect(fatalErrors.length).toBe(0);
   });
 });

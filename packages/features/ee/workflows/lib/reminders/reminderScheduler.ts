@@ -235,20 +235,55 @@ const processWorkflowStep = async (
       const notifType = (triggerToNotificationType[workflow.trigger] ||
         NotificationType.WORKFLOW_TRIGGERED) as (typeof NotificationType)[keyof typeof NotificationType];
 
-      // Send notification to the organizer (workflow owner)
+      // NF-004 fix: Collect all user IDs who should receive the notification.
+      // For personal workflows, `workflow.userId` is the organizer — one notification.
+      // For team workflows, `workflow.userId` may be the workflow creator (admin), not
+      // the booking organizer. We also resolve the organizer by email to ensure the
+      // person who actually received the booking always gets an in-app notification.
+      const userIdsToNotify = new Set<number>();
+
       if (workflow.userId) {
+        userIdsToNotify.add(workflow.userId);
+      }
+
+      // Also resolve the booking organizer's userId from their email address so that
+      // team members who are organizers (but not workflow owners) see notifications.
+      if (evt.organizer?.email) {
+        try {
+          const { prisma: prismaCli } = await import("@calcom/prisma");
+          const organizerUser = await prismaCli.user.findFirst({
+            where: { email: evt.organizer.email },
+            select: { id: true },
+          });
+          if (organizerUser) {
+            userIdsToNotify.add(organizerUser.id);
+          }
+        } catch (lookupError) {
+          logger.warn("Failed to resolve organizer userId for in-app notification", {
+            email: evt.organizer.email,
+            error: lookupError,
+          });
+        }
+      }
+
+      const notificationPayload = {
+        title: step.reminderBody || evt.title || "Booking notification",
+        body: step.reminderBody || `Booking: ${evt.title}`,
+        type: notifType,
+        url: evt.bookerUrl || undefined,
+        metadata: {
+          workflowId: workflow.id,
+          workflowStepId: step.id,
+          trigger: workflow.trigger,
+          bookingUid: evt.uid,
+        },
+      };
+
+      // Send notification to all collected user IDs (deduplicated via Set)
+      for (const userId of userIdsToNotify) {
         await inAppService.createNotification({
-          userId: workflow.userId,
-          title: step.reminderBody || evt.title || "Booking notification",
-          body: step.reminderBody || `Booking: ${evt.title}`,
-          type: notifType,
-          url: evt.bookerUrl || undefined,
-          metadata: {
-            workflowId: workflow.id,
-            workflowStepId: step.id,
-            trigger: workflow.trigger,
-            bookingUid: evt.uid,
-          },
+          userId,
+          ...notificationPayload,
         });
       }
     } catch (inAppError) {

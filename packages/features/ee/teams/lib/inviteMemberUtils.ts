@@ -218,7 +218,11 @@ export const sendExistingUserTeamInviteEmails = async ({
 
     // inform user of membership by email
     if (currentUserTeamName) {
-      const inviteTeamOptions = {
+      const inviteTeamOptions: {
+        joinLink: string;
+        declineLink?: string;
+        isCalcomMember: boolean;
+      } = {
         joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/settings/teams`,
         isCalcomMember: true,
       };
@@ -244,6 +248,8 @@ export const sendExistingUserTeamInviteEmails = async ({
           verificationToken = await createVerificationToken(user.email, teamId);
         }
         inviteTeamOptions.joinLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&autoAccept=true`;
+        // AG-004: Build decline link from the same verification token
+        inviteTeamOptions.declineLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&action=decline`;
       }
 
       return sendTeamInviteEmail({
@@ -552,8 +558,10 @@ export async function sendInvitationReminder({
     verificationToken = await createVerificationToken(email, teamId);
   }
 
-  // Construct the join link (same pattern as sendExistingUserTeamInviteEmails)
+  // Construct the join and decline links (same pattern as sendExistingUserTeamInviteEmails)
   const joinLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&autoAccept=true`;
+  // AG-004: Build decline link from the same verification token
+  const declineLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&action=decline`;
 
   try {
     await sendTeamInviteEmail({
@@ -562,6 +570,7 @@ export async function sendInvitationReminder({
       to: email,
       teamName,
       joinLink,
+      declineLink,
       isCalcomMember: true,
       isOrg,
       parentTeamName: parentTeamName ?? undefined,

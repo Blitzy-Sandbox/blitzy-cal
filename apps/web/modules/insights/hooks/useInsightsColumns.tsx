@@ -155,12 +155,16 @@ export const useInsightsColumns = ({
           RoutingFormFieldType.EMAIL,
           RoutingFormFieldType.PHONE,
           RoutingFormFieldType.TEXTAREA,
+          RoutingFormFieldType.URL,
+          RoutingFormFieldType.DATE,
         ].includes(fieldHeader.type as RoutingFormFieldType);
 
         const isNumber = fieldHeader.type === RoutingFormFieldType.NUMBER;
 
         const isSingleSelect = fieldHeader.type === RoutingFormFieldType.SINGLE_SELECT;
-        const isMultiSelect = fieldHeader.type === RoutingFormFieldType.MULTI_SELECT;
+        const isMultiSelect =
+          fieldHeader.type === RoutingFormFieldType.MULTI_SELECT ||
+          fieldHeader.type === RoutingFormFieldType.CHECKBOX;
 
         const filterType = isSingleSelect
           ? ColumnFilterType.SINGLE_SELECT

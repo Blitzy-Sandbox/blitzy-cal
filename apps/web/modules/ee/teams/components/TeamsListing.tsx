@@ -28,6 +28,8 @@ import TeamList from "./TeamList";
 
 type TeamsListingProps = {
   invitationAccepted: boolean;
+  /** AG-004: True when the user arrived via the Decline link in the invitation email */
+  invitationDeclined?: boolean;
   orgId: number | null;
   permissions: {
     canCreateTeam: boolean;
@@ -39,6 +41,7 @@ type TeamsListingProps = {
 
 export function TeamsListing({
   invitationAccepted,
+  invitationDeclined,
   orgId,
   permissions,
   teams: data,
@@ -111,6 +114,11 @@ export function TeamsListing({
 
     if (invitationAccepted) {
       showToast(t("successfully_joined"), "success");
+      return;
+    }
+
+    if (invitationDeclined && teamNameFromInvite) {
+      showToast(t("invitation_declined", { teamName: teamNameFromInvite }), "success");
       return;
     }
 

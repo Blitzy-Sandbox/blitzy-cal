@@ -48,4 +48,5 @@ export const ENDPOINTS = [
   "phoneNumber",
   "pbac",
   "attributeSync",
+  "inAppNotifications",
 ] as const;

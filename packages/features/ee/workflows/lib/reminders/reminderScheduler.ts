@@ -270,7 +270,7 @@ const processWorkflowStep = async (
         title: step.reminderBody || evt.title || "Booking notification",
         body: step.reminderBody || `Booking: ${evt.title}`,
         type: notifType,
-        url: evt.bookerUrl || undefined,
+        url: evt.uid ? `/booking/${evt.uid}` : "/bookings",
         metadata: {
           workflowId: workflow.id,
           workflowStepId: step.id,

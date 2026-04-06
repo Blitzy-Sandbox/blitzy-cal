@@ -40,13 +40,21 @@ export const resendInvitationHandler = async ({ ctx, input }: InviteMemberOption
     console.error("[resendInvitationHandler] Error updating verification token: ", error);
   }
 
-  const inviteTeamOptions = {
+  const inviteTeamOptions: {
+    joinLink: string;
+    declineLink?: string;
+    isCalcomMember: boolean;
+    isAutoJoin: boolean;
+  } = {
     joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/settings/teams`,
     isCalcomMember: true,
     isAutoJoin: false,
   };
 
   if (verificationToken) {
+    // AG-004: Always set decline link via public endpoint (no login required)
+    inviteTeamOptions.declineLink = `${WEBAPP_URL}/api/auth/teams/decline?token=${verificationToken.token}`;
+
     try {
       const user = await new UserRepository(prisma).findByEmail({ email: input.email });
 

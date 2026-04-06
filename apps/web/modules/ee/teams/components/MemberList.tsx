@@ -378,12 +378,23 @@ function MemberListContent(props: Props) {
         header: "Role",
         size: 100,
         cell: ({ row, table }) => {
-          const { role, accepted, customRole } = row.original;
+          const { role, accepted, customRole, declinedAt } = row.original;
           const roleName = customRole?.name || role;
           const roleIdentifier = customRole?.id || role;
           return (
             <div className="flex h-full flex-wrap items-center gap-2">
-              {!accepted && (
+              {!accepted && declinedAt && (
+                <Badge
+                  data-testid="member-declined"
+                  variant="red"
+                  className="text-xs"
+                  onClick={() => {
+                    table.getColumn("role")?.setFilterValue(["PENDING"]);
+                  }}>
+                  Declined
+                </Badge>
+              )}
+              {!accepted && !declinedAt && (
                 <Badge
                   data-testid="member-pending"
                   variant="orange"

@@ -2482,6 +2482,7 @@
   "organizer_timezone": "Organizer timezone",
   "email_user_cta": "View invitation",
   "accept_invite": "Accept invite",
+  "decline": "Decline",
   "join_now": "Join now",
   "successfully_joined": "Successfully joined",
   "email_no_user_invite_heading_subteam": "You've been invited to join a team of {{parentTeamName}} organization",

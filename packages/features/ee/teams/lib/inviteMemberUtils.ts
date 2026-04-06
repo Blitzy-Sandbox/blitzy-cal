@@ -236,6 +236,8 @@ export const sendExistingUserTeamInviteEmails = async ({
         const gettingStartedPath = await OnboardingPathService.getGettingStartedPathWhenInvited();
         inviteTeamOptions.joinLink = `${WEBAPP_URL}/signup?token=${verificationToken.token}&callbackUrl=${gettingStartedPath}`;
         inviteTeamOptions.isCalcomMember = false;
+        // AG-004: Build decline link for not-onboarded users via public endpoint (no login required)
+        inviteTeamOptions.declineLink = `${WEBAPP_URL}/api/auth/teams/decline?token=${verificationToken.token}`;
       } else if (!isAutoJoin) {
         let verificationToken = await prisma.verificationToken.findFirst({
           where: {
@@ -248,8 +250,8 @@ export const sendExistingUserTeamInviteEmails = async ({
           verificationToken = await createVerificationToken(user.email, teamId);
         }
         inviteTeamOptions.joinLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&autoAccept=true`;
-        // AG-004: Build decline link from the same verification token
-        inviteTeamOptions.declineLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&action=decline`;
+        // AG-004: Build decline link via public endpoint (no login required)
+        inviteTeamOptions.declineLink = `${WEBAPP_URL}/api/auth/teams/decline?token=${verificationToken.token}`;
       }
 
       return sendTeamInviteEmail({
@@ -560,8 +562,8 @@ export async function sendInvitationReminder({
 
   // Construct the join and decline links (same pattern as sendExistingUserTeamInviteEmails)
   const joinLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&autoAccept=true`;
-  // AG-004: Build decline link from the same verification token
-  const declineLink = `${WEBAPP_URL}/teams?token=${verificationToken.token}&action=decline`;
+  // AG-004: Build decline link via public endpoint (no login required)
+  const declineLink = `${WEBAPP_URL}/api/auth/teams/decline?token=${verificationToken.token}`;
 
   try {
     await sendTeamInviteEmail({

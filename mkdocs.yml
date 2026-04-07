@@ -1,5 +1,4 @@
 site_name: 'blitzy-cal'
-use_directory_urls: false
 plugins:
   - techdocs-core
   - mermaid2

@@ -86,7 +86,7 @@ export function SideBar({ bannersHeight, user }: SideBarProps) {
           !isPlatformPages && "max-h-screen"
         )}>
         <div className="flex h-full flex-col justify-between py-3 lg:pt-4">
-          <header className="todesktop:-mt-3 todesktop:flex-col-reverse todesktop:[-webkit-app-region:drag] items-center justify-between md:hidden lg:flex">
+          <header className="todesktop:-mt-3 todesktop:flex-col-reverse todesktop:[-webkit-app-region:drag] md:hidden lg:flex lg:flex-col">
             <div className="flex w-full items-center justify-between rtl:space-x-reverse">
               <NotificationBell />
               <div className="flex items-center gap-2">

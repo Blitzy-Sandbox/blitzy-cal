@@ -266,9 +266,31 @@ const processWorkflowStep = async (
         }
       }
 
+      // NF-004 fix: Compose human-readable title and body from booking event data
+      // instead of using step.reminderBody which contains raw email template HTML
+      // with unrendered placeholder variables ({ORGANIZER}, {EVENT_NAME}, etc.).
+      const triggerToLabel: Record<string, string> = {
+        [WorkflowTriggerEvents.NEW_EVENT]: "New booking",
+        [WorkflowTriggerEvents.EVENT_CANCELLED]: "Booking cancelled",
+        [WorkflowTriggerEvents.RESCHEDULE_EVENT]: "Booking rescheduled",
+        [WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE]: "Booking rescheduled",
+        [WorkflowTriggerEvents.BOOKING_REQUESTED]: "Booking requested",
+        [WorkflowTriggerEvents.BOOKING_REJECTED]: "Booking rejected",
+      };
+      const notifTitle = triggerToLabel[workflow.trigger] || "Booking notification";
+
+      // Build a clean body: "{event title} with {first attendee name}" or just "{event title}"
+      const firstAttendeeName =
+        evt.attendees && evt.attendees.length > 0
+          ? evt.attendees[0].name || evt.attendees[0].email
+          : undefined;
+      const notifBody = firstAttendeeName
+        ? `${evt.title || "Booking"} with ${firstAttendeeName}`
+        : evt.title || "Booking";
+
       const notificationPayload = {
-        title: step.reminderBody || evt.title || "Booking notification",
-        body: step.reminderBody || `Booking: ${evt.title}`,
+        title: notifTitle,
+        body: notifBody,
         type: notifType,
         url: evt.uid ? `/booking/${evt.uid}` : "/bookings",
         metadata: {
@@ -280,7 +302,8 @@ const processWorkflowStep = async (
       };
 
       // Send notification to all collected user IDs (deduplicated via Set)
-      for (const userId of userIdsToNotify) {
+      // Use Array.from() to avoid TS2802 downlevelIteration requirement
+      for (const userId of Array.from(userIdsToNotify)) {
         await inAppService.createNotification({
           userId,
           ...notificationPayload,

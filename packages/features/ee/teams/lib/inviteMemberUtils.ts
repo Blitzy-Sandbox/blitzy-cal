@@ -143,6 +143,9 @@ export async function sendSignupToOrganizationEmail({
       to: usernameOrEmail,
       teamName: team.name,
       joinLink: `${WEBAPP_URL}/signup?token=${verificationToken.token}&callbackUrl=${gettingStartedPath}`,
+      // AG-004: Include decline link for new-user signup invitations so the Decline button
+      // renders in the email template — matches the existing-user paths (lines 240, 254).
+      declineLink: `${WEBAPP_URL}/api/auth/teams/decline?token=${verificationToken.token}`,
       isCalcomMember: false,
       isOrg: isOrg,
       parentTeamName: team?.parent?.name,

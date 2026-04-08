@@ -383,6 +383,117 @@ describe("IN_APP_NOTIFICATION error isolation (NF-004)", () => {
     expect((createNotificationCalls[0] as any).userId).toBe(300);
   });
 
+  // --- NF-004 Gap 2: Notification payload rendering tests ---
+
+  it("should use human-readable trigger label as notification title instead of step.reminderBody", async () => {
+    // The workflow step has a raw email template as reminderBody — this should NOT appear in the title
+    const workflow = makeWorkflow({
+      trigger: "NEW_EVENT",
+    });
+    (workflow.steps[0] as any).reminderBody =
+      "Hi {ORGANIZER},This is a reminder about your upcoming event.Event: {EVENT_NAME}";
+
+    await scheduleWorkflowReminders({
+      workflows: [workflow],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    expect(createNotificationCalls.length).toBe(1);
+    const callArg = createNotificationCalls[0] as Record<string, unknown>;
+
+    // Title should be the human-readable trigger label, NOT step.reminderBody
+    expect(callArg.title).toBe("New booking");
+    // Body should be composed from evt data, NOT step.reminderBody
+    expect(callArg.body).toBe("Test Booking with Att");
+    // Ensure no placeholder variables leaked into the payload
+    expect(String(callArg.title)).not.toContain("{ORGANIZER}");
+    expect(String(callArg.title)).not.toContain("{EVENT_NAME}");
+    expect(String(callArg.body)).not.toContain("{ORGANIZER}");
+    expect(String(callArg.body)).not.toContain("{EVENT_NAME}");
+  });
+
+  it("should use 'Booking cancelled' title for EVENT_CANCELLED trigger", async () => {
+    const cancelWorkflow = makeWorkflow({ trigger: "EVENT_CANCELLED" });
+
+    await sendCancelledReminders({
+      workflows: [cancelWorkflow],
+      smsReminderNumber: null,
+      evt: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as SendCancelledRemindersArgs);
+
+    expect(createNotificationCalls.length).toBe(1);
+    const callArg = createNotificationCalls[0] as Record<string, unknown>;
+    expect(callArg.title).toBe("Booking cancelled");
+    expect(callArg.body).toBe("Test Booking with Att");
+  });
+
+  it("should fall back to event title only when no attendees are present", async () => {
+    const evtNoAttendees = {
+      ...makeCalendarEvent(),
+      attendees: [],
+    };
+
+    await scheduleWorkflowReminders({
+      workflows: [makeWorkflow({ trigger: "NEW_EVENT" })],
+      smsReminderNumber: null,
+      calendarEvent: evtNoAttendees as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    expect(createNotificationCalls.length).toBe(1);
+    const callArg = createNotificationCalls[0] as Record<string, unknown>;
+    expect(callArg.title).toBe("New booking");
+    // No attendees, so body should be just the event title
+    expect(callArg.body).toBe("Test Booking");
+  });
+
+  it("should produce 'Booking notification' title for unmapped trigger events", async () => {
+    const workflow = makeWorkflow({ trigger: "BEFORE_EVENT" });
+
+    // BEFORE_EVENT workflows with IN_APP_NOTIFICATION go through processWorkflowStep
+    // since the scheduleLazyEmailWorkflow path only handles isEmailAction steps
+    await scheduleWorkflowReminders({
+      workflows: [workflow],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    expect(createNotificationCalls.length).toBe(1);
+    const callArg = createNotificationCalls[0] as Record<string, unknown>;
+    // BEFORE_EVENT is not in the triggerToLabel map, so it falls back
+    expect(callArg.title).toBe("Booking notification");
+  });
+
+  it("should never include HTML entities or tags in notification payload", async () => {
+    const workflow = makeWorkflow({ trigger: "RESCHEDULE_EVENT" });
+    // Simulate a reminderBody with HTML entities and tags
+    (workflow.steps[0] as any).reminderBody =
+      "<p>Hi {ORGANIZER},</p><strong>Date &amp; time:</strong> {EVENT_DATE_ddd, MMM D, YYYY h:mma}";
+
+    await scheduleWorkflowReminders({
+      workflows: [workflow],
+      smsReminderNumber: null,
+      calendarEvent: makeCalendarEvent() as any,
+      creditCheckFn: noopCreditCheck,
+    } as ScheduleWorkflowRemindersArgs);
+
+    expect(createNotificationCalls.length).toBe(1);
+    const callArg = createNotificationCalls[0] as Record<string, unknown>;
+    // Title and body should not contain any HTML artifacts
+    expect(String(callArg.title)).not.toContain("&amp;");
+    expect(String(callArg.title)).not.toContain("<p>");
+    expect(String(callArg.title)).not.toContain("<strong>");
+    expect(String(callArg.body)).not.toContain("&amp;");
+    expect(String(callArg.body)).not.toContain("<p>");
+    expect(String(callArg.body)).not.toContain("{EVENT_DATE");
+    expect(callArg.title).toBe("Booking rescheduled");
+    expect(callArg.body).toBe("Test Booking with Att");
+  });
+
   it("should gracefully handle organizer lookup failure and still notify workflow owner", async () => {
     // Organizer lookup throws an error
     mockPrismaUserFindFirst = vi.fn().mockRejectedValue(new Error("DB timeout"));

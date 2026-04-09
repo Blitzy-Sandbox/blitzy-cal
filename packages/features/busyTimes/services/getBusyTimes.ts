@@ -188,6 +188,46 @@ export class BusyTimesService {
       });
     }
 
+    // For seated team events, build cross-user seat counts to ensure accurate
+    // availability across all team members. Without this query, User B cannot see
+    // User A's bookings for the same event type and would incorrectly show
+    // fully-booked slots as available.
+    //
+    // For each time slot, the map stores the total number of booking rows across
+    // ALL users. Since each attendee creates a separate Booking row for seated events,
+    // the row count per slot equals the number of consumed seats.
+    let crossUserSeatMap: Map<string, number> | null = null;
+    let eventTypeSeatsPerTimeSlot: number | null = null;
+
+    if (seatedEvent && eventTypeId) {
+      const eventTypeData = await prisma.eventType.findUnique({
+        where: { id: eventTypeId },
+        select: { seatsPerTimeSlot: true },
+      });
+      eventTypeSeatsPerTimeSlot = eventTypeData?.seatsPerTimeSlot ?? null;
+
+      if (eventTypeSeatsPerTimeSlot) {
+        const allEventBookings = await prisma.booking.findMany({
+          where: {
+            eventTypeId,
+            status: BookingStatus.ACCEPTED,
+            startTime: { gte: startTimeAdjustedWithMaxBuffer },
+            endTime: { lte: endTimeAdjustedWithMaxBuffer },
+          },
+          select: {
+            startTime: true,
+            endTime: true,
+          },
+        });
+
+        crossUserSeatMap = new Map();
+        for (const booking of allEventBookings) {
+          const key = `${dayjs(booking.startTime).utc().format()}<>${dayjs(booking.endTime).utc().format()}`;
+          crossUserSeatMap.set(key, (crossUserSeatMap.get(key) || 0) + 1);
+        }
+      }
+    }
+
     const bookingSeatCountMap: { [x: string]: number } = {};
     const busyTimes = bookings.reduce((aggregate: EventBusyDetails[], booking) => {
       const { id, startTime, endTime, eventType, title, ...rest } = booking;
@@ -199,10 +239,15 @@ export class BusyTimesService {
         const bookedAt = `${dayjs(startTime).utc().format()}<>${dayjs(endTime).utc().format()}`;
         bookingSeatCountMap[bookedAt] = bookingSeatCountMap[bookedAt] || 0;
         bookingSeatCountMap[bookedAt]++;
+
+        // Use cross-user seat count for team events to determine actual seat fullness.
+        // Falls back to per-user count for solo events or when cross-user data is unavailable.
+        const effectiveSeatCount = crossUserSeatMap?.get(bookedAt) ?? bookingSeatCountMap[bookedAt];
+
         // Seat references on the current event are non-blocking until the event is fully booked.
         if (
-          // there are still seats available.
-          bookingSeatCountMap[bookedAt] < (eventType?.seatsPerTimeSlot || 1) &&
+          // there are still seats available (using team-wide seat count when available).
+          effectiveSeatCount < (eventType?.seatsPerTimeSlot || 1) &&
           // and this is the seated event, other event types should be blocked.
           eventTypeId === eventType?.id
         ) {
@@ -237,6 +282,37 @@ export class BusyTimesService {
       });
       return aggregate;
     }, []);
+
+    // For team seated events, block fully-booked cross-user time slots that aren't
+    // in the current user's booking set. This ensures that when all seats are consumed
+    // by other team members' bookings, the current user also sees the slot as unavailable.
+    if (crossUserSeatMap && eventTypeSeatsPerTimeSlot) {
+      // Collect slot keys the user already owns (processed in the reduce above)
+      const userSlotKeys = new Set<string>();
+      for (const booking of bookings) {
+        if (booking._count?.seatsReferences) {
+          const key = `${dayjs(booking.startTime).utc().format()}<>${dayjs(booking.endTime).utc().format()}`;
+          userSlotKeys.add(key);
+        }
+      }
+
+      Array.from(crossUserSeatMap.entries()).forEach(([bookedAt, totalSeats]) => {
+        // Skip slots already handled in the user's reduce loop
+        if (userSlotKeys.has(bookedAt)) return;
+
+        if (totalSeats >= eventTypeSeatsPerTimeSlot) {
+          // Slot is fully booked by other team members — mark as busy for this user
+          const separatorIdx = bookedAt.indexOf("<>");
+          const startStr = bookedAt.slice(0, separatorIdx);
+          const endStr = bookedAt.slice(separatorIdx + 2);
+          busyTimes.push({
+            start: new Date(startStr),
+            end: new Date(endStr),
+            source: `eventType-${eventTypeId}-seated-full`,
+          });
+        }
+      });
+    }
 
     logger.debug(
       `Busy Time from Cal Bookings ${JSON.stringify({
@@ -445,7 +521,50 @@ export class BusyTimesService {
       rescheduleUid,
     });
 
-    for (const booking of bookings) {
+    // For seated events, only fully-booked time slots should count toward booking/duration
+    // limits. A partially-booked slot (with remaining seats) must NOT be counted as a
+    // booking for limit purposes.
+    //
+    // Example with seatsPerTimeSlot=3 and PER_DAY=1:
+    //   - 1 of 3 seats booked → 0 full slots → limit NOT reached → remaining seats bookable
+    //   - 3 of 3 seats booked → 1 full slot  → limit reached → day is blocked
+    //
+    // Without this deduplication, each individual seat booking row would count as a
+    // separate booking against the limit, incorrectly blocking remaining seats.
+    const eventTypeForSeats = await prisma.eventType.findUnique({
+      where: { id: eventTypeId },
+      select: { seatsPerTimeSlot: true },
+    });
+
+    let effectiveBookings = bookings;
+    if (eventTypeForSeats?.seatsPerTimeSlot) {
+      const seatsPerTimeSlot = eventTypeForSeats.seatsPerTimeSlot;
+
+      // Group booking rows by time slot key (startTime<>endTime).
+      // For seated events, each attendee creates a separate Booking row with one
+      // BookingSeat reference, so the number of rows per slot equals seats consumed.
+      const slotGroups = new Map<string, typeof bookings>();
+      for (const booking of bookings) {
+        const key = `${booking.startTime.toISOString()}<>${booking.endTime.toISOString()}`;
+        const group = slotGroups.get(key);
+        if (group) {
+          group.push(booking);
+        } else {
+          slotGroups.set(key, [booking]);
+        }
+      }
+
+      // Include ONE representative booking per fully-booked time slot.
+      // Partially-booked slots are excluded from limit counting entirely.
+      effectiveBookings = [];
+      Array.from(slotGroups.values()).forEach((group) => {
+        if (group.length >= seatsPerTimeSlot) {
+          effectiveBookings.push(group[0]);
+        }
+      });
+    }
+
+    for (const booking of effectiveBookings) {
       busyTimes.push({
         start: new Date(booking.startTime),
         end: new Date(booking.endTime),

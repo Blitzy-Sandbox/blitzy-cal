@@ -1,5 +1,5 @@
 import type { User } from "next-auth";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeAll, beforeEach } from "vitest";
 
 import { IdentityProvider, UserPermissionRole } from "@calcom/prisma/enums";
 
@@ -101,16 +101,20 @@ describe("CredentialsProvider authorize", () => {
   let authorizeCredentials: typeof import("./next-auth-options").authorizeCredentials;
   let verifyPassword: any;
 
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    mockFindByEmailAndIncludeProfilesAndPassword.mockReset();
-
+  // Load heavy modules once to avoid repeated ~3.5s import overhead per test.
+  // Module-level vi.mock() factories (hoisted above) are registered before this runs,
+  // so all dependencies resolve to their mocked implementations.
+  beforeAll(async () => {
     const verifyPasswordModule = await import("./verifyPassword");
     verifyPassword = verifyPasswordModule.verifyPassword;
 
-    // Import the exported authorize function directly
     const authModule = await import("./next-auth-options");
     authorizeCredentials = authModule.authorizeCredentials;
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFindByEmailAndIncludeProfilesAndPassword.mockReset();
   });
 
   const createMockUser = (overrides: Partial<any> = {}) => ({

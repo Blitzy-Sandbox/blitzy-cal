@@ -35,11 +35,120 @@ Inline embeds are created immediately when `Cal.inline()` is called. They have a
 
 See [inline-embed-lifecycle.mermaid](./inline-embed-lifecycle.mermaid) for the complete sequence diagram.
 
+### Calendly Parity: `initInlineWidget()` Alignment (EM-001)
+
+Cal.com's `Cal("inline", { ... })` method provides behavioral parity with Calendly's `Calendly.initInlineWidget()`. Both embed the scheduling page directly within the host page flow using an iframe, but Cal.com additionally supports preloading, command queuing, namespace isolation, and a structured `postMessage` handshake.
+
+**Configuration via the `ui` Command**
+
+Inline embeds accept customization through the `ui` command, which is sent to the iframe via `postMessage`. The following configuration keys are supported for styling parity with Calendly's inline widget customization options:
+
+| Config Key | Type | Description |
+|------------|------|-------------|
+| `styles.body.background` | `string` | Background color of the embed body. Corresponds to Calendly's background color customization. |
+| `styles.eventTypeListItem.color` | `string` | Text color for event type list items. Corresponds to Calendly's text color option. |
+| `styles.eventTypeListItem.backgroundColor` | `string` | Background color for event type list items. |
+| `styles.enabledDateButton.color` | `string` | Text color for enabled (selectable) date buttons. |
+| `styles.enabledDateButton.backgroundColor` | `string` | Background color for enabled date buttons. |
+| `styles.availabilityDatePicker.backgroundColor` | `string` | Background color for the date picker area. |
+| `hideEventTypeDetails` | `boolean` | When `true`, hides the event type avatar, name, location, and description — equivalent to Calendly's "hide event type details" option. |
+| `theme` | `"dark" \| "light" \| "auto"` | Color theme. `"auto"` follows the parent page's `color-scheme` CSS property. |
+| `cssVarsPerTheme` | `Record<Theme, Record<string, string>>` | Per-theme CSS custom property overrides for granular branding control. |
+
+Example with Calendly-equivalent customization:
+
+```javascript
+Cal("inline", {
+  elementOrSelector: "#my-cal-inline",
+  calLink: "organization/event-type",
+  config: { theme: "light" }
+});
+Cal("ui", {
+  hideEventTypeDetails: true,
+  styles: {
+    body: { background: "#ffffff" },
+    eventTypeListItem: { color: "#333333", backgroundColor: "#f5f5f5" },
+    enabledDateButton: { color: "#ffffff", backgroundColor: "#0069ff" }
+  }
+});
+```
+
+**Iframe Sizing Behavior**
+
+Inline embeds follow responsive sizing rules aligned with Calendly's minimum width requirement:
+
+- **Minimum width:** The container element should enforce a minimum width of **320px** to ensure the scheduling interface remains usable, matching Calendly's inline widget minimum (`min-width:320px`). Cal.com sets the iframe to `width:100%` and `height:100%` of the container, so the container element controls the minimum dimensions.
+- **Dynamic height adjustment:** The iframe height is automatically adjusted via `__dimensionChanged` events fired from the embedded page whenever content size changes. The parent listens for these events and sets the iframe's `height` style accordingly, preventing unnecessary scrollbars within the iframe.
+- **Initial dimensions:** The iframe starts at `width:100%; height:100%` of the containing element. Once the embedded page renders and reports its content dimensions, the height is adjusted to fit the content.
+
+**Scroll Handling**
+
+Inline embeds implement scroll coordination between the iframe and the parent page:
+
+- **`__scrollByDistance` event:** When the embedded page needs to scroll content into view (e.g., after navigating to a time slot or a booking form section), it fires a `__scrollByDistance` event. The parent locates the nearest scrollable ancestor of the inline embed element and scrolls it by the requested pixel distance using `scrollTo({ behavior: "smooth" })`. This event is only handled for inline embeds — modal embeds scroll within their own iframe.
+- **`__routeChanged` auto-scroll:** When the embedded page navigates internally (e.g., from date selection to the booking form), the parent checks whether more than 25% of the inline embed is hidden above the viewport. If so, it calls `scrollIntoView({ behavior: "smooth" })` on the inline element to bring it back into view.
+
 ## Modal Embed Lifecycle
 
 Modal embeds are created when a CTA is clicked or `Cal.modal()` is called. They support reuse, state management, and prerendering.
 
 See [modal-embed-lifecycle.mermaid](./modal-embed-lifecycle.mermaid) for the complete sequence diagram.
+
+### Calendly Parity: `initPopupWidget()` Alignment (EM-002)
+
+Cal.com's `Cal("modal", { ... })` method provides behavioral parity with Calendly's `Calendly.initPopupWidget()`. Both open the scheduling page in a popup overlay on top of the host page. Cal.com's modal uses the `cal-modal-box` Web Component, which provides a richer lifecycle including prerendering, iframe reuse, and multiple dismissal mechanisms that exceed Calendly's popup capabilities.
+
+**Popup-to-Modal Behavioral Mapping**
+
+| Calendly Popup | Cal.com Modal | Notes |
+|---------------|---------------|-------|
+| `Calendly.initPopupWidget({ url })` | `Cal("modal", { calLink })` | Both open an overlay with the scheduling page |
+| `Calendly.closePopupWidget()` | Modal closes via Escape key, backdrop click, or close button | Cal.com provides three dismissal methods vs. Calendly's single API call |
+| No reuse — fresh iframe each open | Prerendered iframe reuse with `connect` flow | Cal.com advantage: near-instant reopening via prerendered iframe |
+| Static popup overlay | State-managed modal (`loading`, `loaded`, `closed`, `reopened`, `prerendering`, `failed`, `has-message`) | Cal.com tracks modal state transitions for reliability |
+
+**Modal Overlay Styling Options**
+
+The modal overlay can be customized through the `ui` command, providing equivalent functionality to Calendly's popup customization options:
+
+| Config Key | Type | Description |
+|------------|------|-------------|
+| `styles.body.background` | `string` | Background color of the modal content area. Corresponds to Calendly's background color option. |
+| `styles.eventTypeListItem.color` | `string` | Text color for event type list items. Corresponds to Calendly's text color option. |
+| `styles.enabledDateButton.backgroundColor` | `string` | Button color for selectable dates. Corresponds to Calendly's button color (paid plan) option. |
+| `hideEventTypeDetails` | `boolean` | Hides event avatar, name, location, and description. Same behavior as the inline embed option. |
+| `theme` | `"dark" \| "light" \| "auto"` | Color theme applied to the modal content. |
+| `layout` | `"month_view" \| "week_view" \| "column_view"` | Initial booker layout within the modal. |
+
+Example with Calendly-equivalent customization:
+
+```javascript
+Cal("modal", {
+  calLink: "organization/event-type",
+  config: { theme: "dark", layout: "month_view" }
+});
+Cal("ui", {
+  hideEventTypeDetails: false,
+  styles: {
+    body: { background: "#1a1a2e" },
+    enabledDateButton: { backgroundColor: "#0069ff", color: "#ffffff" }
+  }
+});
+```
+
+**Close Button and Dismissal Lifecycle**
+
+The `cal-modal-box` custom element supports three methods to dismiss the modal, providing more flexibility than Calendly's `closePopupWidget()` API:
+
+1. **Close button (×):** Clicking the close button in the modal overlay calls `explicitClose()`, which hides the modal and fires a `close` DOM event. This always works regardless of the current modal state.
+2. **Escape key:** Pressing the `Escape` key calls `close()`, which hides the modal only if it is not currently in the `loading` or message-display (`has-message`, `failed`) state. This prevents accidental dismissal during loading.
+3. **Backdrop click:** Clicking outside the iframe (on the overlay backdrop) also calls `close()` with the same guard logic as the Escape key — the modal won't dismiss while loading or showing a message.
+
+After closing, a prerendered modal remains in the DOM with its iframe intact. On the next CTA click, the modal can be reopened immediately (state transitions to `reopened`) or reconnected with updated configuration, depending on the iframe reuse decision logic.
+
+**`hideEventTypeDetails` Configuration**
+
+The `hideEventTypeDetails` option works identically in modal embeds as in inline embeds. When set to `true` via the `ui` command, it removes the event type avatar, name, location, and description from the booking page rendered inside the modal. This is equivalent to Calendly's "hide event type details" toggle available on paid plans.
 
 ## Modal Prerendering Flow
 
@@ -55,6 +164,28 @@ The embed system carefully manages visibility to prevent visual glitches:
 2. **After Communication Established**: iframe becomes visible once it's ready to communicate
 3. **After Content Ready**: Loader is removed and iframe is fully visible
 4. **After Parent Acknowledges**: Body content becomes visible, background stays transparent
+
+### Inline Embed Visibility (EM-001)
+
+Inline embeds follow the core visibility flow above with the following specifics:
+
+- The `cal-inline` custom element renders a loader (skeleton or spinner) inside its Shadow DOM immediately on creation.
+- The iframe is created with `visibility: hidden` and appended to the `cal-inline` element.
+- When `__iframeReady` fires, the iframe's `visibility` is reset to its default (effectively visible), but the loader may still be displayed until `linkReady` fires.
+- On `linkReady`, the loader is hidden and the slot content inside the Shadow DOM becomes fully visible.
+- If the page load fails (non-200 status), the `loading` attribute transitions to `"failed"`, the loader is hidden, the slot is hidden, and an error message is displayed.
+- The auto-detected `color-scheme` of the parent page is applied to the iframe's config to prevent opaque background flashes between light and dark mode containers.
+
+### Modal Embed Visibility (EM-002)
+
+Modal embeds have a more complex visibility flow due to their overlay nature and prerendering support:
+
+- **Loading state:** The `cal-modal-box` custom element is made visible (via `open()`) and shows a loader. The iframe is present in the layout but invisible (`visibility: hidden`) until content is ready.
+- **Loaded state:** The loader is hidden, the message element is hidden, and the iframe is made fully visible. The modal is then opened for user interaction.
+- **Closed state:** The modal host element is hidden (`visibility: hidden`), but the iframe remains in the DOM for potential reuse. The page's original `overflow` style is restored so the host page is scrollable again.
+- **Prerendering state:** The entire `cal-modal-box` host element is hidden via `explicitClose()`. Neither the loader nor the iframe is visible to the user. The embed loads silently in the background.
+- **Reopened state:** The modal is simply shown again (`open()`), displaying whatever content was previously loaded in the iframe. No loader is displayed for reopens.
+- **Failed/has-message state:** The loader is hidden, the iframe is collapsed (removed from layout), and a message element is displayed with error details.
 
 ## Event Details
 
@@ -137,6 +268,25 @@ The embed system carefully manages visibility to prevent visual glitches:
     - Triggers: When booker view is loaded and slots are successfully loaded
     - Note: Only fires for booker pages (not booking success view or other non-booker pages). This is different from linkReady which fires for any embed page. The bookerReady event signals that users can now select a slot.
 
+15. **__scrollByDistance Event**
+    - Fired by: Iframe
+    - Purpose: Requests the parent page to scroll by a specified pixel distance
+    - Data: `{ distance: number }` — the number of pixels to scroll (positive = down, negative = up)
+    - Actions: Parent locates the nearest scrollable ancestor of the inline embed and calls `scrollTo()` with `behavior: "smooth"`
+    - Applicability: Only processed for inline embeds. Modal embeds scroll within their own iframe, so this event is ignored with a console warning if received for a non-inline embed.
+
+16. **__routeChanged Event**
+    - Fired by: Iframe
+    - Indicates: Internal navigation occurred within the embedded page (e.g., from date selection to booking form)
+    - Actions: For inline embeds, the parent checks if more than 25% of the embed element is hidden above the viewport. If so, it scrolls the element into view with `scrollIntoView({ behavior: "smooth" })`.
+    - Note: This event is primarily relevant for inline embeds where the embed is part of the page flow and can scroll off-screen during internal navigation.
+
+17. **linkFailed Event**
+    - Fired by: Iframe
+    - Indicates: The embedded page failed to load (non-200 HTTP status)
+    - Data: Includes error code and URL information
+    - Actions: For inline embeds, the `cal-inline` element transitions to `loading="failed"` state and displays an error message. For modal embeds, the `cal-modal-box` transitions to `state="failed"` and shows the error in a message container while collapsing the iframe.
+
 ## Prerendering Flow
 
 Prerendering loads the booking page in the background before the user needs it:
@@ -191,9 +341,63 @@ The embed system queues commands sent before the iframe is ready. Once the ifram
 
 | Method | Purpose | Example |
 |--------|---------|---------|
-| `ui` | Apply styles, theme, branding | `{ method: "ui", arg: { theme: "dark" } }` |
+| `ui` | Apply styles, theme, branding, and layout configuration | `{ method: "ui", arg: { theme: "dark", hideEventTypeDetails: true } }` |
 | `parentKnowsIframeReady` | Acknowledge handshake | `{ method: "parentKnowsIframeReady" }` |
 | `connect` | Activate prerendered embed | `{ method: "connect", arg: { config, params } }` |
+
+#### `ui` Command Configuration Reference (EM-001, EM-002)
+
+The `ui` command accepts a `UiConfig` object with the following properties. These provide Calendly-equivalent customization capabilities for both inline and modal embeds:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `theme` | `"dark" \| "light" \| "auto" \| null` | `null` | Color theme. `"auto"` follows system preference. Corresponds to Calendly's overall theme selection. |
+| `hideEventTypeDetails` | `boolean` | `false` | Hides event avatar, name, location, and description. Equivalent to Calendly's "Hide Event Type Details" option. |
+| `styles` | `EmbedStyles & EmbedNonStylesConfig` | `undefined` | Granular style overrides for embed elements (see below). |
+| `cssVarsPerTheme` | `Record<"dark" \| "light", Record<string, string>>` | `undefined` | Per-theme CSS custom property overrides for advanced branding control. |
+| `layout` | `"month_view" \| "week_view" \| "column_view"` | `undefined` | Initial booker layout. |
+| `colorScheme` | `string \| null` | `null` | Explicit color scheme override. Normally auto-detected from the parent page. |
+| `disableAutoScroll` | `boolean` | `false` | Disables automatic scroll-into-view behavior for route changes within the embed. |
+| `useSlotsViewOnSmallScreen` | `boolean` | `false` | Forces the slots view on small screen sizes instead of the default mobile layout. |
+
+**`styles` Object Structure:**
+
+| Style Target | Supported Properties | Calendly Equivalent |
+|-------------|---------------------|---------------------|
+| `body` | `background` | Background color |
+| `eventTypeListItem` | `background`, `color`, `backgroundColor` | Text color |
+| `enabledDateButton` | `background`, `color`, `backgroundColor` | Button color (selectable dates) |
+| `disabledDateButton` | `background`, `color`, `backgroundColor` | — (not customizable in Calendly) |
+| `availabilityDatePicker` | `background`, `color`, `backgroundColor` | — (not customizable in Calendly) |
+
+**`styles` Non-Style Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `align` | `"left"` | Aligns the booking widget to the left instead of the default center alignment. |
+| `branding.brandColor` | `string` | Primary brand color applied across the embed UI. |
+
+The `ui` command persists across iframe resets — if the iframe reloads due to staleness or a full reload, any previously applied `ui` configuration is automatically reapplied to the new iframe instance.
+
+**Example — Full Customization:**
+
+```javascript
+Cal("ui", {
+  theme: "light",
+  hideEventTypeDetails: true,
+  layout: "month_view",
+  styles: {
+    body: { background: "#ffffff" },
+    eventTypeListItem: { color: "#1a1a2e", backgroundColor: "#f0f0f0" },
+    enabledDateButton: { backgroundColor: "#0069ff", color: "#ffffff" },
+    availabilityDatePicker: { backgroundColor: "#fafafa" }
+  },
+  cssVarsPerTheme: {
+    light: { "--cal-brand-color": "#0069ff" },
+    dark: { "--cal-brand-color": "#4d9fff" }
+  }
+});
+```
 
 ## Popup Window Analogy
 

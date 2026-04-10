@@ -28,6 +28,36 @@ export default class AttendeeRescheduledEmail extends AttendeeScheduledEmail {
     };
   }
 
+  /**
+   * Overrides the parent plain-text body to include reschedule context
+   * (who rescheduled and why) for Calendly notification parity (NF-001).
+   * The HTML template already renders this via BaseScheduledEmail.tsx,
+   * but the plain-text fallback needs the same information.
+   */
+  protected getTextBody(
+    title = "event_has_been_rescheduled",
+    subtitle = "emailed_you_and_any_other_attendees"
+  ): string {
+    let text = super.getTextBody(title, subtitle);
+
+    // Append who triggered the reschedule, if available
+    if (this.calEvent.rescheduledBy) {
+      text += `\n${this.t("rescheduled_by")}: ${this.calEvent.rescheduledBy}`;
+    }
+
+    // Append the reschedule reason when the cancellationReason carries
+    // the $RCH$ prefix (convention used throughout the codebase to
+    // distinguish reschedule reasons from cancellation reasons)
+    if (this.calEvent.cancellationReason?.startsWith("$RCH$")) {
+      const reason = this.calEvent.cancellationReason.replace("$RCH$", "");
+      if (reason) {
+        text += `\n${this.t("reason_for_reschedule")}: ${reason}`;
+      }
+    }
+
+    return text;
+  }
+
   async getHtml(calEvent: CalendarEvent, attendee: Person) {
     return await renderEmail("AttendeeRescheduledEmail", {
       calEvent,

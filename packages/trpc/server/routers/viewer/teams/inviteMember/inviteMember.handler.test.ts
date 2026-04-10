@@ -215,8 +215,11 @@ describe("inviteMemberHandler", () => {
           orgConnectInfoByUsernameOrEmail: expectedConnectionInfoMap,
           teamId: input.teamId,
           language: input.language,
+          isOrg: retValueOfGetTeamOrThrowError.isOrganization,
           inviter,
           autoAcceptEmailDomain: null,
+          creationSource: input.creationSource,
+          invitedByUserId: loggedInUser.id,
         });
 
         // TODO: Fix this test
@@ -331,6 +334,8 @@ describe("inviteMemberHandler", () => {
           inviter,
           autoAcceptEmailDomain: null,
           isOrg: false,
+          creationSource: input.creationSource,
+          invitedByUserId: loggedInUser.id,
         });
 
         // TODO: Fix this test
@@ -345,6 +350,7 @@ describe("inviteMemberHandler", () => {
           orgSlug: null,
           team: retValueOfGetTeamOrThrowError,
           isOrg: false,
+          invitedByUserId: loggedInUser.id,
         });
 
         // Assert the result

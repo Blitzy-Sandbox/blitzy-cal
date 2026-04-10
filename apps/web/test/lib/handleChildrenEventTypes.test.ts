@@ -186,7 +186,7 @@ describe("handleChildrenEventTypes", () => {
         profileId: null,
         updatedValues: {},
       });
-      const { createdAt, updatedAt, ...expectedEvType } = evType;
+      const { createdAt, updatedAt, syncBuffersToCalendar: _syncBuf1, ...expectedEvType } = evType;
       expect(prismaMock.eventType.createManyAndReturn).toHaveBeenCalledWith({
         data: [
           {
@@ -204,6 +204,7 @@ describe("handleChildrenEventTypes", () => {
             assignRRMembersUsingSegment: false,
             useBookerTimezone: false,
             restrictionScheduleId: null,
+            instantMeetingScheduleId: undefined,
             allowReschedulingCancelledBookings: false,
           },
         ],
@@ -261,13 +262,20 @@ describe("handleChildrenEventTypes", () => {
           bookingLimits: undefined,
         },
       });
-      const { profileId, autoTranslateDescriptionEnabled, createdAt, updatedAt, ...rest } = evType;
+      const {
+        profileId,
+        autoTranslateDescriptionEnabled,
+        createdAt,
+        updatedAt,
+        syncBuffersToCalendar: _syncBuf2,
+        rrSegmentQueryValue: _rrSeg2,
+        useEventLevelSelectedCalendars: _useEvtLvl2,
+        ...rest
+      } = evType;
       expect(prismaMock.eventType.update).toHaveBeenCalledWith({
         data: {
           ...rest,
-          useEventLevelSelectedCalendars: undefined,
           customReplyToEmail: null,
-          rrSegmentQueryValue: undefined,
           locations: [],
           scheduleId: null,
           lockTimeZoneToggleOnBookingPage: false,
@@ -278,7 +286,6 @@ describe("handleChildrenEventTypes", () => {
           hashedLink: {
             deleteMany: {},
           },
-          instantMeetingScheduleId: undefined,
           allowReschedulingCancelledBookings: false,
         },
         where: {
@@ -407,7 +414,7 @@ describe("handleChildrenEventTypes", () => {
         profileId: null,
         updatedValues: {},
       });
-      const { createdAt, updatedAt, ...expectedEvType } = evType;
+      const { createdAt, updatedAt, syncBuffersToCalendar: _syncBuf3, ...expectedEvType } = evType;
       expect(prismaMock.eventType.createManyAndReturn).toHaveBeenCalledWith({
         data: [
           {
@@ -484,7 +491,7 @@ describe("handleChildrenEventTypes", () => {
           length: 30,
         },
       });
-      const { profileId, autoTranslateDescriptionEnabled, createdAt, updatedAt, ...rest } = evType;
+      const { profileId, autoTranslateDescriptionEnabled, createdAt, updatedAt, syncBuffersToCalendar: _syncBuf4, ...rest } = evType;
       expect(prismaMock.eventType.update).toHaveBeenCalledWith({
         data: {
           ...rest,
@@ -624,7 +631,7 @@ describe("handleChildrenEventTypes", () => {
         updatedValues: {},
       });
 
-      const { createdAt, updatedAt, ...expectedEvType } = evType;
+      const { createdAt, updatedAt, syncBuffersToCalendar: _syncBuf5, ...expectedEvType } = evType;
       if ("workflows" in expectedEvType) delete expectedEvType.workflows;
       // Verify createManyAndReturn was called for new users (user 5)
       // Note: createManyAndReturn doesn't support nested relations like workflows, so they're handled separately
@@ -661,13 +668,20 @@ describe("handleChildrenEventTypes", () => {
         skipDuplicates: true,
       });
 
-      const { profileId, rrSegmentQueryValue, createdAt: _, updatedAt: __, ...rest } = evType;
+      const {
+        profileId,
+        rrSegmentQueryValue,
+        syncBuffersToCalendar: _syncBuf5b,
+        useEventLevelSelectedCalendars: _useEvtLvl5,
+        createdAt: _,
+        updatedAt: __,
+        ...rest
+      } = evType;
       if ("workflows" in rest) delete rest.workflows;
       expect(prismaMock.eventType.update).toHaveBeenCalledWith({
         data: {
           ...rest,
           locations: [],
-          useEventLevelSelectedCalendars: undefined,
           customReplyToEmail: null,
           lockTimeZoneToggleOnBookingPage: false,
           requiresBookerEmailVerification: false,

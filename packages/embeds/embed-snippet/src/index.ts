@@ -12,10 +12,10 @@ import type { Optional } from "@calcom/types/utils";
  * So, write the code that you need directly but keep it short.
  */
 
-const WEBAPP_URL =
+export const WEBAPP_URL =
   import.meta.env.EMBED_PUBLIC_WEBAPP_URL || `https://${import.meta.env.EMBED_PUBLIC_VERCEL_URL}`;
 
-const EMBED_LIB_URL = import.meta.env.EMBED_PUBLIC_EMBED_LIB_URL || `${WEBAPP_URL}/embed/embed.js`;
+export const EMBED_LIB_URL = import.meta.env.EMBED_PUBLIC_EMBED_LIB_URL || `${WEBAPP_URL}/embed/embed.js`;
 
 type QueuePushArg = {
   [k: number]: Queue[number];

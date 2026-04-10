@@ -140,7 +140,10 @@ class RoutingEventsInsights {
           }
           if (header.type === "select") {
             acc[header.label] = header.options?.find((option) => option.id === field.valueString)?.label;
-          } else if (header.type === "multiselect" && Array.isArray(field.valueStringArray)) {
+          } else if (
+            (header.type === "multiselect" || header.type === "checkbox") &&
+            Array.isArray(field.valueStringArray)
+          ) {
             acc[header.label] = field.valueStringArray
               .map((value) => header.options?.find((option) => option.id === value)?.label)
               .filter((label): label is string => label !== undefined)

@@ -21,6 +21,8 @@ import {
   saveCurrentForm,
   verifySelectOptions,
   addOneFieldAndDescriptionAndSaveForm,
+  addFieldByType,
+  fillFormFieldByType,
 } from "./testUtils";
 
 function todo(title: string) {
@@ -271,8 +273,9 @@ test.describe("Routing Forms", () => {
         description: "Description",
         label: "Test Field",
       });
+      // Query string includes prefill params for text-like fields plus new Calendly-parity types (RF-001)
       const queryString =
-        "firstfield=456&test-field-number=456&test-field-single-choice-selection=456&test-field-multiple-choice-selection=456&test-field-multiple-choice-selection=789&test-field-phone=456&test-field-email=456@example.com";
+        "firstfield=456&test-field-number=456&test-field-single-choice-selection=456&test-field-multiple-choice-selection=456&test-field-multiple-choice-selection=789&test-field-phone=456&test-field-email=456@example.com&test-field-url=https://example.com&test-field-date=2025-01-15";
 
       await gotoRoutingLink({ page, queryString });
 
@@ -289,6 +292,12 @@ test.describe("Routing Forms", () => {
       await expect(page.locator('[data-testid="form-field-test-field-email"]')).toHaveValue(
         "456@example.com"
       );
+
+      // Verify Calendly-parity field types are prefilled correctly (RF-001)
+      await expect(page.locator('[data-testid="form-field-test-field-url"]')).toHaveValue(
+        "https://example.com"
+      );
+      await expect(page.locator('[data-testid="form-field-test-field-date"]')).toHaveValue("2025-01-15");
 
       await page.click('button[type="submit"]');
       await page.waitForURL((url) => {
@@ -307,6 +316,93 @@ test.describe("Routing Forms", () => {
       expect(url.searchParams.getAll("test-field-multiple-choice-selection")).toMatchObject(["456", "789"]);
       expect(url.searchParams.get("test-field-phone")).toBe("456");
       expect(url.searchParams.get("test-field-email")).toBe("456@example.com");
+
+      // Verify new Calendly-parity field type values are forwarded to the redirect URL (RF-001)
+      expect(url.searchParams.get("test-field-url")).toBe("https://example.com");
+      expect(url.searchParams.get("test-field-date")).toBe("2025-01-15");
+    });
+
+    test("should create form with Calendly-parity field types (URL, Date, Checkbox) and route correctly (RF-001, RF-002)", async ({
+      page,
+    }) => {
+      const formId = await addForm(page);
+
+      // Navigate to route builder and set up an external redirect route
+      await page.locator('[data-testid="toggle-group-item-route-builder"]').nth(1).click();
+      await page.waitForURL("/routing/route-builder/**");
+      await addNewRoute(page);
+      await selectOption({
+        selector: { selector: ".data-testid-select-routing-action", nth: 0 },
+        option: 2,
+        page,
+      });
+      await page.fill("[name=externalRedirectUrl]", `${WEBAPP_URL}/pro`);
+      await saveCurrentForm(page);
+
+      // Navigate to form edit to add new Calendly-parity fields
+      await page.goto(`apps/routing-forms/form-edit/${formId}`);
+      await page.click('[data-testid="add-field"]');
+
+      // Add URL field (Calendly "Website URL" question type parity — RF-001)
+      await addFieldByType(page, {
+        fieldIndex: 0,
+        label: "Website",
+        fieldType: "URL",
+      });
+
+      // Add Date field (Calendly "Date" question type parity — RF-001)
+      await page.click('[data-testid="add-field"]');
+      await addFieldByType(page, {
+        fieldIndex: 1,
+        label: "Preferred Date",
+        fieldType: "Date",
+      });
+
+      // Add Checkbox field with options (Calendly "Checkboxes" question type parity — RF-001)
+      await page.click('[data-testid="add-field"]');
+      await addFieldByType(page, {
+        fieldIndex: 2,
+        label: "Topics",
+        fieldType: "Checkbox",
+        options: ["Marketing", "Sales", "Engineering"],
+      });
+
+      await saveCurrentForm(page);
+
+      // Navigate to routing link and fill all new Calendly-parity field types
+      await gotoRoutingLink({ page, formId });
+
+      // Fill URL field
+      await fillFormFieldByType(page, {
+        identifier: "website",
+        fieldType: "URL",
+        value: "https://example.com",
+      });
+
+      // Fill Date field
+      await fillFormFieldByType(page, {
+        identifier: "preferred-date",
+        fieldType: "Date",
+        value: "2025-06-15",
+      });
+
+      // Check a Checkbox option
+      await fillFormFieldByType(page, {
+        identifier: "topics",
+        fieldType: "Checkbox",
+        value: "Marketing",
+      });
+
+      // Submit form and verify routing works with new field types
+      await page.click('button[type="submit"]');
+      await page.waitForURL((url) => {
+        return url.pathname.endsWith("/pro");
+      });
+
+      // Verify text-like field values are forwarded as query params to the redirect destination
+      const url = new URL(page.url());
+      expect(url.searchParams.get("website")).toBe("https://example.com");
+      expect(url.searchParams.get("preferred-date")).toBe("2025-06-15");
     });
 
     // TODO: How to install the app just once?
@@ -568,6 +664,32 @@ test.describe("Routing Forms", () => {
       expect(routingType).toBe("Custom Page");
       expect(route).toBe("Fallback Message");
       await page.click('[data-testid="close-results-button"]');
+    });
+
+    test("Router URL should forward additional query params for new Calendly-parity field types without breaking routing (RF-002)", async ({
+      page,
+      users,
+    }) => {
+      const user = await createUserAndLogin({ users, page });
+      const routingForm = user.routingForms[0];
+
+      // Router should be publicly accessible
+      await users.logout();
+
+      // Include additional query params simulating Calendly-parity field types (URL, Date)
+      // alongside the existing routing-relevant "Test field" param.
+      // The routing should still match on "Test field" and forward extra params to the destination.
+      await page.goto(
+        `/router?form=${routingForm.id}&Test field=event-routing&website-url=https://example.com&event-date=2025-06-15`
+      );
+      await page.waitForURL((url) => {
+        return url.pathname.endsWith("/pro/30min") && url.searchParams.get("Test field") === "event-routing";
+      });
+
+      // Verify extra params for new Calendly-parity field types are forwarded to the destination URL
+      const routerUrl = new URL(page.url());
+      expect(routerUrl.searchParams.get("website-url")).toBe("https://example.com");
+      expect(routerUrl.searchParams.get("event-date")).toBe("2025-06-15");
     });
   });
 
@@ -1061,7 +1183,8 @@ async function addAllTypesOfFieldsAndSaveForm(
 
   const { optionsInUi: fieldTypesList } = await verifySelectOptions(
     { selector: ".data-testid-field-type", nth: 0 },
-    ["Email", "Long text", "Multiple choice selection", "Number", "Phone", "Single-choice selection", "Short text"],
+    // Field types must stay in sync with testUtils.ts verifySelectOptions call (RF-001 Calendly parity)
+    ["Checkbox", "Date", "Email", "Long text", "Multiple choice selection", "Number", "Phone", "Single-choice selection", "Short text", "URL"],
     page
   );
 
@@ -1089,6 +1212,13 @@ async function addAllTypesOfFieldsAndSaveForm(
       await page.fill(`[data-testid="fields.${nth}.options.1-input"]`, "456");
       await page.fill(`[data-testid="fields.${nth}.options.2-input"]`, "789");
       await page.fill(`[data-testid="fields.${nth}.options.3-input"]`, "10-11-12");
+    }
+
+    // Checkbox field type also requires option inputs, similar to select fields (RF-001 Calendly parity)
+    if (fieldTypeLabel === "Checkbox") {
+      await page.fill(`[data-testid="fields.${nth}.options.0-input"]`, "Option A");
+      await page.fill(`[data-testid="fields.${nth}.options.1-input"]`, "Option B");
+      await page.fill(`[data-testid="fields.${nth}.options.2-input"]`, "Option C");
     }
 
     await page.fill(`[name="fields.${nth}.label"]`, label);

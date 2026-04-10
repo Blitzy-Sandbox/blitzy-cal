@@ -187,9 +187,27 @@ ${getEmbedTypeSpecificString({
     Component: forwardRef<
       HTMLIFrameElement | HTMLTextAreaElement | null,
       { calLink: string; embedType: EmbedType; previewState: PreviewState; namespace: string }
-    >(function Preview({ calLink, embedType }, ref) {
+    >(function Preview({ calLink, embedType, previewState }, ref) {
       const bookerUrl = useEmbedBookerUrl();
-      const iframeSrc = `${EMBED_PREVIEW_HTML_URL}?embedType=${embedType}&calLink=${calLink}&embedLibUrl=${embedLibUrl}&bookerUrl=${bookerUrl}`;
+
+      // Build share flow query parameter suffix for preview iframe (EM-004 share flow parity).
+      // Only appends params when shareConfig is explicitly set — keeps backward compatibility.
+      const shareParams = (() => {
+        const shareConfig = previewState.shareConfig;
+        if (!shareConfig) return "";
+        const parts: string[] = [];
+        if (shareConfig.customQueryParams) {
+          for (const [key, value] of Object.entries(shareConfig.customQueryParams)) {
+            parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+          }
+        }
+        if (shareConfig.includeUtmParams) {
+          parts.push("includeUtm=true");
+        }
+        return parts.length > 0 ? `&${parts.join("&")}` : "";
+      })();
+
+      const iframeSrc = `${EMBED_PREVIEW_HTML_URL}?embedType=${embedType}&calLink=${calLink}&embedLibUrl=${embedLibUrl}&bookerUrl=${bookerUrl}${shareParams}`;
       if (ref instanceof Function || !ref) {
         return null;
       }
@@ -238,6 +256,12 @@ const getEmbedTypeSpecificString = ({
     darkBrandColor: string | null;
     hideEventTypeDetails: boolean;
     layout?: BookerLayout;
+    /** Whether to forward parent page query parameters to the booking page (EM-004 share flow parity) */
+    forwardQueryParams?: boolean;
+    /** Post-booking redirect URL (EM-004 share flow parity) */
+    redirectUrl?: string;
+    /** Pre-fill form field data keyed by field identifier (EM-004 share flow parity) */
+    prefillFields?: Record<string, string>;
   };
   const baseUiInstructionStringArg = {
     theme: previewState.theme,
@@ -245,6 +269,7 @@ const getEmbedTypeSpecificString = ({
     darkBrandColor: previewState.palette.darkBrandColor,
     hideEventTypeDetails: previewState.hideEventTypeDetails,
     layout: previewState.layout,
+    ...(previewState.shareConfig?.customQueryParams ? { forwardQueryParams: true } : {}),
   };
   if (embedFramework === "react") {
     uiInstructionStringArg = {
@@ -296,6 +321,9 @@ const getEmbedUIInstructionString = ({
   darkBrandColor,
   hideEventTypeDetails,
   layout,
+  forwardQueryParams,
+  redirectUrl,
+  prefillFields,
 }: {
   apiName: string;
   theme?: string;
@@ -303,6 +331,12 @@ const getEmbedUIInstructionString = ({
   darkBrandColor: string | null;
   hideEventTypeDetails: boolean;
   layout?: string;
+  /** Whether to forward parent page query parameters to the booking page (EM-004 share flow parity) */
+  forwardQueryParams?: boolean;
+  /** Post-booking redirect URL (EM-004 share flow parity) */
+  redirectUrl?: string;
+  /** Pre-fill form field data keyed by field identifier (EM-004 share flow parity) */
+  prefillFields?: Record<string, string>;
 }) => {
   theme = theme !== "auto" ? theme : undefined;
 
@@ -314,6 +348,9 @@ const getEmbedUIInstructionString = ({
       cssVarsPerTheme: buildCssVarsPerTheme({ brandColor, darkBrandColor }),
       hideEventTypeDetails,
       layout,
+      ...(forwardQueryParams !== undefined ? { forwardQueryParams } : {}),
+      ...(redirectUrl ? { redirectUrl } : {}),
+      ...(prefillFields && Object.keys(prefillFields).length > 0 ? { prefill: prefillFields } : {}),
     },
   });
 };

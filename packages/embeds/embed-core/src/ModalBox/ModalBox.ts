@@ -257,5 +257,19 @@ export class ModalBox extends EmbedElement {
     this.open();
     this.assertHasShadowRoot();
     this.shadowRoot.innerHTML = modalHtml;
+
+    // Apply modal customization CSS custom properties from data attributes.
+    // data-modal-overlay-color and data-modal-close-button-color are set by embed.ts
+    // when UiConfig contains modalOverlayColor / modalCloseButtonColor.
+    // ModalBoxHtml.ts reads these via var(--cal-modal-overlay-color, ...) and
+    // var(--cal-modal-close-color, ...) with backward-compatible fallback defaults.
+    const overlayColor = this.dataset.modalOverlayColor;
+    if (overlayColor) {
+      this.shadowRoot.host.style.setProperty("--cal-modal-overlay-color", overlayColor);
+    }
+    const closeColor = this.dataset.modalCloseButtonColor;
+    if (closeColor) {
+      this.shadowRoot.host.style.setProperty("--cal-modal-close-color", closeColor);
+    }
   }
 }

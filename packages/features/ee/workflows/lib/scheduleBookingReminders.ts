@@ -4,12 +4,12 @@ import { scheduleSMSReminder } from "@calcom/ee/workflows/lib/reminders/smsRemin
 import { scheduleWhatsappReminder } from "@calcom/ee/workflows/lib/reminders/whatsappReminderManager";
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
+import logger from "@calcom/lib/logger";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import type { WorkflowStep } from "@calcom/prisma/client";
 import type { TimeUnit } from "@calcom/prisma/enums";
 import { SchedulingType, WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import type { CalEventResponses } from "@calcom/types/Calendar";
-
 import type { getBookings } from "./scheduleWorkflowNotifications";
 import { verifyEmailSender } from "./verifyEmailSender";
 
@@ -29,7 +29,13 @@ export async function scheduleBookingReminders(
   isOrg: boolean
 ) {
   if (!bookings.length) return;
-  if (trigger !== WorkflowTriggerEvents.BEFORE_EVENT && trigger !== WorkflowTriggerEvents.AFTER_EVENT) return;
+  // Schedulable (offset-based) triggers that require time-based reminder scheduling.
+  // Currently BEFORE_EVENT and AFTER_EVENT; extensible for future Calendly parity triggers (NF-003).
+  const SCHEDULABLE_TRIGGERS: Set<WorkflowTriggerEvents> = new Set([
+    WorkflowTriggerEvents.BEFORE_EVENT,
+    WorkflowTriggerEvents.AFTER_EVENT,
+  ]);
+  if (!SCHEDULABLE_TRIGGERS.has(trigger)) return;
 
   const bookerUrl = await getBookerBaseUrl(isOrg ? teamId : null);
 
@@ -43,6 +49,8 @@ export async function scheduleBookingReminders(
         uid: booking.uid,
         bookerUrl,
         type: booking.eventType?.slug || "event",
+        location: booking.location ?? "", // Added for Calendly parity (NF-003) — meeting location in notifications
+        description: booking.description ?? "", // Added for Calendly parity (NF-003) — additional notes
         attendees: booking.attendees.map((attendee) => {
           return {
             name: attendee.name,
@@ -215,7 +223,23 @@ export async function scheduleBookingReminders(
         });
       }
     });
-    await Promise.all(promiseScheduleReminders);
+    // Use Promise.allSettled so a single booking reminder failure (e.g., SMS delivery
+    // error, email verification issue) does not cascade-reject all remaining bookings.
+    const reminderResults = await Promise.allSettled(promiseScheduleReminders);
+    for (const result of reminderResults) {
+      if (result.status === "rejected") {
+        logger.error("Failed to schedule booking reminder", { reason: result.reason });
+      }
+    }
   });
-  return Promise.all(promiseSteps);
+
+  // Use Promise.allSettled so one failed workflow step does not block scheduling
+  // for all other steps. Each step is independent and should be processed fully.
+  const stepResults = await Promise.allSettled(promiseSteps);
+  for (const result of stepResults) {
+    if (result.status === "rejected") {
+      logger.error("Failed to process workflow step reminders", { reason: result.reason });
+    }
+  }
+  return stepResults;
 }

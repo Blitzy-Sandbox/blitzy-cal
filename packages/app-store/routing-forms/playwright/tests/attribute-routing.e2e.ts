@@ -7,12 +7,17 @@ import { AttributeType, SchedulingType } from "@calcom/prisma/enums";
 import type { Fixtures } from "@calcom/web/playwright/lib/fixtures";
 import { test } from "@calcom/web/playwright/lib/fixtures";
 
+/** Recursive JSON-compatible value type used for RAQB queryValue structures passed to Prisma's Json fields. */
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 async function setupTest({
   users,
   attributeType,
   options,
   assigned,
   condition,
+  fields: customFields,
+  routeQueryValue,
 }: {
   users: Fixtures["users"];
   attributeType: AttributeType;
@@ -25,6 +30,17 @@ async function setupTest({
     valueType: string[];
     valueError?: (null | string)[];
   };
+  /** Optional form field definitions to add to the routing form. Defaults to empty (no fields). */
+  fields?: Array<{
+    id: string;
+    label: string;
+    identifier: string;
+    type: string;
+    required?: boolean;
+    options?: Array<{ id: string | null; label: string }>;
+  }>;
+  /** Optional RAQB queryValue for form-field-based routing conditions. Defaults to an empty group (matches all). */
+  routeQueryValue?: { [key: string]: JsonValue };
 }) {
   const user = await users.create(
     { username: "routing-forms" },
@@ -100,7 +116,7 @@ async function setupTest({
             value: `team/${team.slug}/${eventType.slug}`,
             eventTypeId: eventType.id,
           },
-          queryValue: { id: uuid(), type: "group" },
+          queryValue: routeQueryValue || { id: uuid(), type: "group" },
           attributesQueryValue: {
             id: uuid(),
             type: "group",
@@ -126,7 +142,7 @@ async function setupTest({
           queryValue: { id: uuid(), type: "group" },
         },
       ],
-      fields: [],
+      fields: customFields || [],
       team: { connect: { id: team.id } },
       user: { connect: { id: user.id } },
     },
@@ -175,6 +191,27 @@ async function expectNotRoutedToUser(page: Page) {
 
 async function closeResults(page: Page) {
   await page.click('[data-testid="close-results-button"]');
+}
+
+/**
+ * Fills a text-based form field in the route builder preview.
+ * The field is identified by its `identifier` (or `label` if no identifier is set),
+ * which maps to the `data-testid="form-field-{identifier}"` attribute rendered by FormInputFields.
+ */
+async function fillFormTextField(page: Page, fieldIdentifier: string, value: string) {
+  await page.fill(`[data-testid="form-field-${fieldIdentifier}"]`, value);
+}
+
+/**
+ * Asserts that the fallback route (customPageMessage) was chosen after submitting the preview form.
+ * When the route's queryValue does not match the form response, the routing engine falls through
+ * to the fallback route which displays the "Fallback Message" custom page.
+ * Unlike `expectRoutedToUser`, this does NOT wait for the `findTeamMembersMatchingAttributeLogicOfRoute`
+ * API call because customPageMessage routes bypass team member matching entirely.
+ */
+async function expectFallbackRouteChosen(page: Page) {
+  await page.click('[data-testid="submit-button"]');
+  await expect(page.locator('[data-testid="test-routing-result"]')).toHaveText("Fallback Message");
 }
 
 test.describe("Attribute Routing E2E - All Condition Combinations", () => {
@@ -682,6 +719,308 @@ test.describe("Attribute Routing E2E - All Condition Combinations", () => {
         condition: { operator: "select_equals", value: ["small"], valueType: ["select"] },
       });
       await openPreview(page, formId);
+      await expectNotRoutedToUser(page);
+      await closeResults(page);
+    });
+  });
+
+  /**
+   * Answer-based routing conditions — Calendly parity tests (RF-001, RF-002)
+   *
+   * These tests validate Calendly-equivalent conditional routing patterns where routing
+   * decisions are based on form field answers (queryValue), team member attributes
+   * (attributesQueryValue), or a combination of both. This covers:
+   *
+   * 1. Form-field-only queryValue conditions (answer-based matching)
+   * 2. Combined queryValue + attributesQueryValue conditions (both must match)
+   * 3. Fallback behavior when queryValue conditions are not satisfied
+   * 4. Dynamic {field:uuid} template syntax for attribute rules that reference form field values
+   */
+  test.describe("Answer-based routing conditions", () => {
+    test("route matches when form field response equals expected value", async ({ page, users }) => {
+      const fieldId = uuid();
+      const { formId, user } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        condition: { operator: "select_equals", value: ["large"], valueType: ["select"] },
+        fields: [
+          {
+            id: fieldId,
+            label: "Company Size",
+            identifier: "company-size",
+            type: "text",
+            required: true,
+          },
+        ],
+        routeQueryValue: {
+          id: uuid(),
+          type: "group",
+          children1: {
+            [uuid()]: {
+              type: "rule",
+              properties: {
+                field: fieldId,
+                value: ["enterprise"],
+                operator: "equal",
+                valueSrc: ["value"],
+                valueType: ["text"],
+              },
+            },
+          },
+        },
+      });
+      await openPreview(page, formId);
+      await fillFormTextField(page, "company-size", "enterprise");
+      await expectRoutedToUser(page, user.id);
+      await closeResults(page);
+    });
+
+    test("route does not match when form field response differs from expected value", async ({
+      page,
+      users,
+    }) => {
+      const fieldId = uuid();
+      const { formId } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        condition: { operator: "select_equals", value: ["large"], valueType: ["select"] },
+        fields: [
+          {
+            id: fieldId,
+            label: "Company Size",
+            identifier: "company-size",
+            type: "text",
+            required: true,
+          },
+        ],
+        routeQueryValue: {
+          id: uuid(),
+          type: "group",
+          children1: {
+            [uuid()]: {
+              type: "rule",
+              properties: {
+                field: fieldId,
+                value: ["enterprise"],
+                operator: "equal",
+                valueSrc: ["value"],
+                valueType: ["text"],
+              },
+            },
+          },
+        },
+      });
+      await openPreview(page, formId);
+      // Fill in a non-matching value — queryValue condition fails, so the fallback route is selected
+      await fillFormTextField(page, "company-size", "startup");
+      await expectFallbackRouteChosen(page);
+      await closeResults(page);
+    });
+
+    test("combined attribute and field conditions - both must match for routing", async ({
+      page,
+      users,
+    }) => {
+      const fieldId = uuid();
+      const { formId, user } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        // Attribute condition: user must have "large" attribute
+        condition: { operator: "select_equals", value: ["large"], valueType: ["select"] },
+        fields: [
+          {
+            id: fieldId,
+            label: "Industry",
+            identifier: "industry",
+            type: "text",
+            required: true,
+          },
+        ],
+        // Field condition: form response for "industry" must equal "technology"
+        routeQueryValue: {
+          id: uuid(),
+          type: "group",
+          children1: {
+            [uuid()]: {
+              type: "rule",
+              properties: {
+                field: fieldId,
+                value: ["technology"],
+                operator: "equal",
+                valueSrc: ["value"],
+                valueType: ["text"],
+              },
+            },
+          },
+        },
+      });
+      await openPreview(page, formId);
+      // Fill in the matching field value — queryValue matches, and attribute also matches
+      await fillFormTextField(page, "industry", "technology");
+      await expectRoutedToUser(page, user.id);
+      await closeResults(page);
+    });
+
+    test("attribute matches but field condition fails - routes to fallback", async ({ page, users }) => {
+      const fieldId = uuid();
+      const { formId } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        // Attribute condition: user has "large" attribute → would match
+        condition: { operator: "select_equals", value: ["large"], valueType: ["select"] },
+        fields: [
+          {
+            id: fieldId,
+            label: "Industry",
+            identifier: "industry",
+            type: "text",
+            required: true,
+          },
+        ],
+        // Field condition: form response must equal "technology"
+        routeQueryValue: {
+          id: uuid(),
+          type: "group",
+          children1: {
+            [uuid()]: {
+              type: "rule",
+              properties: {
+                field: fieldId,
+                value: ["technology"],
+                operator: "equal",
+                valueSrc: ["value"],
+                valueType: ["text"],
+              },
+            },
+          },
+        },
+      });
+      await openPreview(page, formId);
+      // Fill in a non-matching field value — queryValue fails even though attribute would match
+      await fillFormTextField(page, "industry", "healthcare");
+      await expectFallbackRouteChosen(page);
+      await closeResults(page);
+    });
+
+    test("fallback when form response does not match any route condition", async ({ page, users }) => {
+      const fieldId = uuid();
+      const { formId } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        // Attribute condition: expects "small" — user has "large" → wouldn't match
+        condition: { operator: "select_equals", value: ["small"], valueType: ["select"] },
+        fields: [
+          {
+            id: fieldId,
+            label: "Region",
+            identifier: "region",
+            type: "text",
+            required: true,
+          },
+        ],
+        // Field condition: expects "emea"
+        routeQueryValue: {
+          id: uuid(),
+          type: "group",
+          children1: {
+            [uuid()]: {
+              type: "rule",
+              properties: {
+                field: fieldId,
+                value: ["emea"],
+                operator: "equal",
+                valueSrc: ["value"],
+                valueType: ["text"],
+              },
+            },
+          },
+        },
+      });
+      await openPreview(page, formId);
+      // Neither field condition nor attribute condition matches — fallback is selected
+      await fillFormTextField(page, "region", "apac");
+      await expectFallbackRouteChosen(page);
+      await closeResults(page);
+    });
+
+    test("dynamic field reference in attribute rules - match via {field:uuid} template", async ({
+      page,
+      users,
+    }) => {
+      const fieldId = uuid();
+      const { formId, user } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        // Attribute condition uses {field:fieldId} template syntax:
+        // the attribute rule's value is dynamically resolved from the form field response.
+        // valueSrc: ["field"] indicates the value comes from a form field, not a static value.
+        condition: {
+          operator: "select_equals",
+          value: [`{field:${fieldId}}`],
+          valueSrc: ["field"],
+          valueType: ["select"],
+        },
+        fields: [
+          {
+            id: fieldId,
+            label: "Size Preference",
+            identifier: "size-preference",
+            type: "text",
+            required: true,
+          },
+        ],
+      });
+      await openPreview(page, formId);
+      // Fill in "large" — the {field:fieldId} template resolves to "large", which matches
+      // the user's assigned attribute value "large"
+      await fillFormTextField(page, "size-preference", "large");
+      await expectRoutedToUser(page, user.id);
+      await closeResults(page);
+    });
+
+    test("dynamic field reference in attribute rules - no match when field value differs", async ({
+      page,
+      users,
+    }) => {
+      const fieldId = uuid();
+      const { formId } = await setupTest({
+        users,
+        attributeType: AttributeType.SINGLE_SELECT,
+        options: ["large", "medium", "small"],
+        assigned: ["large"],
+        // Attribute condition uses {field:fieldId} template syntax
+        condition: {
+          operator: "select_equals",
+          value: [`{field:${fieldId}}`],
+          valueSrc: ["field"],
+          valueType: ["select"],
+        },
+        fields: [
+          {
+            id: fieldId,
+            label: "Size Preference",
+            identifier: "size-preference",
+            type: "text",
+            required: true,
+          },
+        ],
+      });
+      await openPreview(page, formId);
+      // Fill in "medium" — the {field:fieldId} template resolves to "medium", which does NOT match
+      // the user's assigned attribute value "large"
+      await fillFormTextField(page, "size-preference", "medium");
       await expectNotRoutedToUser(page);
       await closeResults(page);
     });

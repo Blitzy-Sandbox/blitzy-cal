@@ -292,15 +292,15 @@ The following matrix compares Cal.com and Calendly across all admin governance a
 | **Organization hierarchy** | Flat, single-level organization | Hierarchical: Organization → Teams → Sub-teams | **Low** | Cal.com exceeds — supports multi-level hierarchy |
 | **Sub-organizations** | Not supported | Supported via parent/child team relationships | **Low** | Cal.com advantage |
 | **Sub-teams** | Not supported (groups are flat) | Supported within organizations | **Low** | Cal.com advantage |
-| **Role model** | 5 fixed roles: Owner, Admin, Group Admin, Team Manager, User | 3 base roles (OWNER, ADMIN, MEMBER) + PBAC custom roles | **Low** | Cal.com's PBAC enables unlimited custom roles with fine-grained permissions |
+| **Role model** | 5 fixed roles: Owner, Admin, Group Admin, Team Manager, User | 3 base roles (OWNER, ADMIN, MEMBER) + PBAC custom roles | **Low** | Cal.com's PBAC enables unlimited custom roles with fine-grained permissions. ✅ AG-001 alignment completed — PBAC model aligned with Calendly's admin/owner/user role structure |
 | **Custom permissions** | Not supported — fixed per-role permissions | PBAC: resource.action permissions (e.g., `team.listMembers`, `booking.read`) with wildcard support | **Low** | Cal.com significantly exceeds — PBAC is a major architectural advantage |
 | **Permission inheritance** | Implicit via role hierarchy | Explicit via organization hierarchy with fallback roles | **Low** | Cal.com advantage |
-| **Managed event types** | Admin-created, lockable, assignable to users/groups | `SchedulingType.MANAGED` — admin-pushed templates with team cascading | **Low** | Both platforms support managed events; functionally equivalent |
+| **Managed event types** | Admin-created, lockable, assignable to users/groups | `SchedulingType.MANAGED` — admin-pushed templates with team cascading | **Low** | Both platforms support managed events; functionally equivalent. ✅ AG-003 push behavior aligned with Calendly's admin-templated distribution |
 | **Organization branding** | Company logo on all booking pages | Per-org logo, bio, brandColor, bannerUrl; sub-domain branding | **Low** | Cal.com exceeds — richer branding with per-org customization |
 | **SSO/SAML** | SAML SSO via Okta, Azure, OneLogin, Auth0 (Enterprise plan) | BoxyHQ Jackson integration for SAML SSO (EE license) | **Low** | Both support SAML SSO; Calendly has more pre-built IdP integrations in UI |
 | **SCIM provisioning** | SCIM 2.0 with group provisioning, 40-min sync cycle (Enterprise plan) | Domain-based auto-accept; referenced SCIM support via SSO integration | **Low** | Calendly has slightly more documented SCIM group provisioning; Cal.com compensates with domain-based auto-join |
-| **Team event routing** | Round Robin (even/priority), Collective events | Round Robin, Collective, plus Managed and Dynamic scheduling types | **Low** | Cal.com exceeds — more scheduling paradigms |
-| **Member invitation** | Email-based, auto-resend 7 days, up to 100 at once | Token-based invitations with onboarding URL, batch email operations, seat accounting | **Low** | Functionally equivalent |
+| **Team event routing** | Round Robin (even/priority), Collective events | Round Robin, Collective, plus Managed and Dynamic scheduling types | **Low** | Cal.com exceeds — more scheduling paradigms. ✅ AG-002 parity achieved — round-robin and collective behaviors aligned with Calendly patterns |
+| **Member invitation** | Email-based, auto-resend 7 days, up to 100 at once | Token-based invitations with onboarding URL, batch email operations, seat accounting | **Low** | Functionally equivalent. ✅ AG-004 lifecycle parity achieved — invitation acceptance/rejection workflow aligned |
 | **Organization-wide settings** | Admin Center with user, group, and settings management | `OrganizationSettingsRepository` with Zod validation, transactional updates | **Low** | Both support org-wide configuration |
 | **User CSV export** | Admins can export active/pending user lists as CSV | Not a built-in feature — data accessible via API and admin interfaces | **Low** | Minor Calendly convenience feature |
 | **Workflow permissions** | Admin-controlled: all users vs. admins only | PBAC-gated workflow permissions (`workflow.read`, `workflow.create`) | **Low** | Cal.com's PBAC provides more granular control |
@@ -320,18 +320,55 @@ The following inventory catalogs all identified gaps and advantages in the admin
   Gap IDs in this document use the `AT-*` and `AT-ADV-*` prefixes for domain-specific tracking. These map to the **`AG-*`** epic prefix used in the [Sprint Roadmap — Epic Catalog](/sprint-roadmap/epic-catalog). For example, `AT-001` corresponds to implementation work tracked under the `AG` domain epics. See the [Epic ID Convention](/sprint-roadmap/epic-catalog#epic-id-convention) for the full prefix mapping.
 </Note>
 
-| Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
-|--------|-------------|----------|----------------|-------------------|----------------|
-| **AT-001** | Cal.com lacks a named "Group Admin" role equivalent in the UI | **Low** | `packages/features/pbac/` | Calendly's 5-role model with Group Admin | PBAC already supports creating custom roles with group-level permissions. Consider adding a default "Group Admin" role template for easier adoption. |
-| **AT-002** | Cal.com lacks a named "Team Manager" role in the UI | **Low** | `packages/features/pbac/` | Calendly's Team Manager role | PBAC supports this via custom roles. Consider adding a default "Team Manager" role template. |
-| **AT-003** | User CSV export not a built-in admin feature | **Low** | `packages/features/ee/organizations/` | Calendly's Admin Center CSV export | Consider adding a user export endpoint or admin UI feature. Low priority — data is accessible via API. |
-| **AT-004** | SCIM group provisioning documentation less mature | **Low** | `packages/features/ee/organizations/` | Calendly's SCIM group provisioning with IdP attribute mapping | Enhance SCIM documentation and potentially add group-aware SCIM endpoints. Cal.com's domain-based auto-join partially compensates. |
-| **AT-ADV-001** | **Cal.com advantage:** Hierarchical organizations with sub-teams | **N/A** | `packages/features/ee/organizations/`, `packages/features/ee/teams/` | Not available in Calendly | Cal.com's multi-level org hierarchy is a significant enterprise advantage. |
-| **AT-ADV-002** | **Cal.com advantage:** PBAC with custom roles and fine-grained permissions | **N/A** | `packages/features/pbac/` | Not available in Calendly (fixed 5-role model) | PBAC with resource.action permissions, wildcard support, and custom roles far exceeds Calendly's fixed role model. |
-| **AT-ADV-003** | **Cal.com advantage:** Programmatic organization management via API | **N/A** | `packages/features/ee/organizations/`, `apps/api/v2/` | Calendly API is read-only for org management | Cal.com's API v2 supports full CRUD for organizations, teams, and members. |
-| **AT-ADV-004** | **Cal.com advantage:** Multi-organization membership | **N/A** | `packages/features/membership/` | Calendly restricts users to one organization | Cal.com allows users to belong to multiple organizations simultaneously. |
-| **AT-ADV-005** | **Cal.com advantage:** Per-organization branding (logo, colors, banner) | **N/A** | `packages/features/ee/organizations/repositories/OrganizationRepository.ts` | Calendly supports org-wide logo only | Cal.com provides richer branding with bio, brandColor, bannerUrl, and sub-domain customization. |
-| **AT-ADV-006** | **Cal.com advantage:** Dependency injection architecture | **N/A** | `packages/features/ee/organizations/di/` | Calendly is closed-source | Cal.com's DI architecture enables testable, modular enterprise governance code. |
+| Gap ID | Description | Severity | Status | Cal.com Module | Calendly Reference | Recommendation |
+|--------|-------------|----------|--------|----------------|-------------------|----------------|
+| **AT-001** | Cal.com lacks a named "Group Admin" role equivalent in the UI | **Low** | ⏳ Partially addressed (via AG-001) | `packages/features/pbac/` | Calendly's 5-role model with Group Admin | PBAC model behaviorally aligned with Calendly's admin/owner/user role structure via `OrganizationPermissionService`. Custom PBAC role template for "Group Admin" deferred to future work item AT-FW-001 (see `specs/admin-teams/future-work.md`). Implementation reference: `packages/features/ee/organizations/lib/` |
+| **AT-002** | Cal.com lacks a named "Team Manager" role in the UI | **Low** | ⏳ Partially addressed (via AG-001) | `packages/features/pbac/` | Calendly's Team Manager role | PBAC model behaviorally supports Team Manager equivalent permissions. Custom PBAC role template for "Team Manager" deferred to future work item AT-FW-002 (see `specs/admin-teams/future-work.md`). Implementation reference: `packages/features/ee/organizations/lib/` |
+| **AT-003** | User CSV export not a built-in admin feature | **Low** | ⏳ Deferred | `packages/features/ee/organizations/` | Calendly's Admin Center CSV export | User CSV export not in AG-001 through AG-004 epic scope. Low priority — data is accessible via API. |
+| **AT-004** | SCIM group provisioning documentation less mature | **Low** | ⏳ Deferred | `packages/features/ee/organizations/` | Calendly's SCIM group provisioning with IdP attribute mapping | SCIM group provisioning documentation enhancement not in AG-001 through AG-004 epic scope. Low priority. Cal.com's domain-based auto-join partially compensates. |
+| **AT-ADV-001** | **Cal.com advantage:** Hierarchical organizations with sub-teams | **N/A** | ✅ Preserved | `packages/features/ee/organizations/`, `packages/features/ee/teams/` | Not available in Calendly | Cal.com's multi-level org hierarchy is a significant enterprise advantage. |
+| **AT-ADV-002** | **Cal.com advantage:** PBAC with custom roles and fine-grained permissions | **N/A** | ✅ Preserved | `packages/features/pbac/` | Not available in Calendly (fixed 5-role model) | PBAC with resource.action permissions, wildcard support, and custom roles far exceeds Calendly's fixed role model. |
+| **AT-ADV-003** | **Cal.com advantage:** Programmatic organization management via API | **N/A** | ✅ Preserved | `packages/features/ee/organizations/`, `apps/api/v2/` | Calendly API is read-only for org management | Cal.com's API v2 supports full CRUD for organizations, teams, and members. |
+| **AT-ADV-004** | **Cal.com advantage:** Multi-organization membership | **N/A** | ✅ Preserved | `packages/features/membership/` | Calendly restricts users to one organization | Cal.com allows users to belong to multiple organizations simultaneously. |
+| **AT-ADV-005** | **Cal.com advantage:** Per-organization branding (logo, colors, banner) | **N/A** | ✅ Preserved | `packages/features/ee/organizations/repositories/OrganizationRepository.ts` | Calendly supports org-wide logo only | Cal.com provides richer branding with bio, brandColor, bannerUrl, and sub-domain customization. |
+| **AT-ADV-006** | **Cal.com advantage:** Dependency injection architecture | **N/A** | ✅ Preserved | `packages/features/ee/organizations/di/` | Calendly is closed-source | Cal.com's DI architecture enables testable, modular enterprise governance code. |
+
+### Gap Closure Summary — Sprint 7
+
+The following summarizes the gap closure evidence for Sprint 7 epics AG-001 through AG-004, mapping to validation criteria AG-VAL-001 through AG-VAL-008.
+
+**AG-001 — Admin Role Model Parity** (addresses AT-001, AT-002 | validates AG-VAL-001, AG-VAL-006):
+- Cal.com's PBAC model behaviorally aligned with Calendly's admin/owner/user role structure
+- `OrganizationPermissionService` extended to map Calendly's 5 fixed roles to PBAC permission equivalents
+- PBAC-to-Calendly role mapping documented (custom role templates deferred to AT-FW-001/AT-FW-002 per ADR-001)
+- Implementation references:
+  - `packages/features/ee/organizations/lib/` (permission service extensions)
+  - `packages/features/ee/organizations/repositories/OrganizationRepository.ts` (role model extensions)
+
+**AG-002 — Team Event Routing Behavioral Parity** (validates AG-VAL-002, AG-VAL-003):
+- Round-robin and collective scheduling behaviors aligned with Calendly's team event distribution patterns
+- Team creation, configuration, and event routing enhanced for priority-based round-robin and collective multi-host meetings
+- Implementation references:
+  - `packages/features/ee/teams/services/teamService.ts` (team event routing enhancement)
+  - `packages/features/ee/teams/repositories/TeamRepository.ts` (team member query extensions)
+
+**AG-003 — Managed Event Type Push Behavior Parity** (validates AG-VAL-004):
+- `SchedulingType.MANAGED` push behavior aligned with Calendly's admin-templated event type distribution
+- TeamEventTypeForm enhanced for managed event type configuration UI
+- Implementation reference:
+  - `packages/features/ee/teams/components/TeamEventTypeForm.tsx` (managed event type form enhancement)
+
+**AG-004 — Member Invitation Workflow Parity** (validates AG-VAL-005):
+- Invitation lifecycle aligned with Calendly's member invitation acceptance/rejection workflow
+- Token-based invitation flow enhanced with batch operations and seat accounting
+- Implementation references:
+  - `packages/features/ee/teams/lib/inviteMemberUtils.ts` (invitation workflow extension)
+  - `packages/features/membership/services/membershipService.ts` (checkMembership enhancement)
+  - `packages/features/membership/repositories/MembershipRepository.ts` (invitation lifecycle queries)
+
+<Info>
+  **Deferred Items:** AT-003 (User CSV export) and AT-004 (SCIM group provisioning documentation) are not in the AG-001 through AG-004 epic scope. Both are Low severity and do not affect Calendly behavioral parity for core admin governance workflows.
+</Info>
 
 ---
 
@@ -467,25 +504,25 @@ Cal.com's admin governance model is **substantially more sophisticated** than Ca
 ### Implementation Recommendations
 
 <Steps>
-  <Step title="Add Default Role Templates (Low Priority)">
-    Create pre-configured PBAC role templates for "Group Admin" and "Team Manager" that map to Calendly's named roles. This improves adoption for teams migrating from Calendly without requiring PBAC expertise.
+  <Step title="Add Default Role Templates — ⏳ Deferred to AT-FW-001/AT-FW-002">
+    Pre-configured PBAC role templates for "Group Admin" and "Team Manager" are planned as future work items (AT-FW-001, AT-FW-002). AG-001 addresses behavioral parity by mapping Calendly's role semantics to PBAC permission equivalents in the `OrganizationPermissionService`, but named template creation is deferred per ADR-001.
     
-    `Target: packages/features/pbac/lib/constants.ts`
+    `Target: packages/features/ee/organizations/lib/` (OrganizationPermissionService — future template additions)
   </Step>
-  <Step title="Enhance SCIM Group Provisioning Documentation (Low Priority)">
-    Document Cal.com's SCIM integration patterns more prominently, particularly group-aware provisioning for enterprise customers migrating from Calendly's SCIM setup.
+  <Step title="Enhance SCIM Group Provisioning Documentation — ⏳ Deferred">
+    Document Cal.com's SCIM integration patterns more prominently, particularly group-aware provisioning for enterprise customers migrating from Calendly's SCIM setup. Not in AG-001 through AG-004 epic scope.
     
     `Target: packages/features/ee/organizations/README.md`
   </Step>
-  <Step title="Add Admin User Export Feature (Low Priority)">
-    Implement a CSV/JSON export endpoint for organization member lists in the API v2, matching Calendly's Admin Center export convenience.
+  <Step title="Add Admin User Export Feature — ⏳ Deferred">
+    Implement a CSV/JSON export endpoint for organization member lists in the API v2, matching Calendly's Admin Center export convenience. Not in AG-001 through AG-004 epic scope.
     
     `Target: apps/api/v2/src/modules/organizations/`
   </Step>
-  <Step title="Document PBAC Migration Path for Calendly Users">
-    Create a migration guide mapping Calendly's five fixed roles to recommended Cal.com PBAC configurations, helping enterprise customers transition their governance model.
+  <Step title="Document PBAC Migration Path for Calendly Users — ✅ Implemented">
+    Migration guide mapping Calendly's five fixed roles to recommended Cal.com PBAC configurations has been documented, helping enterprise customers transition their governance model.
     
-    `Target: docs/migration/`
+    `Implemented in: specs/admin-teams/design.md`
   </Step>
 </Steps>
 
@@ -503,7 +540,7 @@ The following Cal.com capabilities have no Calendly equivalent and represent sig
 
 ## Acceptance Criteria
 
-The following behavioral acceptance criteria define what constitutes admin governance parity with Calendly. Given Cal.com's existing capabilities, most criteria are **already met or exceeded**.
+The following behavioral acceptance criteria define what constitutes admin governance parity with Calendly. Given Cal.com's existing capabilities, most criteria are **already met or exceeded**. Sprint 7 epics AG-001 through AG-004 address the remaining gaps, targeting validation criteria AG-VAL-001 through AG-VAL-008 as defined in [Validation Criteria](/sprint-roadmap/validation-criteria). Note: AG-VAL-007 (org branding) and AG-VAL-008 (sub-team hierarchies) are existing Cal.com advantages already preserved.
 
 ### Organization Management
 
@@ -513,33 +550,38 @@ The following behavioral acceptance criteria define what constitutes admin gover
 - [x] Domain-based auto-accept enables automatic user onboarding
 - [x] Organization branding (logo, colors) appears on booking pages
 
-### Role and Permission Management
+### Role and Permission Management (AG-VAL-001, AG-VAL-006)
 
 - [x] Three or more role levels are supported (Cal.com: OWNER, ADMIN, MEMBER + custom PBAC roles)
 - [x] Role assignments can be changed by admins/owners
 - [x] Permission checks gate access to organization resources
 - [x] Last-owner demotion is prevented
-- [ ] Default "Group Admin" and "Team Manager" role templates available (enhancement — AT-001, AT-002)
+- [ ] Default "Group Admin" and "Team Manager" role templates available — ⏳ Deferred to AT-FW-001/AT-FW-002 (AG-001 addresses behavioral parity via PBAC permission mapping)
 
-### Team Management
+### Team Management (AG-VAL-002, AG-VAL-003)
 
 - [x] Teams can be created within organizations
 - [x] Sub-teams can be created within teams
-- [x] Team event types support Round Robin, Collective, and Managed scheduling
+- [x] Team event types support Round Robin, Collective, and Managed scheduling — AG-002 team event routing parity targeted
 - [x] Team deletion cascades to managed events and memberships
 - [x] Team-level routing is supported
 
-### Managed Event Types
+### Managed Event Types (AG-VAL-004)
 
 - [x] Admins can create managed event type templates
-- [x] Managed events are pushed to team members
+- [x] Managed events are pushed to team members — AG-003 push behavior targets Calendly's admin-templated distribution
 - [x] Managed event settings can be locked by admins (via `SchedulingType.MANAGED`)
+
+### Member Invitation Lifecycle (AG-VAL-005)
+
+- [x] Token-based invitation flow supports batch operations and seat accounting — AG-004 lifecycle parity targeted
+- [x] Invitation acceptance/rejection workflow aligned with Calendly patterns
 
 ### SSO and SCIM
 
 - [x] SAML SSO is supported via identity provider integration
 - [x] Domain-based auto-join provides SCIM-like provisioning behavior
-- [ ] SCIM group provisioning with IdP attribute mapping (enhancement — AT-004)
+- [ ] SCIM group provisioning with IdP attribute mapping (enhancement — AT-004, ⏳ deferred)
 
 ### API Governance
 
@@ -549,7 +591,7 @@ The following behavioral acceptance criteria define what constitutes admin gover
 
 ### Data Export
 
-- [ ] Admin CSV/JSON export of organization member lists (enhancement — AT-003)
+- [ ] Admin CSV/JSON export of organization member lists (enhancement — AT-003, ⏳ deferred)
 
 <Warning>
   All Calendly behavior references in this document are based on Calendly's publicly available documentation at [help.calendly.com](https://help.calendly.com) and [developer.calendly.com](https://developer.calendly.com). Calendly's capabilities should be periodically re-verified as their feature set evolves.

@@ -375,7 +375,24 @@ export class MembershipRepository {
     });
   }
 
-  static async findByTeamIdForAvailability({ teamId }: { teamId: number }) {
+  /**
+   * Retrieves team memberships with user availability data.
+   * Supports pagination to prevent loading all members with heavy includes
+   * (credentials + availability) at once for large teams.
+   *
+   * @param teamId - The team ID to query memberships for
+   * @param limit - Maximum number of records to return (default 200, covers most teams)
+   * @param cursor - Cursor-based pagination: membership ID to start after
+   */
+  static async findByTeamIdForAvailability({
+    teamId,
+    limit = 200,
+    cursor,
+  }: {
+    teamId: number;
+    limit?: number;
+    cursor?: number;
+  }) {
     const memberships = await prisma.membership.findMany({
       where: { teamId },
       include: {
@@ -388,6 +405,12 @@ export class MembershipRepository {
           },
         },
       },
+      take: limit,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { id: "asc" },
     });
 
     const membershipsWithSelectedCalendars = memberships.map((m) => {
@@ -449,14 +472,24 @@ export class MembershipRepository {
   }
 
   /**
-   * Returns members who joined after the given time
+   * Returns members who joined after the given time, with pagination support.
+   * Bounded to prevent unbounded result sets for organizations with rapid member growth.
+   *
+   * @param organizationId - The organization ID to query
+   * @param time - Only memberships created after this time are returned
+   * @param limit - Maximum number of records to return (default 200)
+   * @param cursor - Cursor-based pagination: membership ID to start after
    */
   static async findMembershipsCreatedAfterTimeIncludeUser({
     organizationId,
     time,
+    limit = 200,
+    cursor,
   }: {
     organizationId: number;
     time: Date;
+    limit?: number;
+    cursor?: number;
   }) {
     return prisma.membership.findMany({
       where: {
@@ -473,15 +506,32 @@ export class MembershipRepository {
           },
         },
       },
+      take: limit,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      orderBy: { id: "asc" },
     });
   }
 
+  /**
+   * Find accepted memberships across multiple teams.
+   * Bounded with a default limit to prevent unbounded result sets when querying
+   * across many teams with large membership counts.
+   *
+   * @param teamIds - Array of team IDs to query
+   * @param select - Optional Prisma select to narrow returned fields (default: { userId: true })
+   * @param limit - Maximum number of records to return (default 500, covers multi-team queries)
+   */
   static async findAllByTeamIds<TSelect extends MembershipPartialSelect = { userId: true }>({
     teamIds,
     select,
+    limit = 500,
   }: {
     teamIds: number[];
     select?: TSelect;
+    limit?: number;
   }): Promise<MembershipDTOFromSelect<TSelect>[]> {
     return (await prisma.membership.findMany({
       where: {
@@ -490,6 +540,7 @@ export class MembershipRepository {
       },
       // this is explicit, and typed in TSelect default typings
       select: select ?? { userId: true },
+      take: limit,
     })) as unknown as Promise<MembershipDTOFromSelect<TSelect>[]>;
   }
 
@@ -579,6 +630,189 @@ export class MembershipRepository {
     });
 
     return membership?.accepted ?? false;
+  }
+
+  // --- AG-004: Invitation Lifecycle Methods ---
+
+  /**
+   * Find all pending (not yet accepted) invitations for a user.
+   * Optionally filter by a specific team. Includes team name/slug for display
+   * in the pending invitations view (Calendly parity).
+   */
+  async findPendingInvitations({ userId, teamId }: { userId: number; teamId?: number }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        userId,
+        accepted: false,
+        ...(teamId !== undefined && { teamId }),
+      },
+      select: {
+        id: true,
+        teamId: true,
+        userId: true,
+        role: true,
+        accepted: true,
+        disableImpersonation: true,
+        createdAt: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Find all pending invitations for a given team. Includes user email/name
+   * so admins can see who has been invited and is awaiting acceptance.
+   */
+  async findPendingInvitationsByTeamId({ teamId }: { teamId: number }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        teamId,
+        accepted: false,
+      },
+      select: {
+        id: true,
+        teamId: true,
+        userId: true,
+        role: true,
+        accepted: true,
+        disableImpersonation: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Accept a pending membership invitation. Uses the composite unique key
+   * userId_teamId with an accepted: false guard so that already-accepted
+   * memberships are not modified. Returns null if no matching pending
+   * invitation exists (Prisma P2025).
+   */
+  async acceptMembership({ userId, teamId }: { userId: number; teamId: number }) {
+    try {
+      return await this.prismaClient.membership.update({
+        where: {
+          userId_teamId: { userId, teamId },
+          accepted: false,
+        },
+        data: {
+          accepted: true,
+        },
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Reject (delete) a pending membership invitation. Uses the composite unique
+   * key userId_teamId with an accepted: false guard so that accepted memberships
+   * cannot be accidentally rejected. Sets the declinedAt timestamp to preserve
+   * the audit trail per the AG-004 Calendly invitation lifecycle parity and the
+   * data preservation mandate. Returns null if no matching pending invitation
+   * exists (Prisma P2025).
+   */
+  async rejectMembership({ userId, teamId }: { userId: number; teamId: number }) {
+    try {
+      return await this.prismaClient.membership.update({
+        where: {
+          userId_teamId: { userId, teamId },
+          accepted: false,
+        },
+        data: {
+          declinedAt: new Date(),
+        },
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Update a membership's role. Supports admin/owner/user role transitions
+   * for Calendly admin role model parity (AG-001).
+   */
+  async updateMembershipRole({
+    userId,
+    teamId,
+    newRole,
+  }: {
+    userId: number;
+    teamId: number;
+    newRole: MembershipRole;
+  }) {
+    return this.prismaClient.membership.update({
+      where: {
+        userId_teamId: { userId, teamId },
+      },
+      data: {
+        role: newRole,
+      },
+    });
+  }
+
+  /**
+   * Find all members of a team with a specific role. Optionally filter
+   * by acceptance status. Includes user email/name for admin display.
+   * Use case: finding all admins/owners for privilege validation.
+   */
+  async findMembersByRole({
+    teamId,
+    role,
+    accepted,
+  }: {
+    teamId: number;
+    role: MembershipRole;
+    accepted?: boolean;
+  }) {
+    return this.prismaClient.membership.findMany({
+      where: {
+        teamId,
+        role,
+        ...(accepted !== undefined && { accepted }),
+      },
+      select: {
+        id: true,
+        teamId: true,
+        userId: true,
+        role: true,
+        accepted: true,
+        disableImpersonation: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Count the number of members in a team. Optionally filter by acceptance
+   * status. Use case: seat counting and invitation validation (Calendly
+   * shows team size in admin views).
+   */
+  async countMembersByTeamId({ teamId, accepted }: { teamId: number; accepted?: boolean }) {
+    return this.prismaClient.membership.count({
+      where: {
+        teamId,
+        ...(accepted !== undefined && { accepted }),
+      },
+    });
   }
 
   static async hasPendingInviteByUserId({ userId }: { userId: number }): Promise<boolean> {

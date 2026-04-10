@@ -9,6 +9,8 @@ import type { Webhook, WebhookGroup, WebhookSubscriber } from "../dto/types";
  */
 const WebhookVersion = {
   V_2021_10_20: "2021-10-20",
+  /** Calendly-aligned payload version with UTM tracking, reschedule URI references */
+  V_2025_01_01: "2025-01-01",
 } as const;
 
 type WebhookVersion = (typeof WebhookVersion)[keyof typeof WebhookVersion];

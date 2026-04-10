@@ -3,7 +3,7 @@ import type { EventStatus } from "ics";
 
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
-import generateIcsString from "./generateIcsString";
+import generateIcsString, { type BookingAction } from "./generateIcsString";
 
 export enum GenerateIcsRole {
   ATTENDEE = "attendee",
@@ -15,11 +15,13 @@ export default function generateIcsFile({
   role,
   status,
   t,
+  bookingAction,
 }: {
   calEvent: CalendarEvent;
   role: GenerateIcsRole;
   status: EventStatus;
   t?: TFunction;
+  bookingAction?: BookingAction;
 }) {
   // O365 deletes emails if the calendar event is selected. Currently no option to disable this on the web
   if (
@@ -35,6 +37,7 @@ export default function generateIcsFile({
       event: calEvent,
       status,
       t,
+      ...(bookingAction && { bookingAction }),
     }),
     method: "REQUEST",
   };

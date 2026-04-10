@@ -52,6 +52,74 @@ export function hasEmbedPath(pathWithQuery: string) {
   return onlyPath.endsWith("/embed") || onlyPath.endsWith("/embed/");
 }
 
+/**
+ * Normalizes raw query parameter values based on their corresponding form field types.
+ * Ensures Calendly-equivalent field types are correctly interpreted from URL query parameters
+ * before they enter the routing pipeline via getResponseToStore and getFieldResponseForJsonLogic.
+ *
+ * Normalization rules by field type:
+ * - multiselect: comma-separated strings are split into arrays for consistent array handling
+ * - checkbox: "true"/"false" strings are case-normalized; comma-separated multi-checkbox values
+ *   are split into arrays (matching Calendly's multi-checkbox question behavior)
+ * - number: values are validated as numeric strings with a warning logged for invalid inputs
+ *   (actual string-to-number conversion is deferred to getFieldResponseForJsonLogic)
+ *
+ * @param fieldsResponses - Raw field responses extracted from URL query parameters
+ * @param fields - Form field definitions containing type information for normalization
+ * @returns A shallow copy of fieldsResponses with values normalized per field type
+ */
+function normalizeFieldsResponsesForFieldTypes(
+  fieldsResponses: Record<string, string | string[]>,
+  fields: readonly { id: string; label: string; identifier?: string; type: string; fieldType?: string }[]
+): Record<string, string | string[]> {
+  const normalized = { ...fieldsResponses };
+
+  for (const field of fields) {
+    // Resolve the field identifier using the same logic as getFieldIdentifier: identifier ?? label
+    const identifier = field.identifier || field.label;
+    const rawValue = normalized[identifier];
+    if (rawValue === undefined) continue;
+
+    // Prefer the strict Calendly-aligned fieldType discriminator over the legacy type string
+    const effectiveType = field.fieldType || field.type;
+
+    if (effectiveType === "multiselect") {
+      // Multiselect fields: split comma-separated strings into arrays.
+      // Array values from repeated query params (e.g., ?field=a&field=b) are already arrays
+      // via the querySchema's z.string().or(z.array(z.string())) catchall.
+      if (typeof rawValue === "string" && rawValue.includes(",")) {
+        normalized[identifier] = rawValue.split(",").map((v) => v.trim());
+      }
+    } else if (effectiveType === "checkbox") {
+      if (typeof rawValue === "string") {
+        const lowerValue = rawValue.toLowerCase();
+        if (lowerValue === "true" || lowerValue === "false") {
+          // Single boolean checkbox: normalize casing for consistent downstream processing.
+          // The value remains a string here; handleResponse's validator accepts both boolean and string.
+          normalized[identifier] = lowerValue;
+        } else if (rawValue.includes(",")) {
+          // Multi-checkbox field: comma-separated values represent multiple selected options,
+          // matching Calendly's checkbox question type which supports multiple selections.
+          normalized[identifier] = rawValue.split(",").map((v) => v.trim());
+        }
+      }
+      // Array values (from repeated query params) are already correctly shaped
+    } else if (effectiveType === "number") {
+      // Number fields: validate the string is a valid numeric representation.
+      // Actual conversion from string to number is handled downstream by getFieldResponseForJsonLogic.
+      if (typeof rawValue === "string" && rawValue !== "" && Number.isNaN(Number(rawValue))) {
+        log.warn("Non-numeric value received for number field", {
+          fieldId: field.id,
+          identifier,
+          value: rawValue,
+        });
+      }
+    }
+  }
+
+  return normalized;
+}
+
 const _getRoutedUrl = async (context: Pick<GetServerSidePropsContext, "query" | "req">, fetchCrm = true) => {
   // Initialize trace service for tracking routing decisions
   const routingTraceService = getRoutingTraceService();
@@ -135,9 +203,19 @@ const _getRoutedUrl = async (context: Pick<GetServerSidePropsContext, "query" | 
   if (!serializableForm.fields) {
     throw new Error("Form has no fields");
   }
+
+  // Normalize field responses based on form field types before building the response object.
+  // This ensures Calendly-equivalent field types (multiselect arrays from comma-separated strings,
+  // checkbox boolean value normalization, and number field validation) are correctly interpreted
+  // before entering the routing pipeline via getResponseToStore and getFieldResponseForJsonLogic.
+  const normalizedFieldsResponses = normalizeFieldsResponsesForFieldTypes(
+    fieldsResponses,
+    serializableForm.fields
+  );
+
   const response: FormResponse = getResponseToStore({
     formFields: serializableForm.fields,
-    fieldsResponses,
+    fieldsResponses: normalizedFieldsResponses,
   });
 
   let routingFormTraceService: RoutingFormTraceService | undefined;
@@ -164,7 +242,7 @@ const _getRoutedUrl = async (context: Pick<GetServerSidePropsContext, "query" | 
       form: serializableForm,
       formFillerId: uuidv4(),
       response: response,
-      identifierKeyedResponse: fieldsResponses,
+      identifierKeyedResponse: normalizedFieldsResponses,
       chosenRouteId: matchingRoute.id,
       isPreview: isBookingDryRun,
       queueFormResponse: shouldQueueFormResponse,
@@ -217,6 +295,10 @@ const _getRoutedUrl = async (context: Pick<GetServerSidePropsContext, "query" | 
   // Use fallbackAction if set (when no team members found), otherwise use the main decidedAction
   const actionToUse = fallbackAction ?? decidedAction;
 
+  // Action type dispatch for Calendly-equivalent routing behaviors.
+  // Currently handles all three RouteActionType values: customPageMessage, eventTypeRedirectUrl,
+  // and externalRedirectUrl. If the RouteActionType enum is extended in the future for additional
+  // Calendly-parity action types, new handlers should be added here before the fallthrough.
   //TODO: Maybe take action after successful mutation
   if (actionToUse.type === "customPageMessage") {
     return {
@@ -238,6 +320,13 @@ const _getRoutedUrl = async (context: Pick<GetServerSidePropsContext, "query" | 
         destination: getAbsoluteEventTypeRedirectUrlWithEmbedSupport({
           eventTypeRedirectUrl: eventTypeUrlWithResolvedVariables,
           form: serializableForm,
+          // URL parameter forwarding correctly handles all Calendly-equivalent field types:
+          // - Multi-select/checkbox arrays: serialized as repeated query params (field=a&field=b)
+          //   via getUrlSearchParamsToForward's append() loop over array values
+          // - Numeric values: converted to string via String(fieldResponse.value) in the forwarder
+          // - Boolean checkbox values: forwarded as string representation ("true"/"false")
+          // The response-derived params (paramsFromResponse) override raw params (paramsFromCurrentUrl)
+          // ensuring normalized/processed values take precedence over raw query param values.
           allURLSearchParams: getUrlSearchParamsToForward({
             formResponse: response,
             fields: serializableForm.fields,

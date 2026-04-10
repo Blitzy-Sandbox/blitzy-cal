@@ -39,6 +39,10 @@ export function isCalAIAction(action: WorkflowActions) {
   return action === WorkflowActions.CAL_AI_PHONE_CALL;
 }
 
+export function isInAppNotificationAction(action: WorkflowActions) {
+  return action === WorkflowActions.IN_APP_NOTIFICATION;
+}
+
 export function isEmailAction(
   action: WorkflowActions
 ): action is Extract<WorkflowActions, "EMAIL_HOST" | "EMAIL_ATTENDEE" | "EMAIL_ADDRESS"> {

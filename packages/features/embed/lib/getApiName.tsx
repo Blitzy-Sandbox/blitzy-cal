@@ -27,3 +27,24 @@ export function getApiNameForVanillaJsSnippet({
 }) {
   return getApiNameWithNamespace({ mainApiName, namespace });
 }
+
+/**
+ * Unified API name resolver for share flow embed code generation.
+ * Delegates to the framework-specific helper based on the embed framework type,
+ * providing a single entry point for share flow link generation across both
+ * React and vanilla JS embed contexts.
+ */
+export function getApiNameForShareFlow({
+  namespace,
+  mainApiName,
+  embedFramework,
+}: {
+  namespace: string;
+  mainApiName: string;
+  embedFramework: "react" | "vanilla";
+}): string {
+  if (embedFramework === "react") {
+    return getApiNameForReactSnippet({ mainApiName });
+  }
+  return getApiNameForVanillaJsSnippet({ namespace, mainApiName });
+}

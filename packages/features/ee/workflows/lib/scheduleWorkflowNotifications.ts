@@ -1,7 +1,7 @@
 import { prisma } from "@calcom/prisma";
 import type { WorkflowStep } from "@calcom/prisma/client";
-import { BookingStatus, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import type { TimeUnit } from "@calcom/prisma/enums";
+import { BookingStatus, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 
 import { scheduleBookingReminders } from "./scheduleBookingReminders";
 
@@ -11,6 +11,8 @@ export const bookingSelect = {
   endTime: true,
   title: true,
   uid: true,
+  location: true, // Added for Calendly parity (NF-003) — meeting location in notifications
+  description: true, // Added for Calendly parity (NF-003) — additional notes in notifications
   metadata: true,
   smsReminderNumber: true,
   responses: true,
@@ -77,7 +79,13 @@ export async function scheduleWorkflowNotifications({
   teamId: number | null;
   alreadyScheduledActiveOnIds?: number[];
 }) {
-  if (trigger !== WorkflowTriggerEvents.BEFORE_EVENT && trigger !== WorkflowTriggerEvents.AFTER_EVENT) return;
+  // Schedulable (offset-based) triggers that require time-based reminder scheduling.
+  // Currently BEFORE_EVENT and AFTER_EVENT; extensible for future Calendly parity triggers (NF-003).
+  const SCHEDULABLE_TRIGGERS: Set<WorkflowTriggerEvents> = new Set([
+    WorkflowTriggerEvents.BEFORE_EVENT,
+    WorkflowTriggerEvents.AFTER_EVENT,
+  ]);
+  if (!SCHEDULABLE_TRIGGERS.has(trigger)) return;
 
   const bookingsToScheduleNotifications = await getBookings(activeOn, isOrg, alreadyScheduledActiveOnIds);
 

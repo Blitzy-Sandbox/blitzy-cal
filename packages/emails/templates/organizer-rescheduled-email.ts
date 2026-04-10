@@ -35,6 +35,38 @@ export default class OrganizerRescheduledEmail extends OrganizerScheduledEmail {
     };
   }
 
+  /**
+   * Override getTextBody to include reschedule context in the plain text version
+   * of the email, achieving parity with Calendly's organizer-facing reschedule
+   * notifications which include who rescheduled and the reason.
+   *
+   * When `rescheduledBy` is present on the calendar event, the rescheduler's
+   * identity is appended. When `cancellationReason` carries the `$RCH$` prefix
+   * (indicating a reschedule reason rather than a cancellation reason), the
+   * stripped reason text is appended as well.
+   */
+  protected getTextBody(
+    title = "event_has_been_rescheduled",
+    subtitle = "",
+    extraInfo = "",
+    callToAction = ""
+  ): string {
+    let text = super.getTextBody(title, subtitle, extraInfo, callToAction);
+
+    if (this.calEvent.rescheduledBy) {
+      text += `\n${this.t("rescheduled_by")}: ${this.calEvent.rescheduledBy}`;
+    }
+
+    if (this.calEvent.cancellationReason?.startsWith("$RCH$")) {
+      const reason = this.calEvent.cancellationReason.replace("$RCH$", "");
+      if (reason) {
+        text += `\n${this.t("reason_for_reschedule")}: ${reason}`;
+      }
+    }
+
+    return text;
+  }
+
   async getHtml(calEvent: CalendarEvent, attendee: Person, teamMember?: Person) {
     return await renderEmail("OrganizerRescheduledEmail", {
       calEvent,

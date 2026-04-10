@@ -156,6 +156,97 @@ describe("getHumanReadableFieldResponseValue", () => {
     });
   });
 
+  describe("checkbox fields", () => {
+    const createCheckboxField = (
+      options: Array<{ id: string; label: string }>
+    ): Pick<Field, "type" | "options"> => ({
+      type: "checkbox",
+      options,
+    });
+
+    it("should return option labels for checkbox field with array of selected option IDs", () => {
+      const field = createCheckboxField([
+        { id: "opt-a", label: "Morning" },
+        { id: "opt-b", label: "Afternoon" },
+        { id: "opt-c", label: "Evening" },
+      ]);
+      const value: FormResponse[string]["value"] = ["opt-a", "opt-c"];
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual(["Morning", "Evening"]);
+    });
+
+    it("should return single option label for checkbox field with one selection", () => {
+      const field = createCheckboxField([
+        { id: "opt-a", label: "Morning" },
+        { id: "opt-b", label: "Afternoon" },
+      ]);
+      const value: FormResponse[string]["value"] = ["opt-a"];
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual(["Morning"]);
+    });
+
+    it("should handle checkbox field with unknown option IDs (fallback to IDs)", () => {
+      const field = createCheckboxField([{ id: "opt-a", label: "Morning" }]);
+      const value: FormResponse[string]["value"] = ["opt-a", "unknown-id"];
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual(["Morning", "unknown-id"]);
+    });
+  });
+
+  describe("url fields", () => {
+    it("should return the URL string as-is", () => {
+      const field: Pick<Field, "type" | "options"> = {
+        type: "url",
+      };
+      const value: FormResponse[string]["value"] = "https://example.com/page";
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual("https://example.com/page");
+    });
+
+    it("should handle empty URL value", () => {
+      const field: Pick<Field, "type" | "options"> = {
+        type: "url",
+      };
+      const value: FormResponse[string]["value"] = "";
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual("");
+    });
+  });
+
+  describe("date fields", () => {
+    it("should return the date string as-is", () => {
+      const field: Pick<Field, "type" | "options"> = {
+        type: "date",
+      };
+      const value: FormResponse[string]["value"] = "2025-03-15";
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual("2025-03-15");
+    });
+
+    it("should handle ISO date string with time component", () => {
+      const field: Pick<Field, "type" | "options"> = {
+        type: "date",
+      };
+      const value: FormResponse[string]["value"] = "2025-03-15T10:30:00Z";
+
+      const result = getHumanReadableFieldResponseValue({ field, value });
+
+      expect(result).toEqual("2025-03-15T10:30:00Z");
+    });
+  });
+
   describe("edge cases", () => {
     it("should handle numeric values in options", () => {
       const field = createSelectField([

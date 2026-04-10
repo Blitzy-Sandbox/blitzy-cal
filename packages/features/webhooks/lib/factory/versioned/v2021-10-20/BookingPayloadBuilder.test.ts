@@ -381,4 +381,110 @@ describe("v2021-10-20/BookingPayloadBuilder", () => {
       expect(p.assignmentReason).toEqual(legacyArray);
     });
   });
+
+  describe("Calendly parity field population (WH-004)", () => {
+    it("BOOKING_CREATED includes utmParams when provided in DTO", () => {
+      const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED, {
+        utmParams: {
+          utmSource: "google",
+          utmMedium: "cpc",
+          utmCampaign: "spring-sale",
+          utmTerm: "scheduling",
+          utmContent: "banner",
+        },
+      } as Partial<BookingWebhookEventDTO>);
+      const result = builder.build(dto);
+      const p = result.payload as EventPayloadType;
+
+      expect(p.utmParams).toEqual({
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "spring-sale",
+        utmTerm: "scheduling",
+        utmContent: "banner",
+      });
+    });
+
+    it("BOOKING_CREATED includes inviteeUri, eventUri, schedulingUrl when provided", () => {
+      const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED, {
+        inviteeUri: "https://api.calendly.com/scheduled_events/abc/invitees/def",
+        eventUri: "https://api.calendly.com/scheduled_events/abc",
+        schedulingUrl: "https://calendly.com/user/30min",
+      } as Partial<BookingWebhookEventDTO>);
+      const result = builder.build(dto);
+      const p = result.payload as EventPayloadType;
+
+      expect(p.inviteeUri).toBe("https://api.calendly.com/scheduled_events/abc/invitees/def");
+      expect(p.eventUri).toBe("https://api.calendly.com/scheduled_events/abc");
+      expect(p.schedulingUrl).toBe("https://calendly.com/user/30min");
+    });
+
+    it("BOOKING_CANCELLED includes rescheduleUri, cancellationTimestamp when provided", () => {
+      const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CANCELLED, {
+        cancelledBy: "user@test.com",
+        cancellationReason: "Schedule conflict",
+        rescheduleUri: "https://api.calendly.com/scheduled_events/abc/invitees/def",
+        cancellationTimestamp: "2024-01-15T10:30:00Z",
+      } as Partial<BookingWebhookEventDTO>);
+      const result = builder.build(dto);
+      const p = result.payload as EventPayloadType;
+
+      expect(p.rescheduleUri).toBe("https://api.calendly.com/scheduled_events/abc/invitees/def");
+      expect(p.cancellationTimestamp).toBe("2024-01-15T10:30:00Z");
+    });
+
+    it("BOOKING_RESCHEDULED includes oldInviteeUri, newInviteeUri when provided", () => {
+      const dto = createMockDTO(WebhookTriggerEvents.BOOKING_RESCHEDULED, {
+        rescheduleId: 100,
+        rescheduleUid: "reschedule-uid-456",
+        oldInviteeUri: "https://api.calendly.com/scheduled_events/old/invitees/abc",
+        newInviteeUri: "https://api.calendly.com/scheduled_events/new/invitees/def",
+      } as Partial<BookingWebhookEventDTO>);
+      const result = builder.build(dto);
+      const p = result.payload as EventPayloadType;
+
+      expect(p.oldInviteeUri).toBe("https://api.calendly.com/scheduled_events/old/invitees/abc");
+      expect(p.newInviteeUri).toBe("https://api.calendly.com/scheduled_events/new/invitees/def");
+    });
+
+    it("all new optional Calendly fields are OMITTED from payload when NOT provided in DTO (backward compat)", () => {
+      const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED);
+      const result = builder.build(dto);
+      const p = result.payload as Record<string, unknown>;
+
+      // None of the new optional fields should appear in payload if not provided
+      expect(p).not.toHaveProperty("utmParams");
+      expect(p).not.toHaveProperty("inviteeUri");
+      expect(p).not.toHaveProperty("eventUri");
+      expect(p).not.toHaveProperty("schedulingUrl");
+      expect(p).not.toHaveProperty("rescheduleUri");
+      expect(p).not.toHaveProperty("cancellationTimestamp");
+      expect(p).not.toHaveProperty("oldInviteeUri");
+      expect(p).not.toHaveProperty("newInviteeUri");
+    });
+
+    it("existing v2021-10-20 payload structure preserved exactly (regression)", () => {
+      const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED);
+      const result = builder.build(dto);
+
+      // Core envelope fields preserved
+      expect(result.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_CREATED);
+      expect(result.createdAt).toBe("2024-01-15T10:00:00Z");
+
+      // Core payload fields preserved
+      const p = result.payload as EventPayloadType;
+      expect(p.bookingId).toBe(1);
+      expect(p.status).toBe(BookingStatus.ACCEPTED);
+      expect(p.title).toBe("Test Meeting");
+      expect(p.type).toBe("test-event");
+      expect(p.uid).toBe("booking-uid-123");
+      expect(p.eventTitle).toBe("Test Event");
+      expect(p.eventDescription).toBe("Test Description");
+      expect(p.price).toBe(0);
+      expect(p.currency).toBe("USD");
+      expect(p.length).toBe(30);
+      expect("assignmentReason" in p).toBe(true);
+      expect("destinationCalendar" in p).toBe(true);
+    });
+  });
 });

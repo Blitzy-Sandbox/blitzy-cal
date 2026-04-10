@@ -15,6 +15,16 @@ function getWidgetsWithoutFactory(_configFor: ConfigFor) {
     email: {
       ...BasicConfig.widgets.text,
     },
+    checkbox: {
+      ...BasicConfig.widgets.multiselect, // checkboxes behave like multiselect (string[] values with jsType: "array")
+      type: "checkbox", // Explicit type so resolveWidgetType returns "checkbox" (not inherited "multiselect")
+    },
+    url: {
+      ...BasicConfig.widgets.text, // URLs are text-like string values (jsType: "string")
+    },
+    date: {
+      ...BasicConfig.widgets.text, // Dates serialize as strings (jsType: "string")
+    },
   };
   return widgetsWithoutFactory;
 }
@@ -50,6 +60,27 @@ function getTypes(configFor: ConfigFor) {
           ...BasicConfig.types.multiselect.widgets.multiselect,
           operators: [...multiSelectOperators],
         },
+      },
+    },
+    checkbox: {
+      ...BasicConfig.types.multiselect, // checkboxes use multiselect-like operators (multiselect_equals, multiselect_not_equals, etc.)
+      widgets: {
+        checkbox: {
+          ...BasicConfig.types.multiselect.widgets.multiselect,
+          operators: [...multiSelectOperators],
+        },
+      },
+    },
+    url: {
+      ...BasicConfig.types.text, // URLs use text operators (equal, not_equal, like, starts_with, etc.)
+      widgets: {
+        ...BasicConfig.types.text.widgets,
+      },
+    },
+    date: {
+      ...BasicConfig.types.text, // Dates use text-like operators for string comparison
+      widgets: {
+        ...BasicConfig.types.text.widgets,
       },
     },
   };

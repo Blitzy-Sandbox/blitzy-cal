@@ -2,7 +2,7 @@ import getFieldIdentifier from "./getFieldIdentifier";
 import type { RoutingFormResponseData } from "./types";
 
 type FindFieldValueByIdentifierResult =
-  | { success: true; data: string | string[] | number | null }
+  | { success: true; data: string | string[] | number | boolean | null }
   | { success: false; error: string };
 
 export function findFieldValueByIdentifier(

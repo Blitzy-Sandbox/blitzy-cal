@@ -76,48 +76,65 @@ type BuilderCategory = keyof PayloadBuilderSet;
  * This prevents ambiguous routing - each event has exactly one handler.
  *
  * Note: Record<WebhookTriggerEvents, BuilderCategory> ensures all events are mapped.
+ *
+ * Calendly Event Mapping Reference (WH-001, WH-002, WH-003, WH-005):
+ * - BOOKING_CREATED    → "booking" → Calendly `invitee.created`
+ * - BOOKING_CANCELLED  → "booking" → Calendly `invitee.canceled`
+ * - BOOKING_RESCHEDULED → "booking" → Calendly `invitee.created` (reschedule variant)
+ * - BOOKING_RESCHEDULED_BY_ATTENDEE → "booking" → Calendly `invitee.created` (reschedule variant)
+ * - FORM_SUBMITTED     → "form"    → Calendly `routing_form_submission.created`
+ *
+ * Events without Calendly equivalents are Cal.com-specific extensions:
+ * - BOOKING_REJECTED, BOOKING_REQUESTED, BOOKING_PAID, BOOKING_PAYMENT_INITIATED,
+ *   BOOKING_NO_SHOW_UPDATED, OOO_CREATED, RECORDING_READY, RECORDING_TRANSCRIPTION_GENERATED,
+ *   MEETING_STARTED, MEETING_ENDED, AFTER_HOSTS_CAL_VIDEO_NO_SHOW,
+ *   AFTER_GUESTS_CAL_VIDEO_NO_SHOW, INSTANT_MEETING, DELEGATION_CREDENTIAL_ERROR,
+ *   FORM_SUBMITTED_NO_EVENT, WRONG_ASSIGNMENT_REPORT
  */
 const TRIGGER_TO_BUILDER_CATEGORY: Record<WebhookTriggerEvents, BuilderCategory> = {
   // Booking events
-  [WebhookTriggerEvents.BOOKING_CREATED]: "booking",
-  [WebhookTriggerEvents.BOOKING_RESCHEDULED]: "booking",
-  [WebhookTriggerEvents.BOOKING_CANCELLED]: "booking",
-  [WebhookTriggerEvents.BOOKING_REJECTED]: "booking",
-  [WebhookTriggerEvents.BOOKING_REQUESTED]: "booking",
-  [WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED]: "booking",
-  [WebhookTriggerEvents.BOOKING_PAID]: "booking",
-  [WebhookTriggerEvents.BOOKING_NO_SHOW_UPDATED]: "booking",
+  [WebhookTriggerEvents.BOOKING_CREATED]: "booking", // Calendly: invitee.created
+  [WebhookTriggerEvents.BOOKING_RESCHEDULED]: "booking", // Calendly: invitee.created (reschedule variant)
+  [WebhookTriggerEvents.BOOKING_CANCELLED]: "booking", // Calendly: invitee.canceled
+  [WebhookTriggerEvents.BOOKING_REJECTED]: "booking", // No Calendly equivalent
+  [WebhookTriggerEvents.BOOKING_REQUESTED]: "booking", // No Calendly equivalent
+  [WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED]: "booking", // No Calendly equivalent
+  [WebhookTriggerEvents.BOOKING_PAID]: "booking", // No Calendly equivalent
+  [WebhookTriggerEvents.BOOKING_NO_SHOW_UPDATED]: "booking", // No Calendly equivalent
+  // WH-005: Attendee-initiated reschedule — maps to Calendly invitee.created (reschedule variant)
+  [WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE]: "booking", // Calendly: invitee.created (reschedule variant)
 
   // Form events
-  [WebhookTriggerEvents.FORM_SUBMITTED]: "form",
-  [WebhookTriggerEvents.FORM_SUBMITTED_NO_EVENT]: "form",
+  [WebhookTriggerEvents.FORM_SUBMITTED]: "form", // Calendly: routing_form_submission.created
+  [WebhookTriggerEvents.FORM_SUBMITTED_NO_EVENT]: "form", // No Calendly equivalent
 
   // OOO events
-  [WebhookTriggerEvents.OOO_CREATED]: "ooo",
+  [WebhookTriggerEvents.OOO_CREATED]: "ooo", // No Calendly equivalent
 
   // Recording events
-  [WebhookTriggerEvents.RECORDING_READY]: "recording",
-  [WebhookTriggerEvents.RECORDING_TRANSCRIPTION_GENERATED]: "recording",
+  [WebhookTriggerEvents.RECORDING_READY]: "recording", // No Calendly equivalent
+  [WebhookTriggerEvents.RECORDING_TRANSCRIPTION_GENERATED]: "recording", // No Calendly equivalent
 
   // Meeting events
-  [WebhookTriggerEvents.MEETING_STARTED]: "meeting",
-  [WebhookTriggerEvents.MEETING_ENDED]: "meeting",
-  [WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW]: "meeting",
-  [WebhookTriggerEvents.AFTER_GUESTS_CAL_VIDEO_NO_SHOW]: "meeting",
+  [WebhookTriggerEvents.MEETING_STARTED]: "meeting", // No Calendly equivalent
+  [WebhookTriggerEvents.MEETING_ENDED]: "meeting", // No Calendly equivalent
+  [WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW]: "meeting", // No Calendly equivalent
+  [WebhookTriggerEvents.AFTER_GUESTS_CAL_VIDEO_NO_SHOW]: "meeting", // No Calendly equivalent
 
   // Instant meeting events
-  [WebhookTriggerEvents.INSTANT_MEETING]: "instantMeeting",
+  [WebhookTriggerEvents.INSTANT_MEETING]: "instantMeeting", // No Calendly equivalent
 
   // Delegation events
-  [WebhookTriggerEvents.DELEGATION_CREDENTIAL_ERROR]: "delegation",
+  [WebhookTriggerEvents.DELEGATION_CREDENTIAL_ERROR]: "delegation", // No Calendly equivalent
 
   // Wrong assignment report events
-  [WebhookTriggerEvents.WRONG_ASSIGNMENT_REPORT]: "booking",
+  [WebhookTriggerEvents.WRONG_ASSIGNMENT_REPORT]: "booking", // No Calendly equivalent
 };
 
 export type BookingTriggerEvents =
   | typeof WebhookTriggerEvents.BOOKING_CREATED
   | typeof WebhookTriggerEvents.BOOKING_RESCHEDULED
+  | typeof WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE
   | typeof WebhookTriggerEvents.BOOKING_CANCELLED
   | typeof WebhookTriggerEvents.BOOKING_REJECTED
   | typeof WebhookTriggerEvents.BOOKING_REQUESTED

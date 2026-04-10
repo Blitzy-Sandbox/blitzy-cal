@@ -15,6 +15,35 @@ const Html = (props: { children: React.ReactNode }) => (
   </>
 );
 
+/**
+ * Maps email category to Calendly-parity accent color hex values for visual
+ * differentiation of confirmation, reminder, cancellation, follow-up, and
+ * update email types via a colored border-top accent on the content area.
+ */
+const EMAIL_CATEGORY_ACCENT_COLORS: Record<string, string> = {
+  confirmation: "#16A34A",
+  reminder: "#2563EB",
+  cancellation: "#DC2626",
+  "follow-up": "#7C3AED",
+  update: "#D97706",
+};
+
+/**
+ * Hidden preheader styles that work across all major email clients
+ * (Gmail, Outlook, Apple Mail, Yahoo). The preheader text is shown in
+ * inbox listing/preview but completely hidden from the rendered email body.
+ */
+const PREHEADER_HIDDEN_STYLES: React.CSSProperties = {
+  display: "none",
+  fontSize: "1px",
+  color: "#F3F4F6",
+  lineHeight: "1px",
+  maxHeight: "0px",
+  maxWidth: "0px",
+  opacity: 0,
+  overflow: "hidden",
+};
+
 export const V2BaseEmailHtml = (props: {
   children: React.ReactNode;
   callToAction?: React.ReactNode;
@@ -22,11 +51,20 @@ export const V2BaseEmailHtml = (props: {
   title?: string;
   subtitle?: React.ReactNode;
   headerType?: BodyHeadType;
+  /** Optional email category for Calendly-parity visual differentiation via accent border-top */
+  emailCategory?: "confirmation" | "reminder" | "cancellation" | "follow-up" | "update";
+  /** Optional preheader text shown in inbox preview but hidden in email body */
+  preheaderText?: string;
+  /** Optional additional sections rendered after main content but before CTA */
+  additionalSections?: React.ReactNode;
 }) => {
   return (
     <Html>
       <EmailHead title={props.subject} />
       <body style={{ wordSpacing: "normal", backgroundColor: "#F3F4F6" }}>
+        {props.preheaderText && (
+          <div style={PREHEADER_HIDDEN_STYLES}>{props.preheaderText}</div>
+        )}
         <div style={{ backgroundColor: "#F3F4F6" }}>
           <RawHtml
             html={`<!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->`}
@@ -81,6 +119,9 @@ export const V2BaseEmailHtml = (props: {
                     width: "100%",
                     border: "1px solid #E1E1E1",
                     borderRadius: "6px",
+                    borderTop: props.emailCategory
+                      ? `3px solid ${EMAIL_CATEGORY_ACCENT_COLORS[props.emailCategory]}`
+                      : undefined,
                   }}>
                   <Row
                     border="0"
@@ -110,6 +151,7 @@ export const V2BaseEmailHtml = (props: {
                         }}>
                         {props.children}
                       </div>
+                      {props.additionalSections}
                     </td>
                   </Row>
                 </div>

@@ -6,6 +6,7 @@ export const WORKFLOW_TRIGGER_EVENTS = [
   WorkflowTriggerEvents.NEW_EVENT,
   WorkflowTriggerEvents.AFTER_EVENT,
   WorkflowTriggerEvents.RESCHEDULE_EVENT,
+  WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE,
   WorkflowTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW,
   WorkflowTriggerEvents.AFTER_GUESTS_CAL_VIDEO_NO_SHOW,
   WorkflowTriggerEvents.FORM_SUBMITTED,
@@ -26,6 +27,7 @@ export const WORKFLOW_ACTIONS = [
   WorkflowActions.WHATSAPP_ATTENDEE,
   WorkflowActions.WHATSAPP_NUMBER,
   WorkflowActions.CAL_AI_PHONE_CALL,
+  WorkflowActions.IN_APP_NOTIFICATION,
 ] as const;
 
 export const TIME_UNIT = [TimeUnit.DAY, TimeUnit.HOUR, TimeUnit.MINUTE] as const;
@@ -91,6 +93,7 @@ export const IMMEDIATE_WORKFLOW_TRIGGER_EVENTS: WorkflowTriggerEvents[] = [
   WorkflowTriggerEvents.NEW_EVENT,
   WorkflowTriggerEvents.EVENT_CANCELLED,
   WorkflowTriggerEvents.RESCHEDULE_EVENT,
+  WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE,
   WorkflowTriggerEvents.BOOKING_NO_SHOW_UPDATED,
   WorkflowTriggerEvents.BOOKING_PAID,
   WorkflowTriggerEvents.BOOKING_PAYMENT_INITIATED,

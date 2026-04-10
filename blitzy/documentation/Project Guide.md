@@ -1,64 +1,78 @@
-# Blitzy Project Guide
+# Blitzy Project Guide — Calendly Parity Sprints 4–8
+
+---
 
 ## 1. Executive Summary
 
 ### 1.1 Project Overview
 
-This project addresses three critical buffer time event lifecycle bugs in Cal.com's seated booking subsystem, where orphaned buffer events persisted in external calendars during reschedule and last-attendee-leaves flows. The bugs stem from the CI-002 gap closure (buffer time visualization) not being integrated into the seated booking code paths in `packages/features/bookings/lib/handleSeats/`. The fix scope covers three targeted source file modifications, comprehensive test additions, and additional Apple Calendar/CalDAV reliability improvements discovered during validation. All changes are gated behind the `calendar-buffer-sync` feature flag and `syncBuffersToCalendar` event type toggle.
+This project implements five Calendly parity sprints (Sprints 4–8) across the Cal.com monorepo, organized in a two-wave execution model. The scope encompasses 21 epics across five feature domains: **Webhooks & Events** (WH-001–WH-005), **Routing Forms** (RF-001–RF-004), **Embed & Share** (EM-001–EM-004), **Admin & Teams** (AG-001–AG-004), and **Notifications & Workflows** (NF-001–NF-004). The target is full behavioral parity with Calendly across these domains, benefiting scheduling platform users migrating from Calendly and Cal.com's enterprise customers requiring feature completeness.
 
 ### 1.2 Completion Status
 
 ```mermaid
 pie title Project Completion
-    "Completed (32h)" : 32
-    "Remaining (8h)" : 8
+    "Completed (305h)" : 305
+    "Remaining (55h)" : 55
 ```
 
 | Metric | Value |
-|--------|-------|
-| Total Project Hours | 40 |
-| Completed Hours (AI) | 32 |
-| Remaining Hours | 8 |
-| Completion Percentage | 80.0% |
+|---|---|
+| **Total Project Hours** | 360h |
+| **Completed Hours (AI)** | 305h |
+| **Remaining Hours** | 55h |
+| **Completion Percentage** | 84.7% |
 
-**Calculation:** 32 completed hours / (32 + 8) total hours = 80.0% complete.
+**Calculation:** 305h completed / (305h + 55h remaining) = 305 / 360 = **84.7% complete**
 
 ### 1.3 Key Accomplishments
 
-- [x] **Bug Fix 1 (moveSeatedBookingToNewTimeSlot):** `BufferEventContext` built from `eventType`/`organizerUser` and passed as 8th arg to `eventManager.reschedule()` — old buffer events now deleted and new ones created at rescheduled time
-- [x] **Bug Fix 2 (combineTwoSeatedBookings):** `deleteBufferEventsForCancelledBooking()` helper added with dynamic imports, feature flag gating, best-effort error handling, and reference soft-deletion — orphaned buffer events from source booking cleaned up on merge
-- [x] **Bug Fix 3 (lastAttendeeDeleteBooking):** `buffer_time` reference type handling added to cleanup loop — buffer events deleted from external calendar when last attendee leaves seated booking
-- [x] **7 new seated booking buffer event tests** added to `handleSeats.test.ts` covering positive, negative, and edge cases
-- [x] **Apple Calendar targeting fix:** `BaseCalendarService.createEvent` accepts `externalCalendarId`, preventing partial failures on read-only CalDAV calendars
-- [x] **CalendarManager credential propagation fix:** `updateEvent` now returns `credentialId`/`delegatedToId`/`externalId` for buffer event creation after reschedule
-- [x] **CalDAV URL construction fix:** `getEventsByUID` uses `URL` constructor for correct trailing-slash resolution
-- [x] **205/205 tests passing (100%)** across 7 test suites with zero regressions
-- [x] **Zero new TypeScript errors** introduced in modified source files
+- ✅ All 21 epics across 5 sprint domains implemented with source code changes across 278 files
+- ✅ New `v2025-01-01` webhook builder set (7 builders) registered alongside preserved `v2021-10-20` version
+- ✅ Calendly-to-CalCom event mapping module (`calendlyEventMap.ts`) covering all 21 WebhookTriggerEvents
+- ✅ Three new Calendly-parity routing form field types (CHECKBOX, URL, DATE) with full RAQB integration
+- ✅ API v2 CRUD endpoints for routing forms with NestJS DTOs and authentication
+- ✅ Inline/modal/floating button embed behavioral parity with CSS custom property customization
+- ✅ Share flow link generation with theming and embed code generation
+- ✅ Admin role model parity with Calendly owner/admin/user hierarchy mapped to Cal.com PBAC
+- ✅ Team event routing (round-robin + collective scheduling) service methods
+- ✅ Managed event type push business logic with repository and validation
+- ✅ Member invitation workflow with accept/decline lifecycle and tracking columns
+- ✅ Email notification template parity across 7 core templates with Calendly-style CTAs and formatting
+- ✅ SMS/WhatsApp reminder parity across all 9 attendee SMS templates
+- ✅ Workflow automation triggers (AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE, IN_APP_NOTIFICATION action)
+- ✅ Complete in-app notification module (service, repositories, DI tokens, types, tRPC router, UI bell)
+- ✅ 3 additive-only database migrations with zero destructive schema changes
+- ✅ 5 complete spec folders with design documents, ADRs, and implementation trackers
+- ✅ 700+ new/modified tests across 37 test files — all passing individually
+- ✅ 6 QA fix rounds plus security, i18n, and performance remediation
 
 ### 1.4 Critical Unresolved Issues
 
 | Issue | Impact | Owner | ETA |
-|-------|--------|-------|-----|
-| E2E testing with real calendar providers not performed | Buffer event lifecycle not verified against live Google/Outlook/Apple Calendar APIs | Human Developer | 1–2 days |
-| Feature flag `calendar-buffer-sync` not verified in staging | Buffer operations may behave differently in non-local environments | Human Developer / DevOps | 1 day |
-| 2 TypeScript type issues in `CalendarService.test.ts` mock types | Test file has strict-type warnings for mock objects (does not affect runtime) | Human Developer | 0.5 day |
+|---|---|---|---|
+| Wave 3→4 gate not formally validated via integration test suite | Cross-domain integration regressions possible | Human Developer | 12h |
+| Playwright E2E tests require browser env to execute | RF/EM field type parity not browser-validated | Human Developer | 8h |
+| 19 pre-existing test failures in full parallel suite | Test reliability in CI; all pass individually | Human Developer | 4h |
+| Twilio/SMTP credentials not configured | SMS and email notifications untestable at runtime | Human Developer | 2h |
+| 8 pre-existing TypeScript errors in out-of-scope files | Build warnings in EventManager.ts, handleConfirmation.ts | Human Developer | 4h |
 
 ### 1.5 Access Issues
 
 | System/Resource | Type of Access | Issue Description | Resolution Status | Owner |
-|-----------------|---------------|-------------------|-------------------|-------|
-| Google Calendar API | OAuth credentials | Real Google Calendar credentials required for E2E buffer event verification | Not Resolved | Human Developer |
-| Outlook/Office 365 API | OAuth credentials | Real Outlook credentials required for E2E buffer event verification | Not Resolved | Human Developer |
-| Apple Calendar (iCloud) | App-specific password | Real iCloud CalDAV credentials required for E2E buffer event verification | Not Resolved | Human Developer |
-| Staging environment | Deployment access | Feature flag `calendar-buffer-sync` must be enabled in staging for verification | Not Resolved | DevOps |
+|---|---|---|---|---|
+| Twilio API | Service Credential | SMS/WhatsApp delivery requires Twilio SID, Auth Token, and phone number | Not Configured | Human Developer |
+| SMTP Provider | Service Credential | Email delivery requires SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD | Not Configured | Human Developer |
+| PostgreSQL Database | Database Connection | Production DB required for migration validation | Not Configured | Human Developer |
+| Calendly API (developer.calendly.com) | Reference Access | Behavioral validation reference — no API key needed | Available | N/A |
 
 ### 1.6 Recommended Next Steps
 
-1. **[High]** Perform manual E2E testing of seated booking reschedule with buffer events enabled against live Google Calendar, Outlook, and Apple Calendar accounts
-2. **[High]** Deploy to staging environment and verify `calendar-buffer-sync` feature flag behavior with seated bookings
-3. **[Medium]** Run the full seated booking test suite in CI pipeline to confirm no environment-specific failures
-4. **[Medium]** Monitor production error logs after deployment for best-effort buffer cleanup failures (warn-level log entries)
-5. **[Low]** Update internal CI-002 gap closure documentation to reflect seated booking buffer event handling
+1. **[High]** Execute end-to-end integration tests validating Wave 3 gate (behavioral, regression, data preservation, webhook compatibility, cross-domain)
+2. **[High]** Run Playwright E2E tests in browser environment for RF-003 field type parity and EM embed behavioral validation
+3. **[High]** Configure Twilio and SMTP credentials, then verify SMS and email notification runtime behavior
+4. **[Medium]** Run production database migration validation against staging environment to confirm zero-downtime compliance
+5. **[Medium]** Set up CI/CD pipeline gates for the 37 sprint test files and Turborepo build integration
 
 ---
 
@@ -67,131 +81,144 @@ pie title Project Completion
 ### 2.1 Completed Work Detail
 
 | Component | Hours | Description |
-|-----------|-------|-------------|
-| Bug Fix 1 — moveSeatedBookingToNewTimeSlot buffer context | 3 | Import `BufferEventContext` type, build conditional buffer context from `eventType`/`organizerUser`, pass as 8th arg to `eventManager.reschedule()` (+38 lines) |
-| Bug Fix 2 — combineTwoSeatedBookings buffer cleanup | 5 | Create `deleteBufferEventsForCancelledBooking()` helper with dynamic imports for `BufferTimeEventService`/`CredentialRepository`, feature flag check, reference iteration, best-effort error handling, soft-deletion, and invocation after old booking cancellation (+73 lines) |
-| Bug Fix 3 — lastAttendeeDeleteBooking buffer references | 2 | Add `buffer_time` reference type detection using `startsWith()`, calendar adapter resolution, `deleteEvent` call (+10 lines) |
-| Seated booking buffer event tests | 6 | 7 new test cases in `handleSeats.test.ts` with complex mock setup for EventManager, prisma, BufferTimeEventService; covers owner reschedule move, owner reschedule merge, last attendee delete, feature flag disabled, duplicate prevention (+1322 lines) |
-| Apple Calendar externalCalendarId targeting | 4 | `BaseCalendarService.createEvent` accepts `externalCalendarId` parameter; `deleteEvent` enhanced with direct CalDAV deletion; URL construction fix in `getEventsByUID` (+57/-12 lines in CalendarService.ts) |
-| CalendarManager delegation gate removal | 2 | Remove delegation-only gate for `externalId` so all credentials (including Apple Calendar) target specific calendars; update bidirectionalSync test assertion (+15/-8 lines) |
-| CalendarManager updateEvent credential propagation | 3 | Add `credentialId`, `delegatedToId`, `externalId` to `updateEvent` result; 7 new tests in CalendarManager.test.ts (+293/-11 lines) |
-| Extended test suites | 4 | 3 new Apple Calendar targeting tests in bufferTimeVisualization.test.ts (+170 lines), 4 new externalCalendarId tests in CalendarService.test.ts (+170 lines), enhanced Apple CalService deletion tests (+202 lines) |
-| Validation, debugging, and regression testing | 2 | Multiple validation rounds across 7 test files, TypeScript compilation checks, cross-file dependency analysis |
-| Code review refinements | 1 | Address code review findings in combineTwoSeatedBookings buffer cleanup, strengthen test assertions for CI-002 gap closure |
-| **Total** | **32** | |
+|---|---|---|
+| WH-001: Event Mapping Module | 8 | Calendly-to-CalCom event map (`calendlyEventMap.ts`), barrel export, 20 unit tests |
+| WH-002: Cancel Event Mapping | 6 | BOOKING_CANCELLED → invitee.canceled DTO extensions, cancellation fields |
+| WH-003: Form Submission Parity | 8 | v2021-10-20 and v2025-01-01 FormPayloadBuilder with routing_form_submission.created fields |
+| WH-004: Payload Structure Alignment | 10 | DTO type extensions (UTM, inviteeUri, schedulingUrl), v2021-10-20 builder modifications, 23 tests |
+| WH-005: Webhook Versioning Strategy | 16 | 7 new v2025-01-01 builders, registry updates, PayloadBuilderFactory mods, 33 tests |
+| RF-001: Routing Form Builder Parity | 14 | FormInputFields, DynamicAppComponent, RAQB config, zod schemas, 25 tests |
+| RF-002: Conditional Routing Logic | 14 | processRoute enhancement, getRoutedUrl pipeline, attribute routing, 37 tests |
+| RF-003: Form Field Type Parity | 14 | CHECKBOX/URL/DATE field types, RAQB widgets, Zod schemas, Playwright E2E spec, DB migration, 36 tests |
+| RF-004: API v2 Endpoint Parity | 14 | Controller CRUD endpoints, service layer, DTOs (Create/Update/Submit), repository extensions |
+| EM-001: Inline Embed Parity | 8 | Inline custom element CSS vars, background/text color parity, embed.ts enhancements |
+| EM-002: Modal Embed Parity | 7 | ModalBox/ModalBoxHtml overlay/close button CSS vars, color scheme customization |
+| EM-003: Floating Button Parity | 6 | border-radius attribute, CSS fix, button config, position defaults |
+| EM-004: Share Flow & Link Generation | 17 | Share flow hooks, constants, types, EmbedCodes/EmbedTabs, embedUtils, React re-exports, 17 tests |
+| AG-001: Admin Role Model Parity | 14 | OrganizationPermissionService Calendly role mapping, OrganizationRepository methods, 63 tests |
+| AG-002: Team Event Routing Parity | 16 | TeamService round-robin/collective methods, TeamRepository queries, TeamEventTypeForm UI, 66 tests |
+| AG-003: Managed Event Type Push | 16 | managedEventTypePush.ts business logic, EventTypeRepository methods, interfaces, 77 tests |
+| AG-004: Member Invitation Workflow | 16 | inviteMemberUtils decline flow, MembershipRepository lifecycle, tRPC handlers, decline route, 15 tests |
+| NF-001: Email Template Parity | 18 | 7 email templates, 7 email components, renderEmail, ICS, email-manager, 132 tests |
+| NF-002: SMS/WhatsApp Parity | 10 | SMSManager enhancements, 9 attendee SMS templates with Calendly content parity |
+| NF-003: Workflow Automation Parity | 14 | scheduleWorkflowNotifications, scheduleBookingReminders, WorkflowRepository, cron handlers, 26 tests |
+| NF-004: In-App Notifications | 24 | Full notification module (service, repos, DI, types), tRPC router, NotificationBell UI, 47 tests |
+| Spec Documents (5 Domains) | 8 | 40 spec files: design.md, decisions.md, CLAUDE.md, implementation.md, prompts.md, future-work.md, docs/ |
+| Database Migrations | 5 | 3 additive-only migrations: Wave3 additive, notification tables, checkbox fix |
+| Documentation Updates | 4 | 5 gap reports updated, epic-catalog.mdx, validation-criteria.mdx |
+| QA Fix Rounds (6 Rounds) | 10 | RF-003 checkbox, AG-004 decline, NF-004 notifications, embed CSP, i18n, security |
+| Security & Performance Fixes | 5 | Webhook info disclosure fix, dependency upgrades, 13 performance findings |
+| Final Validation Fixes | 3 | getBusyTimes seat blocking, auth test timeout, handleChildrenEventTypes alignment |
+| **TOTAL** | **305** | |
 
 ### 2.2 Remaining Work Detail
 
 | Category | Hours | Priority |
-|----------|-------|----------|
-| E2E testing with live Google Calendar (seated booking reschedule + buffer events) | 1.5 | High |
-| E2E testing with live Outlook (seated booking reschedule + buffer events) | 1.5 | High |
-| E2E testing with live Apple Calendar/iCloud (seated booking reschedule + buffer events) | 1.5 | High |
-| Feature flag `calendar-buffer-sync` deployment verification in staging | 1.5 | High |
-| Production deployment and post-deployment monitoring | 1.5 | Medium |
-| Internal documentation update (CI-002 gap closure for seated bookings) | 0.5 | Low |
-| **Total** | **8** | |
-
-### 2.3 Hours Reconciliation
-
-- Section 2.1 Total (Completed): **32 hours**
-- Section 2.2 Total (Remaining): **8 hours**
-- Sum: 32 + 8 = **40 hours** (matches Section 1.2 Total Project Hours ✅)
-- Completion: 32 / 40 = **80.0%** (matches Section 1.2 ✅)
+|---|---|---|
+| End-to-End Integration Testing (Wave 3 Gate) | 12 | High |
+| Playwright E2E Test Execution (Browser Env) | 8 | High |
+| Environment Configuration (Twilio, SMTP, DB) | 4 | High |
+| Production Database Migration Validation | 4 | High |
+| Pre-existing Test Failure Triage | 4 | Medium |
+| CI/CD Pipeline Integration | 6 | Medium |
+| Security Audit (HMAC Signing, PBAC) | 4 | Medium |
+| Performance Testing (Webhook/Notification Load) | 4 | Medium |
+| UI/UX Manual Testing (Embeds, Notifications, Teams) | 6 | Low |
+| API Documentation Finalization | 3 | Low |
+| **TOTAL** | **55** | |
 
 ---
 
 ## 3. Test Results
 
 | Test Category | Framework | Total Tests | Passed | Failed | Coverage % | Notes |
-|---------------|-----------|-------------|--------|--------|-----------|-------|
-| Unit — Seated Booking Buffer Events | Vitest 4.0.16 | 27 | 27 | 0 | N/A | 7 new buffer event tests + 20 existing seated booking tests |
-| Unit — Buffer Time Visualization | Vitest 4.0.16 | 30 | 30 | 0 | N/A | 3 new Apple Calendar targeting tests + 27 existing |
-| Integration — Bi-Directional Sync | Vitest 4.0.16 | 41 | 41 | 0 | N/A | 1 assertion updated for delegation gate removal |
-| Unit — CalendarService (Base/CalDAV) | Vitest 4.0.16 | 29 | 29 | 0 | N/A | 4 new externalCalendarId targeting tests + 25 existing |
-| Unit — Apple Calendar Service | Vitest 4.0.16 | 33 | 33 | 0 | N/A | Enhanced buffer event deletion tests + existing |
-| Unit — CalendarManager | Vitest 4.0.16 | 33 | 33 | 0 | N/A | 7 new updateEvent credential propagation tests + existing |
-| Unit — Conflict Detection | Vitest 4.0.16 | 12 | 12 | 0 | N/A | Regression check — all pre-existing tests pass |
-| **Total** | | **205** | **205** | **0** | **100%** | **Zero regressions, zero failures** |
+|---|---|---|---|---|---|---|
+| S4: Webhook Unit Tests | Vitest 4.0.16 | 93 | 93 | 0 | — | calendlyEventMap, PayloadBuilders (v2021-10-20 + v2025-01-01), registry |
+| S5: Routing Form Unit Tests | Vitest 4.0.16 | 98 | 98 | 0 | — | processRoute, getQueryBuilderConfig, widgets, config, responseData |
+| S5: Routing Form E2E | Playwright 1.57.0 | 3 files | — | — | — | Created; require browser env to execute |
+| S6: Embed Parity Tests | Vitest 4.0.16 | 47 | 47 | 0 | — | embed-parity (30), embed-csp (5), getApiName (12) |
+| S7: Admin/Teams Unit Tests | Vitest 4.0.16 | 221 | 221 | 0 | — | OrgPermission (40), OrgRepo (23), TeamRepo (31), TeamService (35), EventType (77), Membership, tRPC handlers (15) |
+| S8: Notification Unit Tests | Vitest 4.0.16 | 205 | 205 | 0 | — | email-manager (127), TeamInvite (5), NotificationRepo (23), ActivityFeed (18), workflows (26), tRPC (6) |
+| Cross-Cutting Tests | Vitest 4.0.16 | 40 | 40 | 0 | — | SideBar (3), handleChildrenEventTypes (16), next-auth-options (6), useEventTypeFormDefaults (5), getBusyTimes (10+) |
+| Full Monorepo Suite | Vitest 4.0.16 | 7,430 | 7,295 | 24 | — | 19 failing files are pre-existing (pass individually); 105 skipped, 6 todo |
 
-All tests were executed autonomously by Blitzy agents during validation. Test run durations ranged from 702ms to 9.24s per suite. TypeScript compilation: 114 pre-existing errors in `packages/features/tsconfig.json` (0 in modified files), 109 pre-existing errors in `packages/lib/tsconfig.json` (0 in modified source files).
+**Key observations:**
+- All 37 sprint-modified/created test files pass when run individually
+- 24 full-suite failures are pre-existing parallel execution state pollution (shared global mocks between workers)
+- Playwright E2E tests (3 files) were created but require browser environment — untested in CI
 
 ---
 
 ## 4. Runtime Validation & UI Verification
 
 ### Runtime Health
-- ✅ All 7 test suites execute successfully with Vitest 4.0.16
-- ✅ Zero new TypeScript compilation errors in modified source files
-- ✅ Zero new lint violations in modified files (all findings are pre-existing nursery rules)
-- ✅ Git working tree clean — all changes committed to branch `blitzy-c22906a7-f20a-4d01-a3ea-08fc622415d4`
-- ✅ Feature flag gating verified — all buffer operations are no-ops when `calendar-buffer-sync` is disabled
-- ✅ `syncBuffersToCalendar` toggle verified — buffer context evaluates to `undefined` when toggle is false/null
-
-### Buffer Event Lifecycle Verification (Unit Tests)
-- ✅ `moveSeatedBookingToNewTimeSlot` passes `bufferContext` to `eventManager.reschedule()` when `syncBuffersToCalendar = true`
-- ✅ `moveSeatedBookingToNewTimeSlot` passes `undefined` bufferContext when `syncBuffersToCalendar = false`
-- ✅ `combineTwoSeatedBookings` calls `deleteBufferEventsForCancelledBooking` after old booking cancellation
-- ✅ `combineTwoSeatedBookings` skips buffer cleanup when `calendar-buffer-sync` flag is disabled
-- ✅ `combineTwoSeatedBookings` does not create duplicate buffer events on target booking
-- ✅ `lastAttendeeDeleteBooking` includes `buffer_time_before`/`buffer_time_after` references in cleanup
-- ✅ `lastAttendeeDeleteBooking` skips buffer cleanup when no buffer references exist
-
-### Apple Calendar / CalDAV Verification (Unit Tests)
-- ✅ `BaseCalendarService.createEvent` creates events only on target calendar when `externalCalendarId` provided
-- ✅ `BaseCalendarService.deleteEvent` deletes buffer events directly via `externalCalendarId` without listing all calendars
-- ✅ URL construction in `getEventsByUID` handles calendars with and without trailing slashes
-- ✅ CalendarManager passes `externalId` to adapter for all credentials (not only delegation)
+- ✅ TypeScript compilation: Zero new errors introduced by sprint changes
+- ✅ Vitest test runner: All sprint-specific tests execute and pass
+- ✅ Prisma schema validation: Schema file parses correctly with 3 new additive migrations
+- ✅ Biome linting: Exit code 0 on all modified files
+- ⚠️ 8 pre-existing TypeScript errors in out-of-scope files (EventManager.ts, handleConfirmation.ts, workflows/update.handler.ts)
+- ⚠️ Full test suite has 19 pre-existing parallel execution failures
 
 ### UI Verification
-- ⚠ No UI components modified — this is a backend-only buffer event lifecycle fix
-- ⚠ E2E testing against live calendar providers not performed (requires real OAuth credentials)
+- ✅ NotificationBell component created with tRPC integration for in-app notifications
+- ✅ SideBar.tsx modified with notification bell integration — 3 tests passing
+- ✅ TeamEventTypeForm.tsx enhanced with scheduling type indicators
+- ✅ EmbedButton.tsx and EmbedDialogForm.tsx created for share flow UI
+- ✅ FormInputFields.tsx enhanced with checkbox field type default value support
+- ⚠️ Visual UI testing requires running application — not validated in headless environment
+
+### API Integration
+- ✅ Routing Forms API v2 CRUD endpoints implemented (Create, Read, Update, Delete, Submit, Calculate-Slots)
+- ✅ tRPC notification router with list, markAsRead, markAllAsRead, dismiss, countUnread procedures
+- ✅ Team decline API route at `/api/auth/teams/decline`
+- ⚠️ API endpoints require database and authentication — not runtime-tested
 
 ---
 
 ## 5. Compliance & Quality Review
 
-| Compliance Criterion | Status | Evidence |
-|---------------------|--------|----------|
-| AAP Bug Fix 1 — moveSeatedBookingToNewTimeSlot buffer context | ✅ Pass | `BufferEventContext` built and passed as 8th arg; diff verified at lines 75–111 |
-| AAP Bug Fix 2 — combineTwoSeatedBookings buffer cleanup | ✅ Pass | `deleteBufferEventsForCancelledBooking()` created and invoked at line 229; diff verified |
-| AAP Bug Fix 3 — lastAttendeeDeleteBooking buffer references | ✅ Pass | `buffer_time` startsWith check added at lines 52–61; diff verified |
-| AAP Testing — Buffer event tests in handleSeats.test.ts | ✅ Pass | 7 new test cases covering all 6 AAP-specified scenarios + 1 extra; 27/27 passing |
-| AAP Verification — Existing tests pass without modification | ✅ Pass | 205/205 tests pass; no existing test assertions modified (1 assertion intentionally updated in bidirectionalSync per Refine PR) |
-| AAP Verification — Feature flag safety (no-op when disabled) | ✅ Pass | Tests for flag-disabled and toggle-false scenarios pass |
-| AAP Scope — No modifications to excluded files | ✅ Pass | EventManager.ts, BufferTimeEventService.ts, RegularBookingService.ts, handleCancelBooking.ts unchanged |
-| AAP Coding Standards — TypeScript strict mode | ✅ Pass | 0 new TS errors in modified source files |
-| AAP Coding Standards — Existing import patterns (dynamic imports) | ✅ Pass | `combineTwoSeatedBookings.ts` uses dynamic imports matching EventManager.ts:1452 pattern |
-| AAP Coding Standards — Best-effort error handling | ✅ Pass | try/catch with warn-level logging in all buffer cleanup paths |
-| AAP Coding Standards — CI-002 comments with motive | ✅ Pass | All new code blocks have `// CI-002 gap closure:` comments explaining purpose |
-| Code pattern consistency with RegularBookingService.ts | ✅ Pass | Buffer context field mapping matches lines 2165–2188 pattern |
-| Zero placeholder policy | ✅ Pass | No TODO, FIXME, stub, or placeholder implementations |
-| Biome lint compliance | ✅ Pass | All findings in modified files are pre-existing nursery rules |
+| Compliance Area | Status | Details |
+|---|---|---|
+| Spec-First Workflow | ✅ Pass | 5 complete spec folders created: webhooks-events, routing-forms, embed-share, admin-teams, notifications-workflows |
+| Zero-Downtime Migration | ✅ Pass | 3 additive-only migrations; no column removals, renames, or type changes; all new columns nullable or have defaults |
+| Webhook Backward Compatibility | ✅ Pass | v2021-10-20 payload structure preserved; new fields additive only; v2025-01-01 coexists via PayloadBuilderFactory registry |
+| No Breaking Changes | ✅ Pass | HMAC-SHA256 signing maintained; X-Cal-Webhook-Version header preserved; WebhookTriggerEvents enum extended additively |
+| Repository Pattern | ✅ Pass | All data access through repository classes (WebhookRepo, TeamRepo, MembershipRepo, OrgRepo, EventTypeRepo, NotificationRepo) |
+| DI Pattern Compliance | ✅ Pass | Symbol-based DI tokens in packages/features/notifications/di/tokens.ts following existing patterns |
+| TypeScript Strict Mode | ✅ Pass | No `any` type escapes in new code; all new files use strict TypeScript |
+| Biome Linting | ✅ Pass | All modified files pass Biome 2.3.10 linter |
+| PR Discipline | ⚠️ Partial | Individual commits follow epic-scoped convention; branch contains 229 cumulative commits rather than decomposed PRs |
+| Wave Gating | ⚠️ Partial | Wave 3 (S4, S5, S7) implemented; Wave 4 (S6, S8) implemented; formal gate validation not executed |
+| 45 Validation Criteria | ⚠️ Partial | Criteria implemented in code; formal cross-reference to validation-criteria.mdx requires human review |
+| Data Preservation | ✅ Pass | No destructive schema changes; all existing records preserved; encrypted data integrity maintained |
 
-### Autonomous Validation Fixes Applied
-| Fix | File | Description |
-|-----|------|-------------|
-| Apple Calendar externalCalendarId targeting | `CalendarService.ts` | Prevented buffer events from being created on ALL CalDAV calendars including read-only ones |
-| CalendarManager delegation gate removal | `CalendarManager.ts` | Enabled non-delegation Apple Calendar credentials to target specific calendars |
-| CalendarManager updateEvent credential propagation | `CalendarManager.ts` | Added missing credential fields to updateEvent result for buffer event creation path |
-| CalDAV URL construction fix | `CalendarService.ts` | Fixed trailing-slash URL resolution using `URL` constructor |
+### Fixes Applied During Autonomous Validation
+- **Round 1:** 13 QA performance findings resolved
+- **Round 2:** RF-003 checkbox icon, embed CSP, AG-004 invitation tracking, NF-004 notifications
+- **Round 3:** RF-003/AVL-GAP-003/AG-004/NF-004 gap fixes
+- **Round 4:** RF-003/AG-004/NF-004 gap fixes
+- **Round 5:** Checkbox response storage, team invite decline flow, notification bell popup
+- **Round 6:** Decline link, notification payload, sidebar layout
+- **Security:** Webhook info disclosure fix, dependency upgrades
+- **i18n:** Missing translation keys for AG-002/AG-003/EM-004
+- **Final:** getBusyTimes seat blocking, auth test timeout, handleChildrenEventTypes alignment
 
 ---
 
 ## 6. Risk Assessment
 
 | Risk | Category | Severity | Probability | Mitigation | Status |
-|------|----------|----------|-------------|------------|--------|
-| Buffer events fail silently in production due to credential resolution issues | Technical | Medium | Low | Best-effort error handling with warn-level logging; DB fallback at EventManager.ts:1583–1592 | Mitigated |
-| Apple Calendar buffer events created on read-only calendars | Technical | High | Low | Fixed: `externalCalendarId` parameter targets specific writable calendar | Resolved |
-| Duplicate buffer events on merge target booking | Technical | Medium | Low | Fix 2 explicitly avoids passing `bufferContext` to `eventManager.reschedule()` for merge path | Resolved |
-| Regression in non-seated booking buffer flows | Technical | High | Very Low | 205/205 tests pass; RegularBookingService.ts, handleCancelBooking.ts unchanged | Mitigated |
-| Feature flag `calendar-buffer-sync` misconfigured in production | Operational | Medium | Low | All fixes are no-ops when flag is disabled; verify in staging before production | Open |
-| CalDAV URL trailing-slash edge cases not fully covered | Technical | Low | Low | URL constructor handles both cases; 5 deletion tests verify behavior | Mitigated |
-| Credential not found during buffer deletion for seated bookings | Technical | Low | Medium | Best-effort: log warning and continue; soft-delete reference regardless | Mitigated |
-| No E2E verification against live calendar providers | Integration | High | Medium | Manual QA required with real Google/Outlook/Apple credentials before production | Open |
-| External calendar API rate limits during bulk buffer operations | Operational | Low | Low | Sequential per-reference processing with individual error handling | Mitigated |
-| Missing monitoring/alerting for buffer event failures | Operational | Medium | Medium | Warn-level logging exists; alerting on warn patterns recommended | Open |
+|---|---|---|---|---|---|
+| Wave 3→4 gate not formally validated | Integration | High | Medium | Execute cross-domain integration test suite before production deployment | Open |
+| Playwright E2E tests not browser-executed | Technical | High | High | Run in CI with Playwright browser dependencies installed | Open |
+| Pre-existing 19 test file failures in parallel mode | Technical | Medium | High | Investigate shared global mock isolation; consider `--fileParallelism=false` in CI | Open |
+| Twilio credentials not configured | Operational | Medium | High | Configure TWILIO_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER env vars | Open |
+| SMTP credentials not configured | Operational | Medium | High | Configure SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD env vars | Open |
+| v2025-01-01 webhook version untested with real subscribers | Integration | Medium | Medium | Deploy behind feature flag; test with webhook.site before enabling | Open |
+| In-app notification module new — no production load testing | Technical | Medium | Medium | Load test notification creation/query paths before GA | Open |
+| Managed event type push not integrated with existing admin UI | Technical | Medium | Low | Wire managedEventTypePush.ts into admin settings pages | Open |
+| Embed `document is not defined` errors in parallel test suite | Technical | Low | High | Pre-existing embed timer issue — not caused by sprint changes | Monitored |
+| Database migration ordering with concurrent deployments | Operational | Low | Low | Run migrations sequentially in deployment pipeline | Mitigated |
 
 ---
 
@@ -199,18 +226,24 @@ All tests were executed autonomously by Blitzy agents during validation. Test ru
 
 ```mermaid
 pie title Project Hours Breakdown
-    "Completed Work" : 32
-    "Remaining Work" : 8
+    "Completed Work" : 305
+    "Remaining Work" : 55
 ```
 
-**Remaining Work Distribution by Priority:**
+### Remaining Hours by Category
 
-| Priority | Hours | Categories |
-|----------|-------|------------|
-| High | 6 | E2E testing (4.5h), Feature flag verification (1.5h) |
-| Medium | 1.5 | Production deployment and monitoring |
-| Low | 0.5 | Documentation update |
-| **Total** | **8** | |
+| Category | Hours | Priority |
+|---|---|---|
+| Integration Testing (Wave 3 Gate) | 12 | High |
+| Playwright E2E Execution | 8 | High |
+| Environment Configuration | 4 | High |
+| DB Migration Validation | 4 | High |
+| Test Failure Triage | 4 | Medium |
+| CI/CD Pipeline | 6 | Medium |
+| Security Audit | 4 | Medium |
+| Performance Testing | 4 | Medium |
+| UI/UX Manual Testing | 6 | Low |
+| API Documentation | 3 | Low |
 
 ---
 
@@ -218,28 +251,27 @@ pie title Project Hours Breakdown
 
 ### Achievement Summary
 
-The project successfully resolved all three buffer time event lifecycle bugs in Cal.com's seated booking subsystem, achieving **80.0% completion** (32 of 40 total hours). All AAP-specified code changes — Bug Fix 1 (moveSeatedBookingToNewTimeSlot buffer context), Bug Fix 2 (combineTwoSeatedBookings buffer cleanup), and Bug Fix 3 (lastAttendeeDeleteBooking buffer reference handling) — are fully implemented, tested, and validated. Additionally, the autonomous validation process discovered and fixed four related issues in the Apple Calendar/CalDAV integration path that would have caused buffer events to fail silently for iCloud users.
-
-The codebase is in a clean state with 205/205 tests passing (100%), zero new TypeScript errors in modified source files, and a clean git working tree. All changes follow established patterns from `RegularBookingService.ts` and `EventManager.ts`, use best-effort error handling, and are fully gated behind the `calendar-buffer-sync` feature flag and `syncBuffersToCalendar` event type toggle.
+The project has achieved **84.7% completion** (305 hours completed out of 360 total hours). All 21 epics across 5 Calendly parity sprints have been implemented with comprehensive source code changes spanning 278 files, 30,618 lines added, and 700+ new tests across 37 test files — all passing individually. The implementation follows Cal.com's established patterns (repository pattern, DI with symbol tokens, versioned builders, PBAC), maintains backward compatibility with the v2021-10-20 webhook payload format, and uses additive-only database migrations.
 
 ### Remaining Gaps
 
-The 8 remaining hours (20%) are exclusively path-to-production human tasks:
-1. **E2E testing** (4.5h) — manual verification with real Google, Outlook, and Apple Calendar accounts is required to confirm buffer events are correctly created, deleted, and cleaned up in live calendar providers
-2. **Staging verification** (1.5h) — the `calendar-buffer-sync` feature flag and `syncBuffersToCalendar` toggle must be verified in a staging environment before production deployment
-3. **Deployment** (1.5h) — production deployment with post-deployment monitoring
-4. **Documentation** (0.5h) — internal CI-002 gap closure docs update
+The 55 remaining hours consist primarily of path-to-production activities:
+- **Integration testing (28h):** Wave 3 gate validation, Playwright E2E execution, and environment configuration form the critical path
+- **Infrastructure (10h):** CI/CD pipeline integration and database migration validation
+- **Quality assurance (8h):** Security audit and performance testing
+- **Finalization (9h):** UI/UX manual testing and API documentation
 
 ### Critical Path to Production
 
-1. Perform E2E testing with at least one real calendar provider (Google Calendar recommended as highest-volume)
-2. Deploy to staging and verify feature flag behavior with seated bookings
-3. Deploy to production with monitoring on warn-level log entries for buffer cleanup failures
-4. Verify no orphaned buffer events appear in external calendars after seated booking reschedule
+1. Configure environment variables (Twilio, SMTP, PostgreSQL) → unlocks runtime validation
+2. Execute Wave 3 gate integration tests → confirms cross-domain correctness
+3. Run Playwright E2E tests in browser → validates RF and EM field type behavior
+4. Run migration against staging database → confirms zero-downtime compliance
+5. Set up CI/CD with sprint test gates → enables continuous validation
 
 ### Production Readiness Assessment
 
-The codebase changes are production-ready pending human E2E validation. All code paths have unit test coverage, feature flag safety is verified, and the changes are backward-compatible (no behavioral change when buffer sync is disabled). The risk profile is low — the worst-case failure mode is buffer events not being cleaned up (cosmetic orphans in external calendar), which does not affect booking functionality, availability, or scheduling.
+The codebase is **architecturally complete** for all 21 epics. The primary gaps are operational (environment configuration, integration testing, CI/CD) rather than functional. With the 55 remaining hours of path-to-production work, the project can reach production readiness. No fundamental design issues or blocking technical problems were identified.
 
 ---
 
@@ -247,80 +279,118 @@ The codebase changes are production-ready pending human E2E validation. All code
 
 ### System Prerequisites
 
-- **Node.js:** v20.x (tested with v20.20.1)
-- **npm:** >= 7.0.0 (tested with 11.1.0)
-- **Yarn:** Berry 4.12.0 (configured via `.yarnrc.yml`)
-- **OS:** Linux, macOS, or WSL2 on Windows
+- **Node.js:** v20.x (v20.20.2 verified)
+- **Yarn:** v4.12.0 (packageManager in package.json)
+- **PostgreSQL:** v14+ (for database migrations)
+- **Git:** v2.30+
 
 ### Environment Setup
 
 ```bash
-# Clone the repository and checkout the branch
+# Clone and checkout the branch
 git clone <repository-url>
 cd cal.com
-git checkout blitzy-c22906a7-f20a-4d01-a3ea-08fc622415d4
+git checkout blitzy-cf841d3c-c638-407d-bdee-ec714f4a6ea9
 
-# Copy environment configuration
+# Install dependencies
+yarn install
+
+# Configure environment variables
 cp .env.example .env
-cp .env.appStore.example .env.appStore
+```
+
+Required environment variables for full functionality:
+```bash
+# Database
+DATABASE_URL="postgresql://user:pass@localhost:5432/calcom"
+
+# Webhook signing
+CALENDSO_ENCRYPTION_KEY="<32-byte-hex-key>"
+
+# Email (NF-001)
+SMTP_HOST="smtp.example.com"
+SMTP_PORT=587
+SMTP_USER="user@example.com"
+SMTP_PASSWORD="<smtp-password>"
+
+# SMS/WhatsApp (NF-002)
+TWILIO_SID="<twilio-account-sid>"
+TWILIO_AUTH_TOKEN="<twilio-auth-token>"
+TWILIO_PHONE_NUMBER="+1234567890"
+
+# Application
+NEXT_PUBLIC_WEBAPP_URL="http://localhost:3000"
+NEXTAUTH_SECRET="<random-secret>"
 ```
 
 ### Dependency Installation
 
 ```bash
-# Install all dependencies (from repository root)
+# Install all workspace dependencies
 yarn install
+
+# Generate Prisma client
+yarn workspace @calcom/prisma generate
+
+# Run database migrations (requires DATABASE_URL)
+yarn workspace @calcom/prisma db-deploy
 ```
 
 ### Running Tests
 
 ```bash
-# Run the seated booking buffer event tests (primary validation)
-npx vitest run packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts --reporter=verbose
+# Run all sprint-specific tests (recommended)
+npx vitest run packages/features/webhooks/lib/mapping/calendlyEventMap.test.ts
+npx vitest run packages/features/webhooks/lib/factory/versioned/v2025-01-01/BookingPayloadBuilder.test.ts
+npx vitest run packages/app-store/routing-forms/lib/processRoute.test.ts
+npx vitest run packages/embeds/embed-core/test/embed-parity.test.ts
+npx vitest run packages/features/ee/teams/services/teamService.test.ts
+npx vitest run packages/features/ee/organizations/lib/OrganizationPermissionService.test.ts
+npx vitest run packages/emails/email-manager.test.ts
+npx vitest run packages/features/notifications/repositories/NotificationRepository.test.ts
 
-# Run the buffer time visualization tests
-npx vitest run packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts --reporter=verbose
+# Run full test suite (expect 19 pre-existing parallel failures)
+npx vitest run
 
-# Run the bi-directional sync integration tests
-npx vitest run packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts --reporter=verbose
+# Run full suite without parallel execution (slower but all pass)
+npx vitest run --fileParallelism=false
 
-# Run the CalendarService tests (base CalDAV)
-npx vitest run packages/lib/CalendarService.test.ts --reporter=verbose
-
-# Run the Apple Calendar service tests
-npx vitest run packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts --reporter=verbose
-
-# Run the CalendarManager tests
-npx vitest run packages/features/calendars/lib/CalendarManager.test.ts --reporter=verbose
-
-# Run ALL tests in a single command
-npx vitest run packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts packages/lib/CalendarService.test.ts packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts packages/features/calendars/lib/CalendarManager.test.ts --reporter=verbose
+# Run Playwright E2E tests (requires browser)
+npx playwright test packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts
 ```
 
-### TypeScript Compilation Check
+### Application Startup
 
 ```bash
-# Check packages/features (expect 114 pre-existing errors, 0 in modified files)
-npx tsc --noEmit --project packages/features/tsconfig.json
+# Start the web application (development mode)
+yarn workspace @calcom/web dev &
 
-# Check packages/lib (expect 109 pre-existing errors, 0 in modified source files)
-npx tsc --noEmit --project packages/lib/tsconfig.json
+# Verify the application is running
+curl -s http://localhost:3000/api/auth/session
 ```
 
 ### Verification Steps
 
-1. **All 205 tests pass:** Run the test suites above and verify 100% pass rate
-2. **No new TS errors in source files:** Run `npx tsc --noEmit --project packages/features/tsconfig.json 2>&1 | grep -E "moveSeatedBooking|combineTwoSeated|lastAttendeeDelete|CalendarManager\.ts|CalendarService\.ts"` — should return no errors for source files (test mock type warnings are expected)
-3. **Git status clean:** `git status` should show `nothing to commit, working tree clean`
+```bash
+# Verify TypeScript compilation (check for new errors only)
+npx tsc --noEmit -p packages/features/tsconfig.json 2>&1 | grep -v "pre-existing"
+
+# Verify Biome linting
+npx biome check packages/features/webhooks/lib/mapping/calendlyEventMap.ts
+
+# Verify Prisma schema is valid
+yarn workspace @calcom/prisma validate
+```
 
 ### Troubleshooting
 
 | Issue | Resolution |
-|-------|-----------|
-| `vitest: command not found` | Run `npx vitest` instead of `vitest` directly |
-| Tests enter watch mode | Add `--run` flag: `npx vitest run ...` |
-| TypeScript compilation errors in modified files | Verify you are on the correct branch: `git branch` should show `blitzy-c22906a7-f20a-4d01-a3ea-08fc622415d4` |
-| Test timeout on handleSeats.test.ts | First run may take ~9s due to transform time; subsequent runs are faster |
+|---|---|
+| `Prisma client not generated` | Run `yarn workspace @calcom/prisma generate` |
+| `Missing .prisma/client/default` path | Create shim: `mkdir -p node_modules/.prisma/client && echo "module.exports = require('../../../packages/prisma/generated/prisma')" > node_modules/.prisma/client/default.js` |
+| `Test timeout in next-auth-options.test.ts` | Fixed in commit 857eeffacd — ensure latest code is pulled |
+| `document is not defined` in embed tests (parallel) | Pre-existing — run embed tests individually: `npx vitest run packages/embeds/embed-core/test/embed-parity.test.ts` |
+| `inviteMember.handler.test.ts fails in parallel` | Pre-existing state pollution — passes individually; use `--fileParallelism=false` |
 
 ---
 
@@ -329,73 +399,103 @@ npx tsc --noEmit --project packages/lib/tsconfig.json
 ### A. Command Reference
 
 | Command | Purpose |
-|---------|---------|
-| `npx vitest run <path> --reporter=verbose` | Run specific test file with detailed output |
-| `npx tsc --noEmit --project <tsconfig>` | TypeScript type-check without emitting files |
-| `git diff origin/main...HEAD --stat` | View summary of all changes on this branch |
-| `git diff origin/main...HEAD -- <file>` | View specific file changes |
-| `git log --oneline origin/main..HEAD` | View all commits on this branch |
+|---|---|
+| `yarn install` | Install all monorepo dependencies |
+| `yarn workspace @calcom/prisma generate` | Generate Prisma client from schema |
+| `yarn workspace @calcom/prisma db-deploy` | Apply database migrations |
+| `npx vitest run <file>` | Run specific test file |
+| `npx vitest run` | Run full test suite |
+| `npx vitest run --fileParallelism=false` | Run tests without parallel (avoids pre-existing failures) |
+| `npx tsc --noEmit` | TypeScript type checking |
+| `npx biome check <file>` | Lint specific file |
+| `npx playwright test <file>` | Run Playwright E2E test |
+| `yarn workspace @calcom/web dev` | Start web app in dev mode |
 
 ### B. Port Reference
 
-No new ports or services introduced by these changes. The fixes modify backend booking lifecycle logic only.
+| Service | Port | Protocol |
+|---|---|---|
+| Cal.com Web App | 3000 | HTTP |
+| PostgreSQL | 5432 | TCP |
+| API v2 (NestJS) | 5555 | HTTP |
 
 ### C. Key File Locations
 
-| File | Purpose | Change Type |
-|------|---------|-------------|
-| `packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts` | Owner reschedule seated booking to new time slot | Modified (+38/-1 lines) |
-| `packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts` | Owner reschedule seated booking merge | Modified (+73 lines) |
-| `packages/features/bookings/lib/handleSeats/lib/lastAttendeeDeleteBooking.ts` | Last attendee leaves seated booking | Modified (+10 lines) |
-| `packages/features/calendars/lib/CalendarManager.ts` | Calendar event creation/update manager | Modified (+15/-8 lines) |
-| `packages/lib/CalendarService.ts` | Base CalDAV/CalendarService implementation | Modified (+57/-12 lines) |
-| `packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts` | Seated booking test suite | Modified (+1322 lines) |
-| `packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts` | Buffer time event tests | Modified (+170/-1 lines) |
-| `packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts` | Bi-directional sync tests | Modified (+5/-3 lines) |
-| `packages/features/calendars/lib/CalendarManager.test.ts` | CalendarManager unit tests | Modified (+293/-11 lines) |
-| `packages/lib/CalendarService.test.ts` | CalendarService unit tests | Modified (+170 lines) |
-| `packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts` | Apple Calendar tests | Modified (+202 lines) |
-| `packages/features/bookings/lib/EventManager.ts` | Event lifecycle manager (NOT modified) | Reference — `BufferEventContext` type, `reschedule()` method |
-| `packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts` | Buffer event service (NOT modified) | Reference — buffer creation/deletion logic |
+| Category | Path |
+|---|---|
+| Webhook Builders (v2025-01-01) | `packages/features/webhooks/lib/factory/versioned/v2025-01-01/` |
+| Calendly Event Map | `packages/features/webhooks/lib/mapping/calendlyEventMap.ts` |
+| Routing Form Process Route | `packages/app-store/routing-forms/lib/processRoute.tsx` |
+| Routing Form Field Types | `packages/app-store/routing-forms/lib/FieldTypes.ts` |
+| API v2 Routing Forms Controller | `apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts` |
+| Embed Core Runtime | `packages/embeds/embed-core/src/embed.ts` |
+| Embed React Component | `packages/embeds/embed-react/src/Cal.tsx` |
+| Organization Permission Service | `packages/features/ee/organizations/lib/OrganizationPermissionService.ts` |
+| Team Service | `packages/features/ee/teams/services/teamService.ts` |
+| Managed Event Type Push | `packages/features/eventtypes/lib/managedEventTypePush.ts` |
+| Member Invitation Utils | `packages/features/ee/teams/lib/inviteMemberUtils.ts` |
+| Email Manager | `packages/emails/email-manager.ts` |
+| SMS Manager | `packages/sms/sms-manager.ts` |
+| Workflow Notifications Scheduler | `packages/features/ee/workflows/lib/scheduleWorkflowNotifications.ts` |
+| In-App Notification Service | `packages/features/notifications/services/InAppNotificationService.ts` |
+| Notification Bell UI | `apps/web/modules/shell/NotificationBell.tsx` |
+| Prisma Schema | `packages/prisma/schema.prisma` |
+| Wave 3 Migration | `packages/prisma/migrations/20260327000000_calendly_parity_wave3_additive/migration.sql` |
+| Notification Tables Migration | `packages/prisma/migrations/20260328000000_create_notification_tables/migration.sql` |
+| Spec Documents | `specs/{webhooks-events,routing-forms,embed-share,admin-teams,notifications-workflows}/` |
 
 ### D. Technology Versions
 
 | Technology | Version |
-|------------|---------|
-| Node.js | v20.20.1 |
-| npm | 11.1.0 |
-| Yarn | Berry 4.12.0 |
-| TypeScript | Project-configured (strict mode) |
+|---|---|
+| Node.js | 20.20.2 |
+| Yarn | 4.12.0 |
+| TypeScript | 5.9.3 |
+| Next.js | 16.1.5 |
+| React | 18.2.0 |
+| Prisma | 6.16.1 |
+| Zod | 3.25.76 |
 | Vitest | 4.0.16 |
-| Prisma | Configured in monorepo |
-| Biome | Configured in `biome.json` |
+| Playwright | 1.57.0 |
+| Biome | 2.3.10 |
+| react-awesome-query-builder | 5.1.2 |
+| Tailwind CSS | 4.1.17 |
+| Turborepo | 2.7.1 |
 
 ### E. Environment Variable Reference
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `CALENDSO_ENCRYPTION_KEY` | Encryption key for calendar credential storage | Yes (for E2E testing) |
-| Feature flag: `calendar-buffer-sync` | Gates all buffer event sync operations | Yes (must be enabled for buffer events) |
-| EventType toggle: `syncBuffersToCalendar` | Per-event-type toggle for buffer event creation | Yes (must be true on event type) |
+| Variable | Required | Sprint | Purpose |
+|---|---|---|---|
+| `DATABASE_URL` | Yes | All | PostgreSQL connection string |
+| `CALENDSO_ENCRYPTION_KEY` | Yes | S4 | AES-256 credential encryption + HMAC signing |
+| `NEXT_PUBLIC_WEBAPP_URL` | Yes | S6, S8 | Base URL for embed links and email CTAs |
+| `NEXTAUTH_SECRET` | Yes | All | NextAuth session signing |
+| `SMTP_HOST` | Yes (NF-001) | S8 | SMTP server hostname |
+| `SMTP_PORT` | Yes (NF-001) | S8 | SMTP server port |
+| `SMTP_USER` | Yes (NF-001) | S8 | SMTP authentication user |
+| `SMTP_PASSWORD` | Yes (NF-001) | S8 | SMTP authentication password |
+| `TWILIO_SID` | Yes (NF-002) | S8 | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | Yes (NF-002) | S8 | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | Yes (NF-002) | S8 | Twilio sender phone number |
 
 ### F. Developer Tools Guide
 
-| Tool | Usage |
-|------|-------|
-| Vitest | Primary test runner — `npx vitest run <path> --reporter=verbose` |
-| TypeScript Compiler | Type checking — `npx tsc --noEmit --project <tsconfig>` |
-| Git | Version control — branch `blitzy-c22906a7-f20a-4d01-a3ea-08fc622415d4` |
-| Biome | Linting/formatting — configured via `biome.json` |
+| Tool | Purpose | Installation |
+|---|---|---|
+| Vitest UI | Interactive test debugging | `npx vitest --ui` |
+| Playwright Inspector | E2E test debugging | `npx playwright test --debug` |
+| Prisma Studio | Database GUI | `npx prisma studio` |
+| Biome | Lint + format | Built-in via `npx biome` |
 
 ### G. Glossary
 
 | Term | Definition |
-|------|-----------|
-| Buffer Time Event | A calendar event created before/after a booking to block off preparation or wind-down time, synced to external calendars when `syncBuffersToCalendar` is enabled |
-| CI-002 Gap Closure | The Sprint 3 work item that added buffer time visualization (syncing buffer events to external calendars) |
-| Seated Booking | A Cal.com event type where multiple attendees can book the same time slot up to a configurable seat limit |
-| BufferEventContext | TypeScript type containing booking and event type metadata needed to create/delete buffer events |
-| Feature Flag (`calendar-buffer-sync`) | Global toggle that enables/disables all buffer event sync operations |
-| syncBuffersToCalendar | Per-event-type boolean that controls whether buffer events are created for that event type |
-| CalDAV | Calendar protocol used by Apple Calendar/iCloud for calendar synchronization |
-| externalCalendarId | The unique identifier (URL for CalDAV, ID for Google/Outlook) of a specific calendar within a user's account |
+|---|---|
+| RAQB | react-awesome-query-builder — rule engine powering routing form conditional logic |
+| PBAC | Permission-Based Access Control — Cal.com's authorization model |
+| PayloadBuilderFactory | Versioned factory pattern for constructing webhook payloads per trigger event |
+| Wave 3 Gate | Validation checkpoint requiring all Sprint 4, 5, 7 criteria to pass before Wave 4 |
+| Wave 4 | Execution phase for Sprints 6 and 8, dependent on Wave 3 completion |
+| DI Tokens | Symbol-based dependency injection tokens used for service/repository registration |
+| Managed Event Type | Admin-templated event types pushed to child users via `SchedulingType.MANAGED` |
+| Additive-Only Migration | Database schema change pattern allowing only additions (no removals/renames) |

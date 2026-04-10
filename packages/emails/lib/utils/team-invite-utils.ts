@@ -8,6 +8,12 @@ export type TeamInvite = {
   to: string;
   teamName: string;
   joinLink: string;
+  /**
+   * Optional link to decline the invitation (AG-004).
+   * When present, the email template renders a Decline button alongside the Accept/Join button.
+   * Built from the same verification token as joinLink with an `action=decline` query param.
+   */
+  declineLink?: string;
   isCalcomMember: boolean;
   /**
    * We ideally should have a separate email for auto-join(when a user is automatically accepted into a team/org), but we don't have one yet.

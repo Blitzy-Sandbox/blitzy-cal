@@ -1,6 +1,14 @@
 import type { IOrganizationRepository } from "../repository/IOrganizationRepository";
+
+import type { OrganizationPermissionService } from "@calcom/features/ee/organizations/lib/OrganizationPermissionService";
+import type { OrganizationRepository } from "@calcom/features/ee/organizations/repositories/OrganizationRepository";
+import { HttpError } from "@calcom/lib/http-error";
+import type { MembershipRole } from "@calcom/prisma/enums";
+
 export interface IOrganizationMembershipServiceDependencies {
   organizationRepository: IOrganizationRepository;
+  permissionService?: OrganizationPermissionService;
+  fullOrganizationRepository?: OrganizationRepository;
 }
 
 export class OrganizationMembershipService {
@@ -32,5 +40,104 @@ export class OrganizationMembershipService {
     if (!emailDomain) return false;
 
     return emailDomain === autoAcceptEmailDomain;
+  }
+
+  /**
+   * Transitions a member's role within an organization after permission validation.
+   * Ensures the actor has sufficient privileges to assign the target role and validates
+   * that the current role matches the expected fromRole to prevent stale-state transitions.
+   * Used for Calendly-equivalent admin panel role management (AG-001).
+   *
+   * @param params.organizationId - The organization ID
+   * @param params.userId - The user whose role is being transitioned
+   * @param params.fromRole - The expected current role of the member (used for optimistic concurrency validation)
+   * @param params.toRole - The target role to transition to
+   * @param params.actorRole - The role of the actor performing the transition
+   * @returns true if the transition was successful
+   * @throws HttpError 403 if the actor lacks permission to assign the target role
+   * @throws HttpError 409 if the member's current role does not match fromRole
+   * @throws HttpError 500 if required dependencies are not injected
+   */
+  async transitionRole({
+    organizationId,
+    userId,
+    fromRole,
+    toRole,
+    actorRole,
+  }: {
+    organizationId: number;
+    userId: number;
+    fromRole: MembershipRole;
+    toRole: MembershipRole;
+    actorRole: MembershipRole;
+  }): Promise<boolean> {
+    const { permissionService, fullOrganizationRepository } = this.deps;
+
+    if (!permissionService || !fullOrganizationRepository) {
+      throw new HttpError({
+        message: "Permission service and organization repository are required for role transitions",
+        statusCode: 500,
+      });
+    }
+
+    if (!permissionService.canAssignRoles(actorRole, toRole)) {
+      throw new HttpError({
+        message: `Role ${actorRole} does not have permission to assign role ${toRole}`,
+        statusCode: 403,
+      });
+    }
+
+    // Validate the member's current role matches the expected fromRole to prevent
+    // stale-state transitions (e.g., two concurrent admin actions racing to change the same member's role).
+    const members = await fullOrganizationRepository.findMembersByRole({
+      orgId: organizationId,
+      role: fromRole,
+    });
+    const memberExists = members.some((m) => m.user.id === userId);
+    if (!memberExists) {
+      throw new HttpError({
+        message: `Member ${userId} does not currently have role ${fromRole} — role may have changed since the request was initiated`,
+        statusCode: 409,
+      });
+    }
+
+    await fullOrganizationRepository.transitionMemberRole({
+      orgId: organizationId,
+      userId,
+      newRole: toRole,
+    });
+
+    return true;
+  }
+
+  /**
+   * Returns members of an organization filtered by a specific role.
+   * Used for Calendly-equivalent admin panel member listing (AG-001).
+   */
+  async getMembersByRole({
+    organizationId,
+    role,
+  }: {
+    organizationId: number;
+    role: MembershipRole;
+  }): Promise<{ userId: number; role: MembershipRole }[]> {
+    const { fullOrganizationRepository } = this.deps;
+
+    if (!fullOrganizationRepository) {
+      throw new HttpError({
+        message: "Organization repository is required for member queries",
+        statusCode: 500,
+      });
+    }
+
+    const members = await fullOrganizationRepository.findMembersByRole({
+      orgId: organizationId,
+      role,
+    });
+
+    return members.map((member) => ({
+      userId: member.user.id,
+      role: member.role as MembershipRole,
+    }));
   }
 }

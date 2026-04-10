@@ -597,6 +597,7 @@ export class TeamRepository {
           -- Scenario 2 & 3: Legacy role ADMIN/OWNER (works for both PBAC and non-PBAC teams)
           (m."role"::text = ANY(${fallbackRoles}))
         )
+      LIMIT 1000
     `;
 
     return users;
@@ -644,6 +645,367 @@ export class TeamRepository {
             role: {
               in: ["OWNER", "ADMIN"],
             },
+          },
+        },
+      },
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // AG-002: Team Event Routing Behavioral Parity — Round-Robin & Collective Methods
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Query recent booking history for team members of a given event type.
+   * Used for round-robin last-assigned tracking per team member (AG-002 / Calendly parity).
+   * Returns booking records joined through EventType → teamId and Booking → eventTypeId + userId,
+   * filtering only bookings by accepted team members, ordered by most recent first.
+   *
+   * Bounded by default to the last 100 bookings and recent 30-day window for round-robin
+   * distribution decisions — high-traffic teams may have thousands of bookings per event type
+   * but only recent history is relevant for scheduling fairness.
+   *
+   * @param teamId - The team whose booking history is being queried
+   * @param eventTypeId - The event type to scope the history to
+   * @param limit - Maximum number of booking records to return (default 100)
+   * @param since - Optional cutoff date; when provided, only bookings created on or after this date
+   *               are returned. Defaults to 30 days ago when not specified.
+   */
+  async findMemberSchedulingHistory({
+    teamId,
+    eventTypeId,
+    limit = 100,
+    since,
+  }: {
+    teamId: number;
+    eventTypeId: number;
+    limit?: number;
+    since?: Date;
+  }) {
+    const defaultSince = new Date();
+    defaultSince.setDate(defaultSince.getDate() - 30);
+    const effectiveSince = since ?? defaultSince;
+
+    return await this.prismaClient.booking.findMany({
+      where: {
+        eventTypeId,
+        eventType: {
+          teamId,
+        },
+        createdAt: {
+          gte: effectiveSince,
+        },
+        user: {
+          teams: {
+            some: {
+              teamId,
+              accepted: true,
+            },
+          },
+        },
+      },
+      select: {
+        userId: true,
+        createdAt: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+    });
+  }
+
+  /**
+   * Retrieve round-robin rotation state: booking counts and last-booking timestamps per team member.
+   * Supports Calendly-equivalent round-robin distribution tracking (AG-002).
+   * Respects the team's rrResetInterval for time-based filtering when a resetSince date is provided.
+   *
+   * @param teamId - The team whose rotation state is being queried
+   * @param eventTypeId - The event type to scope the rotation tracking to
+   * @param resetSince - Optional cutoff date; when provided, only bookings created on or after
+   *                     this date are counted (honors rrResetInterval-based resets)
+   */
+  async findRoundRobinRotationState({
+    teamId,
+    eventTypeId,
+    resetSince,
+  }: {
+    teamId: number;
+    eventTypeId: number;
+    resetSince?: Date;
+  }) {
+    const bookingWhere: Prisma.BookingWhereInput = {
+      eventTypeId,
+      eventType: {
+        teamId,
+      },
+      status: {
+        in: ["ACCEPTED", "PENDING"],
+      },
+    };
+
+    // Apply time-based filtering if resetSince is provided (honors rrResetInterval)
+    if (resetSince) {
+      bookingWhere.createdAt = {
+        gte: resetSince,
+      };
+    }
+
+    // Group bookings by userId to get counts and last booking timestamps
+    const rotationData = await this.prismaClient.booking.groupBy({
+      by: ["userId"],
+      where: bookingWhere,
+      _count: {
+        id: true,
+      },
+      _max: {
+        createdAt: true,
+      },
+    });
+
+    return rotationData.map((entry) => ({
+      userId: entry.userId,
+      bookingCount: entry._count.id,
+      lastBookingTimestamp: entry._max.createdAt,
+    }));
+  }
+
+  /**
+   * Retrieve a booking record for round-robin rotation tracking verification (AG-002).
+   * This is a read-only lookup that confirms the last assignment — verifying the booking is
+   * recorded and assigned to the specified user/event type within the team. No mutation occurs.
+   *
+   * @param bookingId - The booking ID to verify
+   * @param userId - The user the booking should be assigned to
+   * @param eventTypeId - The event type the booking belongs to
+   * @param teamId - The team that owns the event type
+   * @returns The booking record if found and matching all criteria, or null
+   */
+  async getLatestBookingForRotation({
+    bookingId,
+    userId,
+    eventTypeId,
+    teamId,
+  }: {
+    bookingId: number;
+    userId: number;
+    eventTypeId: number;
+    teamId: number;
+  }) {
+    const booking = await this.prismaClient.booking.findFirst({
+      where: {
+        id: bookingId,
+        userId,
+        eventTypeId,
+        eventType: {
+          teamId,
+        },
+      },
+      select: {
+        id: true,
+        userId: true,
+        createdAt: true,
+        status: true,
+      },
+    });
+
+    return booking;
+  }
+
+  /**
+   * Resolve members and their host configuration for a collective event type.
+   * For collective scheduling, ALL hosts must be available for a slot to be offered (AG-002).
+   * Returns host records with their user profile and membership acceptance/role data
+   * for the given collective event type within the specified team.
+   *
+   * @param teamId - The team that owns the collective event type
+   * @param eventTypeId - The collective event type to resolve hosts for
+   */
+  async findCollectiveAvailability({
+    teamId,
+    eventTypeId,
+  }: {
+    teamId: number;
+    eventTypeId: number;
+  }) {
+    return await this.prismaClient.host.findMany({
+      where: {
+        eventTypeId,
+        eventType: {
+          teamId,
+          schedulingType: "COLLECTIVE",
+        },
+      },
+      select: {
+        userId: true,
+        isFixed: true,
+        priority: true,
+        weight: true,
+        scheduleId: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            timeZone: true,
+          },
+        },
+        member: {
+          select: {
+            accepted: true,
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Retrieve the host group composition for a collective event type.
+   * Returns hosts grouped by their HostGroup, identifying which members must all be
+   * available for a collective scheduling slot (AG-002).
+   *
+   * @param teamId - The team that owns the collective event type
+   * @param eventTypeId - The collective event type to query group composition for
+   */
+  async findCollectiveSchedulingGroupComposition({
+    teamId,
+    eventTypeId,
+  }: {
+    teamId: number;
+    eventTypeId: number;
+  }) {
+    return await this.prismaClient.host.findMany({
+      where: {
+        eventTypeId,
+        eventType: {
+          teamId,
+          schedulingType: "COLLECTIVE",
+        },
+      },
+      select: {
+        userId: true,
+        isFixed: true,
+        groupId: true,
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Extended version of findTeamWithMembers that includes scheduling weight/priority data,
+   * member scheduling preferences, and host rotation state tracking (AG-002).
+   * The original findTeamWithMembers is preserved for backward compatibility.
+   *
+   * Returns the team with its members and each member's host configurations across
+   * all event types, along with team-level round-robin reset settings (rrResetInterval,
+   * rrTimestampBasis).
+   *
+   * @param teamId - The team to fetch with full scheduling data
+   */
+  async findTeamWithMembersAndSchedulingData(teamId: number) {
+    return await this.prismaClient.team.findUnique({
+      where: { id: teamId },
+      select: {
+        id: true,
+        metadata: true,
+        parentId: true,
+        isOrganization: true,
+        rrResetInterval: true,
+        rrTimestampBasis: true,
+        members: {
+          select: {
+            accepted: true,
+            role: true,
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                timeZone: true,
+              },
+            },
+            Host: {
+              select: {
+                eventTypeId: true,
+                isFixed: true,
+                priority: true,
+                weight: true,
+                scheduleId: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Filter team members by scheduling eligibility — only accepted members who are hosts
+   * for the specified event type are returned.
+   * Returns members with their host scheduling configuration (weight, priority, isFixed) for
+   * round-robin distribution decisions (AG-002 / Calendly team event routing parity).
+   *
+   * @param teamId - The team to filter members from
+   * @param eventTypeId - The event type to check host eligibility against
+   */
+  async findSchedulingEligibleMembers({
+    teamId,
+    eventTypeId,
+  }: {
+    teamId: number;
+    eventTypeId: number;
+  }) {
+    return await this.prismaClient.membership.findMany({
+      where: {
+        teamId,
+        accepted: true,
+        user: {
+          hosts: {
+            some: {
+              eventTypeId,
+            },
+          },
+        },
+      },
+      select: {
+        userId: true,
+        role: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            timeZone: true,
+          },
+        },
+        Host: {
+          where: {
+            eventTypeId,
+          },
+          select: {
+            isFixed: true,
+            priority: true,
+            weight: true,
+            scheduleId: true,
+            createdAt: true,
           },
         },
       },

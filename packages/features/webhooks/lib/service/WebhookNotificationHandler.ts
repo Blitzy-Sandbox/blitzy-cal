@@ -7,6 +7,36 @@ import type { IWebhookService } from "../interface/services";
 import type { IWebhookNotificationHandler } from "../interface/webhook";
 import type { WebhookVersion } from "../interface/IWebhookRepository";
 
+/**
+ * WebhookNotificationHandler — Orchestrates webhook notification delivery.
+ *
+ * This handler bridges Cal.com's 20+ webhook trigger events with subscriber
+ * delivery via the versioned PayloadBuilderFactory. It queries subscribers,
+ * constructs versioned payloads, and delegates processing to the WebhookService.
+ *
+ * ## Calendly Event Mapping Semantics (WH-001, WH-002, WH-003)
+ *
+ * Cal.com's webhook events map to Calendly's 3 core event types as follows:
+ *
+ * | Cal.com Trigger Event         | Calendly Equivalent                      |
+ * | ----------------------------- | ---------------------------------------- |
+ * | `BOOKING_CREATED`             | `invitee.created` (new booking)          |
+ * | `BOOKING_RESCHEDULED`         | `invitee.created` (reschedule variant)   |
+ * | `BOOKING_CANCELLED`           | `invitee.canceled`                       |
+ * | `FORM_SUBMITTED`              | `routing_form_submission.created`        |
+ * | All other Cal.com events      | No Calendly equivalent (Cal.com superset)|
+ *
+ * Cal.com's broader event surface (BOOKING_PAID, BOOKING_REJECTED,
+ * MEETING_STARTED, MEETING_ENDED, RECORDING_READY, OOO_CREATED, etc.)
+ * represents a superset of Calendly's webhook capabilities. Subscribers
+ * consuming Cal.com webhooks receive richer lifecycle coverage than
+ * the Calendly equivalent.
+ *
+ * All trigger events travel through the same versioned PayloadBuilderFactory
+ * pipeline, ensuring consistent payload construction regardless of the
+ * trigger type. The v2021-10-20 payload format is preserved exactly for
+ * backward compatibility.
+ */
 export class WebhookNotificationHandler implements IWebhookNotificationHandler {
   private readonly log: ILogger;
 
@@ -18,6 +48,21 @@ export class WebhookNotificationHandler implements IWebhookNotificationHandler {
     this.log = logger.getSubLogger({ prefix: ["[WebhookNotificationHandler]"] });
   }
 
+  /**
+   * Handle incoming webhook notification by querying subscribers and dispatching payloads.
+   *
+   * For Calendly parity (WH-001, WH-002, WH-003), the following trigger events
+   * produce payloads aligned with Calendly's semantic equivalents:
+   * - `BOOKING_CREATED` → produces payload equivalent to Calendly `invitee.created`
+   * - `BOOKING_CANCELLED` → produces payload equivalent to Calendly `invitee.canceled`
+   * - `FORM_SUBMITTED` → produces payload equivalent to Calendly `routing_form_submission.created`
+   *
+   * Payload construction is delegated to the versioned PayloadBuilderFactory,
+   * which selects the appropriate builder based on the subscriber's webhook version.
+   *
+   * @param dto - The webhook event data transfer object containing trigger event and payload data
+   * @param isDryRun - When true, skips actual webhook delivery (used for testing/validation)
+   */
   async handleNotification(dto: WebhookEventDTO, isDryRun = false): Promise<void> {
     const trigger = dto.triggerEvent;
 
@@ -70,12 +115,28 @@ export class WebhookNotificationHandler implements IWebhookNotificationHandler {
    * Create webhook payload using version-specific builder from factory.
    *
    * All event types now go through the factory for consistent versioning.
+   * The factory resolves a trigger-specific builder for the given version,
+   * ensuring that:
+   * - `BOOKING_CREATED` events produce Calendly `invitee.created`-equivalent payloads
+   * - `BOOKING_CANCELLED` events produce Calendly `invitee.canceled`-equivalent payloads
+   * - `FORM_SUBMITTED` events produce Calendly `routing_form_submission.created`-equivalent payloads
    *
-   * Note: Currently uses DEFAULT version for all subscribers.
-   * In the future, this can be enhanced to:
-   * 1. Accept subscriber version parameter
-   * 2. Build version-specific payloads per subscriber
-   * 3. Group subscribers by version for efficiency
+   * **Current behavior:** Uses `DEFAULT_WEBHOOK_VERSION` (v2021-10-20) for all subscribers.
+   * The v2021-10-20 payload format is preserved exactly — no field removals, renames, or
+   * type changes — per the webhook backward compatibility mandate.
+   *
+   * **Per-subscriber version support (prepared, not yet active):**
+   * The `version` parameter already accepts any valid `WebhookVersion` value, enabling
+   * future per-subscriber version resolution. When activated, the enhancement path is:
+   * 1. Read each subscriber's stored `version` field from the webhook subscription
+   * 2. Pass the subscriber-specific version to this method
+   * 3. Group subscribers by version for efficient batch payload construction
+   * 4. Available versions: v2021-10-20 (default), v2025-01-01 (Calendly-aligned with
+   *    UTM tracking and reschedule URI references)
+   *
+   * @param dto - The webhook event DTO containing all event data
+   * @param version - The webhook payload version to use (defaults to DEFAULT_WEBHOOK_VERSION)
+   * @returns The constructed webhook payload for the given version and trigger event
    */
   private createPayload(
     dto: WebhookEventDTO,

@@ -421,7 +421,9 @@ model User {
   lastActiveAt        DateTime?
   eventTypes          EventType[]          @relation("user_eventtype")
   credentials         Credential[]
-  teams               Membership[]
+  teams               Membership[]         @relation("MembershipUser")
+  // AG-004: Memberships where this user was the inviter (Calendly invitation lifecycle parity)
+  invitedMemberships  Membership[]         @relation("InvitedByUser")
   bookings            Booking[]
   schedules           Schedule[]
   defaultScheduleId   Int?
@@ -492,6 +494,8 @@ model User {
   smsLockState                   SMSLockState                  @default(UNLOCKED)
   smsLockReviewedByAdmin         Boolean                       @default(false)
   NotificationsSubscriptions     NotificationsSubscriptions[]
+  activityFeedItems              ActivityFeedItem[]
+  inAppNotifications             InAppNotification[]
   referralLinkId                 String?
   features                       UserFeatures[]
   reassignedBookings             Booking[]                     @relation("reassignByUser")
@@ -534,6 +538,45 @@ model NotificationsSubscriptions {
   subscription String
 
   @@index([userId, subscription])
+}
+
+model ActivityFeedItem {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityType String
+  title        String
+  description  String?
+  resourceId   String?
+  resourceType String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, activityType])
+  @@index([userId, createdAt])
+}
+
+/// NF-004: In-app notification persistence for Calendly notification lifecycle parity.
+/// Stores persistent in-app notifications delivered via the IN_APP channel.
+model InAppNotification {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  type        String
+  status      String    @default("UNREAD")
+  url         String?
+  icon        String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+  dismissedAt DateTime?
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
 }
 
 // It holds Organization Profiles as well as User Profiles for users that have been added to an organization
@@ -651,6 +694,9 @@ model Team {
 
   autoOptInFeatures Boolean @default(false)
 
+  // AG-001: Default scheduling type for team events (ROUND_ROBIN, COLLECTIVE, or null for individual)
+  schedulingDefault String?
+
   // Monthly proration tracking
   seatChangeLogs    SeatChangeLog[]
   monthlyProrations MonthlyProration[]
@@ -760,12 +806,18 @@ model Membership {
   customRoleId         String?
   customRole           Role?             @relation(fields: [customRoleId], references: [id])
   team                 Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User              @relation("MembershipUser", fields: [userId], references: [id], onDelete: Cascade)
   disableImpersonation Boolean           @default(false)
   AttributeToUser      AttributeToUser[]
   createdAt            DateTime?         @default(now())
   updatedAt            DateTime?         @updatedAt
   Host                 Host[]
+
+  // AG-004: Calendly invitation lifecycle parity — track who invited, when, and decline status
+  invitedByUserId Int?
+  invitedByUser   User?     @relation("InvitedByUser", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  invitedAt       DateTime?
+  declinedAt      DateTime?
 
   @@unique([userId, teamId])
   @@index([teamId])
@@ -773,6 +825,7 @@ model Membership {
   @@index([accepted])
   @@index([role])
   @@index([customRoleId])
+  @@index([invitedByUserId])
 }
 
 model VerificationToken {
@@ -1159,6 +1212,8 @@ enum WebhookTriggerEvents {
   FORM_SUBMITTED_NO_EVENT
   DELEGATION_CREDENTIAL_ERROR
   WRONG_ASSIGNMENT_REPORT
+  // WH-005: Calendly invitee.created parity — distinguishes attendee-initiated reschedules
+  BOOKING_RESCHEDULED_BY_ATTENDEE
 }
 
 model Webhook {
@@ -1185,6 +1240,8 @@ model Webhook {
   time                  Int?
   timeUnit              TimeUnit?
   version               String                     @default("2021-10-20")
+  // WH-005: Per-subscription payload version negotiation (e.g., "v2025-01-01"); null defaults to version field behavior
+  payloadVersion        String?
 
   @@unique([userId, subscriberUrl], name: "courseIdentifier")
   @@unique([platformOAuthClientId, subscriberUrl], name: "oauthclientwebhook")
@@ -1498,6 +1555,8 @@ enum WorkflowTriggerEvents {
   BOOKING_PAYMENT_INITIATED
   BOOKING_PAID
   BOOKING_NO_SHOW_UPDATED
+  // NF-003: Workflow trigger for attendee-initiated reschedules (aligns with WH-005 BOOKING_RESCHEDULED_BY_ATTENDEE)
+  AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE
 }
 
 enum WorkflowActions {
@@ -1509,6 +1568,8 @@ enum WorkflowActions {
   WHATSAPP_ATTENDEE
   WHATSAPP_NUMBER
   CAL_AI_PHONE_CALL
+  // NF-004: In-app notification delivery action (Calendly in-app notification parity)
+  IN_APP_NOTIFICATION
 }
 
 enum WorkflowType {
@@ -1538,6 +1599,9 @@ model WorkflowStep {
   inboundAgentId String? @unique
   inboundAgent   Agent?  @relation("WorkflowStepInboundAgent", fields: [inboundAgentId], references: [id], onDelete: SetNull)
 
+  // NF-003: Optional JSON metadata for step configuration (in-app notification templates, channel-specific settings)
+  metadata Json?
+
   @@index([workflowId])
 }
 
@@ -1558,6 +1622,8 @@ model Workflow {
   timeUnit             TimeUnit?
   steps                WorkflowStep[]
   type                 WorkflowType              @default(EVENT_TYPE)
+  // NF-003: Explicit enable/disable toggle (Calendly workflow activation parity); defaults true for existing workflows
+  isEnabled            Boolean                   @default(true)
 
   @@index([userId])
   @@index([teamId])

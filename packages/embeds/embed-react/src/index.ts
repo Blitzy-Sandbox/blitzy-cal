@@ -7,6 +7,8 @@ import Cal from "./Cal";
 
 // Exporting for consumption by @calcom/embed-react user
 export type { EmbedEvent } from "@calcom/embed-core";
+// Re-export configuration types for React consumer convenience (EM-004 Calendly parity)
+export type { UiConfig, EmbedStyles, PrefillAndIframeAttrsConfig } from "@calcom/embed-core";
 
 export function getCalApi(options?: {
   embedJsUrl?: string;

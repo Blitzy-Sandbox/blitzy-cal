@@ -85,8 +85,25 @@ const _handleResponse = async ({
         if (field.type === "email") {
           schema = emailSchema;
         } else if (field.type === "phone") {
+          // Phone validation is handled externally; accept any value here
           schema = z.any();
+        } else if (field.type === "number") {
+          // Accept numeric values or numeric strings for Calendly-equivalent number field parity
+          schema = z.union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/)]);
+        } else if (field.type === "textarea" || field.type === "text") {
+          // Text and textarea fields must contain string values
+          schema = z.string();
+        } else if (field.type === "checkbox") {
+          // Checkbox fields may be represented as boolean, string ("true"/"false"), or string array
+          schema = z.union([z.boolean(), z.string(), z.array(z.string())]);
+        } else if (field.type === "radio" || field.type === "select") {
+          // Single-select fields must be a string value
+          schema = z.string();
+        } else if (field.type === "multiselect") {
+          // Multi-select fields must be an array of string values
+          schema = z.array(z.string());
         } else {
+          // Backward compatibility for unknown or custom field types
           schema = z.any();
         }
         return !schema.safeParse(fieldValue).success;
@@ -100,6 +117,33 @@ const _handleResponse = async ({
           .map((f) => `'${f.label}' with value '${f.value}' should be valid ${f.type}`)
           .join(", ")}`,
       });
+    }
+
+    // Soft validation: warn about values not matching available options for select-type fields.
+    // This is intentionally non-blocking to maintain backward compatibility — form submissions
+    // are not rejected if a value doesn't match a known option (options may have been updated).
+    for (const field of serializableFormWithFields.fields) {
+      const fieldValue = response[field.id]?.value;
+      if (!fieldValue || !field.options?.length) continue;
+
+      const validValues = field.options.flatMap((opt) =>
+        [opt.label, ...(opt.id !== null ? [opt.id] : [])]
+      );
+
+      if ((field.type === "radio" || field.type === "select") && typeof fieldValue === "string") {
+        if (!validValues.includes(fieldValue)) {
+          moduleLogger.warn(
+            `Field '${field.label}' value '${fieldValue}' does not match any available option`
+          );
+        }
+      } else if (field.type === "multiselect" && Array.isArray(fieldValue)) {
+        const unmatchedValues = fieldValue.filter((v) => !validValues.includes(v));
+        if (unmatchedValues.length) {
+          moduleLogger.warn(
+            `Field '${field.label}' has values not matching available options: ${unmatchedValues.join(", ")}`
+          );
+        }
+      }
     }
 
     const chosenRoute = serializableFormWithFields.routes?.find((route) => route.id === chosenRouteId);

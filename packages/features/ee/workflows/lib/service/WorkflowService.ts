@@ -191,11 +191,13 @@ export class WorkflowService {
     isNormalBookingOrFirstRecurringSlot,
     isConfirmedByDefault,
     isRescheduleEvent,
+    isRescheduledByAttendee,
     workflows,
     ...args
   }: ScheduleWorkflowRemindersArgs & {
     isConfirmedByDefault: boolean;
     isRescheduleEvent: boolean;
+    isRescheduledByAttendee?: boolean;
     isNormalBookingOrFirstRecurringSlot: boolean;
   }) {
     if (workflows.length <= 0) return;
@@ -207,6 +209,8 @@ export class WorkflowService {
         ...workflows.filter(
           (workflow) =>
             workflow.trigger === WorkflowTriggerEvents.RESCHEDULE_EVENT ||
+            (isRescheduledByAttendee &&
+              workflow.trigger === WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE) ||
             this._beforeAfterEventTriggers.includes(workflow.trigger)
         )
       );

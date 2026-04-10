@@ -23,7 +23,7 @@ function getStyle() {
       left:0;
       z-index:999999999999;
       display:block;
-      background-color:rgb(5,5,5, 0.8)
+      background-color:var(--cal-modal-overlay-color, rgb(5,5,5, 0.8))
     }
 
     .modal-box {
@@ -52,10 +52,10 @@ function getStyle() {
       font-size: 30px;
       left: -20px;
       position: relative;
-      color:white;
+      color:var(--cal-modal-close-color, white);
       cursor: pointer;
     }
-    /*Modal background is black only, so hardcode white */
+    /*Modal background is dark by default, close button color is configurable via --cal-modal-close-color */
     .loader {
       --cal-brand:white;
     }

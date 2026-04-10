@@ -2884,6 +2884,7 @@ async function handler(
       isConfirmedByDefault,
       isNormalBookingOrFirstRecurringSlot,
       isRescheduleEvent: !!rescheduleUid,
+      isRescheduledByAttendee: !!rescheduleUid && reqBody.rescheduledBy === bookerEmail,
       creditCheckFn: creditService.hasAvailableCredits.bind(creditService),
     });
   } catch (error) {

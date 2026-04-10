@@ -211,3 +211,184 @@ describe("BookingPayloadBuilder (v2021-10-20)", () => {
     });
   });
 });
+
+describe("Calendly Event Mapping Regression Tests", () => {
+  // Self-contained fixtures duplicated from the main describe block for test isolation
+  const mockEventType: EventTypeInfo = {
+    eventTitle: "Test Event",
+    eventDescription: "Test Description",
+    requiresConfirmation: false,
+    price: 0,
+    currency: "USD",
+    length: 30,
+  };
+
+  const mockCalendarEvent: CalendarEvent = {
+    type: "test-event",
+    title: "Test Meeting",
+    description: "Meeting description",
+    additionalNotes: "Additional notes",
+    startTime: "2024-01-15T10:00:00Z",
+    endTime: "2024-01-15T10:30:00Z",
+    organizer: {
+      id: 1,
+      email: "organizer@test.com",
+      name: "Test Organizer",
+      timeZone: "UTC",
+      language: { locale: "en" },
+    },
+    attendees: [
+      {
+        email: "attendee@test.com",
+        name: "Test Attendee",
+        timeZone: "UTC",
+        language: { locale: "en" },
+      },
+    ],
+    location: "https://cal.com/video/123",
+    uid: "booking-uid-123",
+    customInputs: {},
+    responses: {},
+    userFieldsResponses: {},
+  };
+
+  const createMockDTO = (
+    triggerEvent: WebhookTriggerEvents,
+    extra: Partial<BookingWebhookEventDTO> = {}
+  ): BookingWebhookEventDTO => ({
+    triggerEvent,
+    createdAt: "2024-01-15T10:00:00Z",
+    booking: {
+      id: 1,
+      eventTypeId: 1,
+      userId: 1,
+      smsReminderNumber: null,
+    },
+    eventType: mockEventType,
+    evt: mockCalendarEvent,
+    ...extra,
+  });
+
+  const builder = new BookingPayloadBuilder();
+
+  it("should include UTM params in BOOKING_CREATED payload when provided (WH-001)", () => {
+    const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED, {
+      utmParams: {
+        utmSource: "google",
+        utmMedium: "cpc",
+        utmCampaign: "calendly-parity",
+      },
+    });
+    const payload = builder.build(dto);
+
+    expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_CREATED);
+    expect(payload.payload.utmParams).toBeDefined();
+    expect(payload.payload.utmParams).toEqual({
+      utmSource: "google",
+      utmMedium: "cpc",
+      utmCampaign: "calendly-parity",
+    });
+  });
+
+  it("should include invitee and event URIs in BOOKING_CREATED payload when provided (WH-001)", () => {
+    const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED, {
+      inviteeUri: "https://api.cal.com/v2/invitees/abc123",
+      eventUri: "https://api.cal.com/v2/events/def456",
+      schedulingUrl: "https://cal.com/user/30min",
+    });
+    const payload = builder.build(dto);
+
+    expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_CREATED);
+    expect(payload.payload.inviteeUri).toBe("https://api.cal.com/v2/invitees/abc123");
+    expect(payload.payload.eventUri).toBe("https://api.cal.com/v2/events/def456");
+    expect(payload.payload.schedulingUrl).toBe("https://cal.com/user/30min");
+  });
+
+  it("should include cancellation metadata in BOOKING_CANCELLED payload when provided (WH-002)", () => {
+    const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CANCELLED, {
+      cancelledBy: "user@test.com",
+      cancellationReason: "Schedule conflict",
+      rescheduleUri: "https://cal.com/reschedule/abc",
+      cancellationTimestamp: "2024-01-15T11:00:00Z",
+    });
+    const payload = builder.build(dto);
+
+    expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_CANCELLED);
+    expect(payload.payload.rescheduleUri).toBe("https://cal.com/reschedule/abc");
+    expect(payload.payload.cancellationTimestamp).toBe("2024-01-15T11:00:00Z");
+    // Existing cancellation fields still present
+    expect(payload.payload.cancelledBy).toBe("user@test.com");
+    expect(payload.payload.cancellationReason).toBe("Schedule conflict");
+  });
+
+  it("should include old and new invitee URIs in BOOKING_RESCHEDULED payload when provided (WH-001)", () => {
+    const dto = createMockDTO(WebhookTriggerEvents.BOOKING_RESCHEDULED, {
+      rescheduleId: 2,
+      rescheduleUid: "reschedule-uid-456",
+      rescheduleStartTime: "2024-01-16T10:00:00Z",
+      rescheduleEndTime: "2024-01-16T10:30:00Z",
+      rescheduledBy: "user@test.com",
+      oldInviteeUri: "https://api.cal.com/v2/invitees/old-abc",
+      newInviteeUri: "https://api.cal.com/v2/invitees/new-def",
+    });
+    const payload = builder.build(dto);
+
+    expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_RESCHEDULED);
+    expect(payload.payload.oldInviteeUri).toBe("https://api.cal.com/v2/invitees/old-abc");
+    expect(payload.payload.newInviteeUri).toBe("https://api.cal.com/v2/invitees/new-def");
+    // Existing reschedule fields still present
+    expect(payload.payload.rescheduleId).toBe(2);
+    expect(payload.payload.rescheduleUid).toBe("reschedule-uid-456");
+    expect(payload.payload.rescheduledBy).toBe("user@test.com");
+  });
+
+  it("should NOT include Calendly parity fields when not provided in DTO (WH-004 backward compatibility)", () => {
+    const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED);
+    const payload = builder.build(dto);
+
+    expect(payload.payload.utmParams).toBeUndefined();
+    expect(payload.payload.inviteeUri).toBeUndefined();
+    expect(payload.payload.eventUri).toBeUndefined();
+    expect(payload.payload.schedulingUrl).toBeUndefined();
+    expect(payload.payload.rescheduleUri).toBeUndefined();
+    expect(payload.payload.cancellationTimestamp).toBeUndefined();
+    expect(payload.payload.oldInviteeUri).toBeUndefined();
+    expect(payload.payload.newInviteeUri).toBeUndefined();
+  });
+
+  it("should preserve all existing v2021-10-20 payload fields (WH-005 regression guard)", () => {
+    const dto = createMockDTO(WebhookTriggerEvents.BOOKING_CREATED);
+    const payload = builder.build(dto);
+
+    // Core booking fields
+    expect(payload.payload.bookingId).toBe(1);
+    expect(payload.payload.title).toBe("Test Meeting");
+    expect(payload.payload.status).toBe(BookingStatus.ACCEPTED);
+    expect(payload.payload.uid).toBe("booking-uid-123");
+
+    // Organizer fields
+    expect(payload.payload.organizer).toBeDefined();
+    expect(payload.payload.organizer.email).toBe("organizer@test.com");
+    expect(payload.payload.organizer.name).toBe("Test Organizer");
+    expect(payload.payload.organizer).toHaveProperty("utcOffset");
+
+    // Attendees fields
+    expect(payload.payload.attendees).toHaveLength(1);
+    expect(payload.payload.attendees[0].email).toBe("attendee@test.com");
+    expect(payload.payload.attendees[0]).toHaveProperty("utcOffset");
+
+    // Event type fields
+    expect(payload.payload.eventTitle).toBe("Test Event");
+    expect(payload.payload.eventDescription).toBe("Test Description");
+    expect(payload.payload.price).toBe(0);
+    expect(payload.payload.currency).toBe("USD");
+    expect(payload.payload.length).toBe(30);
+
+    // Location and metadata
+    expect(payload.payload.location).toBe("https://cal.com/video/123");
+
+    // Trigger event metadata
+    expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_CREATED);
+    expect(payload.createdAt).toBe("2024-01-15T10:00:00Z");
+  });
+});

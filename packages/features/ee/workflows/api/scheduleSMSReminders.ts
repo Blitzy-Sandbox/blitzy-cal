@@ -176,6 +176,17 @@ export async function handler(req: NextRequest) {
           attendeeName || "",
           userName
         );
+        // Calendly parity (NF-003): Append location to default SMS reminders when available
+        const bookingLocation = reminder.booking?.location;
+        if (message && bookingLocation) {
+          const locationLabel =
+            bookingMetadataSchema.parse(reminder.booking?.metadata || {})?.videoCallUrl || bookingLocation;
+          // Respect Twilio's 1600 character limit for SMS segments
+          const locationSuffix = ` Location: ${locationLabel}`;
+          if ((message + locationSuffix).length <= 1600) {
+            message = message + locationSuffix;
+          }
+        }
       }
 
       if (message?.length && message?.length > 0 && sendTo) {

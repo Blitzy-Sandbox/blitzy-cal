@@ -1,12 +1,16 @@
 import { useEmbedBookerUrl } from "@calcom/features/bookings/hooks/useBookerUrl";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 
+import type { ShareFlowConfig } from "../../types";
+import { generateShareableLink } from "../EmbedCodes";
+
 export const useEmbedTypes = () => {
   const { t } = useLocale();
   return [
     {
       title: t("inline_embed"),
       subtitle: t("load_inline_content"),
+      shareDescription: "Embed directly on your website as inline content",
       type: "inline",
       illustration: (
         <svg
@@ -80,6 +84,7 @@ export const useEmbedTypes = () => {
     {
       title: t("floating_pop_up_button"),
       subtitle: t("floating_button_trigger_modal"),
+      shareDescription: "Add a floating button that opens a booking popup",
       type: "floating-popup",
       illustration: (
         <svg
@@ -106,6 +111,7 @@ export const useEmbedTypes = () => {
     {
       title: t("pop_up_element_click"),
       subtitle: t("open_dialog_with_element_click"),
+      shareDescription: "Open a booking popup when visitors click an element",
       type: "element-click",
       illustration: (
         <svg
@@ -184,6 +190,7 @@ export const useEmbedTypes = () => {
     {
       title: t("email_embed"),
       subtitle: t("add_times_to_your_email"),
+      shareDescription: "Include available time slots in an email",
       type: "email",
       illustration: (
         <svg
@@ -321,4 +328,71 @@ export const useEmbedTypes = () => {
 export const useEmbedCalOrigin = () => {
   const bookerUrl = useEmbedBookerUrl();
   return bookerUrl;
+};
+
+/**
+ * Computes shareable link URLs for all embed flavors based on the current
+ * embed type, cal link, namespace, and optional share configuration.
+ *
+ * Returns an object with share URLs for inline, popup, floating, and direct link modes.
+ * This hook supports Calendly-equivalent share flow parity (EM-004).
+ */
+export const useShareFlowConfig = ({
+  // Kept in the API contract for downstream context; not consumed in the current implementation
+  embedType: _embedType,
+  calLink,
+  embedCalOrigin,
+  // Kept in the API contract for multi-embed support; not consumed in the current implementation
+  namespace: _namespace,
+  shareConfig,
+}: {
+  /** Current embed type — used for context; all share URLs are generated regardless */
+  embedType: string;
+  /** The booking page path (e.g., "username/event-slug" or "forms/form-slug") */
+  calLink: string;
+  /** The embed origin URL from useEmbedCalOrigin() */
+  embedCalOrigin: string;
+  /** The embed namespace for multi-embed page support */
+  namespace: string;
+  /** Optional share flow configuration with shareType, includeUtmParams, and customQueryParams */
+  shareConfig?: ShareFlowConfig;
+}) => {
+  void _embedType;
+  void _namespace;
+  const shareUrls = {
+    inlineShareUrl: generateShareableLink({
+      calLink,
+      embedCalOrigin,
+      embedType: "inline",
+      config: {
+        customQueryParams: shareConfig?.customQueryParams,
+      },
+    }),
+    popupShareUrl: generateShareableLink({
+      calLink,
+      embedCalOrigin,
+      embedType: "popup",
+      config: {
+        customQueryParams: shareConfig?.customQueryParams,
+      },
+    }),
+    floatingShareUrl: generateShareableLink({
+      calLink,
+      embedCalOrigin,
+      embedType: "floating",
+      config: {
+        customQueryParams: shareConfig?.customQueryParams,
+      },
+    }),
+    directShareUrl: generateShareableLink({
+      calLink,
+      embedCalOrigin,
+      embedType: "link",
+      config: {
+        customQueryParams: shareConfig?.customQueryParams,
+      },
+    }),
+  };
+
+  return shareUrls;
 };

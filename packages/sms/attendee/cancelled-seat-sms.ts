@@ -1,3 +1,4 @@
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
 import SMSManager from "../sms-manager";
@@ -7,17 +8,31 @@ export default class CancelledSeatSMS extends SMSManager {
     super(calEvent);
   }
 
-  getMessage(attendee: Person) {
+  getMessage(attendee: Person): string {
     const t = attendee.language.translate;
 
-    const messageText = `${t("no_longer_attending", {
+    // Seat cancellation notice with attendee name (Calendly parity — personalized notification)
+    const seatCancellationText = t("no_longer_attending", {
       name: attendee.name,
-    })}\n\n${t("event_no_longer_attending_subject", {
+    });
+
+    // Event details with team/organizer name and formatted date
+    const eventDetailsText = t("event_no_longer_attending_subject", {
       name: this.calEvent.team?.name || this.calEvent.organizer.name,
       date: this.getFormattedDate(attendee.timeZone, attendee.language.locale),
       interpolation: { escapeValue: false },
-    })} `;
+    });
 
-    return `${messageText}`;
+    // Event title for Calendly parity — attendee sees which event lost their seat
+    const eventTitle = typeof this.calEvent.title === "string" ? this.calEvent.title : "Untitled Event";
+
+    // Rebooking link URL for Calendly parity — attendee can view booking details or re-book
+    const bookingUrl = `${this.calEvent.bookerUrl ?? WEBAPP_URL}/booking/${this.calEvent.uid}`;
+    const urlText = t("you_can_view_booking_details_with_this_url", {
+      url: bookingUrl,
+      interpolation: { escapeValue: false },
+    });
+
+    return `${seatCancellationText}\n\n${eventDetailsText}\n\n${eventTitle}\n\n${urlText}`;
   }
 }

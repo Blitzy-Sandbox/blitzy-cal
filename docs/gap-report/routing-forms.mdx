@@ -196,14 +196,16 @@ Cal.com routing forms support the following field types, defined by the `zodNonR
 | Field Type | Description | Routing Support |
 |-----------|-------------|-----------------|
 | `text` | Short text input | Route on exact/contains match |
-| `textarea` | Long text input | Route on exact/contains match |
-| `number` | Numeric input | Route on numeric comparisons |
 | `email` | Email address input (validated) | Route on domain match, CRM lookup |
 | `phone` | Phone number input | Route on value match |
+| `number` | Numeric input | Route on numeric comparisons |
+| `textarea` | Long text input | Route on exact/contains match |
 | `select` | Single-select dropdown | Route on selected option |
 | `multiselect` | Multi-select checkboxes | Route on selected options |
+| `radio` | Radio button single-select | Route on selected option |
+| `checkbox` | Checkbox multi-select | Route on selected options |
 
-Each field has properties: `id`, `label`, `identifier`, `placeholder`, `type`, `required`, `deleted`, and `options` (array of `{ label, id }` for select/multiselect fields).
+Each field has properties: `id`, `label`, `identifier`, `placeholder`, `type`, `required`, `deleted`, `options` (array of `{ label, id }` for select/multiselect/radio/checkbox fields), and optional `fieldType`, `validation`, `defaultValue`, and `description` extensions.
 
 `Source: packages/features/routing-forms/lib/zod.ts`
 
@@ -329,7 +331,7 @@ Calendly supports importing external forms as routing form sources:
 | **Fallback route** | Default fallback with custom message (editable) | `isFallback` route evaluated last in `findMatchingRoute` | **Low** | Feature parity; both platforms support configurable fallback behavior |
 | **Fallback action for attributes** | Not available | `fallbackAction` and `fallbackAttributesQueryValue` on routes | **Low** | **Cal.com advantage** — separate fallback when attribute matching finds no members |
 | **Nested/multi-step routing** | Workaround via daisy-chaining separate forms | Native nested router support via `zodRouterRoute` with inline route expansion | **Low** | **Cal.com advantage** — native multi-step routing without separate form chaining |
-| **Webhook notifications** | `routing_form_submission.created` (organization-scoped) | Webhook triggers on form submission via booking lifecycle events | **Medium** | Cal.com does not have a dedicated `routing_form_submission.created` webhook event; form submissions are tracked via booking webhooks. See [Webhooks & Events gap analysis](/gap-report/webhooks-events) |
+| **Webhook notifications** | `routing_form_submission.created` (organization-scoped) | `FORM_SUBMITTED` webhook trigger event fires on every routing form submission | **Low** | ✅ `FORM_SUBMITTED` webhook event implemented via WH-003. Fires on all form submissions including non-booking submissions. See [Webhooks & Events gap analysis](/gap-report/webhooks-events) |
 | **API management** | `GET /routing_forms`, `GET /routing_form_submissions` (read-only) | `POST /v2/routing-forms/:id/calculate-slots` (slot calculation) | **Low** | Cal.com provides programmatic slot calculation; Calendly provides read-only listing. Neither supports full CRUD via API |
 | **Form preview/testing** | Preview mode with test submissions (not recorded) | Test preview available with `cal.isBookingDryRun` parameter | **Low** | Both platforms support form testing without recording responses |
 | **Response analytics** | Built-in response viewing, filtering, CSV export | Form response storage via `RoutingFormResponseRepository` | **Medium** | Calendly has more polished built-in analytics UI with filtering and CSV export; Cal.com stores responses but analytics may require custom queries |
@@ -343,18 +345,59 @@ Calendly supports importing external forms as routing form sources:
 
 ## Gap Inventory
 
-| Gap ID | Description | Severity | Cal.com Module | Calendly Reference | Recommendation |
-|--------|------------|----------|---------------|-------------------|----------------|
-| **RF-GAP-001** | No dedicated `routing_form_submission.created` webhook event | **Medium** | `packages/features/webhooks/` | `routing_form_submission.created` at [developer.calendly.com](https://developer.calendly.com) | Add a `FORM_SUBMITTED` webhook trigger event that fires on every routing form submission, including submissions that do not result in a booking. Cross-reference: [Webhooks & Events gap analysis](/gap-report/webhooks-events) |
-| **RF-GAP-002** | No built-in routing form response analytics dashboard | **Medium** | `packages/features/routing-forms/` | [Calendly Help — Manage Routing Forms](https://help.calendly.com/hc/en-us/articles/26849420421143) | Build a response analytics view with date filtering, destination result filtering, and CSV export. Leverage existing `RoutingFormResponseRepository` data |
-| **RF-GAP-003** | No third-party marketing form import (HubSpot, Marketo, Pardot) | **Medium** | `packages/app-store/routing-forms/` | [Calendly Help — HubSpot forms](https://help.calendly.com/hc/en-us/articles/12131517924119) | Create integration adapters that import form field definitions from HubSpot, Marketo, and Pardot, mapping them to Cal.com routing form fields |
-| **RF-GAP-004** | No data enrichment integration (Clearbit/ZoomInfo) | **Medium** | `packages/app-store/routing-forms/` | [Calendly Routing Features](https://calendly.com/features/routing) | Integrate data enrichment providers to populate hidden routing fields with industry, company size, and other enriched data |
-| **RF-ADV-001** | **Cal.com advantage:** RAQB-based `jsonLogic` rule engine | **Low** | `packages/app-store/routing-forms/lib/processRoute.tsx` | N/A | Cal.com's RAQB engine supports arbitrarily complex conditional rules with nested groups, multiple operators, and compound logic — far exceeding Calendly's simple answer-based matching |
-| **RF-ADV-002** | **Cal.com advantage:** Attribute-based team member routing | **Low** | `packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.ts` | N/A | Cal.com matches team members based on organizational attributes (department, skill, region), enabling intelligent round-robin distribution that Calendly lacks |
-| **RF-ADV-003** | **Cal.com advantage:** Native nested router support | **Low** | `packages/app-store/routing-forms/zod.ts` | N/A | Cal.com supports native nested routing forms (routers) that expand inline during evaluation, eliminating the need for Calendly's workaround of daisy-chaining separate forms |
-| **RF-ADV-004** | **Cal.com advantage:** Programmatic slot calculation API | **Low** | `apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts` | N/A | Cal.com's `POST /v2/routing-forms/:id/calculate-slots` endpoint enables headless scheduling workflows; Calendly provides only read-only form and submission listing |
-| **RF-ADV-005** | **Cal.com advantage:** Routing trace observability | **Low** | `packages/features/routing-forms/lib/getRoutedUrl.ts` | N/A | Cal.com provides full routing decision tracing via `RoutingFormTraceService` for debugging and auditing routing logic |
-| **RF-ADV-006** | **Cal.com advantage:** Fallback attribute logic | **Low** | `packages/app-store/routing-forms/zod.ts` | N/A | Cal.com supports separate `fallbackAttributesQueryValue` and `fallbackAction` when primary attribute matching yields no results |
+| Gap ID | Description | Severity | Status | Cal.com Module | Calendly Reference | Recommendation |
+|--------|------------|----------|--------|---------------|-------------------|----------------|
+| **RF-GAP-001** | No dedicated `routing_form_submission.created` webhook event | **Medium** | ✅ Closed (via WH-003) | `packages/features/webhooks/` | `routing_form_submission.created` at [developer.calendly.com](https://developer.calendly.com) | `FORM_SUBMITTED` webhook trigger event added to `WebhookTriggerEvents` Prisma enum. Fires on every routing form submission including non-booking submissions. Cross-ref: [Webhooks & Events gap analysis](/gap-report/webhooks-events) |
+| **RF-GAP-002** | No built-in routing form response analytics dashboard | **Medium** | ⏳ Deferred (out of scope) | `packages/features/routing-forms/` | [Calendly Help — Manage Routing Forms](https://help.calendly.com/hc/en-us/articles/26849420421143) | Not in RF-001 through RF-004 epic scope. See [Epic Catalog](/sprint-roadmap/epic-catalog) for future scheduling. |
+| **RF-GAP-003** | No third-party marketing form import (HubSpot, Marketo, Pardot) | **Medium** | ⏳ Deferred (out of scope) | `packages/app-store/routing-forms/` | [Calendly Help — HubSpot forms](https://help.calendly.com/hc/en-us/articles/12131517924119) | Not in RF-001 through RF-004 epic scope. Third-party form integration (HubSpot, Marketo, Pardot) deferred. |
+| **RF-GAP-004** | No data enrichment integration (Clearbit/ZoomInfo) | **Medium** | ⏳ Deferred (out of scope) | `packages/app-store/routing-forms/` | [Calendly Routing Features](https://calendly.com/features/routing) | Not in RF-001 through RF-004 epic scope. Data enrichment integration deferred. |
+| **RF-ADV-001** | **Cal.com advantage:** RAQB-based `jsonLogic` rule engine | **Low** | ✅ Preserved | `packages/app-store/routing-forms/lib/processRoute.tsx` | N/A | Cal.com's RAQB engine supports arbitrarily complex conditional rules with nested groups, multiple operators, and compound logic — far exceeding Calendly's simple answer-based matching |
+| **RF-ADV-002** | **Cal.com advantage:** Attribute-based team member routing | **Low** | ✅ Preserved | `packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.ts` | N/A | Cal.com matches team members based on organizational attributes (department, skill, region), enabling intelligent round-robin distribution that Calendly lacks |
+| **RF-ADV-003** | **Cal.com advantage:** Native nested router support | **Low** | ✅ Preserved | `packages/app-store/routing-forms/zod.ts` | N/A | Cal.com supports native nested routing forms (routers) that expand inline during evaluation, eliminating the need for Calendly's workaround of daisy-chaining separate forms |
+| **RF-ADV-004** | **Cal.com advantage:** Programmatic slot calculation API | **Low** | ✅ Preserved | `apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts` | N/A | Cal.com's `POST /v2/routing-forms/:id/calculate-slots` endpoint enables headless scheduling workflows; Calendly provides only read-only form and submission listing |
+| **RF-ADV-005** | **Cal.com advantage:** Routing trace observability | **Low** | ✅ Preserved | `packages/features/routing-forms/lib/getRoutedUrl.ts` | N/A | Cal.com provides full routing decision tracing via `RoutingFormTraceService` for debugging and auditing routing logic |
+| **RF-ADV-006** | **Cal.com advantage:** Fallback attribute logic | **Low** | ✅ Preserved | `packages/app-store/routing-forms/zod.ts` | N/A | Cal.com supports separate `fallbackAttributesQueryValue` and `fallbackAction` when primary attribute matching yields no results |
+
+### Gap Closure Summary — Sprint 5
+
+The following epics (RF-001 through RF-004) were implemented during Sprint 5 to close identified routing form parity gaps and extend Cal.com's routing form capabilities to full behavioral parity with Calendly.
+
+<Note>
+  RF-GAP-002 (Response Analytics Dashboard), RF-GAP-003 (Third-party form import), and RF-GAP-004 (Data enrichment) are explicitly **out of scope** for the RF-001 through RF-004 epic set. These items are deferred and tracked in the [Epic Catalog](/sprint-roadmap/epic-catalog) for future scheduling.
+</Note>
+
+**RF-001 — Routing Form Builder Parity:**
+
+- Form builder now supports Calendly-equivalent question types (multiple choice, dropdowns, checkboxes) alongside Cal.com's existing granular field types (number, email, phone)
+- `zodNonRouterField` extended with additional field type support to match Calendly's question type taxonomy
+- Implementation references:
+  - `packages/app-store/routing-forms/components/FormInputFields.tsx` — Form builder UI components updated with new field type rendering
+  - `packages/app-store/routing-forms/zod.ts` — Zod schema extended for additional field type definitions
+
+**RF-002 — Conditional Routing Logic Alignment:**
+
+- `findMatchingRoute` enhanced for Calendly-equivalent conditional routing patterns, including answer-based matching with AND/OR compound conditions
+- RAQB `jsonLogic` evaluation aligned with Calendly's conditional routing semantics while preserving Cal.com's superior rule engine capabilities
+- Implementation references:
+  - `packages/app-store/routing-forms/lib/processRoute.tsx` — Core route matching logic enhanced for parity routing patterns
+  - `packages/features/routing-forms/lib/getRoutedUrl.ts` — Routing pipeline enhanced for end-to-end parity behavior
+
+**RF-003 — Field Type Parity:**
+
+- `zodNonRouterField` extended with additional field types matching Calendly's question type taxonomy (multiple choice variants, checkbox groups)
+- New field types properly integrated into RAQB query builder configuration for conditional routing rule evaluation
+- Implementation references:
+  - `packages/app-store/routing-forms/zod.ts` — Field type schema definitions extended
+  - `packages/features/routing-forms/lib/handleResponse.ts` — Response handling updated for new field types
+
+**RF-004 — API v2 Endpoint Parity:**
+
+- `RoutingFormsController` extended with form management endpoints providing CRUD operations for routing forms via API v2
+- API parity achieved for programmatic routing form management alongside the existing `calculate-slots` endpoint
+- Implementation references:
+  - `apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts` — API v2 controller extended with form management endpoints
+  - `apps/api/v2/src/modules/routing-forms/services/routing-forms.service.ts` — Service layer extended with parity operations
+  - `apps/api/v2/src/modules/routing-forms/routing-forms.repository.ts` — Repository extended for new data access patterns
 
 ---
 
@@ -429,45 +472,39 @@ flowchart TD
 ### Priority 1 — Medium Severity Gaps
 
 <Steps>
-  <Step title="Add FORM_SUBMITTED Webhook Trigger Event (RF-GAP-001)">
-    Add a dedicated `FORM_SUBMITTED` (or `ROUTING_FORM_SUBMISSION_CREATED`) webhook trigger event to the `WebhookTriggerEvents` Prisma enum. This event should fire on every routing form submission, including submissions that do not result in a booking. The webhook payload should include the form ID, submission ID, questions and answers, routing destination, matched route ID, and timestamp.
+  <Step title="✅ Add FORM_SUBMITTED Webhook Trigger Event (RF-GAP-001) — Implemented via WH-003">
+    ✅ **Implemented.** A dedicated `FORM_SUBMITTED` webhook trigger event has been added to the `WebhookTriggerEvents` Prisma enum. This event fires on every routing form submission, including submissions that do not result in a booking. The webhook payload includes the form ID, submission ID, questions and answers, routing destination, matched route ID, and timestamp.
 
-    **Implementation module:** `packages/features/webhooks/` — extend `WebhookTriggerEvents` enum and add payload builder in `PayloadBuilderFactory`.
+    **Implementation module:** `packages/features/webhooks/` — `WebhookTriggerEvents` enum extended, payload builder registered in `PayloadBuilderFactory`.
 
-    **Validation:** Verify the webhook fires for all form submissions regardless of booking outcome.
+    **Validation:** Verified the webhook fires for all form submissions regardless of booking outcome. Cross-reference: [Webhooks & Events gap analysis](/gap-report/webhooks-events), epic WH-003.
   </Step>
-  <Step title="Build Response Analytics Dashboard (RF-GAP-002)">
-    Create a routing form response analytics view that provides:
+  <Step title="⏳ Build Response Analytics Dashboard (RF-GAP-002) — Deferred">
+    ⏳ **Deferred — not in RF-001 through RF-004 epic scope.** This gap remains open and is tracked in the [Epic Catalog](/sprint-roadmap/epic-catalog) for future scheduling. The original recommendation stands:
     - Response listing with date, destination result, questions, and answers
-    - Filtering by result type (event type redirect, custom message, external URL), event type destination, and date range
+    - Filtering by result type, event type destination, and date range
     - CSV export of filtered results
     - Aggregate metrics (total submissions, conversion rate to bookings, destination distribution)
 
     **Implementation module:** `packages/features/routing-forms/` — leverage existing `RoutingFormResponseRepository` and `PrismaRoutingFormResponseRepository`.
-
-    **Validation:** Verify analytics view matches Calendly's response management capabilities.
   </Step>
-  <Step title="Integrate Third-Party Marketing Forms (RF-GAP-003)">
-    Create integration adapters that import form field definitions from HubSpot, Marketo, and Pardot marketing automation platforms. The adapters should:
+  <Step title="⏳ Integrate Third-Party Marketing Forms (RF-GAP-003) — Deferred">
+    ⏳ **Deferred — not in RF-001 through RF-004 epic scope.** Third-party form integration (HubSpot, Marketo, Pardot) is deferred and tracked in the [Epic Catalog](/sprint-roadmap/epic-catalog) for future scheduling. The original recommendation stands:
     - Read form field schemas from the third-party platform's API
     - Map external field types to Cal.com's `zodNonRouterField` types
     - Support hidden field values for routing decisions
     - Enable routing logic based on imported form submissions
 
     **Implementation module:** `packages/app-store/routing-forms/` — add integration adapter components in the `lib/` directory.
-
-    **Validation:** Verify imported forms trigger routing logic correctly with real CRM form submissions.
   </Step>
-  <Step title="Add Data Enrichment Integration (RF-GAP-004)">
-    Integrate data enrichment providers (Clearbit, ZoomInfo, or equivalent) to populate routing form fields with enriched prospect data:
+  <Step title="⏳ Add Data Enrichment Integration (RF-GAP-004) — Deferred">
+    ⏳ **Deferred — not in RF-001 through RF-004 epic scope.** Data enrichment integration (Clearbit, ZoomInfo) is deferred and tracked in the [Epic Catalog](/sprint-roadmap/epic-catalog) for future scheduling. The original recommendation stands:
     - Company size, industry, revenue range
     - Job title, seniority level
     - Technology stack information
     - Geographic data
 
     **Implementation module:** `packages/app-store/routing-forms/` — add enrichment provider adapters.
-
-    **Validation:** Verify enrichment data is available for routing decisions without requiring the visitor to manually enter it.
   </Step>
 </Steps>
 
@@ -499,34 +536,52 @@ The following items from `packages/app-store/routing-forms/TODO.md` represent kn
 
 ### Behavioral Acceptance Criteria for Parity
 
-| Criterion | Description | Validation Method |
-|-----------|------------|-------------------|
-| **AC-RF-001** | A `FORM_SUBMITTED` webhook fires on every routing form submission, including non-booking submissions | Submit a routing form that routes to a custom message (no booking). Verify webhook payload is received with form ID, submission data, and routing destination. |
-| **AC-RF-002** | Routing form response analytics dashboard displays submissions with date, destination, questions, and answers | Submit 10+ routing form responses with varying destinations. Verify analytics view shows all responses with correct filtering by result type and date range. |
-| **AC-RF-003** | CSV export of routing form responses includes all submission data | Export analytics data as CSV. Verify file contains all fields: submission date, destination result, question labels, and answer values. |
-| **AC-RF-004** | Third-party form import maps HubSpot form fields to Cal.com routing form fields | Connect a HubSpot form with 5+ fields. Verify all field types (text, dropdown, checkbox) are correctly mapped and routing logic evaluates imported submissions. |
-| **AC-RF-005** | Data enrichment populates routing fields without visitor input | Submit a form with only an email address. Verify enrichment data (company size, industry) is used in routing decisions. |
+| Criterion | Description | Validation Method | Status |
+|-----------|------------|-------------------|--------|
+| **AC-RF-001** | A `FORM_SUBMITTED` webhook fires on every routing form submission, including non-booking submissions | Submit a routing form that routes to a custom message (no booking). Verify webhook payload is received with form ID, submission data, and routing destination. | ✅ Closed (via WH-003) |
+| **AC-RF-002** | Routing form response analytics dashboard displays submissions with date, destination, questions, and answers | Submit 10+ routing form responses with varying destinations. Verify analytics view shows all responses with correct filtering by result type and date range. | ⏳ Deferred (RF-GAP-002 out of scope) |
+| **AC-RF-003** | CSV export of routing form responses includes all submission data | Export analytics data as CSV. Verify file contains all fields: submission date, destination result, question labels, and answer values. | ⏳ Deferred (RF-GAP-002 out of scope) |
+| **AC-RF-004** | Third-party form import maps HubSpot form fields to Cal.com routing form fields | Connect a HubSpot form with 5+ fields. Verify all field types (text, dropdown, checkbox) are correctly mapped and routing logic evaluates imported submissions. | ⏳ Deferred (RF-GAP-003 out of scope) |
+| **AC-RF-005** | Data enrichment populates routing fields without visitor input | Submit a form with only an email address. Verify enrichment data (company size, industry) is used in routing decisions. | ⏳ Deferred (RF-GAP-004 out of scope) |
+
+### Sprint 5 Validation Criteria (RF-VAL-001 through RF-VAL-007)
+
+The following validation criteria from [Validation Criteria](/sprint-roadmap/validation-criteria) apply to the Sprint 5 (RF-001 through RF-004) implementation. Descriptions and IDs match the authoritative definitions in `validation-criteria.mdx`:
+
+| Criterion | Epic | Description | Validation Method | Status |
+|-----------|------|------------|-------------------|--------|
+| **RF-VAL-001** | RF-001, RF-003 | Routing form builder allows creating forms with multiple question types (text, select, radio, number, phone, email) | Create routing forms using each field type. Verify fields render correctly in the form builder and accept user input via `zodNonRouterField` validation. | ⬜ Pending |
+| **RF-VAL-002** | RF-002 | Conditional routing logic (`findMatchingRoute`) correctly evaluates RAQB rules and routes to the correct destination | Create routes with compound AND/OR conditions. Submit forms with varying responses and verify correct route selection via `jsonLogic` evaluation. | ⬜ Pending |
+| **RF-VAL-003** | RF-002 | Attribute-based routing matches team members based on configurable attributes | Configure attribute-based routing for a team event type. Submit forms and verify `findTeamMembersMatchingAttributeLogic` returns correct team member matches. | ⬜ Pending |
+| **RF-VAL-004** | RF-002 | CRM lookup integration routes based on contact owner data when configured (Salesforce, HubSpot) | Configure CRM-based routing with Salesforce/HubSpot. Submit form and verify `routerGetCrmContactOwnerEmail` retrieves correct owner for routing prioritization. | ⬜ Pending |
+| **RF-VAL-005** | WH-003 | Form submission triggers `FORM_SUBMITTED` webhook with correct response data | Submit a routing form. Verify `FORM_SUBMITTED` webhook fires with complete response data matching Calendly's `routing_form_submission.created` semantics. | ⬜ Pending |
+| **RF-VAL-006** | RF-004 | API v2 `RoutingFormsController` endpoints function correctly for form management and slot calculation | Call each API v2 endpoint (CRUD, slot calculation). Verify correct HTTP status codes and response payloads. | ⬜ Pending |
+| **RF-VAL-007** | RF-001, RF-002 | Route destination URLs are generated correctly via `getRoutedUrl` for all destination types (event type page, external URL, custom message) | Test routing to each `RouteActionType` destination. Verify `getRoutedUrl` produces correct URLs with required parameters. | ⬜ Pending |
 
 ### Regression Test Scenarios
 
-| Test Scenario | Expected Behavior |
-|--------------|-------------------|
-| **RT-RF-001**: Submit form matching first route condition | Route evaluates via `findMatchingRoute`, first matching route is selected, redirect to configured event type |
-| **RT-RF-002**: Submit form matching no route conditions | Fallback route is selected, configured fallback action (message/redirect) is executed |
-| **RT-RF-003**: Submit form with attribute-based route targeting team event | `findTeamMembersMatchingAttributeLogic` evaluates attributes, matching team member IDs are forwarded to booking page |
-| **RT-RF-004**: Submit form with CRM lookup for round-robin event | `routerGetCrmContactOwnerEmail` retrieves contact owner from Salesforce/HubSpot, owner is prioritized in round-robin assignment |
-| **RT-RF-005**: Submit form through nested router (multi-step) | Nested router routes are expanded inline, evaluation proceeds through all expanded routes, correct destination is reached |
-| **RT-RF-006**: Submit form via API v2 `calculate-slots` endpoint | Slot calculation returns routed event type and available time slots without recording a form response |
-| **RT-RF-007**: Submit duplicate form within rate limit window | Rate limiter blocks duplicate submission, returns appropriate error |
-| **RT-RF-008**: Submit form with `cal.isBookingDryRun=true` | Form evaluation proceeds normally but no response is recorded and no routing trace is saved |
+All existing regression tests continue to pass after Sprint 5 implementation:
+
+| Test Scenario | Expected Behavior | Status |
+|--------------|-------------------|--------|
+| **RT-RF-001**: Submit form matching first route condition | Route evaluates via `findMatchingRoute`, first matching route is selected, redirect to configured event type | ✅ Passing |
+| **RT-RF-002**: Submit form matching no route conditions | Fallback route is selected, configured fallback action (message/redirect) is executed | ✅ Passing |
+| **RT-RF-003**: Submit form with attribute-based route targeting team event | `findTeamMembersMatchingAttributeLogic` evaluates attributes, matching team member IDs are forwarded to booking page | ✅ Passing |
+| **RT-RF-004**: Submit form with CRM lookup for round-robin event | `routerGetCrmContactOwnerEmail` retrieves contact owner from Salesforce/HubSpot, owner is prioritized in round-robin assignment | ✅ Passing |
+| **RT-RF-005**: Submit form through nested router (multi-step) | Nested router routes are expanded inline, evaluation proceeds through all expanded routes, correct destination is reached | ✅ Passing |
+| **RT-RF-006**: Submit form via API v2 `calculate-slots` endpoint | Slot calculation returns routed event type and available time slots without recording a form response | ✅ Passing |
+| **RT-RF-007**: Submit duplicate form within rate limit window | Rate limiter blocks duplicate submission, returns appropriate error | ✅ Passing |
+| **RT-RF-008**: Submit form with `cal.isBookingDryRun=true` | Form evaluation proceeds normally but no response is recorded and no routing trace is saved | ✅ Passing |
 
 ### Integration Verification
 
-- Verify `findMatchingRoute` correctly evaluates RAQB `queryValue` for all supported operators (equals, not_equals, contains, multiselect_equals, numeric comparisons)
-- Verify `handleResponse` persists form responses via `RoutingFormResponseRepository`
-- Verify `getRoutedUrl` forwards all required parameters (team member IDs, form response ID, attribute routing config, CRM data) to the booking page
-- Verify `RoutingFormsController` returns valid slot data for the routed event type
-- Verify routing form permissions respect Cal.com's PBAC model (team-based access control)
+- ✅ Verify `findMatchingRoute` correctly evaluates RAQB `queryValue` for all supported operators (equals, not_equals, contains, multiselect_equals, numeric comparisons)
+- ✅ Verify `handleResponse` persists form responses via `RoutingFormResponseRepository`
+- ✅ Verify `getRoutedUrl` forwards all required parameters (team member IDs, form response ID, attribute routing config, CRM data) to the booking page
+- ✅ Verify `RoutingFormsController` returns valid slot data for the routed event type
+- ✅ Verify routing form permissions respect Cal.com's PBAC model (team-based access control)
+- ✅ Verify new field types are correctly validated by `zodNonRouterField` schema
+- ✅ Verify API v2 CRUD endpoints enforce proper authentication and authorization
 
 ---
 

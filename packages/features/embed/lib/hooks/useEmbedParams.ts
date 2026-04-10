@@ -11,6 +11,8 @@ type EmbedParams = {
   eventId: string | null;
   date: string | null;
   month: string | null;
+  shareMode: string | null;
+  redirectUrl: string | null;
 };
 
 export function useEmbedParams(noQueryParamMode = false): EmbedParams {
@@ -26,6 +28,8 @@ export function useEmbedParams(noQueryParamMode = false): EmbedParams {
         eventId: embedState?.eventId ?? null,
         date: embedState?.date ?? null,
         month: embedState?.month ?? null,
+        shareMode: embedState?.shareMode ?? null,
+        redirectUrl: null,
       }
     : {
         embedType: (searchParams?.get("embedType") as EmbedType) ?? null,
@@ -35,5 +39,7 @@ export function useEmbedParams(noQueryParamMode = false): EmbedParams {
         eventId: (searchParams?.get("eventId") || "") as string,
         date: (searchParams?.get("date") || "") as string,
         month: (searchParams?.get("month") || "") as string,
+        shareMode: searchParams?.get("shareMode") ?? null,
+        redirectUrl: searchParams?.get("redirectUrl") ?? null,
       };
 }

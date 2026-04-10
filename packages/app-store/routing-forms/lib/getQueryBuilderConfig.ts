@@ -36,6 +36,45 @@ const attributeTypesMap = new Map<keyof typeof AttributeType, RoutingFormFieldTy
   [AttributeType.NUMBER, RoutingFormFieldType.NUMBER],
 ]);
 
+/**
+ * Fallback RAQB widget type mapping for Calendly-parity field types (RF-003) that do not yet
+ * have a dedicated widget registered in FormFieldsInitialConfig / AttributesInitialConfig.
+ *
+ * - "url": Calendly "Website URL" question type — URL values are compared as strings.
+ * - "date": Calendly "Date" question type — date values are compared as text strings
+ *   until a dedicated RAQB date widget is configured.
+ *
+ * Note: "checkbox" is NOT in this fallback map because it now has a proper widget registered
+ * in the RAQB config (config.ts) with type "checkbox" and uses listValues like select/multiselect.
+ */
+const FIELD_TYPE_WIDGET_FALLBACK: Partial<Record<RoutingFormFieldType, string>> = {
+  [RoutingFormFieldType.URL]: "text",
+  [RoutingFormFieldType.DATE]: "date",
+};
+
+/**
+ * Resolves the RAQB widget type string for a given routing form field type.
+ *
+ * First checks if the RAQB config has a widget registered for this field type (the normal path
+ * for text, number, textarea, select, multiselect, phone, email). If no widget is registered,
+ * falls back to {@link FIELD_TYPE_WIDGET_FALLBACK} for new Calendly-parity field types.
+ * Throws if neither source can resolve the widget type — this indicates a configuration gap.
+ */
+function resolveWidgetType(
+  fieldType: (typeof FieldTypes)[number]["value"],
+  configWidgets: typeof FormFieldsInitialConfig.widgets
+): string {
+  const widget = configWidgets[fieldType];
+  if (widget) {
+    return widget.type;
+  }
+  const fallback = FIELD_TYPE_WIDGET_FALLBACK[fieldType as RoutingFormFieldType];
+  if (fallback) {
+    return fallback;
+  }
+  throw new Error(`No widget configuration found for field type: ${fieldType}`);
+}
+
 export type FormFieldsQueryBuilderConfigWithRaqbFields = ReturnType<
   typeof getQueryBuilderConfigForFormFields
 >;
@@ -55,16 +94,19 @@ export function getQueryBuilderConfigForFormFields(form: Pick<RoutingForm, "fiel
     if (FieldTypes.map((f) => f.value).includes(fieldType)) {
       const options = getUIOptionsForSelect(field);
 
-      const widget = FormFieldsInitialConfig.widgets[fieldType];
-      const widgetType = widget.type;
+      // Resolve widget type from the RAQB config or fallback mapping for new Calendly-parity types (RF-003)
+      const widgetType = resolveWidgetType(fieldType, FormFieldsInitialConfig.widgets);
 
       fields[field.id] = {
         label: field.label,
         type: widgetType,
         valueSources: ["value"],
         fieldSettings: {
-          // IMPORTANT: listValues must be undefined for non-select/multiselect fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
-          listValues: fieldType === "select" || fieldType === "multiselect" ? options : undefined,
+          // IMPORTANT: listValues must be undefined for non-select/multiselect/checkbox fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
+          listValues:
+            fieldType === "select" || fieldType === "multiselect" || fieldType === "checkbox"
+              ? options
+              : undefined,
         },
       };
     } else {
@@ -137,9 +179,8 @@ export function getQueryBuilderConfigForAttributes({
   transformedAttributes.forEach((attribute) => {
     const attributeType = attribute.type as (typeof FieldTypes)[number]["value"];
     if (FieldTypes.map((f) => f.value).includes(attributeType)) {
-      // We can assert the type because otherwise we throw 'Unsupported field type' error
-      const widget = FormFieldsInitialConfig.widgets[attributeType];
-      const widgetType = widget.type;
+      // Resolve widget type from the RAQB config or fallback mapping for new Calendly-parity types (RF-003)
+      const widgetType = resolveWidgetType(attributeType, FormFieldsInitialConfig.widgets);
       const valueOfFieldOptions = (() => {
         const formFieldsOptions = dynamicOperandFields.map((field) => ({
           title: `Value of field '${field.label}'`,
@@ -156,9 +197,11 @@ export function getQueryBuilderConfigForAttributes({
         type: widgetType,
         valueSources: ["value"],
         fieldSettings: {
-          // IMPORTANT: listValues must be undefined for non-select/multiselect fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
+          // IMPORTANT: listValues must be undefined for non-select/multiselect/checkbox fields otherwise RAQB doesn't like it. It ends up considering all the text values as per the listValues too which could be empty as well making all values invalid
           listValues:
-            attributeType === "select" || attributeType === "multiselect" ? attributeOptions : undefined,
+            attributeType === "select" || attributeType === "multiselect" || attributeType === "checkbox"
+              ? attributeOptions
+              : undefined,
         },
       };
     } else {

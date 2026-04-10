@@ -19,6 +19,8 @@ export const RoutingFormEmbedDialog = () => {
     title: t("use_my_own_form"),
     subtitle: t("use_our_headless_routing_api"),
     type: "headless",
+    /** Share flow description for the headless routing API option (EM-004 parity) */
+    shareDescription: t("routing_form_headless_share_description"),
     illustration: (
       <svg
         width="100%"

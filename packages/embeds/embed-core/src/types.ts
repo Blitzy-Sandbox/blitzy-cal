@@ -13,6 +13,8 @@ export interface EmbedStyles {
   enabledDateButton?: Pick<CSSProperties, "background" | "color" | "backgroundColor">;
   disabledDateButton?: Pick<CSSProperties, "background" | "color" | "backgroundColor">;
   availabilityDatePicker?: Pick<CSSProperties, "background" | "color" | "backgroundColor">;
+  /** Style overrides for the embed container element itself (EM-001). Enables Calendly-equivalent embed background and text color customization. */
+  embedContainer?: Pick<CSSProperties, "background" | "color" | "backgroundColor">;
 }
 
 export interface EmbedNonStylesConfig {
@@ -34,6 +36,18 @@ export type UiConfig = {
   colorScheme?: string | null;
   disableAutoScroll?: boolean;
   useSlotsViewOnSmallScreen?: boolean;
+  /**
+   * Custom overlay background color for modal embeds (EM-002).
+   * Enables Calendly-equivalent `initPopupWidget()` background color customization.
+   * Accepts any valid CSS color value (e.g., "rgba(0, 0, 0, 0.5)", "#000000").
+   */
+  modalOverlayColor?: string;
+  /**
+   * Custom close button color for modal embeds (EM-002).
+   * Allows theming of the modal close button to match the host site's design.
+   * Accepts any valid CSS color value (e.g., "#ffffff", "rgb(255, 255, 255)").
+   */
+  modalCloseButtonColor?: string;
 };
 
 declare global {
@@ -74,6 +88,10 @@ export type KnownConfig = {
   "cal.embed.noSlotsFetchOnConnect"?: "true" | "false";
   // If true, enables slots view on small screen in the booker
   useSlotsViewOnSmallScreen?: "true" | "false";
+  // Calendly parity config options (EM-001/EM-003). When true, hides the GDPR/cookie consent banner in the embed.
+  hideGdprBanner?: "true" | "false";
+  // Calendly parity config option (EM-001/EM-003). When true, hides the page landing/header section of the booking page in the embed.
+  hidePageLandingBanner?: "true" | "false";
 };
 
 export type EmbedBookerState =

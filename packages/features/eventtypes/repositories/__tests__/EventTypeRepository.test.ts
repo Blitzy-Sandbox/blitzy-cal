@@ -7,12 +7,14 @@ vi.mock("@calcom/prisma", () => ({
   readonlyPrisma: {
     eventType: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
     },
     team: {
       findMany: vi.fn(),
     },
     membership: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
@@ -202,4 +204,218 @@ describe("EventTypeRepository", () => {
   // - describe("create", () => { ... })
   // - describe("findAllByUpId", () => { ... })
   // etc.
+
+  describe("findManagedEventTypeTemplate", () => {
+    it("should return a managed event type template when found", async () => {
+      const mockTemplate = {
+        id: 100,
+        title: "Managed Meeting",
+        slug: "managed-meeting",
+        schedulingType: "MANAGED" as const,
+        teamId: 5,
+        assignAllTeamMembers: true,
+        metadata: { someKey: "someValue" },
+      };
+      vi.mocked(readonlyPrisma.eventType.findFirst).mockResolvedValue(mockTemplate);
+
+      const result = await eventTypeRepository.findManagedEventTypeTemplate(5, 100);
+
+      expect(result).toEqual(mockTemplate);
+    });
+
+    it("should return null when event type is not MANAGED", async () => {
+      vi.mocked(readonlyPrisma.eventType.findFirst).mockResolvedValue(null);
+
+      const result = await eventTypeRepository.findManagedEventTypeTemplate(5, 100);
+
+      expect(result).toBeNull();
+    });
+
+    it("should return null when event type belongs to a different team", async () => {
+      vi.mocked(readonlyPrisma.eventType.findFirst).mockResolvedValue(null);
+
+      const result = await eventTypeRepository.findManagedEventTypeTemplate(999, 100);
+
+      expect(result).toBeNull();
+      expect(readonlyPrisma.eventType.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ teamId: 999 }),
+        })
+      );
+    });
+
+    it("should pass correct Prisma query parameters", async () => {
+      vi.mocked(readonlyPrisma.eventType.findFirst).mockResolvedValue(null);
+
+      await eventTypeRepository.findManagedEventTypeTemplate(5, 100);
+
+      expect(readonlyPrisma.eventType.findFirst).toHaveBeenCalledWith({
+        where: {
+          id: 100,
+          teamId: 5,
+          schedulingType: "MANAGED",
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          schedulingType: true,
+          teamId: true,
+          assignAllTeamMembers: true,
+          metadata: true,
+        },
+      });
+    });
+  });
+
+  describe("findChildEventTypesByParentId", () => {
+    it("should return child event types for a parent", async () => {
+      const mockChildren = [
+        { id: 201, userId: 1, slug: "child-1", hidden: false },
+        { id: 202, userId: 2, slug: "child-2", hidden: true },
+      ];
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue(mockChildren);
+
+      const result = await eventTypeRepository.findChildEventTypesByParentId(100);
+
+      expect(result).toEqual(mockChildren);
+    });
+
+    it("should return empty array when no children exist", async () => {
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue([]);
+
+      const result = await eventTypeRepository.findChildEventTypesByParentId(100);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should pass correct Prisma query parameters", async () => {
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue([]);
+
+      await eventTypeRepository.findChildEventTypesByParentId(100);
+
+      expect(readonlyPrisma.eventType.findMany).toHaveBeenCalledWith({
+        where: {
+          parentId: 100,
+        },
+        select: {
+          id: true,
+          userId: true,
+          slug: true,
+          hidden: true,
+        },
+      });
+    });
+  });
+
+  describe("findManagedEventTypesForTeam", () => {
+    it("should return managed templates with child counts", async () => {
+      const mockTemplates = [
+        {
+          id: 100,
+          title: "Managed 1",
+          slug: "managed-1",
+          assignAllTeamMembers: true,
+          _count: { children: 3 },
+        },
+        {
+          id: 101,
+          title: "Managed 2",
+          slug: "managed-2",
+          assignAllTeamMembers: false,
+          _count: { children: 0 },
+        },
+      ];
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue(mockTemplates);
+
+      const result = await eventTypeRepository.findManagedEventTypesForTeam(5);
+
+      expect(result).toEqual([
+        { id: 100, title: "Managed 1", slug: "managed-1", assignAllTeamMembers: true, childCount: 3 },
+        { id: 101, title: "Managed 2", slug: "managed-2", assignAllTeamMembers: false, childCount: 0 },
+      ]);
+    });
+
+    it("should return empty array when team has no managed templates", async () => {
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue([]);
+
+      const result = await eventTypeRepository.findManagedEventTypesForTeam(5);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should filter for parent templates only (parentId: null)", async () => {
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue([]);
+
+      await eventTypeRepository.findManagedEventTypesForTeam(5);
+
+      expect(readonlyPrisma.eventType.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            parentId: null,
+            schedulingType: "MANAGED",
+            teamId: 5,
+          }),
+        })
+      );
+    });
+  });
+
+  describe("findTeamMembersWithoutManagedEventType", () => {
+    it("should return members without the managed event type", async () => {
+      const existingChildren = [{ userId: 1 }, { userId: 2 }];
+      const membersWithout = [{ userId: 3 }, { userId: 4 }];
+
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue(existingChildren);
+      vi.mocked(readonlyPrisma.membership.findMany).mockResolvedValue(membersWithout);
+
+      const result = await eventTypeRepository.findTeamMembersWithoutManagedEventType(100, 5);
+
+      expect(result).toEqual([{ userId: 3 }, { userId: 4 }]);
+    });
+
+    it("should return empty array when all members have the event type", async () => {
+      const existingChildren = [{ userId: 1 }, { userId: 2 }];
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue(existingChildren);
+      vi.mocked(readonlyPrisma.membership.findMany).mockResolvedValue([]);
+
+      const result = await eventTypeRepository.findTeamMembersWithoutManagedEventType(100, 5);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should filter out null userId values from children", async () => {
+      const existingChildren = [{ userId: 1 }, { userId: null }, { userId: 2 }];
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue(existingChildren);
+      vi.mocked(readonlyPrisma.membership.findMany).mockResolvedValue([]);
+
+      await eventTypeRepository.findTeamMembersWithoutManagedEventType(100, 5);
+
+      expect(readonlyPrisma.membership.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: {
+              notIn: [1, 2],
+            },
+          }),
+        })
+      );
+    });
+
+    it("should only include accepted team members", async () => {
+      vi.mocked(readonlyPrisma.eventType.findMany).mockResolvedValue([]);
+      vi.mocked(readonlyPrisma.membership.findMany).mockResolvedValue([]);
+
+      await eventTypeRepository.findTeamMembersWithoutManagedEventType(100, 5);
+
+      expect(readonlyPrisma.membership.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            accepted: true,
+            teamId: 5,
+          }),
+        })
+      );
+    });
+  });
 });

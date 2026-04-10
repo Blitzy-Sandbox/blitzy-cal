@@ -16,6 +16,19 @@ type SeatsPrice = {
   pricePerSeat?: number | null;
 };
 
+/**
+ * Defines the permission matrix for Calendly-equivalent role capabilities.
+ * Maps Cal.com's PBAC model to Calendly's admin/owner/user permission structure (AG-001).
+ */
+export type CalendlyRolePermissions = {
+  canManageOrganizationSettings: boolean;
+  canManageMembers: boolean;
+  canManageTeams: boolean;
+  canManageBilling: boolean;
+  canViewReports: boolean;
+  canManageEventTypes: boolean;
+};
+
 export interface validatePermissionsIOrganizationPermissionService {
   hasPermissionToCreateForEmail(targetEmail: string): Promise<boolean>;
   hasPendingOrganizations(email: string, slug?: string): Promise<boolean>;
@@ -26,6 +39,22 @@ export interface validatePermissionsIOrganizationPermissionService {
       billingPeriod?: string;
     } & SeatsPrice
   ): boolean;
+  /** Returns whether the given role can manage organization-level settings (Calendly: owner/admin). */
+  canManageOrganizationSettings(role: MembershipRole): boolean;
+  /** Returns whether the given role can invite, remove, or change roles of members (Calendly: owner/admin). */
+  canManageMembers(role: MembershipRole): boolean;
+  /** Returns whether the given role can create, delete, and configure teams (Calendly: owner/admin). */
+  canManageTeams(role: MembershipRole): boolean;
+  /** Returns whether the given role can manage billing and subscriptions (Calendly: owner only). */
+  canManageBilling(role: MembershipRole): boolean;
+  /** Returns whether the actor role can assign the target role to a member. */
+  canAssignRoles(role: MembershipRole, targetRole: MembershipRole): boolean;
+  /** Returns whether the actor role can remove a member with the target role. */
+  canRemoveMember(actorRole: MembershipRole, targetRole: MembershipRole): boolean;
+  /** Maps a Cal.com MembershipRole to its Calendly-equivalent role string. */
+  getCalendlyEquivalentRole(role: MembershipRole): "owner" | "admin" | "user";
+  /** Returns the full Calendly-equivalent permission matrix for a given role. */
+  getPermissionsForRole(role: MembershipRole): CalendlyRolePermissions;
 }
 
 export class OrganizationPermissionService {
@@ -129,5 +158,144 @@ export class OrganizationPermissionService {
     }
 
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Calendly Role Parity Methods (AG-001)
+  // ---------------------------------------------------------------------------
+  // The following methods map Calendly's admin/owner/user role capabilities onto
+  // Cal.com's existing PBAC infrastructure. They are synchronous and do not
+  // access the database — they operate solely on MembershipRole enum values.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Determines whether the given role can manage organization-level settings.
+   *
+   * Calendly mapping: owner and admin roles can manage organization settings.
+   * Cal.com equivalent: OWNER and ADMIN.
+   */
+  canManageOrganizationSettings(role: MembershipRole): boolean {
+    return role === MembershipRole.OWNER || role === MembershipRole.ADMIN;
+  }
+
+  /**
+   * Determines whether the given role can invite, remove, or change roles of members.
+   *
+   * Calendly mapping: owner and admin roles can manage members.
+   * Cal.com equivalent: OWNER and ADMIN.
+   */
+  canManageMembers(role: MembershipRole): boolean {
+    return role === MembershipRole.OWNER || role === MembershipRole.ADMIN;
+  }
+
+  /**
+   * Determines whether the given role can create, delete, and configure teams.
+   *
+   * Calendly mapping: owner and admin roles can manage teams.
+   * Cal.com equivalent: OWNER and ADMIN.
+   */
+  canManageTeams(role: MembershipRole): boolean {
+    return role === MembershipRole.OWNER || role === MembershipRole.ADMIN;
+  }
+
+  /**
+   * Determines whether the given role can manage billing and subscriptions.
+   *
+   * Calendly mapping: only the owner role can manage billing.
+   * Cal.com equivalent: OWNER exclusively.
+   */
+  canManageBilling(role: MembershipRole): boolean {
+    return role === MembershipRole.OWNER;
+  }
+
+  /**
+   * Determines whether the actor role can assign the specified target role to a member.
+   *
+   * Role assignment hierarchy enforcement:
+   * - OWNER can assign any role (including OWNER transfer)
+   * - ADMIN can assign MEMBER and ADMIN but NOT OWNER
+   * - MEMBER cannot assign any role
+   */
+  canAssignRoles(role: MembershipRole, targetRole: MembershipRole): boolean {
+    if (role === MembershipRole.OWNER) {
+      return true;
+    }
+    if (role === MembershipRole.ADMIN) {
+      return targetRole === MembershipRole.MEMBER || targetRole === MembershipRole.ADMIN;
+    }
+    return false;
+  }
+
+  /**
+   * Determines whether the actor role can remove a member with the specified target role.
+   *
+   * Removal hierarchy enforcement:
+   * - OWNER can remove anyone (including other OWNERs)
+   * - ADMIN can only remove MEMBER (not other ADMINs or OWNERs)
+   * - MEMBER cannot remove anyone
+   */
+  canRemoveMember(actorRole: MembershipRole, targetRole: MembershipRole): boolean {
+    if (actorRole === MembershipRole.OWNER) {
+      return true;
+    }
+    if (actorRole === MembershipRole.ADMIN) {
+      return targetRole === MembershipRole.MEMBER;
+    }
+    return false;
+  }
+
+  /**
+   * Maps a Cal.com MembershipRole to its Calendly-equivalent role string.
+   *
+   * Mapping:
+   * - MembershipRole.OWNER  → "owner"
+   * - MembershipRole.ADMIN  → "admin"
+   * - MembershipRole.MEMBER → "user"
+   */
+  getCalendlyEquivalentRole(role: MembershipRole): "owner" | "admin" | "user" {
+    const roleMapping: Record<MembershipRole, "owner" | "admin" | "user"> = {
+      [MembershipRole.OWNER]: "owner",
+      [MembershipRole.ADMIN]: "admin",
+      [MembershipRole.MEMBER]: "user",
+    };
+    return roleMapping[role];
+  }
+
+  /**
+   * Returns the full Calendly-equivalent permission matrix for a given Cal.com role.
+   *
+   * Permission matrix:
+   * - OWNER: all permissions are true
+   * - ADMIN: all true except canManageBilling (false)
+   * - MEMBER: only canManageEventTypes is true (members manage their own event types)
+   */
+  getPermissionsForRole(role: MembershipRole): CalendlyRolePermissions {
+    const permissionMatrix: Record<MembershipRole, CalendlyRolePermissions> = {
+      [MembershipRole.OWNER]: {
+        canManageOrganizationSettings: true,
+        canManageMembers: true,
+        canManageTeams: true,
+        canManageBilling: true,
+        canViewReports: true,
+        canManageEventTypes: true,
+      },
+      [MembershipRole.ADMIN]: {
+        canManageOrganizationSettings: true,
+        canManageMembers: true,
+        canManageTeams: true,
+        canManageBilling: false,
+        canViewReports: true,
+        canManageEventTypes: true,
+      },
+      [MembershipRole.MEMBER]: {
+        canManageOrganizationSettings: false,
+        canManageMembers: false,
+        canManageTeams: false,
+        canManageBilling: false,
+        canViewReports: false,
+        canManageEventTypes: true,
+      },
+    };
+    return permissionMatrix[role];
   }
 }

@@ -6,6 +6,7 @@ import {
   isSMSOrWhatsappAction,
   isWhatsappAction,
   isCalAIAction,
+  isInAppNotificationAction,
 } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import { isEmailAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import { EmailWorkflowService } from "@calcom/features/ee/workflows/lib/service/EmailWorkflowService";
@@ -13,6 +14,7 @@ import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/Workf
 import type { Workflow, WorkflowStep } from "@calcom/features/ee/workflows/lib/types";
 import { WorkflowReminderRepository } from "@calcom/features/ee/workflows/repositories/WorkflowReminderRepository";
 import { formatCalEventExtended } from "@calcom/lib/formatCalendarEvent";
+import logger from "@calcom/lib/logger";
 import { withReporting } from "@calcom/lib/sentryWrapper";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
@@ -99,7 +101,9 @@ const processWorkflowStep = async (
   }: ProcessWorkflowStepParams,
   creditCheckFn: CreditCheckFn
 ) => {
-  if (!step?.verifiedAt) return;
+  // IN_APP_NOTIFICATION actions don't require sender verification (no phone/email needed),
+  // so we skip the verifiedAt check for them. All other actions (SMS, email, WhatsApp) must be verified.
+  if (!step?.verifiedAt && !isInAppNotificationAction(step.action)) return;
 
   const evt = calendarEvent ? formatCalEventExtended(calendarEvent) : undefined;
 
@@ -176,7 +180,7 @@ const processWorkflowStep = async (
 
     await scheduleWhatsappReminder({
       ...scheduleFunctionParams,
-      verifiedAt: step.verifiedAt,
+      verifiedAt: step.verifiedAt ?? null,
       reminderPhone: sendTo,
       action: step.action as ScheduleTextReminderAction,
       message: step.reminderBody || "",
@@ -196,10 +200,124 @@ const processWorkflowStep = async (
       teamId: workflow.teamId,
       seatReferenceUid,
       submittedPhoneNumber: smsReminderNumber,
-      verifiedAt: step.verifiedAt,
+      verifiedAt: step.verifiedAt ?? null,
       routedEventTypeId: formData ? formData.routedEventTypeId : null,
       ...contextData,
     });
+  } else if (isInAppNotificationAction(step.action)) {
+    // IN_APP_NOTIFICATION action: delegate to the InAppNotificationService implemented in NF-004.
+    // Only booking-context notifications are supported (not form submissions).
+    if (!evt) return;
+
+    // NF-004 fix: Wrap the entire IN_APP_NOTIFICATION branch in try-catch to prevent
+    // errors (dynamic import failures, DB write failures, type mismatches) from propagating
+    // out of processWorkflowStep and breaking the surrounding booking flow (reschedule,
+    // cancel, buffer sync). Errors are logged but never re-thrown.
+    try {
+      const { InAppNotificationService } = await import(
+        "@calcom/features/notifications/services/InAppNotificationService"
+      );
+      const { NotificationType } = await import("@calcom/features/notifications/types");
+      const inAppService = new InAppNotificationService();
+
+      // Map the workflow trigger to the appropriate notification type for categorisation.
+      // Use a plain record with string values and cast the result to satisfy the enum-typed
+      // `type` field on `InAppNotificationCreateInput`.  The dynamic import returns
+      // `NotificationType` as a *value* so it cannot be used in a TS type-position directly.
+      const triggerToNotificationType: Record<string, string> = {
+        [WorkflowTriggerEvents.NEW_EVENT]: NotificationType.BOOKING_CREATED,
+        [WorkflowTriggerEvents.EVENT_CANCELLED]: NotificationType.BOOKING_CANCELLED,
+        [WorkflowTriggerEvents.RESCHEDULE_EVENT]: NotificationType.BOOKING_RESCHEDULED,
+        [WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE]: NotificationType.BOOKING_RESCHEDULED,
+        [WorkflowTriggerEvents.BOOKING_REQUESTED]: NotificationType.BOOKING_REQUESTED,
+        [WorkflowTriggerEvents.BOOKING_REJECTED]: NotificationType.BOOKING_REJECTED,
+      };
+      const notifType = (triggerToNotificationType[workflow.trigger] ||
+        NotificationType.WORKFLOW_TRIGGERED) as (typeof NotificationType)[keyof typeof NotificationType];
+
+      // NF-004 fix: Collect all user IDs who should receive the notification.
+      // For personal workflows, `workflow.userId` is the organizer — one notification.
+      // For team workflows, `workflow.userId` may be the workflow creator (admin), not
+      // the booking organizer. We also resolve the organizer by email to ensure the
+      // person who actually received the booking always gets an in-app notification.
+      const userIdsToNotify = new Set<number>();
+
+      if (workflow.userId) {
+        userIdsToNotify.add(workflow.userId);
+      }
+
+      // Also resolve the booking organizer's userId from their email address so that
+      // team members who are organizers (but not workflow owners) see notifications.
+      if (evt.organizer?.email) {
+        try {
+          const { prisma: prismaCli } = await import("@calcom/prisma");
+          const organizerUser = await prismaCli.user.findFirst({
+            where: { email: evt.organizer.email },
+            select: { id: true },
+          });
+          if (organizerUser) {
+            userIdsToNotify.add(organizerUser.id);
+          }
+        } catch (lookupError) {
+          logger.warn("Failed to resolve organizer userId for in-app notification", {
+            email: evt.organizer.email,
+            error: lookupError,
+          });
+        }
+      }
+
+      // NF-004 fix: Compose human-readable title and body from booking event data
+      // instead of using step.reminderBody which contains raw email template HTML
+      // with unrendered placeholder variables ({ORGANIZER}, {EVENT_NAME}, etc.).
+      const triggerToLabel: Record<string, string> = {
+        [WorkflowTriggerEvents.NEW_EVENT]: "New booking",
+        [WorkflowTriggerEvents.EVENT_CANCELLED]: "Booking cancelled",
+        [WorkflowTriggerEvents.RESCHEDULE_EVENT]: "Booking rescheduled",
+        [WorkflowTriggerEvents.AFTER_BOOKING_RESCHEDULED_BY_ATTENDEE]: "Booking rescheduled",
+        [WorkflowTriggerEvents.BOOKING_REQUESTED]: "Booking requested",
+        [WorkflowTriggerEvents.BOOKING_REJECTED]: "Booking rejected",
+      };
+      const notifTitle = triggerToLabel[workflow.trigger] || "Booking notification";
+
+      // Build a clean body: "{event title} with {first attendee name}" or just "{event title}"
+      const firstAttendeeName =
+        evt.attendees && evt.attendees.length > 0
+          ? evt.attendees[0].name || evt.attendees[0].email
+          : undefined;
+      const notifBody = firstAttendeeName
+        ? `${evt.title || "Booking"} with ${firstAttendeeName}`
+        : evt.title || "Booking";
+
+      const notificationPayload = {
+        title: notifTitle,
+        body: notifBody,
+        type: notifType,
+        url: evt.uid ? `/booking/${evt.uid}` : "/bookings",
+        metadata: {
+          workflowId: workflow.id,
+          workflowStepId: step.id,
+          trigger: workflow.trigger,
+          bookingUid: evt.uid,
+        },
+      };
+
+      // Send notification to all collected user IDs (deduplicated via Set)
+      // Use Array.from() to avoid TS2802 downlevelIteration requirement
+      for (const userId of Array.from(userIdsToNotify)) {
+        await inAppService.createNotification({
+          userId,
+          ...notificationPayload,
+        });
+      }
+    } catch (inAppError) {
+      // Log but never re-throw — IN_APP_NOTIFICATION failures must not disrupt the booking flow
+      logger.error("IN_APP_NOTIFICATION workflow step failed", {
+        workflowId: workflow.id,
+        stepId: step.id,
+        trigger: workflow.trigger,
+        error: inAppError,
+      });
+    }
   }
 };
 
@@ -217,39 +335,51 @@ const _scheduleWorkflowReminders = async (args: ScheduleWorkflowRemindersArgs) =
   } = args;
   if (isDryRun || !workflows.length) return;
 
-  for (const workflow of workflows) {
-    if (workflow.steps.length === 0) continue;
+  // Parallelize across independent workflows using Promise.allSettled.
+  // Steps within a single workflow are processed sequentially (ordering may matter),
+  // but separate workflows are independent and can execute concurrently.
+  const workflowResults = await Promise.allSettled(
+    workflows.map(async (workflow) => {
+      if (workflow.steps.length === 0) return;
 
-    for (const step of workflow.steps) {
-      if (
-        // These tasks currently write the entire payload in the task
-        (workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT ||
-          workflow.trigger === WorkflowTriggerEvents.AFTER_EVENT) &&
-        isEmailAction(step.action) &&
-        evt
-      ) {
-        await WorkflowService.scheduleLazyEmailWorkflow({
-          evt,
-          workflowStepId: step.id,
-          workflowTriggerEvent: workflow.trigger,
+      for (const step of workflow.steps) {
+        if (
+          // These tasks currently write the entire payload in the task
+          (workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT ||
+            workflow.trigger === WorkflowTriggerEvents.AFTER_EVENT) &&
+          isEmailAction(step.action) &&
+          evt
+        ) {
+          await WorkflowService.scheduleLazyEmailWorkflow({
+            evt,
+            workflowStepId: step.id,
+            workflowTriggerEvent: workflow.trigger,
+            workflow,
+            seatReferenceId: args.seatReferenceUid,
+          });
+          continue;
+        }
+
+        await processWorkflowStep(
           workflow,
-          seatReferenceId: args.seatReferenceUid,
-        });
-        continue;
+          step,
+          {
+            emailAttendeeSendToOverride,
+            smsReminderNumber,
+            hideBranding,
+            seatReferenceUid,
+            ...(evt ? { calendarEvent: evt } : { formData }),
+          },
+          creditCheckFn
+        );
       }
+    })
+  );
 
-      await processWorkflowStep(
-        workflow,
-        step,
-        {
-          emailAttendeeSendToOverride,
-          smsReminderNumber,
-          hideBranding,
-          seatReferenceUid,
-          ...(evt ? { calendarEvent: evt } : { formData }),
-        },
-        creditCheckFn
-      );
+  // Log any per-workflow failures without blocking other workflows
+  for (const result of workflowResults) {
+    if (result.status === "rejected") {
+      logger.error("Failed to schedule workflow reminders", { reason: result.reason });
     }
   }
 };
@@ -271,16 +401,28 @@ const _sendCancelledReminders = async (args: SendCancelledRemindersArgs) => {
     if (workflow.trigger !== WorkflowTriggerEvents.EVENT_CANCELLED) continue;
 
     for (const step of workflow.steps) {
-      await processWorkflowStep(
-        workflow,
-        step,
-        {
-          smsReminderNumber,
-          hideBranding,
-          calendarEvent: evt,
-        },
-        creditCheckFn
-      );
+      // NF-004 fix: Wrap each step in try-catch so that a failure in one step
+      // (particularly IN_APP_NOTIFICATION) does not abort remaining steps or
+      // break the cancellation flow that calls sendCancelledReminders.
+      try {
+        await processWorkflowStep(
+          workflow,
+          step,
+          {
+            smsReminderNumber,
+            hideBranding,
+            calendarEvent: evt,
+          },
+          creditCheckFn
+        );
+      } catch (stepError) {
+        logger.error("Failed to process workflow step during cancellation", {
+          workflowId: workflow.id,
+          stepId: step.id,
+          action: step.action,
+          error: stepError,
+        });
+      }
     }
   }
 };

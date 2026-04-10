@@ -1,3 +1,4 @@
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 
 import SMSManager from "../sms-manager";
@@ -20,6 +21,14 @@ export default class EventDeclinedSMS extends SMSManager {
       "event_request_declined"
     )} ${eventDeclinedText}`;
 
-    return messageText;
+    // Construct booking URL for viewing details or rebooking (Calendly NF-002 parity)
+    const bookingUrl = `${this.calEvent.bookerUrl ?? WEBAPP_URL}/booking/${this.calEvent.uid}`;
+
+    const urlText = t("you_can_view_booking_details_with_this_url", {
+      url: bookingUrl,
+      interpolation: { escapeValue: false },
+    });
+
+    return `${messageText}\n\n${urlText}`;
   }
 }

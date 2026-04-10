@@ -70,4 +70,80 @@ export interface IEventTypesRepository {
     schedulingType: "ROUND_ROBIN" | "COLLECTIVE" | "MANAGED" | null;
     seatsPerTimeSlot: number | null;
   } | null>;
+
+  /**
+   * Returns the managed event type template (parent) for a given team (AG-003).
+   * Used to identify admin-templated event types that should be pushed to team members.
+   * A managed event type template is an event type with `schedulingType = MANAGED`
+   * that has a teamId and serves as the parent for child event types.
+   *
+   * @param teamId - The team ID to query managed templates for
+   * @param eventTypeId - The specific managed parent event type ID
+   * @returns The managed template with its configuration, or null if not found
+   */
+  findManagedEventTypeTemplate(
+    teamId: number,
+    eventTypeId: number
+  ): Promise<{
+    id: number;
+    title: string;
+    slug: string;
+    schedulingType: "MANAGED" | null;
+    teamId: number | null;
+    assignAllTeamMembers: boolean;
+    metadata: unknown;
+  } | null>;
+
+  /**
+   * Returns all child event types for a managed parent event type (AG-003).
+   * Used to determine which team members already have the managed event type
+   * and which still need it pushed to them.
+   *
+   * @param parentEventTypeId - The parent managed event type ID
+   * @returns Array of child event types with their owner user IDs
+   */
+  findChildEventTypesByParentId(
+    parentEventTypeId: number
+  ): Promise<
+    Array<{
+      id: number;
+      userId: number | null;
+      slug: string;
+      hidden: boolean;
+    }>
+  >;
+
+  /**
+   * Returns all managed event type templates for a team (AG-003).
+   * Used to list all admin-templated event types that can be pushed to members
+   * when the team admin configures managed event type distribution.
+   *
+   * @param teamId - The team ID
+   * @returns Array of managed event type templates with push configuration
+   */
+  findManagedEventTypesForTeam(
+    teamId: number
+  ): Promise<
+    Array<{
+      id: number;
+      title: string;
+      slug: string;
+      assignAllTeamMembers: boolean;
+      childCount: number;
+    }>
+  >;
+
+  /**
+   * Returns team members who do not yet have a child event type for a given
+   * managed parent event type (AG-003). Used to identify which members need
+   * the managed event type pushed to them during distribution.
+   *
+   * @param parentEventTypeId - The managed parent event type ID
+   * @param teamId - The team ID to check memberships against
+   * @returns Array of user IDs that lack a child of the given parent
+   */
+  findTeamMembersWithoutManagedEventType(
+    parentEventTypeId: number,
+    teamId: number
+  ): Promise<Array<{ userId: number }>>;
 }

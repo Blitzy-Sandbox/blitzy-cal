@@ -24,6 +24,7 @@ const dataAttributes = [
   "data-button-color",
   "data-button-text-color",
   "data-toggle-off",
+  "data-button-border-radius",
 ] as const;
 
 type DataAttributes = (typeof dataAttributes)[number];
@@ -74,6 +75,9 @@ export class FloatingButton extends HTMLElement {
       buttonWrapperEl.style.backgroundColor = newValue;
     } else if (name === "data-button-text-color") {
       buttonWrapperEl.style.color = newValue;
+    } else if (name === "data-button-border-radius") {
+      // Calendly initBadgeWidget() parity: allow customizing border-radius (default is pill via rounded-full class)
+      buttonWrapperEl.style.borderRadius = newValue;
     } else if (name === "data-toggle-off") {
       const off = newValue == "true";
       if (off) {
@@ -111,5 +115,15 @@ export class FloatingButton extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.assertHasShadowRoot();
     this.shadowRoot.innerHTML = buttonHtml;
+
+    // Apply border radius override if specified on the element before construction (e.g., declarative HTML usage).
+    // Default pill shape from rounded-full CSS class is preserved when no override is set.
+    const buttonBorderRadius = dataset.buttonBorderRadius;
+    if (buttonBorderRadius) {
+      const buttonWrapperEl = this.shadowRoot.querySelector<HTMLElement>("button");
+      if (buttonWrapperEl) {
+        buttonWrapperEl.style.borderRadius = buttonBorderRadius;
+      }
+    }
   }
 }

@@ -47,6 +47,7 @@ import { EmbedTabName } from "@calcom/features/embed/lib/EmbedTabs";
 import { buildCssVarsPerTheme } from "@calcom/features/embed/lib/buildCssVarsPerTheme";
 import { EmbedTheme } from "@calcom/features/embed/lib/constants";
 import { getDimension } from "@calcom/features/embed/lib/getDimension";
+import { generateShareableLink } from "@calcom/features/embed/lib/EmbedCodes";
 import { useEmbedDialogCtx } from "@calcom/features/embed/lib/hooks/useEmbedDialogCtx";
 import { useEmbedParams } from "@calcom/features/embed/lib/hooks/useEmbedParams";
 import type {
@@ -55,6 +56,7 @@ import type {
   EmbedTypes,
   PreviewState,
   EmbedConfig,
+  ShareFlowConfig,
 } from "@calcom/features/embed/types";
 
 type EventType = RouterOutputs["viewer"]["eventTypes"]["get"]["eventType"] | undefined;
@@ -814,6 +816,8 @@ const EmbedTypeCodeAndPreviewDialogContent = ({
       brandColor: defaultBrandColor?.brandColor ?? null,
       darkBrandColor: defaultBrandColor?.darkBrandColor ?? null,
     },
+    /** Share flow configuration for link generation (EM-004 Calendly parity) */
+    shareConfig: undefined,
   });
 
   const close = () => {
@@ -879,6 +883,10 @@ const EmbedTypeCodeAndPreviewDialogContent = ({
         brandColor: previewState.palette.brandColor,
         darkBrandColor: previewState.palette.darkBrandColor,
       }),
+      // EM-004: Custom embed colors (backgroundColor, textColor, buttonColor) are sent
+      // via direct previewInstruction calls from individual ColorPicker onChange handlers
+      // below. When these values are added to previewState in the future, include them
+      // here conditionally to keep the preview iframe in sync on every render.
     },
   });
 
@@ -1028,6 +1036,60 @@ const EmbedTypeCodeAndPreviewDialogContent = ({
                         </div>
                       </div>
                     )}
+                    {/* EM-004: Background Color — visible for ALL embed types (Calendly parity) */}
+                    <div className="mt-4">
+                      <div className="mb-2 text-sm">{t("background_color") || "Background color"}</div>
+                      <div className="w-40">
+                        <ColorPicker
+                          className="w-[130px]"
+                          popoverAlign="start"
+                          container={dialogContentRef?.current ?? undefined}
+                          defaultValue="#ffffff"
+                          onChange={(color) => {
+                            previewInstruction({
+                              name: "ui",
+                              arg: { styles: { body: { background: color } } },
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* EM-004: Text Color — visible for ALL embed types (Calendly parity) */}
+                    <div className="mt-4">
+                      <div className="mb-2 text-sm">{t("text_color") || "Text color"}</div>
+                      <div className="w-40">
+                        <ColorPicker
+                          className="w-[130px]"
+                          popoverAlign="start"
+                          container={dialogContentRef?.current ?? undefined}
+                          defaultValue="#000000"
+                          onChange={(color) => {
+                            previewInstruction({
+                              name: "ui",
+                              arg: { styles: { body: { color } } },
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* EM-004: Button Color — visible for ALL embed types, affects CTA buttons inside the embedded booking page (Calendly parity) */}
+                    <div className="mt-4">
+                      <div className="mb-2 text-sm">{t("button_color") || "Button color"}</div>
+                      <div className="w-40">
+                        <ColorPicker
+                          className="w-[130px]"
+                          popoverAlign="start"
+                          container={dialogContentRef?.current ?? undefined}
+                          defaultValue="#000000"
+                          onChange={(color) => {
+                            previewInstruction({
+                              name: "ui",
+                              arg: { styles: { branding: { brandColor: color } } },
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
                     <div
                       className={classNames(
                         "items-center justify-between",
@@ -1361,6 +1423,37 @@ const EmbedTypeCodeAndPreviewDialogContent = ({
             </div>
             <DialogFooter className="mt-10 flex-row-reverse gap-x-2" showDivider>
               <DialogClose />
+              {/* EM-004: Copy Link button for share flow — generates a shareable booking URL (Calendly parity) */}
+              {embedType !== "email" && (
+                <Button
+                  color="secondary"
+                  type="button"
+                  onClick={() => {
+                    const shareLink = generateShareableLink({
+                      calLink,
+                      embedCalOrigin:
+                        typeof window !== "undefined" ? window.location.origin : "",
+                      embedType:
+                        embedType === "inline"
+                          ? "inline"
+                          : embedType === "floating-popup"
+                            ? "floating"
+                            : "popup",
+                      config: {
+                        ...(previewState.hideEventTypeDetails
+                          ? { customQueryParams: { hideDetails: "true" } }
+                          : {}),
+                        ...(previewState.shareConfig?.customQueryParams
+                          ? { customQueryParams: { ...previewState.shareConfig.customQueryParams } }
+                          : {}),
+                      },
+                    });
+                    navigator.clipboard.writeText(shareLink);
+                    showToast(t("link_copied") || "Link copied!", "success");
+                  }}>
+                  {t("copy_link") || "Copy Link"}
+                </Button>
+              )}
               <Button
                 type="submit"
                 onClick={() => {

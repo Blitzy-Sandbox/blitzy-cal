@@ -4,10 +4,14 @@ export const CallToAction = (props: {
   label: string;
   href?: string;
   secondary?: boolean;
+  /** Action type variant: "primary" (default), "secondary", or "danger" (cancel/reschedule). Overrides `secondary` boolean when set. */
+  variant?: "primary" | "secondary" | "danger";
+  /** When true, CTA spans full email width with block display and centered text. */
+  fullWidth?: boolean;
   startIconName?: string;
   endIconName?: string;
 }) => {
-  const { label, href, secondary, startIconName, endIconName } = props;
+  const { label, href, secondary, variant, fullWidth, startIconName, endIconName } = props;
 
   const calculatePadding = () => {
     const paddingTop = "0.625rem";
@@ -24,15 +28,45 @@ export const CallToAction = (props: {
     return `${paddingTop} ${paddingRight} ${paddingBottom} ${paddingLeft}`;
   };
 
+  // Compute background color: variant takes full priority when set, otherwise fall back to secondary boolean
+  const getBackgroundColor = () => {
+    if (variant === "danger") return "#DC2626";
+    if (variant === "secondary") return "#FFFFFF";
+    if (variant === "primary") return "#292929";
+    // Fallback to secondary boolean when variant is not set
+    if (secondary) return "#FFFFFF";
+    return "#292929"; // primary default
+  };
+
+  // Compute text color: variant takes full priority when set, otherwise fall back to secondary boolean
+  const getTextColor = () => {
+    if (variant === "danger") return "#FFFFFF";
+    if (variant === "secondary") return "#292929";
+    if (variant === "primary") return "#FFFFFF";
+    // Fallback to secondary boolean when variant is not set
+    if (secondary) return "#292929";
+    return "#FFFFFF"; // primary default
+  };
+
+  // Compute border: variant takes full priority when set, otherwise fall back to secondary boolean
+  const getBorder = () => {
+    if (variant === "secondary") return "1px solid #d1d5db";
+    if (variant) return ""; // variant is set to primary or danger — no border
+    // Fallback to secondary boolean when variant is not set
+    if (secondary) return "1px solid #d1d5db";
+    return "";
+  };
+
   const El = href ? "a" : "button";
   const restProps = href ? { href, target: "_blank" } : { type: "submit" };
 
   return (
     <p
       style={{
-        display: "inline-block",
-        background: secondary ? "#FFFFFF" : "#292929",
-        border: secondary ? "1px solid #d1d5db" : "",
+        display: fullWidth ? "block" : "inline-block",
+        ...(fullWidth ? { width: "100%", textAlign: "center" as const } : {}),
+        background: getBackgroundColor(),
+        border: getBorder(),
         color: "#ffffff",
         fontFamily: "Roboto, Helvetica, sans-serif",
         fontSize: "0.875rem",
@@ -52,7 +86,7 @@ export const CallToAction = (props: {
       {/* @ts-expect-error shared props between href and button */}
       <El
         style={{
-          color: secondary ? "#292929" : "#FFFFFF",
+          color: getTextColor(),
           textDecoration: "none",
           display: "flex",
           alignItems: "center",

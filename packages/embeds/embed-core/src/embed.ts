@@ -1,6 +1,7 @@
 /// <reference types="../env" />
 
 import {
+  EMBED_INLINE_MIN_WIDTH,
   EMBED_MODAL_IFRAME_FORCE_RELOAD_THRESHOLD_MS,
   EMBED_MODAL_IFRAME_SLOT_STALE_TIME,
   EMBED_MODAL_PRERENDER_PREVENT_THRESHOLD_MS,
@@ -28,7 +29,7 @@ import { getMaxHeightForModal } from "./ui-utils";
 
 // Exporting for consumption by @calcom/embed-core user
 export type { EmbedEvent } from "./sdk-action-manager";
-export type { PrefillAndIframeAttrsConfig } from "./types";
+export type { PrefillAndIframeAttrsConfig, UiConfig, EmbedStyles } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rest<T extends any[] | undefined> = T extends [any, ...infer U] ? U : never;
@@ -967,7 +968,7 @@ class CalApi {
         theme,
         layout,
       })}
-      style="max-height:inherit;height:inherit;min-height:inherit;display:flex;position:relative;flex-wrap:wrap;width:100%">
+      style="max-height:inherit;height:inherit;min-height:inherit;display:flex;position:relative;flex-wrap:wrap;width:100%;min-width:${EMBED_INLINE_MIN_WIDTH}px">
     </cal-inline>
     <style>.cal-inline-container::-webkit-scrollbar{display:none}.cal-inline-container{scrollbar-width:none}</style>`;
     this.cal.inlineEl = template.content.children[0];
@@ -983,6 +984,7 @@ class CalApi {
     buttonPosition = "bottom-right",
     buttonColor = "rgb(0, 0, 0)",
     buttonTextColor = "rgb(255, 255, 255)",
+    buttonBorderRadius,
     calOrigin,
     config,
   }: {
@@ -993,6 +995,8 @@ class CalApi {
     buttonPosition?: "bottom-left" | "bottom-right";
     buttonColor?: string;
     buttonTextColor?: string;
+    /** EM-003: Custom border radius for the floating button (e.g., "50%", "8px") */
+    buttonBorderRadius?: string;
     calOrigin?: string;
     config?: PrefillAndIframeAttrsConfig;
   }) {
@@ -1035,6 +1039,10 @@ class CalApi {
     dataset.buttonPosition = `${buttonPosition}`;
     dataset.buttonColor = `${buttonColor}`;
     dataset.buttonTextColor = `${buttonTextColor}`;
+    // EM-003: Pass custom border radius to FloatingButton custom element
+    if (buttonBorderRadius) {
+      dataset.buttonBorderRadius = buttonBorderRadius;
+    }
   }
 
   async modal({
@@ -1250,11 +1258,21 @@ class CalApi {
     const theme = getConfigProp(enrichedConfig, "theme");
     const layout = getConfigProp(enrichedConfig, "layout");
 
+    // EM-002: Extract modal overlay and close button color customization from config
+    const modalOverlayColor =
+      typeof enrichedConfig.modalOverlayColor === "string" ? enrichedConfig.modalOverlayColor : undefined;
+    const modalCloseButtonColor =
+      typeof enrichedConfig.modalCloseButtonColor === "string"
+        ? enrichedConfig.modalCloseButtonColor
+        : undefined;
+
     template.innerHTML = `<cal-modal-box 
       ${generateDataAttributes({
         pageType,
         theme,
         layout,
+        modalOverlayColor,
+        modalCloseButtonColor,
       })}
       uid="${uid}">
     </cal-modal-box>`;
@@ -1499,6 +1517,20 @@ class CalApi {
         },
       },
     });
+
+    // EM-002: Apply modal overlay and close button color customization to the parent ModalBox element
+    // These CSS custom properties live on the ModalBox shadow host, not inside the iframe
+    if (this.cal.modalBox) {
+      const modalEl = this.cal.modalBox as HTMLElement;
+      if (uiConfig.modalOverlayColor) {
+        modalEl.dataset.modalOverlayColor = uiConfig.modalOverlayColor;
+        modalEl.style.setProperty("--cal-modal-overlay-color", uiConfig.modalOverlayColor);
+      }
+      if (uiConfig.modalCloseButtonColor) {
+        modalEl.dataset.modalCloseButtonColor = uiConfig.modalCloseButtonColor;
+        modalEl.style.setProperty("--cal-modal-close-color", uiConfig.modalCloseButtonColor);
+      }
+    }
 
     this.cal.doInIframe({ method: "ui", arg: uiConfig });
   }

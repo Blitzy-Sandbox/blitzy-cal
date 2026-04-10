@@ -11,7 +11,7 @@ import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { Team } from "@calcom/prisma/client";
-import { SchedulingType } from "@calcom/prisma/enums";
+import { BookingStatus, MembershipRole, SchedulingType } from "@calcom/prisma/enums";
 import { baseEventTypeSelect } from "@calcom/prisma/selects";
 import {
   EventTypeMetaDataSchema,
@@ -23,6 +23,42 @@ import {
 import { EventTypeSchema } from "@calcom/prisma/zod/modelSchema/EventTypeSchema";
 
 export type TeamWithMembers = Awaited<ReturnType<typeof getTeamWithMembers>>;
+
+/**
+ * AG-002: Represents a team member eligible for scheduling in round-robin or collective event types.
+ * Contains the minimal fields needed for scheduling distribution decisions.
+ */
+export type SchedulingEligibleMember = {
+  /** The user ID of the team member */
+  userId: number;
+  /** The member's role within the team (MEMBER, ADMIN, OWNER) */
+  role: MembershipRole;
+  /** When the membership was created — used for fair rotation state tracking in round-robin distribution */
+  createdAt: Date | null;
+};
+
+/**
+ * AG-003: Configuration for managed event type push behavior.
+ * Controls which fields propagate from admin-templated event types to child instances,
+ * enabling Calendly-compatible admin push behavior where admins control field inheritance.
+ */
+export type ManagedEventPushSettings = {
+  /** Whether to inherit the parent event type's schedule configuration */
+  inheritSchedule?: boolean;
+  /** Whether to inherit the parent event type's buffer time settings */
+  inheritBufferTime?: boolean;
+  /** Whether to inherit the parent event type's minimum notice period */
+  inheritMinNotice?: boolean;
+};
+
+/**
+ * AG-002: Represents a round-robin assignment result, indicating the next user
+ * to be assigned based on rotation logic.
+ */
+export type RoundRobinAssignment = {
+  /** The user ID of the member next in line for assignment */
+  userId: number;
+};
 
 export async function getTeamWithMembers(args: {
   id?: number;
@@ -135,11 +171,18 @@ export async function getTeamWithMembers(args: {
           slug: true,
         },
       },
+      // AG-002: Round-robin and collective scheduling parity fields — consistent with getTeamWithoutMembers
+      bookingLimits: true,
+      rrResetInterval: true,
+      rrTimestampBasis: true,
+      includeManagedEventsInLimits: true,
       members: {
         select: {
           accepted: true,
           role: true,
           disableImpersonation: true,
+          // AG-002: Include membership creation timestamp for round-robin rotation state tracking
+          createdAt: true,
           user: {
             select: userSelect,
           },
@@ -221,6 +264,8 @@ export async function getTeamWithMembers(args: {
       organization: profile?.organization,
       accepted: m.accepted,
       disableImpersonation: m.disableImpersonation,
+      // AG-002: Membership creation date for round-robin rotation state tracking
+      createdAt: m.createdAt,
       subteams: orgSlug
         ? m.user.teams
             .filter((membership) => membership.team.id !== teamOrOrg.id)
@@ -422,6 +467,85 @@ export async function isTeamMember(userId: number, teamId: number) {
   }));
 }
 
+/**
+ * AG-002: Retrieves team members eligible for scheduling in round-robin or collective event types.
+ *
+ * For both round-robin and collective scheduling, all accepted members are eligible.
+ * The distinction between scheduling types is handled by the downstream scheduling infrastructure:
+ * - Round-robin: one eligible member is selected per booking (rotation-based)
+ * - Collective: all eligible members must be available simultaneously
+ *
+ * @param teamId - The team to query members for
+ * @param schedulingType - Optional scheduling type context for future filtering extensions
+ * @returns Array of scheduling-eligible members with minimal fields for distribution decisions
+ */
+export async function getSchedulingEligibleMembers({
+  teamId,
+  schedulingType: _schedulingType,
+}: {
+  teamId: number;
+  schedulingType?: SchedulingType;
+}): Promise<SchedulingEligibleMember[]> {
+  const memberships = await prisma.membership.findMany({
+    where: {
+      teamId,
+      accepted: true,
+    },
+    select: {
+      userId: true,
+      role: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  return memberships.map((m) => ({
+    userId: m.userId,
+    role: m.role as MembershipRole,
+    createdAt: m.createdAt,
+  }));
+}
+
+/**
+ * AG-002: Filters team members by specific membership roles.
+ *
+ * Useful for role-based team event routing decisions, such as determining
+ * which members have admin or owner privileges for managed event type governance.
+ *
+ * @param teamId - The team to query members for
+ * @param roles - Array of MembershipRole values to filter by (MEMBER, ADMIN, OWNER)
+ * @returns Array of members matching the specified roles
+ */
+export async function getTeamMembersByRole({
+  teamId,
+  roles,
+}: {
+  teamId: number;
+  roles: MembershipRole[];
+}): Promise<{ userId: number; role: MembershipRole; accepted: boolean }[]> {
+  const memberships = await prisma.membership.findMany({
+    where: {
+      teamId,
+      role: {
+        in: roles,
+      },
+    },
+    select: {
+      userId: true,
+      role: true,
+      accepted: true,
+    },
+  });
+
+  return memberships.map((m) => ({
+    userId: m.userId,
+    role: m.role as MembershipRole,
+    accepted: m.accepted,
+  }));
+}
+
 // Type derived from the actual query result to ensure type safety at call sites
 type EventTypeForChildCreation = Awaited<ReturnType<typeof getEventTypesToAddNewMembers>>[number];
 
@@ -430,11 +554,14 @@ export function generateNewChildEventTypeDataForDB({
   userId,
   includeWorkflow = true,
   includeUserConnect = true,
+  pushSettings,
 }: {
   eventType: EventTypeForChildCreation;
   userId: number;
   includeWorkflow?: boolean;
   includeUserConnect?: boolean;
+  /** AG-003: Optional managed event push settings controlling which fields propagate from admin templates */
+  pushSettings?: ManagedEventPushSettings;
 }) {
   const allManagedEventTypePropsZod = EventTypeSchema.pick(allManagedEventTypePropsForZod).extend({
     bookingFields: EventTypeSchema.shape.bookingFields.nullish(),
@@ -456,6 +583,19 @@ export function generateNewChildEventTypeDataForDB({
   const currentWorkflowIds = Array.isArray(eventType.workflows)
     ? eventType.workflows.map((wf) => wf.workflowId)
     : [];
+
+  // AG-003: Build push settings overrides for managed event type field inheritance.
+  // When pushSettings is provided, selectively strip fields that should NOT propagate
+  // from the admin template to child instances. If a field's inherit flag is false,
+  // the child event type will use its own default rather than the parent's value.
+  // Uses `undefined` for non-nullable Int columns (minimumBookingNotice, beforeEventBuffer,
+  // afterEventBuffer) so the spread omits these keys and Prisma applies column defaults
+  // (120, 0, 0 respectively). Only scheduleId uses `null` because it is a nullable Int? column.
+  const pushOverrides = {
+    ...(pushSettings?.inheritSchedule === false && { scheduleId: null }),
+    ...(pushSettings?.inheritBufferTime === false && { beforeEventBuffer: undefined, afterEventBuffer: undefined }),
+    ...(pushSettings?.inheritMinNotice === false && { minimumBookingNotice: undefined }),
+  };
 
   return {
     ...managedEventTypeValues,
@@ -481,6 +621,10 @@ export function generateNewChildEventTypeDataForDB({
         create: currentWorkflowIds.map((wfId) => ({ workflowId: wfId })),
       },
     }),
+    // AG-003: Apply push settings overrides — nullable fields (scheduleId) are set to null
+    // to clear child values, non-nullable fields use undefined to omit the key and let
+    // Prisma apply column defaults. Keys not present in pushOverrides are left untouched.
+    ...pushOverrides,
   };
 }
 
@@ -498,7 +642,12 @@ async function getEventTypesToAddNewMembers(teamId: number) {
   });
 }
 
-export async function updateNewTeamMemberEventTypes(userId: number, teamId: number) {
+export async function updateNewTeamMemberEventTypes(
+  userId: number,
+  teamId: number,
+  /** AG-003: Optional push configuration controlling which fields propagate from admin templates */
+  pushConfig?: ManagedEventPushSettings
+) {
   const eventTypesToAdd = await getEventTypesToAddNewMembers(teamId);
 
   if (eventTypesToAdd.length > 0) {
@@ -509,6 +658,8 @@ export async function updateNewTeamMemberEventTypes(userId: number, teamId: numb
             data: generateNewChildEventTypeDataForDB({
               eventType,
               userId,
+              // AG-003: Pass push settings to control field inheritance for managed event type push
+              pushSettings: pushConfig,
             }),
           });
         } else {
@@ -522,7 +673,16 @@ export async function updateNewTeamMemberEventTypes(userId: number, teamId: numb
   }
 }
 
-export async function addNewMembersToEventTypes({ userIds, teamId }: { userIds: number[]; teamId: number }) {
+export async function addNewMembersToEventTypes({
+  userIds,
+  teamId,
+  pushConfig,
+}: {
+  userIds: number[];
+  teamId: number;
+  /** AG-003: Optional push configuration controlling which fields propagate from admin templates */
+  pushConfig?: ManagedEventPushSettings;
+}) {
   const log = logger.getSubLogger({
     prefix: ["addNewMembersToEventTypes"],
   });
@@ -543,6 +703,8 @@ export async function addNewMembersToEventTypes({ userIds, teamId }: { userIds: 
                 userId,
                 includeWorkflow: false,
                 includeUserConnect: false,
+                // AG-003: Pass push settings to control field inheritance for managed event type push
+                pushSettings: pushConfig,
               })
             )
           )
@@ -664,4 +826,142 @@ export async function addNewMembersToEventTypes({ userIds, teamId }: { userIds: 
       ]);
     }
   }
+}
+
+/**
+ * AG-002: Determines the next team member to assign in a round-robin scheduling rotation.
+ *
+ * The assignment algorithm queries the most recent booking assignments across the team's
+ * round-robin event types and selects the eligible member who was least recently assigned.
+ * If no booking history exists (e.g., new team), falls back to the first eligible member
+ * by creation order to ensure deterministic initial distribution.
+ *
+ * This provides Calendly-compatible round-robin distribution where each team member
+ * receives bookings in a fair rotation sequence.
+ *
+ * @param teamId - The team whose event types to check for booking history
+ * @param eligibleMemberIds - Array of user IDs eligible for the next assignment
+ * @param rrTimestampBasis - Optional timestamp basis for rotation tracking (defaults to booking creation time)
+ * @returns The next member to assign, or null if no eligible members exist
+ */
+export async function getNextRoundRobinAssignee({
+  teamId,
+  eligibleMemberIds,
+  rrTimestampBasis: _rrTimestampBasis,
+}: {
+  teamId: number;
+  eligibleMemberIds: number[];
+  rrTimestampBasis?: string;
+}): Promise<RoundRobinAssignment | null> {
+  const log = logger.getSubLogger({ prefix: ["getNextRoundRobinAssignee"] });
+
+  if (eligibleMemberIds.length === 0) {
+    return null;
+  }
+
+  try {
+    // Fetch the team's round-robin event type IDs to scope the booking history query
+    const teamEventTypes = await prisma.eventType.findMany({
+      where: {
+        teamId,
+        schedulingType: SchedulingType.ROUND_ROBIN,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const eventTypeIds = teamEventTypes.map((et) => et.id);
+
+    if (eventTypeIds.length === 0) {
+      // No round-robin event types configured — return the first eligible member by default
+      return { userId: eligibleMemberIds[0] };
+    }
+
+    // Query the most recent booking per eligible member across round-robin event types.
+    // Members with no recent bookings are prioritized (least recently assigned).
+    const recentBookings = await prisma.booking.findMany({
+      where: {
+        eventTypeId: {
+          in: eventTypeIds,
+        },
+        userId: {
+          in: eligibleMemberIds,
+        },
+        status: {
+          not: BookingStatus.CANCELLED,
+        },
+      },
+      select: {
+        userId: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Build a map of userId -> most recent booking timestamp
+    const lastAssignedMap = new Map<number, Date>();
+    for (const booking of recentBookings) {
+      if (booking.userId !== null && !lastAssignedMap.has(booking.userId)) {
+        lastAssignedMap.set(booking.userId, booking.createdAt);
+      }
+    }
+
+    // Find eligible members with NO booking history (they get priority)
+    const unassignedMembers = eligibleMemberIds.filter((id) => !lastAssignedMap.has(id));
+    if (unassignedMembers.length > 0) {
+      return { userId: unassignedMembers[0] };
+    }
+
+    // All members have history — select the one least recently assigned
+    let leastRecentUserId = eligibleMemberIds[0];
+    let leastRecentTime = lastAssignedMap.get(eligibleMemberIds[0]) ?? new Date();
+
+    for (const memberId of eligibleMemberIds) {
+      const lastTime = lastAssignedMap.get(memberId);
+      if (lastTime && lastTime < leastRecentTime) {
+        leastRecentTime = lastTime;
+        leastRecentUserId = memberId;
+      }
+    }
+
+    return { userId: leastRecentUserId };
+  } catch (error) {
+    log.error(
+      "Failed to determine next round-robin assignee",
+      safeStringify({ teamId, eligibleMemberIds, error })
+    );
+    // Graceful fallback: return the first eligible member to avoid blocking the booking flow
+    return eligibleMemberIds.length > 0 ? { userId: eligibleMemberIds[0] } : null;
+  }
+}
+
+/**
+ * AG-002: Resolves the member set required for collective scheduling availability.
+ *
+ * In collective scheduling, ALL specified members must be simultaneously available
+ * for a booking slot to be offered. This lightweight helper packages the member set
+ * with the scheduling type marker for downstream availability computation.
+ *
+ * The actual availability intersection computation is handled by the existing
+ * scheduling infrastructure in `packages/features/schedules/` — this function
+ * provides the member resolution layer that feeds into it.
+ *
+ * @param teamId - The team context for collective scheduling (used for logging/tracing)
+ * @param memberIds - Array of user IDs that must all be available for collective slots
+ * @returns Object containing the member set and scheduling type marker
+ */
+export function resolveCollectiveAvailability({
+  teamId: _teamId,
+  memberIds,
+}: {
+  teamId: number;
+  memberIds: number[];
+}): { memberIds: number[]; schedulingType: "COLLECTIVE" } {
+  return {
+    memberIds,
+    schedulingType: "COLLECTIVE" as const,
+  };
 }

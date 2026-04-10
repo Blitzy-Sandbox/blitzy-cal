@@ -3,7 +3,7 @@ import { vi } from "vitest";
 
 import widgets from "./widgets";
 
-const { SelectWidget, MultiSelectWidget } = widgets;
+const { SelectWidget, MultiSelectWidget, CheckboxGroupWidget, TextWidget } = widgets;
 
 // Mock the dynamic import of Select component
 vi.mock("next/dynamic", () => ({
@@ -99,5 +99,68 @@ describe("Select Widgets", () => {
 
       expect(setValue).toHaveBeenCalledWith([]);
     });
+  });
+
+  describe("CheckboxGroupWidget", () => {
+    const listValues = [
+      { title: "Option 1", value: "1" },
+      { title: "Option 2", value: "2" },
+      { title: "Option 3", value: "3" },
+    ];
+
+    it("should render the correct number of checkbox options", () => {
+      const setValue = vi.fn();
+      render(<CheckboxGroupWidget value={[]} setValue={setValue} listValues={listValues} />);
+
+      // CheckboxGroupWidget renders one native checkbox input per listValue option
+      expect(screen.getAllByRole("checkbox")).toHaveLength(3);
+    });
+
+    it("should maintain matching values correctly", () => {
+      const setValue = vi.fn();
+      render(<CheckboxGroupWidget value={["1", "3"]} setValue={setValue} listValues={listValues} />);
+
+      // When all selected values exist in listValues, setValue should NOT be called
+      expect(setValue).not.toHaveBeenCalled();
+    });
+
+    it("should clear stale selections when list values are absent", () => {
+      const setValue = vi.fn();
+      render(<CheckboxGroupWidget value={["4", "5"]} setValue={setValue} listValues={listValues} />);
+
+      // When values don't match any listValues, widget should clear by calling setValue([])
+      // This follows the same pattern as MultiSelectWidget stale value clearing
+      expect(setValue).toHaveBeenCalledWith([]);
+    });
+
+    it("should handle empty listValues gracefully", () => {
+      const setValue = vi.fn();
+      // @ts-expect-error - testing undefined listValues guard
+      const { container } = render(<CheckboxGroupWidget value={[]} setValue={setValue} listValues={undefined} />);
+
+      // Widget should return null when listValues is undefined (same as MultiSelectWidget pattern)
+      expect(container.firstChild).toBeNull();
+    });
+  });
+});
+
+describe("Gap 2 — Date field TextWidget type", () => {
+  it('should render an input with type="date" when type prop is "date"', () => {
+    const setValue = vi.fn();
+    const { container } = render(<TextWidget value="" setValue={setValue} type="date" />);
+
+    // jsdom does not expose type="date" inputs via the "textbox" role,
+    // so we query by selector directly to verify the type attribute.
+    const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement | null;
+    expect(dateInput).toBeTruthy();
+    expect(dateInput!.type).toBe("date");
+  });
+
+  it('should default to type="text" when no type prop is provided', () => {
+    const setValue = vi.fn();
+    render(<TextWidget value="" setValue={setValue} />);
+
+    const input = screen.getByRole("textbox") as HTMLInputElement;
+    expect(input.type).toBe("text");
   });
 });

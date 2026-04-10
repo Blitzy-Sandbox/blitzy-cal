@@ -9,7 +9,34 @@ import type {
 import { getUTCOffsetByTimezone } from "@calcom/lib/dayjs";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 import { compile } from "handlebars";
+import type { TemplateDelegate } from "handlebars";
 import { z } from "zod";
+
+/**
+ * Module-level cache for compiled Handlebars templates.
+ * Avoids re-parsing and re-compiling the same template AST on every webhook
+ * delivery. Keyed by the raw template string; bounded to 500 entries to
+ * prevent unbounded memory growth in long-running processes.
+ */
+const TEMPLATE_CACHE_MAX_SIZE = 500;
+const templateCache = new Map<string, TemplateDelegate>();
+
+function getCompiledTemplate(template: string): TemplateDelegate {
+  const cached = templateCache.get(template);
+  if (cached) return cached;
+
+  const compiled = compile(template);
+
+  // Evict oldest entry when cache reaches max size (simple FIFO eviction)
+  if (templateCache.size >= TEMPLATE_CACHE_MAX_SIZE) {
+    const firstKey = templateCache.keys().next().value;
+    if (firstKey !== undefined) {
+      templateCache.delete(firstKey);
+    }
+  }
+  templateCache.set(template, compiled);
+  return compiled;
+}
 
 // Minimal webhook shape for sending payloads (subset of WebhookSubscriber)
 type WebhookForPayload = Pick<WebhookSubscriber, "subscriberUrl" | "appId" | "payloadTemplate" | "version">;
@@ -186,7 +213,7 @@ function applyTemplate(
   data: WebhookDataType | Record<string, unknown>,
   contentType: ContentType
 ) {
-  const compiled = compile(template)(data).replace(/&quot;/g, '"');
+  const compiled = getCompiledTemplate(template)(data).replace(/&quot;/g, '"');
 
   if (contentType === "application/json") {
     return JSON.stringify(jsonParse(compiled));
@@ -320,7 +347,7 @@ export const sendGenericWebhookPayload = async ({
 export const createWebhookSignature = (params: { secret?: string | null; body: string }) =>
   params.secret
     ? createHmac("sha256", params.secret).update(`${params.body}`).digest("hex")
-    : "no-secret-provided";
+    : "";
 
 const _sendPayload = async (
   secretKey: string | null,
@@ -333,13 +360,19 @@ const _sendPayload = async (
     throw new Error("Missing required elements to send webhook payload.");
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": contentType,
+    "X-Cal-Webhook-Version": version,
+  };
+
+  const signature = createWebhookSignature({ secret: secretKey, body });
+  if (signature) {
+    headers["X-Cal-Signature-256"] = signature;
+  }
+
   const response = await fetch(subscriberUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": contentType,
-      "X-Cal-Signature-256": createWebhookSignature({ secret: secretKey, body }),
-      "X-Cal-Webhook-Version": version,
-    },
+    headers,
     redirect: "manual",
     body,
   });

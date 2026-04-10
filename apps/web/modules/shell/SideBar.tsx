@@ -22,6 +22,7 @@ import { SkeletonText } from "@calcom/ui/components/skeleton";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 
 import { KBarTrigger } from "./Kbar";
+import { NotificationBell } from "./NotificationBell";
 import { Navigation } from "./navigation/Navigation";
 import { useBottomNavItems } from "./useBottomNavItems";
 import { ProfileDropdown } from "./user-dropdown/ProfileDropdown";
@@ -85,7 +86,30 @@ export function SideBar({ bannersHeight, user }: SideBarProps) {
           !isPlatformPages && "max-h-screen"
         )}>
         <div className="flex h-full flex-col justify-between py-3 lg:pt-4">
-          <header className="todesktop:-mt-3 todesktop:flex-col-reverse todesktop:[-webkit-app-region:drag] items-center justify-between md:hidden lg:flex">
+          <header className="todesktop:-mt-3 todesktop:flex-col-reverse todesktop:[-webkit-app-region:drag] md:hidden lg:flex lg:flex-col">
+            <div className="flex w-full items-center justify-between rtl:space-x-reverse">
+              <NotificationBell />
+              <div className="flex items-center gap-2">
+                <button
+                  color="minimal"
+                  onClick={() => window.history.back()}
+                  className="todesktop:block hover:text-emphasis text-subtle group hidden text-sm font-medium">
+                  <ArrowLeftIcon className="group-hover:text-emphasis text-subtle h-4 w-4 shrink-0" />
+                </button>
+                <button
+                  color="minimal"
+                  onClick={() => window.history.forward()}
+                  className="todesktop:block hover:text-emphasis text-subtle group hidden text-sm font-medium">
+                  <ArrowRightIcon className="group-hover:text-emphasis text-subtle h-4 w-4 shrink-0" />
+                </button>
+                {!!user?.org && (
+                  <div data-testid="user-dropdown-trigger" className="flex items-center">
+                    <UserDropdown small />
+                  </div>
+                )}
+                <KBarTrigger />
+              </div>
+            </div>
             {user?.org ? (
               !ENABLE_PROFILE_SWITCHER ? (
                 <Link href="/settings/organizations/profile" className="w-full px-1.5">
@@ -113,26 +137,6 @@ export function SideBar({ bannersHeight, user }: SideBarProps) {
                 </span>
               </div>
             )}
-            <div className="flex w-full justify-end rtl:space-x-reverse">
-              <button
-                color="minimal"
-                onClick={() => window.history.back()}
-                className="todesktop:block hover:text-emphasis text-subtle group hidden text-sm font-medium">
-                <ArrowLeftIcon className="group-hover:text-emphasis text-subtle h-4 w-4 shrink-0" />
-              </button>
-              <button
-                color="minimal"
-                onClick={() => window.history.forward()}
-                className="todesktop:block hover:text-emphasis text-subtle group hidden text-sm font-medium">
-                <ArrowRightIcon className="group-hover:text-emphasis text-subtle h-4 w-4 shrink-0" />
-              </button>
-              {!!user?.org && (
-                <div data-testid="user-dropdown-trigger" className="flex items-center">
-                  <UserDropdown small />
-                </div>
-              )}
-              <KBarTrigger />
-            </div>
           </header>
           {/* logo icon for tablet */}
           <Link href="/event-types" className="text-center md:inline lg:hidden">

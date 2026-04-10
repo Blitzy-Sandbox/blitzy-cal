@@ -6,6 +6,12 @@ export const enum RoutingFormFieldType {
   MULTI_SELECT = "multiselect",
   PHONE = "phone",
   EMAIL = "email",
+  /** Corresponds to Calendly's "Checkboxes" question type — multiple boolean/option selections */
+  CHECKBOX = "checkbox",
+  /** Corresponds to Calendly's "Website URL" question type — URL input */
+  URL = "url",
+  /** Corresponds to Calendly's "Date" question type — date input */
+  DATE = "date",
 }
 
 export const isValidRoutingFormFieldType = (type: string): type is RoutingFormFieldType => {
@@ -17,6 +23,9 @@ export const isValidRoutingFormFieldType = (type: string): type is RoutingFormFi
     RoutingFormFieldType.MULTI_SELECT,
     RoutingFormFieldType.PHONE,
     RoutingFormFieldType.EMAIL,
+    RoutingFormFieldType.CHECKBOX,
+    RoutingFormFieldType.URL,
+    RoutingFormFieldType.DATE,
   ].includes(type as RoutingFormFieldType);
 };
 
@@ -48,5 +57,17 @@ export const FieldTypes = [
   {
     label: "Email",
     value: RoutingFormFieldType.EMAIL,
+  },
+  {
+    label: "Checkbox",
+    value: RoutingFormFieldType.CHECKBOX,
+  },
+  {
+    label: "URL",
+    value: RoutingFormFieldType.URL,
+  },
+  {
+    label: "Date",
+    value: RoutingFormFieldType.DATE,
   },
 ] as const;

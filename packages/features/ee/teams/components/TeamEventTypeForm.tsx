@@ -9,6 +9,7 @@ import classNames from "@calcom/ui/classNames";
 import { Alert } from "@calcom/ui/components/alert";
 import { Form } from "@calcom/ui/components/form";
 import { TextField } from "@calcom/ui/components/form";
+import { Icon } from "@calcom/ui/components/icon";
 import { RadioAreaGroup as RadioArea } from "@calcom/ui/components/radio";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import type { z } from "zod";
@@ -46,6 +47,7 @@ export const TeamEventTypeForm = ({
 
   const { register, setValue, formState } = form;
   const { canCreateEventType } = permissions;
+  const schedulingType = form.watch("schedulingType");
 
   return (
     <Form form={form} handleSubmit={handleSubmit}>
@@ -138,6 +140,10 @@ export const TeamEventTypeForm = ({
               classNames={{ container: classNames(canCreateEventType && "w-full") }}>
               <strong className="mb-1 block">{t("collective")}</strong>
               <p>{t("collective_description")}</p>
+              <div className="mt-2 flex items-center gap-1.5 text-subtle text-xs">
+                <Icon name="users" size={12} />
+                <span>{t("collective_all_hosts_required")}</span>
+              </div>
             </RadioArea.Item>
             <RadioArea.Item
               {...register("schedulingType")}
@@ -146,6 +152,16 @@ export const TeamEventTypeForm = ({
               classNames={{ container: classNames(canCreateEventType && "w-full") }}>
               <strong className="mb-1 block">{t("round_robin")}</strong>
               <p>{t("round_robin_description")}</p>
+              <div className="mt-2 flex flex-col gap-1 text-subtle text-xs">
+                <div className="flex items-center gap-1.5">
+                  <Icon name="shuffle" size={12} />
+                  <span>{t("round_robin_priority_distribution")}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Icon name="sliders-horizontal" size={12} />
+                  <span>{t("round_robin_availability_weighted")}</span>
+                </div>
+              </div>
             </RadioArea.Item>
             {canCreateEventType && (
               <RadioArea.Item
@@ -156,9 +172,34 @@ export const TeamEventTypeForm = ({
                 data-testid="managed-event-type">
                 <strong className="mb-1 block">{t("managed_event")}</strong>
                 <p>{t("managed_event_description")}</p>
+                <div className="mt-2 flex flex-col gap-1 text-subtle text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="send" size={12} />
+                    <span>{t("managed_auto_push_to_members")}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="lock" size={12} />
+                    <span>{t("managed_admin_controlled_fields")}</span>
+                  </div>
+                </div>
               </RadioArea.Item>
             )}
           </RadioArea.Group>
+          {schedulingType === SchedulingType.COLLECTIVE && (
+            <div className="mt-3 rounded-md border border-subtle bg-muted p-3">
+              <p className="text-sm text-subtle">{t("collective_host_config_hint")}</p>
+            </div>
+          )}
+          {schedulingType === SchedulingType.ROUND_ROBIN && (
+            <div className="mt-3 rounded-md border border-subtle bg-muted p-3">
+              <p className="text-sm text-subtle">{t("round_robin_host_config_hint")}</p>
+            </div>
+          )}
+          {schedulingType === SchedulingType.MANAGED && canCreateEventType && (
+            <div className="mt-3 rounded-md border border-subtle bg-muted p-3">
+              <p className="text-sm text-subtle">{t("managed_event_push_config_hint")}</p>
+            </div>
+          )}
         </div>
       </div>
       {SubmitButton(isPending)}

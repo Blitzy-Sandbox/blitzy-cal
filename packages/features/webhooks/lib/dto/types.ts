@@ -36,6 +36,17 @@ export interface BookingCreatedDTO extends BaseEventDTO {
     platformCancelUrl?: string;
     platformBookingUrl?: string;
   };
+  // Calendly parity fields (WH-001: invitee.created alignment)
+  utmParams?: {
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    utmTerm?: string;
+    utmContent?: string;
+  };
+  inviteeUri?: string;
+  eventUri?: string;
+  schedulingUrl?: string;
 }
 
 export interface BookingCancelledDTO extends BaseEventDTO {
@@ -54,6 +65,9 @@ export interface BookingCancelledDTO extends BaseEventDTO {
   cancelledBy?: string;
   cancellationReason?: string;
   requestReschedule?: boolean;
+  // Calendly parity fields (WH-002: invitee.canceled alignment)
+  rescheduleUri?: string;
+  cancellationTimestamp?: string;
 }
 
 export interface BookingRejectedDTO extends BaseEventDTO {
@@ -102,6 +116,37 @@ export interface BookingRescheduledDTO extends BaseEventDTO {
   rescheduleStartTime?: string;
   rescheduleEndTime?: string;
   rescheduledBy?: string;
+  // Calendly parity fields (WH-001: invitee.created reschedule variant)
+  oldInviteeUri?: string;
+  newInviteeUri?: string;
+}
+
+/**
+ * DTO for attendee-initiated reschedule events. Carries the same payload fields as
+ * BookingRescheduledDTO but with a distinct triggerEvent discriminant for
+ * BOOKING_RESCHEDULED_BY_ATTENDEE. Maps to Calendly invitee.created (reschedule variant)
+ * per WH-001.
+ */
+export interface BookingRescheduledByAttendeeDTO extends BaseEventDTO {
+  triggerEvent: typeof WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE;
+  evt: CalendarEvent;
+  eventType: EventTypeInfo & {
+    id: number;
+  };
+  booking: {
+    id: number;
+    eventTypeId: number | null;
+    userId: number | null;
+    smsReminderNumber?: string | null;
+  };
+  rescheduleId?: number;
+  rescheduleUid?: string;
+  rescheduleStartTime?: string;
+  rescheduleEndTime?: string;
+  rescheduledBy?: string;
+  // Calendly parity fields (WH-001: invitee.created reschedule variant)
+  oldInviteeUri?: string;
+  newInviteeUri?: string;
 }
 
 export interface BookingPaidDTO extends BaseEventDTO {
@@ -183,6 +228,13 @@ export interface FormSubmittedDTO extends BaseEventDTO {
   response: {
     id: number;
     data: FORM_SUBMITTED_WEBHOOK_RESPONSES;
+  };
+  // Calendly parity fields (WH-003: routing_form_submission.created alignment)
+  submissionTimestamp?: string;
+  routingResult?: {
+    eventTypeId?: number;
+    teamMemberId?: number;
+    url?: string;
   };
 }
 
@@ -347,6 +399,7 @@ export type WebhookEventDTO =
   | BookingRejectedDTO
   | BookingRequestedDTO
   | BookingRescheduledDTO
+  | BookingRescheduledByAttendeeDTO
   | BookingPaidDTO
   | BookingPaymentInitiatedDTO
   | BookingNoShowDTO
@@ -585,6 +638,27 @@ export type EventPayloadType = CalendarEvent &
     cancelledBy?: string;
     paymentData?: Record<string, unknown>;
     requestReschedule?: boolean;
+    // Calendly parity fields (WH-004: payload structure alignment)
+    utmParams?: {
+      utmSource?: string;
+      utmMedium?: string;
+      utmCampaign?: string;
+      utmTerm?: string;
+      utmContent?: string;
+    };
+    inviteeUri?: string;
+    eventUri?: string;
+    schedulingUrl?: string;
+    rescheduleUri?: string;
+    cancellationTimestamp?: string;
+    oldInviteeUri?: string;
+    newInviteeUri?: string;
+    submissionTimestamp?: string;
+    routingResult?: {
+      eventTypeId?: number;
+      teamMemberId?: number;
+      url?: string;
+    };
   };
 
 // dto/types.ts
@@ -594,6 +668,7 @@ export type BookingWebhookEventDTO =
   | BookingCancelledDTO
   | BookingRequestedDTO
   | BookingRescheduledDTO
+  | BookingRescheduledByAttendeeDTO
   | BookingPaidDTO
   | BookingPaymentInitiatedDTO
   | BookingRejectedDTO

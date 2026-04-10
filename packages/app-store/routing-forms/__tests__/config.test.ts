@@ -79,6 +79,29 @@ describe("Query Builder Config", () => {
     it("should have maxNesting set to 1 in settings", () => {
       assertMaxNesting(FormFieldsBaseConfig, 1);
     });
+
+    // RF-003: Checkbox widget and type wiring (Calendly "Checkboxes" parity)
+    it("should have a checkbox widget with explicit type 'checkbox'", () => {
+      expect(FormFieldsBaseConfig.widgets).toHaveProperty("checkbox");
+      expect(FormFieldsBaseConfig.widgets.checkbox.type).toBe("checkbox");
+    });
+
+    it("should have a checkbox type that wires to the 'checkbox' widget key", () => {
+      expect(FormFieldsBaseConfig.types).toHaveProperty("checkbox");
+      // The checkbox type must use 'checkbox' as its widget key (not 'multiselect')
+      // so RAQB resolves CheckboxGroupWidget correctly
+      expect(FormFieldsBaseConfig.types.checkbox.widgets).toHaveProperty("checkbox");
+      expect(FormFieldsBaseConfig.types.checkbox.widgets).not.toHaveProperty("multiselect");
+    });
+
+    it("should give checkbox type the same operators as multiselect", () => {
+      const checkboxOps = FormFieldsBaseConfig.types.checkbox.widgets.checkbox.operators;
+      const multiselectOps = FormFieldsBaseConfig.types.multiselect.widgets.multiselect.operators;
+      // Checkbox should have at least the same operators as multiselect
+      for (const op of multiselectOps) {
+        expect(checkboxOps).toContain(op);
+      }
+    });
   });
 
   describe("AttributesBaseConfig", () => {

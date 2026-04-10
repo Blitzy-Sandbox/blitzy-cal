@@ -57,10 +57,33 @@ function nameToFirstAndLast(name: string): { firstName: string; lastName: string
  * - Trigger-specific extra fields (cancellation reason, reschedule info, etc.)
  */
 export class BookingPayloadBuilder extends BaseBookingPayloadBuilder {
+  /** Temporary storage for Calendly parity fields captured during build cycle (WH-001, WH-002, WH-004) */
+  private _calendlyFields: Record<string, unknown> = {};
+
   /**
    * Build the complete booking webhook payload for v2021-10-20.
    */
   build(dto: BookingWebhookEventDTO): WebhookPayload {
+    // Capture Calendly parity fields from DTO before routing through switch cases (WH-001, WH-002, WH-004).
+    // These optional fields are conditionally included in the payload only when present,
+    // maintaining backward compatibility with existing v2021-10-20 consumers.
+    this._calendlyFields = {};
+    const dtoRecord = dto as unknown as Record<string, unknown>;
+    for (const key of [
+      "utmParams",
+      "inviteeUri",
+      "eventUri",
+      "schedulingUrl",
+      "rescheduleUri",
+      "cancellationTimestamp",
+      "oldInviteeUri",
+      "newInviteeUri",
+    ]) {
+      if (dtoRecord[key] !== undefined) {
+        this._calendlyFields[key] = dtoRecord[key];
+      }
+    }
+
     switch (dto.triggerEvent) {
       case WebhookTriggerEvents.BOOKING_CREATED:
         return this.buildBookingPayload({
@@ -111,6 +134,25 @@ export class BookingPayloadBuilder extends BaseBookingPayloadBuilder {
         });
 
       case WebhookTriggerEvents.BOOKING_RESCHEDULED:
+        return this.buildBookingPayload({
+          booking: dto.booking,
+          eventType: dto.eventType,
+          evt: dto.evt,
+          status: BookingStatus.ACCEPTED,
+          triggerEvent: dto.triggerEvent,
+          createdAt: dto.createdAt,
+          extra: {
+            rescheduleId: dto.rescheduleId,
+            rescheduleUid: dto.rescheduleUid,
+            rescheduleStartTime: dto.rescheduleStartTime,
+            rescheduleEndTime: dto.rescheduleEndTime,
+            rescheduledBy: dto.rescheduledBy,
+          },
+        });
+
+      // Attendee-initiated reschedule — same payload shape as BOOKING_RESCHEDULED
+      // Maps to Calendly invitee.created (reschedule variant) per WH-001
+      case WebhookTriggerEvents.BOOKING_RESCHEDULED_BY_ATTENDEE:
         return this.buildBookingPayload({
           booking: dto.booking,
           eventType: dto.eventType,
@@ -230,6 +272,13 @@ export class BookingPayloadBuilder extends BaseBookingPayloadBuilder {
       destinationCalendar: params.evt.destinationCalendar ?? null,
       ...(params.extra || {}),
     };
+
+    // Spread Calendly parity fields additively onto payload (WH-001, WH-002, WH-004).
+    // These fields are only present when the originating DTO included them,
+    // preserving the exact v2021-10-20 payload shape for existing consumers.
+    if (Object.keys(this._calendlyFields).length > 0) {
+      Object.assign(payload, this._calendlyFields);
+    }
 
     return {
       triggerEvent: params.triggerEvent,

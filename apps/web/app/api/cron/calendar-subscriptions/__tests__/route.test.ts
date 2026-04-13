@@ -60,7 +60,7 @@ describe("/api/cron/calendar-subscriptions", () => {
       expect(response.status).toBe(403);
       const body = await response.json();
       expect(body.message).toBe("Forbiden");
-    }, 10000);
+    }, 600_000); // Dynamic import inside test can take 300+ s under full-suite contention
 
     test("should return 403 when invalid API key is provided", async () => {
       const request = new NextRequest("http://localhost/api/cron/calendar-subscriptions");

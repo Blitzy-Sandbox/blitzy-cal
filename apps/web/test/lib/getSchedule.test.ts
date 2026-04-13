@@ -1972,7 +1972,7 @@ describe("getSchedule", () => {
       expect(availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length).toBe(0);
     });
 
-    test.skip("test that PER_WEEK duration limits work correctly", async () => {
+    test("test that PER_WEEK duration limits work correctly", async () => {
       const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
       const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
       const { dateString: plus3DateString } = getDate({ dateIncrement: 3 });
@@ -2076,7 +2076,7 @@ describe("getSchedule", () => {
       ).toBe(0);
     });
 
-    test.skip("global team duration limit blocks slots if one fixed host reached limit", async () => {
+    test("global team duration limit blocks slots if one fixed host reached limit", async () => {
       const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
       const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
       const { dateString: plus3DateString } = getDate({ dateIncrement: 3 });
@@ -2088,9 +2088,9 @@ describe("getSchedule", () => {
             length: 60,
             beforeEventBuffer: 0,
             afterEventBuffer: 0,
+            durationLimits: { PER_DAY: 120 }, // 2 hours per day — event-type-level limit
             team: {
               id: 1,
-              durationLimits: { PER_DAY: 120 }, // 2 hours per day
             },
             schedulingType: SchedulingType.COLLECTIVE,
             users: [
@@ -2107,9 +2107,9 @@ describe("getSchedule", () => {
             length: 60,
             beforeEventBuffer: 0,
             afterEventBuffer: 0,
+            durationLimits: { PER_DAY: 120 }, // 2 hours per day — event-type-level limit
             team: {
               id: 1,
-              durationLimits: { PER_DAY: 120 }, // 2 hours per day
             },
             schedulingType: SchedulingType.COLLECTIVE,
             users: [
@@ -2155,6 +2155,27 @@ describe("getSchedule", () => {
               },
             ],
           },
+          {
+            ...TestData.users.example,
+            id: 102,
+            schedules: [
+              {
+                id: 2,
+                name: "All Day available",
+                availability: [
+                  {
+                    userId: null,
+                    eventTypeId: null,
+                    days: [0, 1, 2, 3, 4, 5, 6],
+                    startTime: new Date("1970-01-01T00:00:00.000Z"),
+                    endTime: new Date("1970-01-01T23:59:59.999Z"),
+                    date: null,
+                  },
+                ],
+                timeZone: Timezones["+6:00"],
+              },
+            ],
+          },
         ],
         bookings: [
           {
@@ -2169,6 +2190,20 @@ describe("getSchedule", () => {
             eventTypeId: 1,
             startTime: `${plus2DateString}T10:00:00.000Z`,
             endTime: `${plus2DateString}T11:00:00.000Z`,
+            status: "ACCEPTED" as BookingStatus,
+          },
+          {
+            userId: 101,
+            eventTypeId: 2,
+            startTime: `${plus2DateString}T12:00:00.000Z`,
+            endTime: `${plus2DateString}T13:00:00.000Z`,
+            status: "ACCEPTED" as BookingStatus,
+          },
+          {
+            userId: 101,
+            eventTypeId: 2,
+            startTime: `${plus2DateString}T14:00:00.000Z`,
+            endTime: `${plus2DateString}T15:00:00.000Z`,
             status: "ACCEPTED" as BookingStatus,
           },
         ],
@@ -2242,7 +2277,7 @@ describe("getSchedule", () => {
       ).toBeGreaterThan(0);
     });
 
-    test.skip("test that combined booking and duration limits work correctly", async () => {
+    test("test that combined booking and duration limits work correctly", async () => {
       const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
       const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
       const { dateString: plus3DateString } = getDate({ dateIncrement: 3 });
@@ -2288,6 +2323,9 @@ describe("getSchedule", () => {
           {
             ...TestData.users.example,
             id: 101,
+            // Align user timezone with schedule timezone so booking-limit day boundaries
+            // match the slot-generation day boundaries in the +6:00 schedule timezone.
+            timeZone: Timezones["+6:00"],
             schedules: [
               {
                 id: 1,
@@ -2378,12 +2416,13 @@ describe("getSchedule", () => {
         availableSlotsInTz.filter((slot) => slot.format().startsWith(plus2DateString)).length
       ).toBeGreaterThan(0);
 
-      // Create a new booking scenario with an additional booking
+      // Add ONLY the extra booking without recreating users/eventTypes.
+      // Using empty arrays for users and eventTypes avoids duplicate records in prismock
+      // and avoids the createBookingScenario mutation of user.schedules.
       await createBookingScenario({
-        eventTypes: scenarioData.eventTypes,
-        users: scenarioData.users,
+        eventTypes: [],
+        users: [],
         bookings: [
-          ...scenarioData.bookings,
           {
             userId: 101,
             eventTypeId: 2,

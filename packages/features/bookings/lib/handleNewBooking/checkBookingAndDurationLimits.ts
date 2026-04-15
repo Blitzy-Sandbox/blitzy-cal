@@ -6,7 +6,7 @@ import { withReporting } from "@calcom/lib/sentryWrapper";
 
 import type { NewBookingEventType } from "./getEventTypesFromDB";
 
-type EventType = Pick<NewBookingEventType, "bookingLimits" | "durationLimits" | "id" | "schedule">;
+type EventType = Pick<NewBookingEventType, "bookingLimits" | "durationLimits" | "id" | "schedule" | "seatsPerTimeSlot">;
 
 type InputProps = {
   eventType: EventType;
@@ -38,7 +38,9 @@ export class CheckBookingAndDurationLimitsService {
           startAsDate,
           eventType.id,
           reqBodyRescheduleUid,
-          eventType.schedule?.timeZone
+          eventType.schedule?.timeZone,
+          undefined, // includeManagedEvents
+          eventType.seatsPerTimeSlot
         );
       }
       if (eventType.durationLimits) {

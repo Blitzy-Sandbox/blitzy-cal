@@ -1973,6 +1973,10 @@ describe("getSchedule", () => {
     });
 
     test("test that PER_WEEK duration limits work correctly", async () => {
+      // Pin the system clock to a Monday so that plus1–plus4 (Tue–Fri) all
+      // fall within the same Sun–Sat week and the PER_WEEK limit applies uniformly.
+      vi.setSystemTime("2024-05-20T00:00:00Z");
+
       const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
       const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
       const { dateString: plus3DateString } = getDate({ dateIncrement: 3 });
@@ -2074,6 +2078,211 @@ describe("getSchedule", () => {
             slot.format().startsWith(plus4DateString)
         ).length
       ).toBe(0);
+    });
+
+    test("seated event with PER_DAY booking limit shows only the partially booked slot", async () => {
+      // Gap 2: When a seated event type has PER_DAY=1 and one seat is booked on a slot,
+      // only that partially-booked slot should remain available with its remaining seats.
+      // No other time slots on the same day should be offered.
+      vi.setSystemTime("2024-05-20T00:00:00Z");
+
+      const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
+      const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
+
+      const scenarioData = {
+        eventTypes: [
+          {
+            id: 1,
+            length: 60,
+            beforeEventBuffer: 0,
+            afterEventBuffer: 0,
+            seatsPerTimeSlot: 3,
+            bookingLimits: { PER_DAY: 1 },
+            users: [{ id: 101 }],
+          },
+        ],
+        users: [
+          {
+            ...TestData.users.example,
+            id: 101,
+            schedules: [
+              {
+                id: 1,
+                name: "All Day available",
+                availability: [
+                  {
+                    userId: null,
+                    eventTypeId: null,
+                    days: [0, 1, 2, 3, 4, 5, 6],
+                    startTime: new Date("1970-01-01T00:00:00.000Z"),
+                    endTime: new Date("1970-01-01T23:59:59.999Z"),
+                    date: null,
+                  },
+                ],
+                timeZone: Timezones["+6:00"],
+              },
+            ],
+          },
+        ],
+        bookings: [
+          {
+            userId: 101,
+            eventTypeId: 1,
+            startTime: `${plus1DateString}T08:00:00.000Z`,
+            endTime: `${plus1DateString}T09:00:00.000Z`,
+            status: "ACCEPTED" as BookingStatus,
+          },
+        ],
+      };
+
+      await createBookingScenario(scenarioData);
+
+      const result = await availableSlotsService.getAvailableSlots({
+        input: {
+          eventTypeId: 1,
+          eventTypeSlug: "",
+          startTime: `${plus1DateString}T00:00:00.000Z`,
+          endTime: `${plus2DateString}T23:59:59.999Z`,
+          timeZone: Timezones["+6:00"],
+          isTeamEvent: false,
+          orgSlug: null,
+        },
+      });
+
+      const slotsOnPlus1: dayjs.Dayjs[] = [];
+      for (const date in result.slots) {
+        result.slots[date].forEach((timeObj) => {
+          const slot = dayjs(timeObj.time).tz(Timezones["+6:00"]);
+          if (slot.format().startsWith(plus1DateString)) {
+            slotsOnPlus1.push(slot);
+          }
+        });
+      }
+
+      // Only the single partially-booked slot should be available on plus1.
+      // All other time slots on that day should be blocked by the PER_DAY limit.
+      expect(slotsOnPlus1.length).toBe(1);
+
+      // Day plus2 (no bookings) should still have availability
+      const slotsOnPlus2: dayjs.Dayjs[] = [];
+      for (const date in result.slots) {
+        result.slots[date].forEach((timeObj) => {
+          const slot = dayjs(timeObj.time).tz(Timezones["+6:00"]);
+          if (slot.format().startsWith(plus2DateString)) {
+            slotsOnPlus2.push(slot);
+          }
+        });
+      }
+      expect(slotsOnPlus2.length).toBeGreaterThan(0);
+    });
+
+    test("seated event date is disabled when all seats are consumed for per-day booking limit", async () => {
+      // Gap 3: When all seats in the only booked slot are consumed and PER_DAY=1,
+      // the date should be fully disabled (no slots shown, date not bookable).
+      vi.setSystemTime("2024-05-20T00:00:00Z");
+
+      const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
+      const { dateString: plus2DateString } = getDate({ dateIncrement: 2 });
+
+      const scenarioData = {
+        eventTypes: [
+          {
+            id: 1,
+            length: 60,
+            beforeEventBuffer: 0,
+            afterEventBuffer: 0,
+            seatsPerTimeSlot: 3,
+            bookingLimits: { PER_DAY: 1 },
+            users: [{ id: 101 }],
+          },
+        ],
+        users: [
+          {
+            ...TestData.users.example,
+            id: 101,
+            schedules: [
+              {
+                id: 1,
+                name: "All Day available",
+                availability: [
+                  {
+                    userId: null,
+                    eventTypeId: null,
+                    days: [0, 1, 2, 3, 4, 5, 6],
+                    startTime: new Date("1970-01-01T00:00:00.000Z"),
+                    endTime: new Date("1970-01-01T23:59:59.999Z"),
+                    date: null,
+                  },
+                ],
+                timeZone: Timezones["+6:00"],
+              },
+            ],
+          },
+        ],
+        bookings: [
+          // 3 bookings at the same slot = all 3 seats consumed
+          {
+            userId: 101,
+            eventTypeId: 1,
+            startTime: `${plus1DateString}T08:00:00.000Z`,
+            endTime: `${plus1DateString}T09:00:00.000Z`,
+            status: "ACCEPTED" as BookingStatus,
+          },
+          {
+            userId: 101,
+            eventTypeId: 1,
+            startTime: `${plus1DateString}T08:00:00.000Z`,
+            endTime: `${plus1DateString}T09:00:00.000Z`,
+            status: "ACCEPTED" as BookingStatus,
+          },
+          {
+            userId: 101,
+            eventTypeId: 1,
+            startTime: `${plus1DateString}T08:00:00.000Z`,
+            endTime: `${plus1DateString}T09:00:00.000Z`,
+            status: "ACCEPTED" as BookingStatus,
+          },
+        ],
+      };
+
+      await createBookingScenario(scenarioData);
+
+      const result = await availableSlotsService.getAvailableSlots({
+        input: {
+          eventTypeId: 1,
+          eventTypeSlug: "",
+          startTime: `${plus1DateString}T00:00:00.000Z`,
+          endTime: `${plus2DateString}T23:59:59.999Z`,
+          timeZone: Timezones["+6:00"],
+          isTeamEvent: false,
+          orgSlug: null,
+        },
+      });
+
+      const slotsOnPlus1: dayjs.Dayjs[] = [];
+      for (const date in result.slots) {
+        result.slots[date].forEach((timeObj) => {
+          const slot = dayjs(timeObj.time).tz(Timezones["+6:00"]);
+          if (slot.format().startsWith(plus1DateString)) {
+            slotsOnPlus1.push(slot);
+          }
+        });
+      }
+
+      // All seats consumed + PER_DAY limit reached → date should have zero slots
+      expect(slotsOnPlus1.length).toBe(0);
+
+      // Day plus2 should still have availability
+      const slotsOnPlus2: dayjs.Dayjs[] = [];
+      for (const date in result.slots) {
+        result.slots[date].forEach((timeObj) => {
+          const slot = dayjs(timeObj.time).tz(Timezones["+6:00"]);
+          if (slot.format().startsWith(plus2DateString)) {
+            slotsOnPlus2.push(slot);
+          }
+        });
+      }
+      expect(slotsOnPlus2.length).toBeGreaterThan(0);
     });
 
     test("global team duration limit blocks slots if one fixed host reached limit", async () => {

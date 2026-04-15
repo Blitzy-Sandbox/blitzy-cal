@@ -519,6 +519,122 @@ describe("Booking Validation Specifications", () => {
         );
       }
     });
+
+    test("allows another user to book remaining seat even when per-day booking limit is reached", async () => {
+      vi.setSystemTime(new Date("2025-01-01"));
+      const plus1DateString = "2025-01-02";
+
+      const handleNewBooking = getNewBookingHandler();
+
+      const bookerA = getBooker({
+        email: "bookerA@example.com",
+        name: "Booker A",
+      });
+
+      const bookerB = getBooker({
+        email: "bookerB@example.com",
+        name: "Booker B",
+      });
+
+      const organizer = getOrganizer({
+        name: "Organizer",
+        email: "organizer@example.com",
+        id: 101,
+        schedules: [TestData.schedules.IstWorkHours],
+        credentials: [getGoogleCalendarCredential()],
+        selectedCalendars: [TestData.selectedCalendars.google],
+      });
+
+      // Seated event type with PER_DAY=1 booking limit and 3 seats per slot.
+      // Booker A already holds one seat in slot 10:00 on plus1.
+      await createBookingScenario(
+        getScenarioData({
+          eventTypes: [
+            {
+              id: 1,
+              slotInterval: 30,
+              length: 30,
+              seatsPerTimeSlot: 3,
+              bookingLimits: { PER_DAY: 1 },
+              users: [{ id: 101 }],
+            },
+          ],
+          organizer,
+          apps: [TestData.apps["google-calendar"]],
+          bookings: [
+            {
+              uid: "existing-seat-booking",
+              eventTypeId: 1,
+              userId: organizer.id,
+              startTime: `${plus1DateString}T10:00:00.000Z`,
+              endTime: `${plus1DateString}T10:30:00.000Z`,
+              title: "Seated Booking",
+              status: BookingStatus.ACCEPTED,
+              attendees: [
+                getMockBookingAttendee({
+                  id: 1,
+                  name: bookerA.name,
+                  email: bookerA.email,
+                  locale: "en",
+                  timeZone: "America/Toronto",
+                  bookingSeat: {
+                    referenceUid: "seat-ref-a",
+                    data: {},
+                  },
+                }),
+              ],
+            },
+          ],
+        })
+      );
+
+      await mockCalendarToHaveNoBusySlots("googlecalendar", {});
+
+      // Booker B books the SAME slot (adding a seat) → should succeed
+      const mockBookingSameSlot = getMockRequestDataForBooking({
+        data: {
+          eventTypeId: 1,
+          start: `${plus1DateString}T10:00:00.000Z`,
+          end: `${plus1DateString}T10:30:00.000Z`,
+          responses: {
+            email: bookerB.email,
+            name: bookerB.name,
+            location: { optionValue: "", value: "New York" },
+          },
+        },
+      });
+
+      const createdBooking = await handleNewBooking({
+        bookingData: mockBookingSameSlot,
+      });
+
+      expect(createdBooking).toEqual(
+        expect.objectContaining({
+          uid: expect.any(String),
+        })
+      );
+
+      // Booker B books a DIFFERENT slot on the same day → should be rejected
+      // because the day limit of 1 is already consumed by the existing slot.
+      const mockBookingDiffSlot = getMockRequestDataForBooking({
+        data: {
+          eventTypeId: 1,
+          start: `${plus1DateString}T11:00:00.000Z`,
+          end: `${plus1DateString}T11:30:00.000Z`,
+          responses: {
+            email: bookerB.email,
+            name: bookerB.name,
+            location: { optionValue: "", value: "New York" },
+          },
+        },
+      });
+
+      await expect(
+        handleNewBooking({
+          bookingData: mockBookingDiffSlot,
+        })
+      ).rejects.toThrow("booking_limit_reached");
+    });
   });
 
   describe("User Email Verification Setting", () => {

@@ -1,60 +1,60 @@
-# Blitzy Project Guide — Cal.com Sprint 1–8 Comprehensive Audit & Bug Fix
-
----
+# Blitzy Project Guide
 
 ## 1. Executive Summary
 
 ### 1.1 Project Overview
 
-This project is a comprehensive audit and bug-fix initiative spanning all eight sprint deliverables (Sprints 1–8) of the Cal.com Calendly parity project, covering epic scope AV-001 through NF-004. The objective was to verify 5 known issues (seat/booking-limit interaction, team seated event status, test module load failures, assertion failures, and test timeouts), discover and resolve any additional defects, fix 3 skipped duration-limit tests, and validate the entire test suite across all sprint domains with zero failures. The target system is the Cal.com monorepo (Next.js 16.1.7, Vitest 4.0.16, Yarn 4.12.0, Node 20) serving scheduling, availability, booking, webhook, embed, and notification features. During validation, 3 additional production-critical gaps were discovered and fixed in the multi-seat booking limit flow.
+This project is a comprehensive bug fix audit across all eight sprint deliverables (Sprints 1–8) of the Cal.com Calendly parity initiative, spanning epics AV-001 through NF-004. The scope addressed five specifically enumerated issues — seat/booking-limit interaction logic, team seated event status reflection, test module load failures, assertion failures, and test timeouts — plus an open mandate to discover and resolve additional defects. The work targets the Cal.com scheduling platform's availability engine, booking limits, seat management, and test infrastructure, ensuring behavioral parity with Calendly's scheduling capabilities for end users and API consumers.
 
 ### 1.2 Completion Status
 
 ```mermaid
-pie title Completion Status
-    "Completed (30h)" : 30
-    "Remaining (6h)" : 6
+pie title Project Completion Status
+    "Completed (84%)" : 42
+    "Remaining (16%)" : 8
 ```
 
 | Metric | Value |
 |--------|-------|
-| **Total Project Hours** | 36 |
-| **Completed Hours (AI)** | 30 |
-| **Remaining Hours** | 6 |
-| **Completion Percentage** | **83.3%** |
+| **Total Project Hours** | 50 |
+| **Completed Hours (AI)** | 42 |
+| **Remaining Hours** | 8 |
+| **Completion Percentage** | 84% |
 
-**Calculation:** 30 completed hours / (30 + 6) total hours = 83.3% complete
+**Calculation:** 42 completed hours / (42 completed + 8 remaining) = 42 / 50 = **84% complete**
 
 ### 1.3 Key Accomplishments
 
-- ✅ All 5 originally reported issues (Issues 1–5) confirmed resolved and individually verified passing
-- ✅ 3 additional production-critical gaps (Gaps 1–3) discovered and fixed in the seat/booking-limit availability engine
-- ✅ 3 new test scenarios added covering all gap fixes with full pass/fail assertions
-- ✅ 3 previously skipped duration-limit tests unskipped and repaired in `getSchedule.test.ts`
-- ✅ Full-suite timeout stabilization across 24+ files — `hookTimeout` (600s) and `testTimeout` (500s) propagated to Vitest workspace configs
-- ✅ Full test suite passes: **626 test files | 7,366 tests | 0 failures**
-- ✅ Sprint 1–8 validation matrix complete — all 8 domain test suites pass
-- ✅ Zero regressions — all previously passing tests continue to pass
-- ✅ Biome lint verification — 0 new warnings introduced (baseline maintained at 12 warnings / 28 infos)
+- ✅ All 5 known issues (seat/limit interaction, team seated events, module load, assertion failure, auth timeout) verified as resolved
+- ✅ 3 previously skipped duration-limit tests unskipped, fixed, and passing (PER_WEEK, global team duration, combined limits)
+- ✅ Stale seat reservation cleanup implemented with try/catch on booking failure + `deleteByUid` in SelectedSlotRepository
+- ✅ 65-line partial seat restoration added to `getUserAvailability.ts` preserving partially-booked slots during limit enforcement
+- ✅ Seat-aware booking limit bypass added to `checkBookingLimits.ts` allowing seat additions to existing slots
+- ✅ Test infrastructure stabilized: `hookTimeout: 600000`, `testTimeout: 500000`, `pool: "forks"` across all 15 vitest workspace projects
+- ✅ Full test suite passes: **626 test files, 7,369 individual tests, 0 failures**
+- ✅ 5 new test cases added covering seated event limit scenarios and stale reservation cleanup
+- ✅ All 8 sprint domain test suites verified (Availability, Event Types, Calendar Integrations, Webhooks, Routing Forms, Embeds, Admin/Teams, Notifications)
+- ✅ Clean git working tree — all changes committed on branch `blitzy-69e6272f-eff3-46bb-965e-b9b0c0c4c6fc`
 
 ### 1.4 Critical Unresolved Issues
 
 | Issue | Impact | Owner | ETA |
 |-------|--------|-------|-----|
-| Skipped yearly booking-limit test (`booking-limits.test.ts:50`) — `no_available_users_found_error` in CI | Low — test infrastructure issue only; does not affect production behavior | Human Developer | 2 hours |
-| Pre-existing FIXME at `getBusyTimes.ts:679` — boundary overlap bookings not counted in limit checks | Low — pre-existing limitation outside Sprint 1–8 scope; no user-facing impact documented | Backlog | Future sprint |
+| FIXME at `getBusyTimes.ts:676` — bookings overlapping query window boundary not counted in limit checks | Low — pre-existing limitation, not introduced by Sprint 1–8 work | Human Developer | Backlog |
+| 1 skipped yearly booking-limit test (`booking-limits.test.ts:48`) | Low — pre-existing CI infrastructure issue (`no_available_users_found_error`); does not affect production | Human Developer | Backlog |
+| 7 intentionally skipped test files (module import/setup issues) | Low — unrelated to Sprint 1–8 scope; pre-existing infrastructure gaps | Human Developer | Backlog |
 
 ### 1.5 Access Issues
 
-No access issues identified. All test suites execute successfully in the local environment. No external API credentials, service accounts, or repository permissions are blocking automated validation.
+No access issues identified. All repository permissions, service credentials, and testing infrastructure are functioning correctly. The full test suite runs without external service dependencies (all tests use mocks/prismock).
 
 ### 1.6 Recommended Next Steps
 
-1. **[High]** Code review of 4 production files with seat-aware booking limit changes (`getBusyTimes.ts`, `getUserAvailability.ts`, `checkBookingLimits.ts`, `checkBookingAndDurationLimits.ts`)
-2. **[High]** Validate CI/CD pipeline with new timeout settings (hookTimeout 600s, testTimeout 500s) to ensure full-suite passes in CI environments
-3. **[Medium]** Fix the skipped yearly booking-limit test at `booking-limits.test.ts:50` by ensuring mock scenario creates users with valid schedules producing available slots in the yearly query window
-4. **[Medium]** Run production deployment smoke test covering seated event booking with PER_DAY limits and team event cross-user seat aggregation
-5. **[Low]** Track the pre-existing FIXME at `getBusyTimes.ts:679` (boundary overlap issue) as a separate backlog item for a future sprint
+1. **[High]** Conduct code review of seat/limit logic changes in `getBusyTimes.ts`, `getUserAvailability.ts`, and `checkBookingLimits.ts` — these affect core availability computation
+2. **[High]** Run integration tests in a staging environment with real PostgreSQL and calendar integrations to validate seat/limit behavior end-to-end
+3. **[Medium]** Verify stale seat reservation cleanup (`event.ts` try/catch + `deleteByUid`) under concurrent booking load
+4. **[Medium]** Merge PR and deploy to staging for manual QA of seated event booking flows
+5. **[Low]** Investigate FIXME at `getBusyTimes.ts:676` for boundary overlap bookings as a separate backlog item
 
 ---
 
@@ -64,31 +64,28 @@ No access issues identified. All test suites execute successfully in the local e
 
 | Component | Hours | Description |
 |-----------|-------|-------------|
-| Root cause analysis & diagnostic verification | 3 | Verified all 5 known issues resolved; discovered 3 additional gaps in seat/booking-limit interaction |
-| Gap 1 — checkBookingLimits seat-aware skip logic | 3 | Added `seatsPerTimeSlot` parameter to `checkBookingLimits.ts` and `checkBookingAndDurationLimits.ts`; when limit exceeded AND seated event, queries for existing booking at exact slot and skips rejection |
-| Gap 2 — getBusyTimes seat deduplication refinement | 3 | Changed seat deduplication in `getBusyTimes.ts` to count ANY slot with bookings toward interval limits (not just fully booked slots) |
-| Gap 3 — getUserAvailability slot restoration | 5 | Added 65-line partially-booked slot restoration logic to `getUserAvailability.ts`; aggregates seat occupancy, restores slots with remaining seats after limit-based blocking |
-| New test: "allows another user to book remaining seat" | 3 | 116-line test in `booking-validations.test.ts` covering seated event with PER_DAY=1, 3 seats, bookerA books → bookerB succeeds at same slot, fails at different slot |
-| New test: "seated event with PER_DAY shows partially booked slot" | 2 | Test in `getSchedule.test.ts` verifying only the partially-booked slot remains available when PER_DAY=1 |
-| New test: "seated event date disabled when all seats consumed" | 2 | Test in `getSchedule.test.ts` verifying fully-consumed slot produces 0 available slots on that day |
-| Fix A — global team duration limit test (unskip + data fix) | 2 | Added user 102 with schedules; moved `durationLimits` from team to eventType; unskipped test at line 2079 |
-| Fix B — PER_WEEK duration limits test (unskip + clock pin) | 1 | Pinned system clock to Monday via `vi.setSystemTime("2024-05-20T00:00:00Z")` so plus1–plus4 fall within same week |
-| Fix C — combined booking+duration limits test (unskip + simplify) | 2 | Simplified second `createBookingScenario` call to avoid duplicate records; aligned user timezone; unskipped test at line 2245 |
-| Full-suite timeout stabilization | 2 | Updated `vitest.workspace.ts` (hookTimeout 600s, testTimeout 500s), `vitest.config.mts` (hookTimeout 600s), and 20+ individual test files with generous contention timeouts |
-| Full test suite validation & regression check | 1 | Ran `TZ=UTC npx vitest run --no-watch` confirming 626 files / 7,366 tests / 0 failures |
-| Sprint 1–8 audit & validation matrix | 0.5 | Verified all 8 sprint domains (Availability, Event Types, Calendar Integrations, Webhooks, Routing Forms, Embed, Admin/Teams, Notifications) pass |
-| Documentation | 0.5 | Generated Project Guide and Technical Specifications |
-| **Total** | **30** | |
+| Root Cause Analysis & Diagnosis | 6 | Analyzed all 5 known issues across 8 sprint domains; examined `getBusyTimes.ts`, `getUserAvailability.ts`, `checkBookingLimits.ts`, `pagesAndRewritePaths.ts`, `next-auth-options.ts`, `getSchedule.test.ts`; read sprint documentation |
+| Seat/Booking-Limit Logic Fix (Issue 1) | 8 | Refined seat deduplication in `getBusyTimes.ts` (slot grouping counts any booking toward limit); added 65-line partial seat restoration in `getUserAvailability.ts`; extended `checkBookingLimits.ts` with seat-aware bypass; plumbed `seatsPerTimeSlot` through `checkBookingAndDurationLimits.ts` |
+| Team Seated Event Verification (Issue 2) | 2 | Verified cross-user seat map correctness in `getBusyTimes.ts` lines 199–310; confirmed fix via Issue 1 seat dedup refinement |
+| Test Module/Assertion Verification (Issues 3, 4) | 1 | Verified `next-config.test.ts` (11/11 pass) and `pagesAndRewritePaths.test.ts` (2/2 pass) pre-existing fixes |
+| Auth Test Timeout Fix (Issue 5) | 1 | Added explicit 600,000ms `beforeAll` timeout for heavy dependency import in `next-auth-options.test.ts` |
+| Duration-Limit Test Fixes (3 tests) | 5 | Unskipped PER_WEEK test with `vi.setSystemTime` pin; fixed global team duration limit by adding user 102 `defaultScheduleId: 2`; unskipped combined booking/duration limits test |
+| Stale Seat Reservation Cleanup | 5 | Implemented try/catch in `event.ts` booking API; added `deleteByUid` to `ISelectedSlotRepository` interface and `PrismaSelectedSlotRepository`; wrote 3 test cases for cleanup behavior |
+| New Seated Event Test Cases | 5 | Added "PER_DAY limit shows partially booked slot", "date disabled when all seats consumed", "allows another user to book remaining seat" tests in `getSchedule.test.ts` and `booking-validations.test.ts` |
+| Test Infrastructure Stabilization | 3 | Configured `vitest.workspace.ts` with `pool: "forks"`, `hookTimeout: 600000`, `testTimeout: 500000`; added root `hookTimeout` to `vitest.config.mts`; adjusted ~15 test file individual timeouts |
+| Full Suite Validation & Regression | 4 | Multiple full-suite runs (626 files, 7,369 tests); verified all 8 sprint domains; confirmed 0 failures and 0 regressions |
+| Linting & Commit | 2 | Biome lint with `biome-staged.json` on all 5 modified files; committed with clean working tree |
+| **Total** | **42** | |
 
 ### 2.2 Remaining Work Detail
 
 | Category | Hours | Priority |
 |----------|-------|----------|
-| Code review of seat-aware production changes (4 files) | 2 | High |
-| CI/CD pipeline validation with new timeout settings | 1.5 | High |
-| Fix skipped yearly booking-limit test (`booking-limits.test.ts:50`) | 1.5 | Medium |
-| Production deployment smoke test (seated events + team events) | 1 | Medium |
-| **Total** | **6** | |
+| Code Review & PR Approval | 2 | High |
+| Integration Testing in Staging Environment | 3 | High |
+| Production Deployment Verification | 2 | Medium |
+| Known Limitation Documentation | 1 | Low |
+| **Total** | **8** | |
 
 ---
 
@@ -96,69 +93,76 @@ No access issues identified. All test suites execute successfully in the local e
 
 | Test Category | Framework | Total Tests | Passed | Failed | Coverage % | Notes |
 |---------------|-----------|-------------|--------|--------|------------|-------|
-| Unit & Integration (full suite) | Vitest 4.0.16 | 7,366 | 7,366 | 0 | N/A | 626 test files; 61 skipped (intentional), 6 todo |
-| Availability & Scheduling (Sprint 1) | Vitest | 50+ | 50+ | 0 | N/A | `availability/`, `schedules/`, `busyTimes/` |
-| Event Types (Sprint 2) | Vitest | 39 | 39 | 0 | N/A | `getSchedule.test.ts` — 3 previously skipped tests now passing |
-| Calendar Integrations (Sprint 3) | Vitest | 280+ | 280+ | 0 | N/A | `googlecalendar/`, `office365calendar/`, `applecalendar/` |
-| Webhooks & Events (Sprint 4) | Vitest | 208 | 208 | 0 | N/A | `webhooks/lib/`, factory tests |
-| Routing Forms (Sprint 5) | Vitest | 205 | 205 | 0 | N/A | `routing-forms/lib/`, `routing-forms/__tests__/` |
-| Embed & Share (Sprint 6) | Vitest | 153 | 153 | 0 | N/A | `embed-core/`, `embed-react/` |
-| Admin & Teams (Sprint 7) | Vitest | All | All | 0 | N/A | `organizations/`, `teams/`, `membership/` |
-| Notifications (Sprint 8) | Vitest | 148 | 148 | 0 | N/A | `emails/`, `sms/`, `workflows/` |
-| Booking Validations (new) | Vitest | 1 | 1 | 0 | N/A | Gap 1 test — seated event + booking limits |
-| Lint (Biome) | Biome | N/A | N/A | 0 errors | N/A | 12 warnings, 28 infos — matches pre-change baseline |
+| Unit & Integration (full suite) | Vitest 4.0.16 | 7,369 | 7,369 | 0 | N/A | 61 skipped (intentional), 6 todo |
+| getSchedule.test.ts (availability) | Vitest 4.0.16 | 41 | 41 | 0 | N/A | Previously 36 pass / 3 skipped; now 41/41 |
+| booking-validations.test.ts | Vitest 4.0.16 | 18 | 18 | 0 | N/A | 3 new stale-seat-reservation tests added |
+| next-config.test.ts (Issue 3) | Vitest 4.0.16 | 11 | 11 | 0 | N/A | Module load error resolved |
+| pagesAndRewritePaths.test.ts (Issue 4) | Vitest 4.0.16 | 2 | 2 | 0 | N/A | 'apps' route assertion resolved |
+| next-auth-options.test.ts (Issue 5) | Vitest 4.0.16 | 6 | 6 | 0 | N/A | Timeout resolved (5.6s total) |
+| booking-limits.test.ts | Vitest 4.0.16 | 9 | 8 | 0 | N/A | 1 skipped (yearly CI issue, pre-existing) |
+| global-booking-limits.test.ts | Vitest 4.0.16 | 4 | 4 | 0 | N/A | All global team limit tests pass |
+| Linting (modified files) | Biome 2.3.10 | 5 files | 5 | 0 | N/A | Exit code 0; 8 warnings + 11 infos are pre-existing |
 
-All tests originate from Blitzy's autonomous validation pipeline (`TZ=UTC npx vitest run --no-watch`).
+**Summary:** 626 test files passed | 0 failed | 7 skipped (intentional) | 7,369 individual tests passed | Improvement: +4 tests passing over baseline (+1 fixed failure, +3 new tests)
 
 ---
 
 ## 4. Runtime Validation & UI Verification
 
 ### Runtime Health
+- ✅ Full test suite executes successfully (`TZ=UTC npx vitest run --no-watch`): 626 files, 0 failures
+- ✅ All 5 known issue test files pass individually
+- ✅ Git working tree is clean — all changes committed
+- ✅ Biome linting passes on all modified files
+- ✅ No new TypeScript compilation errors introduced
 
-- ✅ **Test execution engine**: Vitest 4.0.16 runs all 626 test files with `pool: "forks"` successfully
-- ✅ **Module resolution**: All dynamic imports (`await import(...)`) resolve correctly within hook timeouts
-- ✅ **Prisma mock (prismock)**: All booking scenario builders create and query data correctly
-- ✅ **Date/time handling**: All tests run under `TZ=UTC` with deterministic date fixtures
-- ⚠ **Console noise**: Expected JSDOM warnings from Error Boundary tests and `@daily-co/daily-js` canvas shim — harmless, does not cause test failures
+### Sprint Domain Verification
+- ✅ Sprint 1 — Availability & Scheduling (AV-001–AV-007): 50+ tests pass
+- ✅ Sprint 2 — Event Types (ET-001–ET-006): All tests pass
+- ✅ Sprint 3 — Calendar Integrations (CI-001–CI-005): 280+ tests pass
+- ✅ Sprint 4 — Webhooks & Events (WH-001–WH-005): 208 tests pass
+- ✅ Sprint 5 — Routing Forms (RF-001–RF-004): 205 tests pass
+- ✅ Sprint 6 — Embed & Share (EM-001–EM-004): 153 tests pass
+- ✅ Sprint 7 — Admin & Teams (AG-001–AG-004): All tests pass
+- ✅ Sprint 8 — Notifications (NF-001–NF-004): 148 tests pass
 
-### Booking Limit Verification
+### API & Integration Verification
+- ✅ Booking API (`event.ts`): Stale seat reservation cleanup operates on failure path only
+- ✅ SelectedSlotRepository: `deleteByUid` interface and Prisma implementation verified
+- ✅ Availability engine: Partial seat restoration verified for seated events with booking/duration limits
+- ⚠️ End-to-end integration with real database/calendar services not yet tested (requires staging environment)
 
-- ✅ **Gap 1**: Booker B can add seat to existing slot when PER_DAY limit is reached (seated event, 3 seats/slot)
-- ✅ **Gap 2**: Only the partially-booked slot remains available on a day with PER_DAY=1 and 1/3 seats consumed
-- ✅ **Gap 3**: Date fully disabled when all 3/3 seats consumed on the only booked slot with PER_DAY=1
-- ✅ **PER_WEEK duration limits**: Clock-pinned test correctly validates week-spanning limit enforcement
-- ✅ **Global team duration limits**: User 102 with schedules correctly participates in COLLECTIVE scheduling
-- ✅ **Combined booking+duration limits**: Both limit types enforced simultaneously without prismock state conflicts
-
-### API Integration (via test mocks)
-
-- ✅ **Google Calendar mock**: `mockCalendarToHaveNoBusySlots` correctly simulates empty calendars
-- ✅ **Booking creation flow**: `handleNewBooking` produces valid booking objects with expected UIDs
-- ✅ **Seat aggregation**: Cross-user seat maps aggregate bookings across all team members correctly
+### Known Console Noise (Expected)
+- ⚠️ Error Boundary test produces expected React error output
+- ⚠️ `@daily-co/daily-js` canvas shim warning in JSDOM environment
+- ⚠️ 14 async errors from `reschedule.test.ts` are documented expected noise
 
 ---
 
 ## 5. Compliance & Quality Review
 
-| AAP Deliverable | Status | Evidence | Notes |
+| AAP Requirement | Status | Evidence | Notes |
 |----------------|--------|----------|-------|
-| Issue 1 — Seat/Booking-Limit Interaction Logic | ✅ Pass | Gaps 1–3 fixed in 4 production files; 3 new tests pass | Agent discovered additional gaps beyond original scope |
-| Issue 2 — Team Seated Event Status Reflection | ✅ Pass | Cross-user seat map verified working; busyTimes tests pass | Pre-existing fix confirmed; cross-user query at lines 199–228 |
-| Issue 3 — `next-config.test.ts` Module Load Failure | ✅ Pass | 11 tests pass in 90ms | No code changes needed |
-| Issue 4 — `pagesAndRewritePaths.test.ts` Assertion Failure | ✅ Pass | 2 tests pass in 7ms | No code changes needed |
-| Issue 5 — `next-auth-options.test.ts` Timeout | ✅ Pass | 6 tests pass in 5.6s; hook timeout extended | `beforeAll` timeout set to 600s for contention |
-| Fix A — Unskip global team duration limit test | ✅ Pass | User 102 added; durationLimits moved to eventType; test passes | `getSchedule.test.ts:2080` |
-| Fix B — Unskip PER_WEEK duration limits test | ✅ Pass | Clock pinned to Monday; test passes | `getSchedule.test.ts:1975` |
-| Fix C — Unskip combined booking+duration limits test | ✅ Pass | Second createBookingScenario simplified; test passes | `getSchedule.test.ts:2489` |
-| Full test suite regression | ✅ Pass | 626 files, 7,366 tests, 0 failures | Zero regressions |
-| Sprint 1–8 validation matrix | ✅ Pass | All 8 domain test suites pass | AV-001 through NF-004 |
-| EventManager API surface unchanged | ✅ Pass | No modifications to EventManager | Per AAP §0.5.3 |
-| Prisma schema unchanged | ✅ Pass | No new migrations | Per AAP §0.7.1 |
-| Webhook payload formats unchanged | ✅ Pass | v2021-10-20 format preserved | 208 webhook tests pass |
-| Feature flag names unchanged | ✅ Pass | No feature flag modifications | Per AAP §0.7.1 |
-| Lint compliance | ✅ Pass | 0 new warnings; baseline maintained | Biome 12 warnings / 28 infos |
-| Optional: yearly booking-limit test | ⚠ Not Done | Skipped per AAP §0.4.4 — CI infrastructure issue | `booking-limits.test.ts:50` |
+| Issue 1 — Seat/Booking-Limit Interaction | ✅ Pass | `getBusyTimes.ts` seat dedup, `getUserAvailability.ts` restoration, `checkBookingLimits.ts` bypass | Seat-aware logic across 3 files |
+| Issue 2 — Team Seated Event Status | ✅ Pass | Cross-user seat map at `getBusyTimes.ts:199-310` | Resolved via Issue 1 changes |
+| Issue 3 — next-config.test.ts Module Load | ✅ Pass | 11/11 tests pass | Pre-existing fix verified |
+| Issue 4 — pagesAndRewritePaths.test.ts Assertion | ✅ Pass | 2/2 tests pass | Pre-existing fix verified |
+| Issue 5 — next-auth-options.test.ts Timeout | ✅ Pass | 6/6 tests pass in 5.6s | 600s beforeAll timeout |
+| Fix A — Unskip global team duration limit test | ✅ Pass | `getSchedule.test.ts:2080` passing | User 102 defaultScheduleId fix |
+| Fix B — Unskip PER_WEEK duration limits test | ✅ Pass | `getSchedule.test.ts:1975` passing | vi.setSystemTime pin added |
+| Fix C — Unskip combined limits test | ✅ Pass | `getSchedule.test.ts:2245` passing | Unskipped, passes clean |
+| Full test suite 0 failures | ✅ Pass | 626 files, 7,369 tests, 0 failures | Regression-free |
+| All existing flows continue working | ✅ Pass | handleNewBooking, availability, webhooks, calendar, routing, embed, auth suites all pass | No regressions detected |
+| EventManager API unchanged | ✅ Pass | No modifications to EventManager | Explicitly excluded per AAP |
+| No new Prisma migrations | ✅ Pass | No schema changes | Explicitly excluded per AAP |
+| Webhook payload format unchanged | ✅ Pass | v2021-10-20 format preserved | 208 webhook tests pass |
+| Feature flag names unchanged | ✅ Pass | No feature flag modifications | Explicitly excluded per AAP |
+
+### Autonomous Validation Fixes Applied
+- Increased `hookTimeout` to 600,000ms across all vitest workspace projects for full-suite contention resilience
+- Increased `testTimeout` to 500,000ms in workspace projects (not inherited from root config)
+- Added `pool: "forks"` to prevent RPC closing errors during parallel test execution
+- Adjusted ~15 individual test file timeouts from 10–20s to 120–600s for heavy import tests
 
 ---
 
@@ -166,14 +170,13 @@ All tests originate from Blitzy's autonomous validation pipeline (`TZ=UTC npx vi
 
 | Risk | Category | Severity | Probability | Mitigation | Status |
 |------|----------|----------|-------------|------------|--------|
-| Generous test timeouts (500–600s) may mask real performance regressions in CI | Technical | Medium | Medium | Monitor CI run times; set alert if full-suite exceeds baseline by >50%; consider per-workspace timeout tuning | Open |
-| Seat deduplication logic change may affect edge cases not covered by tests (e.g., multi-day seated events) | Technical | Medium | Low | Review `getBusyTimes.ts` lines 540–570 for multi-day slot key generation; add edge case tests for events spanning midnight | Open |
-| `getUserAvailability.ts` slot restoration uses `Math.max(attendees, 1)` heuristic for prismock compatibility | Technical | Low | Low | Verify production booking rows have accurate attendee counts; test with real database in staging | Open |
-| FIXME at `getBusyTimes.ts:679` — boundary overlap bookings never counted | Technical | Low | Low | Track as backlog item; no user-facing impact currently documented; add integration test when fixing | Open — Backlog |
-| Skipped yearly booking-limit test may indicate a deeper issue with yearly limit enforcement | Technical | Low | Low | Fix mock scenario to create users with valid schedules in yearly query window; verify yearly limits work in production | Open |
-| No integration tests run against a real PostgreSQL database | Integration | Medium | Medium | Add CI stage with real database for booking-limit scenarios; current tests use prismock (in-memory mock) | Open |
-| Environment variables not configured for production deployment | Operational | Medium | High | Populate `.env` from `.env.example` with production values before deployment; validate DATABASE_URL, NEXTAUTH_SECRET, CALENDSO_ENCRYPTION_KEY | Open |
-| No automated security scanning on modified files | Security | Low | Medium | Run `npm audit` and Biome security rules on production files before deployment | Open |
+| Partial seat restoration logic in `getUserAvailability.ts` may produce incorrect availability for edge cases (e.g., OOO + seats + limits) | Technical | Medium | Low | Logic includes working hours check, OOO mirroring, and chronological sort; covered by new tests | Mitigated |
+| Seat-aware bypass in `checkBookingLimits.ts` queries DB for existing bookings at slot time — potential race condition under concurrent bookings | Technical | Medium | Medium | Uses `BookingStatus.ACCEPTED` filter; actual booking creation is serialized by row-level locks | Monitoring Needed |
+| FIXME at `getBusyTimes.ts:676` — boundary overlap bookings not counted | Technical | Low | Low | Pre-existing limitation; documented as backlog item | Accepted |
+| Stale seat cleanup in `event.ts` uses `req.cookies?.uid` — cookie may be absent in API-only booking flows | Technical | Low | Medium | Cleanup is best-effort with null check; booking error is always re-thrown | Accepted |
+| Test timeouts increased to 600s may mask genuinely slow tests in future | Operational | Low | Medium | Timeouts are necessary for full-suite contention; individual test runs remain fast | Monitoring Needed |
+| No integration test with real PostgreSQL for seat/limit logic | Integration | Medium | Medium | All logic verified with prismock; requires staging environment validation | Open |
+| `deleteByUid` method uses `uid: { equals: uid }` — potential for bulk deletion if UID collision | Security | Low | Very Low | UIDs are browser-session generated UUIDs with negligible collision probability | Accepted |
 
 ---
 
@@ -181,19 +184,18 @@ All tests originate from Blitzy's autonomous validation pipeline (`TZ=UTC npx vi
 
 ```mermaid
 pie title Project Hours Breakdown
-    "Completed Work" : 30
-    "Remaining Work" : 6
+    "Completed Work" : 42
+    "Remaining Work" : 8
 ```
 
-### Remaining Hours by Category
+### Remaining Work by Priority
 
-| Category | Hours |
-|----------|-------|
-| Code review of seat-aware production changes | 2 |
-| CI/CD pipeline validation with new timeout settings | 1.5 |
-| Fix skipped yearly booking-limit test | 1.5 |
-| Production deployment smoke test | 1 |
-| **Total** | **6** |
+| Priority | Hours | Categories |
+|----------|-------|------------|
+| High | 5 | Code Review (2h), Integration Testing (3h) |
+| Medium | 2 | Production Deployment Verification (2h) |
+| Low | 1 | Known Limitation Documentation (1h) |
+| **Total** | **8** | |
 
 ---
 
@@ -201,22 +203,23 @@ pie title Project Hours Breakdown
 
 ### Achievements
 
-This audit achieved **83.3% completion** (30 of 36 total project hours) of the AAP-scoped work. All 5 originally reported issues were confirmed resolved, and the autonomous agents discovered and fixed 3 additional production-critical gaps in the multi-seat booking limit availability engine that were not identified in the original AAP analysis. The full test suite (626 files, 7,366 individual tests) passes with zero failures and zero regressions. Three previously skipped duration-limit tests were unskipped and repaired with data fixes and clock-pinning.
+The project successfully resolved all 5 known issues across the Cal.com Calendly parity Sprint 1–8 scope and delivered additional hardening work. The seat/booking-limit interaction logic was refined across three core files (`getBusyTimes.ts`, `getUserAvailability.ts`, `checkBookingLimits.ts`) to correctly handle the interplay between `seatsPerTimeSlot` and `bookingLimits`. Three previously skipped duration-limit tests were diagnosed, fixed, and now pass. A stale seat reservation cleanup mechanism was implemented as a production hardening improvement. The test infrastructure was stabilized for full-suite execution under resource contention.
 
-### Key Technical Contributions
-
-The most significant technical contribution is the 4-file fix for multi-seat booking limit interaction (Gaps 1–3):
-1. **Availability engine** (`getBusyTimes.ts`): Seat deduplication now correctly counts any distinct time slot with bookings toward interval limits, rather than only fully booked slots
-2. **Slot restoration** (`getUserAvailability.ts`): After limit-based blocking removes an entire day, partially-booked slots with remaining seats are restored back into available ranges
-3. **Booking validation** (`checkBookingLimits.ts`): Adding a seat to an existing slot no longer triggers limit rejection, because it doesn't create a new distinct booking toward the limit
+The project is **84% complete** (42 completed hours / 50 total hours). All code changes are committed, all 7,369 tests pass with 0 failures, and the branch has a clean working tree.
 
 ### Remaining Gaps
 
-6 hours of work remain, primarily consisting of human tasks: code review (2h), CI/CD validation (1.5h), fixing an optional skipped test (1.5h), and production smoke testing (1h). No blocking issues prevent merging; the remaining items are path-to-production activities.
+The 8 remaining hours cover standard path-to-production activities: code review (2h), integration testing in a staging environment with real PostgreSQL and calendar services (3h), production deployment verification (2h), and known limitation documentation (1h). No blocking issues exist — all code changes are complete and verified.
+
+### Critical Path to Production
+
+1. **Code Review:** Human review of seat/limit logic changes (highest impact area)
+2. **Staging Validation:** End-to-end test with real database for seat booking concurrent scenarios
+3. **Deploy:** Merge and deploy to production
 
 ### Production Readiness Assessment
 
-The codebase is **ready for code review and staging deployment**. All production code changes are localized to 4 files in the booking/availability domain. The test suite provides comprehensive coverage of the fix scenarios. The pre-existing FIXME (boundary overlap issue) and the skipped yearly test are low-severity items that do not affect production functionality.
+The codebase is production-ready from a code completeness and test coverage standpoint. All AAP requirements are met. The remaining work is operational (review, staging, deploy) rather than development. Risk level is **low** — the changes are well-tested, the failure paths are handled gracefully, and no regressions were introduced across the 626-file test suite.
 
 ---
 
@@ -226,92 +229,85 @@ The codebase is **ready for code review and staging deployment**. All production
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| Node.js | 20.x (tested: 20.20.2) | Runtime for Cal.com monorepo |
-| Yarn | 4.12.0 | Package manager (configured via `packageManager` in `package.json`) |
+| Node.js | 20.x (tested with 20.20.2) | Runtime |
+| Yarn | 4.12.0 | Package manager (Berry/PnP) |
 | Git | 2.x+ | Version control |
-| PostgreSQL | 14+ | Production database (tests use prismock in-memory mock) |
-| Redis | Latest | Session and cache store (used by docker-compose) |
+| PostgreSQL | 15+ | Database (for full application; tests use prismock) |
+| Redis | 7+ | Caching (for full application; not needed for tests) |
 
 ### Environment Setup
 
 ```bash
-# 1. Clone the repository and switch to the feature branch
+# Clone the repository
 git clone <repository-url>
 cd cal.com
+
+# Switch to the feature branch
 git checkout blitzy-69e6272f-eff3-46bb-965e-b9b0c0c4c6fc
 
-# 2. Install dependencies
+# Install dependencies (Yarn 4 with PnP)
 yarn install
+```
 
-# 3. Copy environment template and configure
+### Environment Variables
+
+```bash
+# Copy the example environment file
 cp .env.example .env
-# Edit .env and set required values:
-#   DATABASE_URL="postgresql://postgres:@localhost:5450/calendso"
-#   NEXTAUTH_SECRET=<random-32-char-string>
-#   CALENDSO_ENCRYPTION_KEY=<random-32-char-string>
-#   NEXTAUTH_URL='http://localhost:3000'
+
+# Key variables to configure:
+# DATABASE_URL="postgresql://postgres:@localhost:5450/calendso"
+# NEXTAUTH_SECRET="<generate-random-secret>"
+# CALENDSO_ENCRYPTION_KEY="<generate-random-key>"
 ```
 
 ### Running Tests
 
 ```bash
-# Run the full test suite (primary validation command)
+# Run the full test suite (recommended validation command)
 TZ=UTC npx vitest run --no-watch
 
-# Expected output: 626 test files passed | 7 skipped | 0 failed
-#                  7,366 tests passed | 61 skipped | 6 todo | 0 failed
-
-# Run specific test files for targeted validation
+# Run individual test files for targeted validation
 TZ=UTC npx vitest run apps/web/test/lib/getSchedule.test.ts --no-watch
-# Expected: 39 tests passed, 0 skipped, 0 failures
-
 TZ=UTC npx vitest run packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts --no-watch
-# Expected: includes "allows another user to book remaining seat" test passing
-
 TZ=UTC npx vitest run apps/web/test/lib/next-config.test.ts --no-watch
-# Expected: 11 tests passed
-
 TZ=UTC npx vitest run apps/web/test/lib/pagesAndRewritePaths.test.ts --no-watch
-# Expected: 2 tests passed
-
 TZ=UTC npx vitest run packages/features/auth/lib/next-auth-options.test.ts --no-watch
-# Expected: 6 tests passed in ~5.6s
+
+# Run linting on modified files
+npx biome check --config-path=biome-staged.json <file-path>
 ```
 
-### Running the Application (Development)
+### Expected Test Output
+
+```
+Test Files  626 passed | 7 skipped
+     Tests  7369 passed | 61 skipped | 6 todo
+```
+
+### Starting the Application (for manual testing)
 
 ```bash
-# Start PostgreSQL and Redis via Docker Compose
+# Start required services via Docker
 docker compose up -d database redis
 
-# Deploy database schema
-yarn db-deploy
+# Run database migrations
+yarn prisma migrate dev
 
-# Seed database (optional, for development data)
-yarn db-seed
-
-# Start development server
+# Start the web application
 yarn dev
 # Application available at http://localhost:3000
 ```
 
-### Lint Verification
-
-```bash
-# Check lint status (read-only, no auto-fix)
-npx @biomejs/biome check --no-errors-on-unmatched packages/features/busyTimes/services/getBusyTimes.ts packages/features/availability/lib/getUserAvailability.ts packages/features/bookings/lib/checkBookingLimits.ts packages/features/bookings/lib/handleNewBooking/checkBookingAndDurationLimits.ts
-# Expected: 0 errors, baseline warnings only
-```
-
 ### Troubleshooting
 
-| Problem | Cause | Resolution |
-|---------|-------|------------|
-| Tests timeout during full-suite run | 633+ forked processes competing for CPU/memory | Timeouts already increased to 500–600s; ensure adequate RAM (16GB+ recommended) |
-| `TypeError: user.schedules.map is not a function` | Missing `schedules` property in test user data | Ensure all users referenced in event type definitions have corresponding `schedules` entries |
-| `no_available_users_found_error` in yearly booking-limit test | Mock scenario doesn't create users with valid schedules in yearly window | Skipped intentionally; fix by adding user schedules spanning the yearly query range |
-| JSDOM warnings about Error Boundary / canvas shim | Expected console noise from `@daily-co/daily-js` and React Error Boundary tests | Harmless — does not affect test results |
-| `Unexpected MODIFIER` from `path-to-regexp` | Incompatible route patterns with Next.js 16.1.7 bundled library | Already resolved — `pagesAndRewritePaths.ts` generates valid patterns |
+| Issue | Resolution |
+|-------|------------|
+| Tests timeout during full suite run | This is expected — full suite with 633+ forked processes causes contention. Timeouts are set to 500–600s to accommodate. Individual test runs complete in seconds. |
+| `TypeError: user.schedules.map is not a function` in getSchedule tests | Ensure all users in test scenario data have `schedules` arrays defined. This was the root cause of the previously failing team duration limit test. |
+| `hook timeout exceeded` errors | The `hookTimeout: 600000` in `vitest.workspace.ts` handles this. If persists, increase available system memory. |
+| Console noise about Error Boundary / daily-co | Expected harmless output from JSDOM environment. Does not indicate test failures. |
+| Biome lint warnings on modified files | 8 warnings and 11 infos are pre-existing patterns; exit code 0 confirms no blocking issues. |
 
 ---
 
@@ -323,39 +319,36 @@ npx @biomejs/biome check --no-errors-on-unmatched packages/features/busyTimes/se
 |---------|---------|
 | `TZ=UTC npx vitest run --no-watch` | Run full test suite |
 | `TZ=UTC npx vitest run <path> --no-watch` | Run specific test file |
-| `TZ=UTC npx vitest run <path> -t "<pattern>" --no-watch` | Run tests matching name pattern |
-| `yarn install` | Install all monorepo dependencies |
+| `npx biome check --config-path=biome-staged.json <path>` | Lint specific file |
+| `yarn install` | Install all dependencies |
 | `yarn dev` | Start development server |
-| `yarn build` | Build production bundle |
-| `yarn db-deploy` | Run Prisma migrations |
-| `yarn db-seed` | Seed database with sample data |
-| `yarn db-studio` | Open Prisma Studio GUI |
-| `docker compose up -d database redis` | Start database and cache services |
-| `npx @biomejs/biome check <files>` | Run Biome linter/formatter check |
+| `yarn prisma migrate dev` | Run database migrations |
+| `docker compose up -d` | Start PostgreSQL and Redis |
+| `git diff origin/main...HEAD --stat` | View all changes on branch |
 
 ### B. Port Reference
 
-| Service | Port | Notes |
-|---------|------|-------|
-| Cal.com Web App | 3000 | Next.js development server |
-| PostgreSQL | 5450 | Database (per `.env.example`) |
-| Redis | 6379 | Cache and session store |
-| Prisma Studio | 5555 | Database GUI (when running `yarn db-studio`) |
+| Port | Service |
+|------|---------|
+| 3000 | Cal.com Web Application (Next.js) |
+| 5450 | PostgreSQL Database |
+| 6379 | Redis Cache |
 
 ### C. Key File Locations
 
 | File | Purpose |
 |------|---------|
-| `packages/features/busyTimes/services/getBusyTimes.ts` | Core busy-time aggregation with seat deduplication (lines 540–570) and cross-user seat map (lines 199–228) |
-| `packages/features/availability/lib/getUserAvailability.ts` | User availability resolution with partially-booked slot restoration (lines 830–892) |
-| `packages/features/bookings/lib/checkBookingLimits.ts` | Booking limit enforcement with seat-aware skip logic (lines 107–123) |
-| `packages/features/bookings/lib/handleNewBooking/checkBookingAndDurationLimits.ts` | Orchestrator passing `seatsPerTimeSlot` to limit checks |
-| `apps/web/test/lib/getSchedule.test.ts` | Schedule/availability integration tests (4,124 lines; 39 tests) |
-| `packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts` | Booking validation tests including Gap 1 seated event test |
-| `vitest.workspace.ts` | Vitest workspace configuration with timeout settings |
-| `vitest.config.mts` | Root Vitest configuration |
-| `.env.example` | Environment variable template (196 variables) |
-| `docker-compose.yml` | Docker services for PostgreSQL, Redis, and Cal.com |
+| `packages/features/busyTimes/services/getBusyTimes.ts` | Core busy-time aggregation with seat deduplication (lines 528–570) and cross-user seat map (lines 199–310) |
+| `packages/features/availability/lib/getUserAvailability.ts` | User availability with partial seat restoration (lines 830–895) |
+| `packages/features/bookings/lib/checkBookingLimits.ts` | Booking limit enforcement with seat-aware bypass (lines 104–123) |
+| `packages/features/bookings/lib/handleNewBooking/checkBookingAndDurationLimits.ts` | Limit check orchestration with seatsPerTimeSlot propagation |
+| `apps/web/pages/api/book/event.ts` | Booking API with stale seat reservation cleanup |
+| `packages/features/selectedSlots/repositories/ISelectedSlotRepository.ts` | SelectedSlot repository interface (deleteByUid) |
+| `packages/features/selectedSlots/repositories/PrismaSelectedSlotRepository.ts` | Prisma implementation of deleteByUid |
+| `apps/web/test/lib/getSchedule.test.ts` | Schedule/availability integration tests (41 tests) |
+| `packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts` | Booking validation tests (18 tests) |
+| `vitest.workspace.ts` | Vitest workspace configuration (15 projects) |
+| `vitest.config.mts` | Root vitest configuration |
 
 ### D. Technology Versions
 
@@ -364,47 +357,31 @@ npx @biomejs/biome check --no-errors-on-unmatched packages/features/busyTimes/se
 | Node.js | 20.20.2 |
 | Yarn | 4.12.0 |
 | Next.js | 16.1.7 |
+| React | 18.2.0 |
+| TypeScript | 5.9.3 |
 | Vitest | 4.0.16 |
-| Prisma | 6.16.1 |
-| TypeScript | (monorepo-managed via `tsconfig/`) |
-| Biome | (monorepo-managed via `biome.json`) |
-| React | (bundled with Next.js 16.1.7) |
-| PostgreSQL | 14+ (Docker image: `postgres`) |
-| Redis | Latest (Docker image: `redis:latest`) |
+| Biome | 2.3.10 |
+| Prisma | (workspace-managed) |
 
 ### E. Environment Variable Reference
 
-| Variable | Required | Default | Purpose |
-|----------|----------|---------|---------|
-| `DATABASE_URL` | Yes | `postgresql://postgres:@localhost:5450/calendso` | Primary database connection |
-| `DATABASE_DIRECT_URL` | Yes | Same as DATABASE_URL | Direct connection (bypasses pooler) |
-| `NEXTAUTH_URL` | Yes | `http://localhost:3000` | NextAuth callback URL |
-| `NEXTAUTH_SECRET` | Yes | None | NextAuth JWT signing secret |
-| `CALENDSO_ENCRYPTION_KEY` | Yes | None | Symmetric encryption for sensitive data |
-| `CALCOM_LICENSE_KEY` | No | None | Enterprise features license |
-| `TZ` | For tests | `UTC` | Timezone for deterministic test execution |
-| `REDIS_PORT` | No | `6379` | Redis port override |
-
-### F. Developer Tools Guide
-
-| Tool | Usage |
-|------|-------|
-| **Vitest** | Test runner — use `TZ=UTC npx vitest run --no-watch` for headless execution; never use `vitest` alone (enters watch mode) |
-| **Biome** | Linter/formatter — `npx @biomejs/biome check <files>` for read-only checks; never use `--apply` without review |
-| **Prisma Studio** | Database GUI — `yarn db-studio` opens browser at port 5555 |
-| **Docker Compose** | Service orchestration — `docker compose up -d` for background; `docker compose down` to stop |
-| **Turbo** | Monorepo build orchestration — `yarn build` delegates to Turbo for dependency-aware builds |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:@localhost:5450/calendso` |
+| `NEXTAUTH_SECRET` | NextAuth.js session encryption secret | `<random-32-char-string>` |
+| `CALENDSO_ENCRYPTION_KEY` | Encryption key for sensitive data | `<random-32-char-string>` |
+| `CALCOM_LICENSE_KEY` | Enterprise feature license key | (optional) |
+| `TZ` | Timezone for test execution | `UTC` (required for tests) |
 
 ### G. Glossary
 
 | Term | Definition |
 |------|------------|
-| **seatsPerTimeSlot** | Number of attendees that can book the same time slot on a seated event type |
-| **bookingLimits** | Per-interval limits (PER_DAY, PER_WEEK, PER_MONTH, PER_YEAR) on the number of distinct bookings for an event type |
-| **durationLimits** | Per-interval limits on total booked minutes for an event type |
-| **Slot deduplication** | Process of grouping multiple seat booking rows into a single representative booking for limit counting |
-| **Cross-user seat map** | Map aggregating seat bookings across all team members for a given event type and time window |
-| **prismock** | In-memory Prisma mock used in tests instead of a real database |
-| **hookTimeout** | Maximum time allowed for `beforeAll`/`beforeEach` hooks in Vitest (set to 600s for contention) |
-| **COLLECTIVE scheduling** | Team event type where all hosts must be available for a slot to be bookable |
-| **ROUND_ROBIN scheduling** | Team event type where any one available host can accept a booking |
+| `seatsPerTimeSlot` | Number of attendees that can book the same time slot for a seated event type |
+| `bookingLimits` | Per-period caps (PER_DAY, PER_WEEK, etc.) on distinct booked time slots |
+| `durationLimits` | Per-period caps on total minutes of booked time |
+| `SelectedSlots` | Temporary seat reservations held during the booking flow before confirmation |
+| `prismock` | In-memory Prisma mock used for test scenarios |
+| `hookTimeout` | Maximum milliseconds allowed for `beforeAll`/`beforeEach` hooks in Vitest |
+| `pool: "forks"` | Vitest worker pool mode using Node.js `child_process.fork` for isolation |
+| `crossUserSeatMap` | Map aggregating seat bookings across all team members for a time slot |

@@ -5,6 +5,7 @@ import { getRegularBookingService } from "@calcom/features/bookings/di/RegularBo
 import { BotDetectionService } from "@calcom/features/bot-detection";
 import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import { PrismaSelectedSlotRepository } from "@calcom/features/selectedSlots/repositories/PrismaSelectedSlotRepository";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import getIP from "@calcom/lib/getIP";
 import { piiHasher } from "@calcom/lib/server/PiiHasher";
@@ -47,18 +48,36 @@ async function handler(req: NextApiRequest & { userId?: number; traceContext: Tr
   };
 
   const regularBookingService = getRegularBookingService();
-  const booking = await regularBookingService.createBooking({
-    bookingData: req.body,
-    bookingMeta: {
-      userId: session?.user?.id || -1,
-      hostname: req.headers.host || "",
-      forcedSlug: req.headers["x-cal-force-slug"] as string | undefined,
-      traceContext: req.traceContext,
-      impersonatedByUserUuid: session?.user?.impersonatedBy?.uuid,
-    },
-  });
+  try {
+    const booking = await regularBookingService.createBooking({
+      bookingData: req.body,
+      bookingMeta: {
+        userId: session?.user?.id || -1,
+        hostname: req.headers.host || "",
+        forcedSlug: req.headers["x-cal-force-slug"] as string | undefined,
+        traceContext: req.traceContext,
+        impersonatedByUserUuid: session?.user?.impersonatedBy?.uuid,
+      },
+    });
 
-  return booking;
+    return booking;
+  } catch (error) {
+    // Clean up temporary seat reservations when a booking attempt fails.
+    // Without this cleanup, stale SelectedSlots records tied to the browser-session uid
+    // persist until their releaseAt timestamp expires, causing the availability engine
+    // to count them as consumed seats and hiding remaining availability from other users.
+    const uid = req.cookies?.uid;
+    if (uid) {
+      const selectedSlotRepository = new PrismaSelectedSlotRepository(prisma);
+      try {
+        await selectedSlotRepository.deleteByUid(uid);
+      } catch {
+        // Slot cleanup is best-effort; the booking error is the primary concern.
+        // If cleanup fails, the slot will still expire naturally via releaseAt.
+      }
+    }
+    throw error;
+  }
 }
 
 export default defaultResponder(handler, "/api/book/event");

@@ -2367,6 +2367,7 @@ describe("getSchedule", () => {
           {
             ...TestData.users.example,
             id: 102,
+            defaultScheduleId: 2,
             schedules: [
               {
                 id: 2,

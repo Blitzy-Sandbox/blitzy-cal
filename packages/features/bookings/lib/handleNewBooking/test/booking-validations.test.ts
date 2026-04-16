@@ -1375,4 +1375,274 @@ describe("Booking Validation Specifications", () => {
       expect(verifyCodeUnAuthenticated).toHaveBeenCalledWith("user@example.com", "invalid-code");
     });
   });
+
+  describe("Stale Seat Reservation Cleanup", () => {
+    test("deleteByUid removes stale selectedSlots after a booking failure so remaining seats are visible", async () => {
+      const { PrismaSelectedSlotRepository } = await import(
+        "@calcom/features/selectedSlots/repositories/PrismaSelectedSlotRepository"
+      );
+      vi.setSystemTime(new Date("2025-01-01T09:00:00.000Z"));
+      const plus1DateString = "2025-01-02";
+
+      const organizer = getOrganizer({
+        name: "Organizer",
+        email: "organizer@example.com",
+        id: 101,
+        schedules: [TestData.schedules.IstWorkHours],
+        credentials: [getGoogleCalendarCredential()],
+        selectedCalendars: [TestData.selectedCalendars.google],
+      });
+
+      // Seated event type with 3 seats per slot.
+      // Booker A already holds one actual seat.
+      // A stale selectedSlots record from a failed booking persists.
+      await createBookingScenario({
+        ...getScenarioData({
+          eventTypes: [
+            {
+              id: 1,
+              slotInterval: 30,
+              length: 30,
+              seatsPerTimeSlot: 3,
+              users: [{ id: 101 }],
+            },
+          ],
+          organizer,
+          apps: [TestData.apps["google-calendar"]],
+          bookings: [
+            {
+              uid: "existing-seat-booking",
+              eventTypeId: 1,
+              userId: organizer.id,
+              startTime: `${plus1DateString}T10:00:00.000Z`,
+              endTime: `${plus1DateString}T10:30:00.000Z`,
+              title: "Seated Booking",
+              status: BookingStatus.ACCEPTED,
+              attendees: [
+                getMockBookingAttendee({
+                  id: 1,
+                  name: "Booker A",
+                  email: "bookerA@example.com",
+                  locale: "en",
+                  timeZone: "America/Toronto",
+                  bookingSeat: {
+                    referenceUid: "seat-ref-a",
+                    data: {},
+                  },
+                }),
+              ],
+            },
+          ],
+        }),
+        selectedSlots: [
+          {
+            eventTypeId: 1,
+            userId: 101,
+            slotUtcStartDate: new Date(`${plus1DateString}T10:00:00.000Z`),
+            slotUtcEndDate: new Date(`${plus1DateString}T10:30:00.000Z`),
+            uid: "stale-browser-session-uid",
+            releaseAt: new Date("2025-01-01T09:10:00.000Z"),
+            isSeat: true,
+          },
+        ],
+      });
+
+      // Verify the stale selectedSlots record exists before cleanup
+      const slotsBefore = await prismaMock.selectedSlots.findMany({
+        where: { uid: "stale-browser-session-uid" },
+      });
+      expect(slotsBefore).toHaveLength(1);
+      expect(slotsBefore[0].isSeat).toBe(true);
+
+      // Simulate the cleanup that the booking API handler performs on error:
+      // PrismaSelectedSlotRepository.deleteByUid() removes all slots for the uid
+      const selectedSlotRepo = new PrismaSelectedSlotRepository(prismaMock);
+      const deleteResult = await selectedSlotRepo.deleteByUid("stale-browser-session-uid");
+      expect(deleteResult.count).toBe(1);
+
+      // Verify the stale slot is gone after cleanup
+      const slotsAfter = await prismaMock.selectedSlots.findMany({
+        where: { uid: "stale-browser-session-uid" },
+      });
+      expect(slotsAfter).toHaveLength(0);
+    });
+
+    test("cleanup does not affect other users' valid selectedSlots reservations", async () => {
+      const { PrismaSelectedSlotRepository } = await import(
+        "@calcom/features/selectedSlots/repositories/PrismaSelectedSlotRepository"
+      );
+      vi.setSystemTime(new Date("2025-01-01T09:00:00.000Z"));
+      const plus1DateString = "2025-01-02";
+
+      const organizer = getOrganizer({
+        name: "Organizer",
+        email: "organizer@example.com",
+        id: 101,
+        schedules: [TestData.schedules.IstWorkHours],
+        credentials: [getGoogleCalendarCredential()],
+        selectedCalendars: [TestData.selectedCalendars.google],
+      });
+
+      await createBookingScenario({
+        ...getScenarioData({
+          eventTypes: [
+            {
+              id: 1,
+              slotInterval: 30,
+              length: 30,
+              seatsPerTimeSlot: 3,
+              users: [{ id: 101 }],
+            },
+          ],
+          organizer,
+          apps: [TestData.apps["google-calendar"]],
+        }),
+        selectedSlots: [
+          {
+            eventTypeId: 1,
+            userId: 101,
+            slotUtcStartDate: new Date(`${plus1DateString}T10:00:00.000Z`),
+            slotUtcEndDate: new Date(`${plus1DateString}T10:30:00.000Z`),
+            uid: "failed-user-uid",
+            releaseAt: new Date("2025-01-01T09:10:00.000Z"),
+            isSeat: true,
+          },
+          {
+            eventTypeId: 1,
+            userId: 101,
+            slotUtcStartDate: new Date(`${plus1DateString}T10:00:00.000Z`),
+            slotUtcEndDate: new Date(`${plus1DateString}T10:30:00.000Z`),
+            uid: "valid-other-user-uid",
+            releaseAt: new Date("2025-01-01T09:15:00.000Z"),
+            isSeat: true,
+          },
+        ],
+      });
+
+      // Both slots exist before cleanup
+      const allSlotsBefore = await prismaMock.selectedSlots.findMany();
+      expect(allSlotsBefore).toHaveLength(2);
+
+      // Clean up only the failed user's stale slot
+      const selectedSlotRepo = new PrismaSelectedSlotRepository(prismaMock);
+      await selectedSlotRepo.deleteByUid("failed-user-uid");
+
+      // The valid other user's slot must still be present
+      const allSlotsAfter = await prismaMock.selectedSlots.findMany();
+      expect(allSlotsAfter).toHaveLength(1);
+      expect(allSlotsAfter[0].uid).toBe("valid-other-user-uid");
+    });
+
+    test("after stale reservation cleanup, another user can book the remaining seat", async () => {
+      const { PrismaSelectedSlotRepository } = await import(
+        "@calcom/features/selectedSlots/repositories/PrismaSelectedSlotRepository"
+      );
+      const handleNewBooking = getNewBookingHandler();
+      vi.setSystemTime(new Date("2025-01-01T09:00:00.000Z"));
+      const plus1DateString = "2025-01-02";
+
+      const bookerB = getBooker({
+        email: "bookerB@example.com",
+        name: "Booker B",
+      });
+
+      const organizer = getOrganizer({
+        name: "Organizer",
+        email: "organizer@example.com",
+        id: 101,
+        schedules: [TestData.schedules.IstWorkHours],
+        credentials: [getGoogleCalendarCredential()],
+        selectedCalendars: [TestData.selectedCalendars.google],
+      });
+
+      // 2-seat event type. Booker A already holds 1 seat.
+      // A stale selectedSlots record lingers from a prior failed booking attempt.
+      await createBookingScenario({
+        ...getScenarioData({
+          eventTypes: [
+            {
+              id: 1,
+              slotInterval: 30,
+              length: 30,
+              seatsPerTimeSlot: 2,
+              users: [{ id: 101 }],
+            },
+          ],
+          organizer,
+          apps: [TestData.apps["google-calendar"]],
+          bookings: [
+            {
+              uid: "existing-seat-booking",
+              eventTypeId: 1,
+              userId: organizer.id,
+              startTime: `${plus1DateString}T10:00:00.000Z`,
+              endTime: `${plus1DateString}T10:30:00.000Z`,
+              title: "Seated Booking",
+              status: BookingStatus.ACCEPTED,
+              attendees: [
+                getMockBookingAttendee({
+                  id: 1,
+                  name: "Booker A",
+                  email: "bookerA@example.com",
+                  locale: "en",
+                  timeZone: "America/Toronto",
+                  bookingSeat: {
+                    referenceUid: "seat-ref-a",
+                    data: {},
+                  },
+                }),
+              ],
+            },
+          ],
+        }),
+        selectedSlots: [
+          {
+            eventTypeId: 1,
+            userId: 101,
+            slotUtcStartDate: new Date(`${plus1DateString}T10:00:00.000Z`),
+            slotUtcEndDate: new Date(`${plus1DateString}T10:30:00.000Z`),
+            uid: "stale-session-uid",
+            releaseAt: new Date("2025-01-01T09:10:00.000Z"),
+            isSeat: true,
+          },
+        ],
+      });
+
+      await mockCalendarToHaveNoBusySlots("googlecalendar", {});
+
+      // Simulate the cleanup that the booking API handler performs on booking failure
+      const selectedSlotRepo = new PrismaSelectedSlotRepository(prismaMock);
+      await selectedSlotRepo.deleteByUid("stale-session-uid");
+
+      // Verify the stale slot is removed
+      const slotsAfter = await prismaMock.selectedSlots.findMany({
+        where: { uid: "stale-session-uid" },
+      });
+      expect(slotsAfter).toHaveLength(0);
+
+      // Booker B can now successfully book the remaining seat
+      const mockBookingData = getMockRequestDataForBooking({
+        data: {
+          eventTypeId: 1,
+          start: `${plus1DateString}T10:00:00.000Z`,
+          end: `${plus1DateString}T10:30:00.000Z`,
+          responses: {
+            email: bookerB.email,
+            name: bookerB.name,
+            location: { optionValue: "", value: "New York" },
+          },
+        },
+      });
+
+      const createdBooking = await handleNewBooking({
+        bookingData: mockBookingData,
+      });
+
+      expect(createdBooking).toEqual(
+        expect.objectContaining({
+          uid: expect.any(String),
+        })
+      );
+    });
+  });
 });

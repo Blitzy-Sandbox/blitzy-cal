@@ -89,4 +89,17 @@ export class PrismaSelectedSlotRepository implements ISelectedSlotRepository {
       },
     });
   }
+
+  /**
+   * Deletes all temporary slot reservations associated with a given browser-session uid.
+   * This is called when a booking attempt fails to ensure stale seat reservations
+   * do not hide remaining availability from other users.
+   */
+  async deleteByUid(uid: string) {
+    return this.prismaClient.selectedSlots.deleteMany({
+      where: {
+        uid: { equals: uid },
+      },
+    });
+  }
 }

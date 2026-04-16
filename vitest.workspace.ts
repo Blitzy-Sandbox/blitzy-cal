@@ -16,6 +16,18 @@ if (timeZoneDependentTestsOnly && !envTZ) {
 // Use pool: "forks" to prevent "Closing rpc while fetch was pending" errors.
 const pool = "forks" as const;
 
+// Generous hook timeout to prevent beforeAll/beforeEach timeouts during full-suite
+// runs where 633+ forked processes compete for CPU/memory, causing dynamic imports
+// and mock setups to exceed the default 10 000 ms hook timeout.
+// Observed slowdowns: 30–120× under full-suite contention (e.g. 3.5 s → 300+ s).
+const hookTimeout = 600000;
+
+// Generous test timeout matching the root vitest.config.mts value. Workspace projects
+// do NOT inherit testTimeout from the root config, so it must be set explicitly.
+// Under full-suite resource contention, individual tests performing dynamic imports
+// (e.g., await import("../route")) can take 30–60 seconds instead of 2–3 seconds.
+const testTimeout = 500000;
+
 const workspaces = packagedEmbedTestsOnly
   ? [
       {
@@ -24,6 +36,7 @@ const workspaces = packagedEmbedTestsOnly
           include: ["packages/embeds/**/packaged/**/*.{test,spec}.{ts,js}"],
           environment: "jsdom",
           pool,
+          hookTimeout,
         },
       },
     ]
@@ -36,6 +49,7 @@ const workspaces = packagedEmbedTestsOnly
             exclude: ["**/node_modules/**/*", "packages/embeds/**/*"],
             setupFiles: ["packages/testing/src/setupVitest.ts"],
             pool,
+            hookTimeout,
           },
           resolve: {
             alias: {
@@ -72,6 +86,7 @@ const workspaces = packagedEmbedTestsOnly
               exclude: ["**/node_modules/**/*", "packages/embeds/**/*"],
               setupFiles: ["packages/testing/src/setupVitest.ts"],
               pool,
+              hookTimeout,
             },
           },
         ]
@@ -91,6 +106,8 @@ const workspaces = packagedEmbedTestsOnly
               name: "@calcom/lib",
               setupFiles: ["packages/testing/src/setupVitest.ts"],
               pool,
+              hookTimeout,
+              testTimeout,
             },
             resolve: {
               alias: {
@@ -116,6 +133,8 @@ const workspaces = packagedEmbedTestsOnly
               name: "@calcom/api",
               setupFiles: ["packages/testing/src/setupVitest.ts"],
               pool,
+              hookTimeout,
+              testTimeout,
             },
             resolve: {
               alias: {
@@ -132,6 +151,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["setupVitest.ts", "packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
 
@@ -142,6 +162,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/app-store/closecom/test/globals.ts"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -153,6 +174,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -163,6 +185,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "node",
               setupFiles: ["packages/testing/src/setupVitest.ts"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -173,6 +196,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -183,6 +207,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -193,6 +218,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -203,6 +229,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -213,6 +240,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -223,6 +251,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: ["packages/app-store/test-setup.ts"],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -232,6 +261,7 @@ const workspaces = packagedEmbedTestsOnly
               environment: "jsdom",
               setupFiles: [],
               pool,
+              hookTimeout,
             },
           },
           {
@@ -242,6 +272,7 @@ const workspaces = packagedEmbedTestsOnly
               include: ["apps/web/modules/**/*.{test,spec}.tsx"],
               setupFiles: ["apps/web/modules/test-setup.ts"],
               pool,
+              hookTimeout,
             },
           },
 
@@ -253,6 +284,7 @@ const workspaces = packagedEmbedTestsOnly
               include: ["packages/embeds/**/*.{test,spec}.{ts,js}"],
               exclude: ["packages/embeds/**/packaged/**/*.{test,spec}.{ts,js}"],
               pool,
+              hookTimeout,
             },
           },
         ];

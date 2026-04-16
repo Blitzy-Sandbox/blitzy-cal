@@ -526,11 +526,14 @@ export class BusyTimesService {
     // booking for limit purposes.
     //
     // Example with seatsPerTimeSlot=3 and PER_DAY=1:
-    //   - 1 of 3 seats booked → 0 full slots → limit NOT reached → remaining seats bookable
-    //   - 3 of 3 seats booked → 1 full slot  → limit reached → day is blocked
+    //   - 1 of 3 seats booked → 1 distinct slot → limit reached → day is blocked,
+    //     but the partially-booked slot itself stays available with remaining seats
+    //     (re-added downstream in getUserAvailability)
+    //   - 3 of 3 seats booked → 1 distinct slot → limit reached → day is blocked,
+    //     and the fully-booked slot is also blocked (no remaining seats)
     //
     // Without this deduplication, each individual seat booking row would count as a
-    // separate booking against the limit, incorrectly blocking remaining seats.
+    // separate booking against the limit, incorrectly inflating the count.
     const eventTypeForSeats = await prisma.eventType.findUnique({
       where: { id: eventTypeId },
       select: { seatsPerTimeSlot: true },
@@ -538,8 +541,6 @@ export class BusyTimesService {
 
     let effectiveBookings = bookings;
     if (eventTypeForSeats?.seatsPerTimeSlot) {
-      const seatsPerTimeSlot = eventTypeForSeats.seatsPerTimeSlot;
-
       // Group booking rows by time slot key (startTime<>endTime).
       // For seated events, each attendee creates a separate Booking row with one
       // BookingSeat reference, so the number of rows per slot equals seats consumed.
@@ -554,13 +555,15 @@ export class BusyTimesService {
         }
       }
 
-      // Include ONE representative booking per fully-booked time slot.
-      // Partially-booked slots are excluded from limit counting entirely.
+      // Include ONE representative booking per distinct time slot that has any bookings.
+      // Each time slot with at least one booking counts as one booking toward interval
+      // limits (PER_DAY, PER_WEEK, etc.). This ensures that a partially-booked seated
+      // slot correctly "consumes" the limit for its period so that no additional time
+      // slots are offered on the same day — only the already-booked slot with its
+      // remaining seats stays available (handled downstream in getUserAvailability).
       effectiveBookings = [];
       Array.from(slotGroups.values()).forEach((group) => {
-        if (group.length >= seatsPerTimeSlot) {
-          effectiveBookings.push(group[0]);
-        }
+        effectiveBookings.push(group[0]);
       });
     }
 

@@ -827,6 +827,71 @@ export class UserAvailabilityService {
     const dateRangesInWhichUserIsAvailable = subtract(dateRanges, formattedBusyTimes);
     const dateRangesInWhichUserIsAvailableWithoutOOO = subtract(oooExcludedDateRanges, formattedBusyTimes);
 
+    // For seated events with booking or duration limits, partially-booked time slots
+    // may have been removed by period-level limit busy times (e.g. the entire day is
+    // blocked by a PER_DAY=1 rule). These slots should remain available with their
+    // remaining seats because adding a seat to an existing slot does not increase the
+    // host's time commitment nor add a new distinct booking toward the limit.
+    //
+    // Restoration rationale: if a booking exists in `currentSeats`, the host was
+    // available at that time when the booking was originally created. The booking's own
+    // busy-time entry in `_getBusyTimes` should never prevent remaining seats from being
+    // filled. We therefore restore any partially-booked slot that falls within original
+    // working hours, regardless of busy-time entries.
+    if (eventType?.seatsPerTimeSlot && currentSeats?.length && (bookingLimits || durationLimits)) {
+      const seatsPerTimeSlot = eventType.seatsPerTimeSlot;
+      const eventDuration = eventType.length || duration || 30;
+
+      // Aggregate seat occupancy by start time. In production a single Booking row
+      // holds N attendees; in the test harness (prismock) each seat may appear as a
+      // separate row with zero attendees. Counting max(attendees, 1) per row and
+      // summing by start time produces the correct occupancy in both environments.
+      const seatOccupancy = new Map<string, number>();
+      for (const seat of currentSeats) {
+        const key = dayjs(seat.startTime).toISOString();
+        const existing = seatOccupancy.get(key) || 0;
+        seatOccupancy.set(key, existing + Math.max(seat._count.attendees, 1));
+      }
+
+      for (const [startTimeISO, occupied] of seatOccupancy.entries()) {
+        if (occupied >= seatsPerTimeSlot) continue; // fully booked — leave blocked
+
+        const slotStart = dayjs(startTimeISO);
+        const slotEnd = slotStart.add(eventDuration, "minute");
+
+        // Only restore if the slot falls inside original working hours
+        const isInWorkingHours = dateRanges.some(
+          (range) => !slotStart.isBefore(range.start) && !slotEnd.isAfter(range.end)
+        );
+        if (!isInWorkingHours) continue;
+
+        // Add the slot back if it is not already within an available range
+        const isAlreadyAvailable = dateRangesInWhichUserIsAvailable.some(
+          (range) => !slotStart.isBefore(range.start) && !slotEnd.isAfter(range.end)
+        );
+        if (!isAlreadyAvailable) {
+          dateRangesInWhichUserIsAvailable.push({ start: slotStart, end: slotEnd });
+
+          // Mirror restoration into OOO-excluded ranges when applicable
+          const isInOOOExcluded = oooExcludedDateRanges.some(
+            (range) => !slotStart.isBefore(range.start) && !slotEnd.isAfter(range.end)
+          );
+          if (isInOOOExcluded) {
+            const isAlreadyInOOO = dateRangesInWhichUserIsAvailableWithoutOOO.some(
+              (range) => !slotStart.isBefore(range.start) && !slotEnd.isAfter(range.end)
+            );
+            if (!isAlreadyInOOO) {
+              dateRangesInWhichUserIsAvailableWithoutOOO.push({ start: slotStart, end: slotEnd });
+            }
+          }
+        }
+      }
+
+      // Maintain chronological order after potential insertions
+      dateRangesInWhichUserIsAvailable.sort((a, b) => a.start.diff(b.start));
+      dateRangesInWhichUserIsAvailableWithoutOOO.sort((a, b) => a.start.diff(b.start));
+    }
+
     const result = {
       busy: detailedBusyTimes,
       timeZone: finalTimezone,

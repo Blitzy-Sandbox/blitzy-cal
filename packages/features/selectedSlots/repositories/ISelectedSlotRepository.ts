@@ -21,4 +21,10 @@ export interface ISelectedSlotRepository {
     currentTimeInUtc: string;
   }): Promise<Array<Omit<SelectedSlot, "releaseAt">>>;
   deleteManyExpiredSlots(args: { eventTypeId: number; currentTimeInUtc: string }): Promise<{ count: number }>;
+  /**
+   * Deletes all temporary slot reservations associated with a given browser-session uid.
+   * Used to clean up stale seat reservations when a booking attempt fails, ensuring
+   * that other users see the correct remaining seat count for the slot.
+   */
+  deleteByUid(uid: string): Promise<{ count: number }>;
 }

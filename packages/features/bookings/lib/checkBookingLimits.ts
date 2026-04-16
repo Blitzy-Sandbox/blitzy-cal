@@ -20,7 +20,8 @@ export class CheckBookingLimitsService {
     eventId: number,
     rescheduleUid?: string | undefined,
     timeZone?: string | null,
-    includeManagedEvents?: boolean
+    includeManagedEvents?: boolean,
+    seatsPerTimeSlot?: number | null
   ) {
     const parsedBookingLimits = parseBookingLimit(bookingLimits);
     if (!parsedBookingLimits) return false;
@@ -35,6 +36,7 @@ export class CheckBookingLimitsService {
         timeZone,
         rescheduleUid,
         includeManagedEvents,
+        seatsPerTimeSlot,
       })
     );
 
@@ -57,6 +59,7 @@ export class CheckBookingLimitsService {
     teamId,
     user,
     includeManagedEvents = false,
+    seatsPerTimeSlot,
   }: {
     eventStartDate: Date;
     eventId?: number;
@@ -67,6 +70,7 @@ export class CheckBookingLimitsService {
     teamId?: number;
     user?: { id: number; email: string };
     includeManagedEvents?: boolean;
+    seatsPerTimeSlot?: number | null;
   }) {
     const eventDateInOrganizerTz = timeZone ? dayjs(eventStartDate).tz(timeZone) : dayjs(eventStartDate);
 
@@ -99,6 +103,23 @@ export class CheckBookingLimitsService {
     }
 
     if (bookingsInPeriod < limitingNumber) return;
+
+    // For seated events, check whether the booker is adding a seat to an existing
+    // booking at the exact requested time slot. If so, the count of distinct booked
+    // slots will not increase — the limit was already satisfied by this slot — so
+    // skip the rejection. Only NEW time slots should be blocked by the limit.
+    if (seatsPerTimeSlot && eventId) {
+      const existingBookingsAtSlot = await this.dependencies.bookingRepo.findAcceptedBookingByEventTypeId({
+        eventTypeId: eventId,
+        dateFrom: dayjs(eventStartDate).toISOString(),
+        dateTo: dayjs(eventStartDate).toISOString(),
+      });
+      if (existingBookingsAtSlot.length > 0) {
+        // An accepted booking already exists at this exact time slot.
+        // The booker is adding a seat, not creating a new slot.
+        return;
+      }
+    }
 
     throw new HttpError({
       message: `booking_limit_reached`,

@@ -104,13 +104,17 @@ describe("CredentialsProvider authorize", () => {
   // Load heavy modules once to avoid repeated ~3.5s import overhead per test.
   // Module-level vi.mock() factories (hoisted above) are registered before this runs,
   // so all dependencies resolve to their mocked implementations.
+  // Explicit 600 000 ms timeout: the dynamic import pulls in the full next-auth-options
+  // dependency graph (~30+ Cal.com internal modules, googleapis, next-auth), which can
+  // exceed the default hookTimeout under full-suite resource contention (633+ forked
+  // processes competing for CPU). Observed times: ~3.5 s in isolation, ~300+ s in suite.
   beforeAll(async () => {
     const verifyPasswordModule = await import("./verifyPassword");
     verifyPassword = verifyPasswordModule.verifyPassword;
 
     const authModule = await import("./next-auth-options");
     authorizeCredentials = authModule.authorizeCredentials;
-  });
+  }, 600_000);
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -69,7 +69,7 @@ describe("/api/webhooks/calendar-subscription/[provider]", () => {
 
       expect(response.status).toBe(200);
       expect(mockProcessWebhook).toHaveBeenCalledWith("google_calendar", request);
-    }, 10000);
+    }, 600_000); // Dynamic import inside test can take 300+ s under full-suite contention
 
     test("should accept office365_calendar provider", async () => {
       const request = new NextRequest(

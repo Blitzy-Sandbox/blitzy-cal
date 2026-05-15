@@ -12,12 +12,11 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap"
     rel="stylesheet">
 
-  <!-- reveal.js 5.1.0 (pinned per Executive Presentation rule) -->
+  <!-- reveal.js -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 
-  <!-- Inline Blitzy theme (the canonical theme file blitzy-deck/references/blitzy-reveal-theme.css
-       does not exist in this repository; D21 in the decision log records this forced inlining). -->
+  <!-- Inline theme -->
   <style>
     :root {
       /* Blitzy brand palette */
@@ -35,13 +34,12 @@
       --bz-white: #FFFFFF;
       --bz-purple-tint: #F2F0FE;
 
-      /* Canonical gradient-stop and tint-purple aliases (see D28) */
       --bz-gradient-start: #7A6DEC;
       --bz-gradient-mid: #5B39F3;
       --bz-gradient-end: #4101DB;
       --bz-tint-purple: #F2F0FE;
 
-      /* Severity palette (visually distinct from brand purple) */
+      /* Severity palette */
       --sev-critical: #B71C1C;
       --sev-high: #E65100;
       --sev-medium: #F9A825;
@@ -109,15 +107,12 @@
       color: var(--bz-primary-dark);
       font-weight: 600;
     }
-    /* Strong text on dark-background slides — use teal accent for legibility
-       (dark purple #2D1C77 is too close in tone to navy #1A105F to read well). */
     .reveal .slides > section.slide-title strong,
     .reveal .slides > section.slide-divider strong,
     .reveal .slides > section.slide-closing strong {
       color: var(--bz-teal);
       font-weight: 600;
     }
-    /* Inline <code> on dark backgrounds — needs lighter background and brighter ink */
     .reveal .slides > section.slide-title code,
     .reveal .slides > section.slide-divider code,
     .reveal .slides > section.slide-closing code {
@@ -228,7 +223,7 @@
       border-radius: 4px;
     }
 
-    /* SECTION DIVIDER (see D27) */
+    /* SECTION DIVIDER */
     .reveal .slides > section.slide-divider {
       background: linear-gradient(135deg, var(--bz-primary-dark) 0%, var(--bz-navy) 100%);
       color: var(--bz-white);
@@ -386,7 +381,6 @@
       margin-top: 16px;
       font-size: 1.1rem;
     }
-    /* .styled-table th uses primary-dark per D29 */
     .styled-table th {
       background: var(--bz-primary-dark);
       color: var(--bz-white);
@@ -446,12 +440,6 @@
       display: block;
       margin: 0 auto;
     }
-    /* Mermaid 11.4.0 produces foreignObjects whose inner <div> has an inline
-       max-width:200px (the markdownAutoWrap limit). When the label's longest line
-       happens to span close to 200 px, table-cell sizing rounds the rendered div
-       a few pixels wider than the foreignObject viewport, clipping the final glyph.
-       Allowing the foreignObject to overflow visibly removes the visible clip
-       without changing Mermaid's layout. */
     .reveal pre.mermaid foreignObject {
       overflow: visible !important;
     }
@@ -618,12 +606,10 @@
     .callout .callout-title i { color: var(--bz-primary); width: 18px; height: 18px; }
     .callout p { margin: 0; font-size: 1.05rem; color: var(--bz-ink); }
 
-    /* Hide reveal.js progress for cleaner look */
     .reveal .progress {
       color: var(--bz-primary);
     }
 
-    /* Reveal.js controls colors */
     .reveal .controls {
       color: var(--bz-primary);
     }
@@ -646,7 +632,7 @@
       <div class="meta-row">
         <span class="meta-pill"><i data-lucide="server"></i>SonarQube 26.5 &middot; Community</span>
         <span class="meta-pill"><i data-lucide="container"></i>Ephemeral Docker</span>
-        <span class="meta-pill"><i data-lucide="clock"></i>752 s scan &middot; 35 s cold-start</span>
+        <span class="meta-pill"><i data-lucide="clock"></i>752.126 s scan &middot; 35.288 s cold-start</span>
         <span class="meta-pill"><i data-lucide="file-json"></i>263 findings</span>
       </div>
       <div class="accent-bar"></div>
@@ -661,7 +647,7 @@
         <span class="config-id">Slide 02 &middot; KPIs</span>
       </div>
       <h2>What we found, at a glance</h2>
-      <p>One ephemeral SonarQube Community Build scan over the entire repository surfaced <strong>263 findings</strong> across the four output severities, all schema-conformant and ready for the multi-configuration diff.</p>
+      <p>One ephemeral SonarQube Community Build scan over the entire repository surfaced <strong>263 findings</strong> in <strong>752.126 s</strong> of wall-clock scan time, all schema-conformant and ready for the multi-configuration diff.</p>
       <div class="kpi-grid">
         <div class="kpi-card kpi-teal">
           <div class="kpi-label"><i data-lucide="list"></i>Total findings</div>
@@ -669,24 +655,24 @@
           <div class="kpi-sub">VULNERABILITY + BUG, schema-normalized</div>
         </div>
         <div class="kpi-card kpi-critical">
-          <div class="kpi-label"><i data-lucide="alert-octagon"></i>Critical</div>
-          <div class="kpi-value">58</div>
-          <div class="kpi-sub">22% of total &middot; sourced from BLOCKER + CRITICAL</div>
+          <div class="kpi-label"><i data-lucide="alert-octagon"></i>Critical + High</div>
+          <div class="kpi-value">216</div>
+          <div class="kpi-sub">58 critical &middot; 158 high &middot; 82% of total</div>
         </div>
-        <div class="kpi-card kpi-high">
-          <div class="kpi-label"><i data-lucide="alert-triangle"></i>High</div>
-          <div class="kpi-value">158</div>
-          <div class="kpi-sub">60% of total &middot; sourced from MAJOR</div>
+        <div class="kpi-card kpi-teal">
+          <div class="kpi-label"><i data-lucide="timer"></i>Cold-start</div>
+          <div class="kpi-value">35.288 s</div>
+          <div class="kpi-sub">From <code>docker run</code> to <code>status=UP</code> &middot; budget 120 s</div>
         </div>
-        <div class="kpi-card kpi-medium">
-          <div class="kpi-label"><i data-lucide="info"></i>Medium</div>
-          <div class="kpi-value">47</div>
-          <div class="kpi-sub">18% of total &middot; sourced from MINOR</div>
+        <div class="kpi-card kpi-teal">
+          <div class="kpi-label"><i data-lucide="hourglass"></i>Scan duration</div>
+          <div class="kpi-value">752.126 s</div>
+          <div class="kpi-sub">Wall-clock <code>sonar-scanner</code> invocation to exit</div>
         </div>
       </div>
       <div class="callout">
         <div class="callout-title"><i data-lucide="check-circle"></i>Quality gate</div>
-        <p>SonarQube's default Sonar way quality gate reported <strong>PASSED</strong>. The 263 findings are informational; none individually blocked the gate.</p>
+        <p>SonarQube's default Sonar way quality gate reported <strong>PASSED</strong>. The 263 findings are informational; none individually blocked the gate. Severity breakdown lives on slide 7 (58 critical, 158 high, 47 medium, 0 low).</p>
       </div>
     </section>
 
@@ -704,7 +690,7 @@
 graph LR
   A["D1 Install Toolchain<br/>apt + docker pull"] --&gt; B["D2 Start Server<br/>docker run -d"]
   B --&gt; C{"Poll /api/system/status<br/>until UP, &le;120s"}
-  C --&gt;|"UP at 35.3 s"| D["D3 sonar-scanner<br/>qualitygate.wait=true"]
+  C --&gt;|"UP at 35.288 s"| D["D3 sonar-scanner<br/>qualitygate.wait=true"]
   C --&gt;|"Timeout"| F["FAIL<br/>Directive 2"]
   D --&gt; E["D4 Export<br/>/api/issues/search"]
   E --&gt; G["D5 Normalize<br/>severity + CWE"]
@@ -719,7 +705,7 @@ graph LR
       </pre>
       <p class="pipeline-caption">
         <i data-lucide="timer"></i>
-        <span>Cold-start <strong>35.3&nbsp;s</strong> &middot; Scan <strong>752.1&nbsp;s</strong> &middot; Export <strong>1 page</strong> &middot; Write <strong>54,966 bytes</strong> &middot; Teardown clean.</span>
+        <span>Cold-start <strong>35.288&nbsp;s</strong> &middot; Scan <strong>752.126&nbsp;s</strong> &middot; Export <strong>1 page</strong> &middot; Write <strong>54,966 bytes</strong> &middot; Teardown clean.</span>
       </p>
     </section>
 
@@ -819,7 +805,7 @@ graph LR
         <span class="config-id">Slide 08 &middot; CWE</span>
       </div>
       <h2>Where industry-standard weakness types map</h2>
-      <p>Forty-four findings (16.7%) tie to a specific CWE through SonarQube rule documentation. The remaining 219 are non-security bugs (sort comparisons, identical sub-expressions, missing event handlers) where no CWE applies; these receive the explicit <code>CWE-Unknown</code> fallback (D10).</p>
+      <p>Ordered by occurrence (<code>collections.Counter.most_common(10)</code>): the Tier-3 <code>CWE-Unknown</code> fallback dominates because most BUG rules carry no CWE in their documentation; the 44 findings resolved to a specific CWE land in the lower rows (D10).</p>
       <table class="styled-table">
         <thead>
           <tr>
@@ -830,12 +816,12 @@ graph LR
           </tr>
         </thead>
         <tbody>
+          <tr><td><code>CWE-Unknown</code></td><td>Non-security BUG rules (no CWE in rule docs)</td><td style="text-align: right;"><strong>219</strong></td><td>Tier-3 fallback (D10)</td></tr>
           <tr><td><code>CWE-798</code></td><td>Use of Hard-coded Credentials</td><td style="text-align: right;"><strong>23</strong></td><td>Rule <code>typescript:S2068</code> via descriptionSections (Tier 2)</td></tr>
           <tr><td><code>CWE-345</code></td><td>Insufficient Verification of Data Authenticity</td><td style="text-align: right;"><strong>9</strong></td><td>Rule descriptionSections (Tier 2)</td></tr>
           <tr><td><code>CWE-353</code></td><td>Missing Support for Integrity Check</td><td style="text-align: right;"><strong>7</strong></td><td>Rule descriptionSections (Tier 2)</td></tr>
           <tr><td><code>CWE-482</code></td><td>Comparing instead of Assigning</td><td style="text-align: right;"><strong>4</strong></td><td>Rule descriptionSections (Tier 2)</td></tr>
           <tr><td><code>CWE-327</code></td><td>Use of a Broken or Risky Cryptographic Algorithm</td><td style="text-align: right;"><strong>1</strong></td><td>Rule descriptionSections (Tier 2)</td></tr>
-          <tr><td><code>CWE-Unknown</code></td><td>Non-security BUG rules (no CWE in rule docs)</td><td style="text-align: right;">219</td><td>Tier-3 fallback (D10)</td></tr>
         </tbody>
       </table>
     </section>
@@ -864,28 +850,28 @@ graph LR
           <i data-lucide="key-round"></i>
           <div>
             <span class="item-title">Hard-coded credentials &mdash; 23 instances (CWE-798)</span>
-            <span class="item-body">Distributed across <code>apps/api/v1/test/lib/</code>, <code>apps/api/v2/src/.../e2e-spec.ts</code>, and seed scripts. Most appear in test fixtures; the highest-severity match is a CRITICAL flag in <code>apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts</code>. Reviewer task: confirm none are real secrets and rotate any that escaped to test setup.</span>
+            <span class="item-body">Mostly test fixtures and seed scripts. Confirm none are real secrets.</span>
           </div>
         </li>
         <li>
           <i data-lucide="key"></i>
           <div>
             <span class="item-title">Insufficient data authenticity (CWE-345) &mdash; 9 instances</span>
-            <span class="item-body">SonarQube flags places where data integrity verification appears missing. Pair with a manual review of any HMAC, signature-verification, or webhook-validation paths in <code>packages/features/</code> and the API surface.</span>
+            <span class="item-body">Audit HMAC, signature, and webhook validation paths.</span>
           </div>
         </li>
         <li>
           <i data-lucide="lock"></i>
           <div>
             <span class="item-title">Cryptography &mdash; CWE-327 in <code>packages/lib/crypto.ts</code></span>
-            <span class="item-body">A single CRITICAL flag on <code>line 18</code> regarding a "secure mode and padding scheme". This is the highest-leverage finding in the run &mdash; one file, one line, one decision.</span>
+            <span class="item-body">One CRITICAL on line 18: cipher mode and padding.</span>
           </div>
         </li>
         <li>
           <i data-lucide="circle-help"></i>
           <div>
             <span class="item-title">219 CWE-Unknown findings &mdash; mostly code-quality BUG rules</span>
-            <span class="item-body">Top rules: <code>typescript:S2871</code> (sort comparisons, 43), <code>typescript:S1082</code> (event handlers, 39), <code>typescript:S1764</code> (identical sub-expressions, 17). These are quality, not security.</span>
+            <span class="item-body">Sort comparisons, event handlers, identical sub-expressions. Quality, not security.</span>
           </div>
         </li>
       </ul>
@@ -904,12 +890,12 @@ graph LR
       <div class="kpi-grid">
         <div class="kpi-card kpi-teal">
           <div class="kpi-label"><i data-lucide="timer"></i>Cold-start</div>
-          <div class="kpi-value">35.3 s</div>
+          <div class="kpi-value">35.288 s</div>
           <div class="kpi-sub">From <code>docker run</code> to <code>/api/system/status</code> <code>UP</code> (budget: 120 s)</div>
         </div>
         <div class="kpi-card kpi-teal">
           <div class="kpi-label"><i data-lucide="hourglass"></i>Scan duration</div>
-          <div class="kpi-value">752.1 s</div>
+          <div class="kpi-value">752.126 s</div>
           <div class="kpi-sub">12 min 32 s wall-clock &middot; scanner-internal 10 min 39 s</div>
         </div>
         <div class="kpi-card kpi-teal">
@@ -949,28 +935,28 @@ graph LR
           <i data-lucide="git-compare"></i>
           <div>
             <span class="item-title">Run the next configuration</span>
-            <span class="item-body">Apply the same 5-directive shape with a different tool (e.g., Semgrep CE, CodeQL, Snyk Code) to produce <code>findings-config-ii.json</code>. The 5-field schema is the diff contract.</span>
+            <span class="item-body">Apply the same shape with Semgrep, CodeQL, or Snyk to produce <code>findings-config-ii.json</code>.</span>
           </div>
         </li>
         <li>
           <i data-lucide="filter"></i>
           <div>
             <span class="item-title">Apply optional filters</span>
-            <span class="item-body">If hard-coded test credentials are noise, filter on <code>file</code> matching <code>**/*.e2e-spec.ts</code> or <code>**/*-test.ts</code>. The contract preserves verbatim file paths so this is straightforward.</span>
+            <span class="item-body">Filter by <code>file</code> pattern to scope test versus production noise.</span>
           </div>
         </li>
         <li>
           <i data-lucide="shield-check"></i>
           <div>
             <span class="item-title">Address the CWE-327 crypto flag</span>
-            <span class="item-body">One CRITICAL finding on <code>packages/lib/crypto.ts:18</code>. Verify the cipher mode and padding scheme; this is the single highest-leverage remediation in the run.</span>
+            <span class="item-body">Verify cipher mode and padding in <code>packages/lib/crypto.ts:18</code>.</span>
           </div>
         </li>
         <li>
           <i data-lucide="file-text"></i>
           <div>
             <span class="item-title">Read the decision log</span>
-            <span class="item-body">Thirty entries in <code>findings-config-i.decisions.md</code> explain every deviation from a literal interpretation of the directives, including the Node-heap and auth-token forced changes.</span>
+            <span class="item-body">40 entries cover every deviation from the literal directives.</span>
           </div>
         </li>
       </ul>
@@ -1041,7 +1027,7 @@ graph TB
       <ul>
         <li><strong>263 findings</strong> normalized into the 5-field comparison schema; PASSED the default quality gate; valid JSON, one line, UTF-8.</li>
         <li><strong>One high-leverage CRITICAL</strong> in <code>packages/lib/crypto.ts</code> &mdash; CWE-327, secure mode &amp; padding. Everything else is structural or test-hygiene.</li>
-        <li><strong>30 documented decisions</strong> &mdash; auth-token, Node-heap, exclusions, CWE tiers &mdash; covering every deviation from a literal reading of the directives.</li>
+        <li><strong>40 documented decisions</strong> &mdash; auth-token, Node-heap, exclusions, CWE tiers &mdash; covering every deviation from a literal reading of the directives.</li>
       </ul>
       <div class="brand-lockup">
         <span class="dot"></span>
@@ -1053,16 +1039,12 @@ graph TB
   </div>
 </div>
 
-<!-- reveal.js, Mermaid, Lucide via CDN (versions pinned per Executive Presentation rule) -->
+<!-- reveal.js, Mermaid, Lucide -->
 <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
 <script>
-  // Mermaid init per Executive Presentation rule
-  // startOnLoad: false because reveal.js controls slide lifecycle and would otherwise
-  // render diagrams on hidden slides at the wrong time. The five theme variables
-  // below are exactly those mandated by the Executive Presentation rule.
   mermaid.initialize({
     startOnLoad: false,
     theme: 'base',
@@ -1072,18 +1054,12 @@ graph TB
       primaryBorderColor: '#5B39F3',
       lineColor: '#999999',
       secondaryColor: '#F4EFF6',
-      // Match the SVG render font to the page font used during off-screen text
-      // measurement (body uses Inter via Google Fonts). Trebuchet (Mermaid's default)
-      // is wider than Inter, which produces undersized foreignObjects and clipped
-      // labels. Setting fontFamily here keeps measurement and render in sync.
       fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif'
     },
     flowchart: { curve: 'basis', padding: 16, useMaxWidth: true, htmlLabels: true, nodeSpacing: 36, rankSpacing: 64 },
     securityLevel: 'loose'
   });
 
-  // Reveal.js config per Executive Presentation rule
-  // hash, transition, controlsTutorial, width, height are all the verbatim spec values.
   Reveal.initialize({
     hash: true,
     transition: 'slide',
@@ -1094,10 +1070,6 @@ graph TB
     pdfSeparateFragments: false
   });
 
-  // renderMermaid waits for web fonts to fully load before running Mermaid so the
-  // diagram's measured text widths match the rendered widths (Mermaid sizes node
-  // rectangles by measuring text; if the web font has not loaded, the fallback
-  // metrics produce undersized rectangles that clip text after the font swaps in).
   function renderMermaid() {
     if (typeof mermaid === 'undefined' || !mermaid.run) return;
     var pending = document.querySelectorAll('pre.mermaid:not([data-processed="true"])');
@@ -1109,8 +1081,6 @@ graph TB
     }
   }
 
-  // refreshDynamicContent re-runs Lucide and Mermaid renderers; both are bound to
-  // the reveal.js 'ready' and 'slidechanged' lifecycle hooks per the rule.
   function refreshDynamicContent() {
     if (typeof lucide !== 'undefined' && lucide.createIcons) {
       lucide.createIcons();

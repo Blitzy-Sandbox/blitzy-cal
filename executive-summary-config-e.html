@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Config E — ESLint + eslint-plugin-security static security scan of the calcom-monorepo. Executive summary for non-technical leadership." />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Config E — ESLint Security Scan</title>
+
+  <!-- Google Fonts: Inter (body), Space Grotesk (display), Fira Code (mono/eyebrow) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" />
+
+  <!-- reveal.js 5.1.0 core CSS (reset + base). Theme is embedded inline below. -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reset.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css" />
+
+  <style>
+    /* =========================================================
+       Blitzy reveal.js theme — embedded inline (self-contained).
+       Tokens mirror the Blitzy brand palette and typography
+       defined in the Executive Presentation rule.
+       ========================================================= */
+    :root {
+      --blitzy-primary: #5B39F3;
+      --blitzy-primary-dark: #2D1C77;
+      --blitzy-primary-navy: #1A105F;
+      --blitzy-primary-light: #7A6DEC;
+      --blitzy-primary-deep: #4101DB;
+      --blitzy-accent-teal: #94FAD5;
+      --blitzy-surface-0: #FFFFFF;
+      --blitzy-surface-1: #F4EFF6;
+      --blitzy-surface-2: #F2F0FE;
+      --blitzy-surface-3: #F5F5F5;
+      --blitzy-border: #D9D9D9;
+      --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+      --blitzy-text: #333333;
+      --blitzy-text-muted: #999999;
+      --blitzy-text-invert: #FFFFFF;
+      --ff-body: 'Inter', system-ui, sans-serif;
+      --ff-display: 'Space Grotesk', 'Inter', sans-serif;
+      --ff-mono: 'Fira Code', 'Courier New', monospace;
+      --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+      --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+      --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+    }
+
+    /* ---------- Base typography & reveal overrides ---------- */
+    html, body { background: var(--blitzy-surface-0); }
+    .reveal {
+      font-family: var(--ff-body);
+      color: var(--blitzy-text);
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+    }
+    .reveal .slides { text-align: left; }
+    .reveal .slides > section,
+    .reveal .slides > section > section {
+      padding: 64px 96px;
+      box-sizing: border-box;
+      height: 100%;
+    }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: var(--ff-display);
+      color: var(--blitzy-text);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      text-transform: none;
+    }
+    .reveal h1 { font-size: 88px; font-weight: 700; }
+    .reveal h2 { font-size: 64px; }
+    .reveal h3 { font-size: 44px; }
+    .reveal h4 { font-size: 32px; }
+    .reveal p { font-size: 28px; line-height: 1.45; margin: 0 0 14px 0; }
+    .reveal ul { margin: 18px 0 0 0; padding-left: 0; list-style: none; }
+    .reveal ul li {
+      position: relative;
+      padding: 10px 0 10px 38px;
+      font-size: 28px;
+      line-height: 1.4;
+    }
+    .reveal ul li + li { border-top: 1px solid var(--blitzy-surface-1); }
+    .reveal ul li::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 22px;
+      width: 18px; height: 18px;
+      background: var(--gradient-accent-bar);
+      border-radius: 4px;
+    }
+    .reveal code {
+      font-family: var(--ff-mono);
+      font-size: 0.9em;
+      background: var(--blitzy-surface-2);
+      color: var(--blitzy-primary-deep);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .reveal strong { font-weight: 600; color: var(--blitzy-primary-dark); }
+    .reveal a { color: var(--blitzy-primary); }
+
+    /* ---------- Eyebrow / brand mark / accent bar ---------- */
+    .eyebrow {
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--blitzy-accent-teal);
+      margin-bottom: 24px;
+      display: inline-block;
+    }
+    .slide-light .eyebrow { color: var(--blitzy-primary); }
+    .accent-bar {
+      display: block;
+      width: 96px; height: 6px;
+      background: var(--gradient-accent-bar);
+      border-radius: 3px;
+      margin: 16px 0 28px 0;
+    }
+    .brand-lockup {
+      font-family: var(--ff-display);
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: 0.04em;
+      color: var(--blitzy-text-invert);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.18);
+    }
+    .brand-lockup .brand-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--gradient-accent-bar);
+      display: inline-block;
+    }
+
+    /* ---------- Slide types ---------- */
+    .slide-title {
+      background: var(--gradient-hero);
+      color: var(--blitzy-text-invert);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .slide-title h1 { color: var(--blitzy-text-invert); max-width: 1500px; }
+    .slide-title .subtitle {
+      font-size: 32px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.92);
+      max-width: 1400px;
+      margin-top: 24px;
+      line-height: 1.4;
+    }
+    .slide-title .hero-icon {
+      color: var(--blitzy-accent-teal);
+      margin-bottom: 12px;
+    }
+    .slide-title .meta-row {
+      margin-top: 56px;
+      display: flex;
+      gap: 64px;
+      align-items: center;
+    }
+    .slide-title .meta-row .meta-item {
+      font-family: var(--ff-mono);
+      font-size: 20px;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 0.04em;
+    }
+    .slide-title .meta-row .meta-item .meta-label {
+      display: block;
+      font-size: 14px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blitzy-accent-teal);
+      margin-bottom: 4px;
+    }
+
+    .slide-divider {
+      background: var(--gradient-divider);
+      color: var(--blitzy-text-invert);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .slide-divider h2 {
+      color: var(--blitzy-text-invert);
+      font-size: 96px;
+      max-width: 1500px;
+    }
+    .slide-divider .hero-icon { color: var(--blitzy-accent-teal); margin-bottom: 8px; }
+    .slide-divider .divider-rule {
+      width: 240px; height: 6px;
+      background: var(--gradient-accent-bar);
+      border-radius: 3px;
+      margin-top: 36px;
+    }
+
+    .slide-closing {
+      background: var(--blitzy-primary-navy);
+      color: var(--blitzy-text-invert);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .slide-closing h2 {
+      color: var(--blitzy-text-invert);
+      font-size: 80px;
+      max-width: 1500px;
+    }
+    .slide-closing .eyebrow { color: var(--blitzy-accent-teal); }
+    .slide-closing ul li { color: rgba(255,255,255,0.92); }
+    .slide-closing ul li + li { border-top: 1px solid rgba(255,255,255,0.12); }
+    .slide-closing ul li::before { background: var(--gradient-accent-bar); }
+    .slide-closing strong { color: var(--blitzy-accent-teal); font-weight: 600; }
+    .slide-closing .accent-bar { width: 240px; margin: 28px 0 48px 0; }
+    .slide-closing .closing-icon-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 20px;
+      padding: 14px 18px;
+      background: rgba(148, 250, 213, 0.08);
+      border: 1px solid rgba(148, 250, 213, 0.22);
+      border-radius: 16px;
+    }
+    .slide-closing .closing-icon-row svg {
+      width: 44px;
+      height: 44px;
+      color: var(--blitzy-accent-teal);
+      stroke-width: 1.5;
+    }
+    .slide-closing .closing-brand-row { margin-top: 48px; }
+
+    /* Utility classes. */
+    .mono { font-family: var(--ff-mono); }
+    table.styled-table th.col-risk { width: 30%; }
+
+    /* ---------- Hero icon (large Lucide on title / divider) ---------- */
+    .hero-icon svg {
+      width: 96px;
+      height: 96px;
+      stroke-width: 1.5;
+    }
+    .slide-divider .hero-icon svg {
+      width: 112px;
+      height: 112px;
+      color: var(--blitzy-accent-teal);
+    }
+
+    /* ---------- Content slide layout ---------- */
+    .slide-light {
+      background: var(--blitzy-surface-0);
+      color: var(--blitzy-text);
+    }
+    .slide-light .slide-eyebrow-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .slide-light .slide-eyebrow-row svg {
+      width: 28px; height: 28px;
+      color: var(--blitzy-primary);
+      stroke-width: 2;
+    }
+    .slide-light h2 {
+      max-width: 1500px;
+      margin: 0 0 12px 0;
+    }
+    .slide-light .lede {
+      font-size: 26px;
+      color: var(--blitzy-text-muted);
+      max-width: 1500px;
+      margin-bottom: 28px;
+    }
+
+    /* ---------- KPI grid + card ---------- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+      margin-top: 24px;
+    }
+    .kpi-grid.kpi-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .kpi-card {
+      background: var(--blitzy-surface-0);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 1px 0 rgba(45,28,119,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 220px;
+      position: relative;
+    }
+    .kpi-card .kpi-icon {
+      width: 36px; height: 36px;
+      color: var(--blitzy-primary);
+      margin-bottom: 4px;
+    }
+    .kpi-card .kpi-icon svg { width: 36px; height: 36px; stroke-width: 1.75; }
+    .kpi-card .kpi-value {
+      font-family: var(--ff-display);
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--blitzy-primary);
+      letter-spacing: -0.02em;
+    }
+    .kpi-card .kpi-unit {
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+      margin-left: 6px;
+      font-weight: 500;
+    }
+    .kpi-card .kpi-label {
+      font-family: var(--ff-body);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .kpi-card .kpi-sub {
+      font-size: 16px;
+      color: var(--blitzy-text-muted);
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+    .kpi-card.kpi-accent {
+      background: linear-gradient(180deg, var(--blitzy-surface-2) 0%, var(--blitzy-surface-0) 100%);
+    }
+    .kpi-card .kpi-tag {
+      position: absolute;
+      top: 18px; right: 18px;
+      font-family: var(--ff-mono);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      color: var(--blitzy-primary);
+      background: var(--blitzy-surface-2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    /* ---------- Deliverable cards (slightly different visual) ---------- */
+    .deliverable-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      margin-top: 24px;
+    }
+    .deliverable-card {
+      background: var(--blitzy-surface-0);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 16px;
+      padding: 26px 28px;
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .deliverable-card .deliverable-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: var(--blitzy-surface-2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blitzy-primary);
+    }
+    .deliverable-card .deliverable-icon svg {
+      width: 28px; height: 28px;
+      stroke-width: 1.75;
+    }
+    .deliverable-card .deliverable-name {
+      font-family: var(--ff-mono);
+      font-size: 22px;
+      color: var(--blitzy-primary-dark);
+      font-weight: 500;
+      margin-bottom: 4px;
+      letter-spacing: -0.005em;
+    }
+    .deliverable-card .deliverable-desc {
+      font-size: 19px;
+      color: var(--blitzy-text);
+      line-height: 1.4;
+      margin: 0;
+    }
+    .deliverable-card .deliverable-tag {
+      display: inline-block;
+      margin-top: 8px;
+      font-family: var(--ff-mono);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      color: var(--blitzy-primary);
+      background: var(--blitzy-surface-2);
+      padding: 3px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .deliverable-card.is-transient .deliverable-tag {
+      color: var(--blitzy-text-muted);
+      background: var(--blitzy-surface-3);
+    }
+
+    /* ---------- Icon row (grouped feature callouts) ---------- */
+    .icon-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 28px;
+    }
+    .icon-row .icon-item {
+      background: var(--blitzy-surface-2);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 14px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .icon-row .icon-item svg {
+      width: 30px; height: 30px;
+      color: var(--blitzy-primary);
+      stroke-width: 1.75;
+    }
+    .icon-row .icon-item .icon-item-title {
+      font-family: var(--ff-display);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--blitzy-primary-dark);
+    }
+    .icon-row .icon-item .icon-item-body {
+      font-size: 18px;
+      color: var(--blitzy-text);
+      line-height: 1.4;
+    }
+
+    /* ---------- Styled tables ---------- */
+    .styled-table-wrap { margin-top: 18px; }
+    table.styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--blitzy-surface-0);
+      border: 1px solid var(--blitzy-border);
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 22px;
+      box-shadow: 0 1px 0 rgba(45,28,119,0.04);
+    }
+    table.styled-table thead th {
+      background: var(--blitzy-surface-2);
+      color: var(--blitzy-primary-dark);
+      font-family: var(--ff-display);
+      font-weight: 600;
+      text-align: left;
+      padding: 14px 18px;
+      letter-spacing: -0.005em;
+      font-size: 22px;
+      border-bottom: 2px solid var(--blitzy-border-soft);
+    }
+    table.styled-table tbody td {
+      padding: 11px 18px;
+      border-top: 1px solid var(--blitzy-border);
+      vertical-align: top;
+      font-size: 21px;
+      line-height: 1.35;
+    }
+    table.styled-table tbody tr:nth-child(even) td {
+      background: var(--blitzy-surface-3);
+    }
+    table.styled-table tbody td:first-child {
+      font-family: var(--ff-mono);
+      color: var(--blitzy-primary-dark);
+      white-space: nowrap;
+      font-size: 19px;
+    }
+    table.styled-table tbody td.cwe-cell {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      color: var(--blitzy-primary);
+      white-space: nowrap;
+    }
+    table.styled-table.compact tbody td { padding: 8px 16px; font-size: 19px; }
+    table.styled-table.compact thead th { padding: 11px 16px; font-size: 19px; }
+
+    /* ---------- CWE family grid (slide 9) ---------- */
+    .cwe-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      margin-top: 24px;
+    }
+    .cwe-card {
+      background: var(--blitzy-surface-0);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 14px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 1px 0 rgba(45,28,119,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .cwe-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--gradient-accent-bar);
+      opacity: 0.85;
+    }
+    .cwe-card-head {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+    .cwe-card-head svg {
+      width: 26px; height: 26px;
+      color: var(--blitzy-primary);
+      stroke-width: 1.75;
+    }
+    .cwe-card .cwe-family {
+      font-family: var(--ff-display);
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--blitzy-primary-dark);
+      letter-spacing: -0.005em;
+    }
+    .cwe-card .cwe-id {
+      font-family: var(--ff-mono);
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      color: var(--blitzy-primary);
+      background: var(--blitzy-surface-2);
+      padding: 3px 9px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .cwe-card .cwe-rules {
+      font-family: var(--ff-mono);
+      font-size: 16px;
+      color: var(--blitzy-text);
+      line-height: 1.45;
+    }
+
+    /* ---------- Mermaid container ---------- */
+    .mermaid {
+      background: var(--blitzy-surface-2);
+      padding: 24px;
+      border-radius: 14px;
+      border: 1px solid var(--blitzy-border-soft);
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      min-height: 260px;
+    }
+    .mermaid svg { max-width: 100% !important; height: auto !important; }
+
+    .mermaid .nodeLabel,
+    .mermaid .label,
+    .mermaid .edgeLabel,
+    .mermaid foreignObject p {
+      font-family: var(--ff-body) !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      letter-spacing: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    /* ---------- Severity bar (visual on KPI slide) ---------- */
+    .severity-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 18px;
+      width: 100%;
+    }
+    .severity-bar .seg {
+      height: 16px;
+      border-radius: 4px;
+      background: var(--blitzy-surface-3);
+      position: relative;
+    }
+    .severity-bar .seg.seg-active { background: var(--gradient-accent-bar); }
+    .severity-bar .seg .seg-label {
+      position: absolute;
+      top: 22px; left: 0;
+      font-family: var(--ff-mono);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      color: var(--blitzy-text-muted);
+      text-transform: uppercase;
+    }
+    .severity-bar .seg.seg-active .seg-label { color: var(--blitzy-primary-dark); }
+
+    /* ---------- Two-column content ---------- */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 36px;
+      margin-top: 24px;
+      align-items: start;
+    }
+
+    /* ---------- Reveal control colors ---------- */
+    .reveal .controls { color: var(--blitzy-primary); }
+    .reveal .progress { color: var(--blitzy-primary); height: 4px; }
+    .reveal .progress span { background: var(--gradient-accent-bar); }
+    .reveal .slide-number {
+      background: rgba(91,57,243,0.08);
+      color: var(--blitzy-primary-dark);
+      font-family: var(--ff-mono);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .reveal .slide-title .controls,
+    .reveal .slide-divider .controls,
+    .reveal .slide-closing .controls { color: var(--blitzy-text-invert); }
+
+    @media print {
+      .reveal .progress, .reveal .controls, .reveal .slide-number { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ============================================
+         SLIDE 1 — TITLE
+         ============================================ -->
+    <section class="slide-title" data-slide-type="title">
+      <div class="hero-icon"><i data-lucide="shield-check"></i></div>
+      <span class="eyebrow">Security Tooling Sweep &mdash; Config E</span>
+      <h1>Config E: ESLint Security Scan</h1>
+      <p class="subtitle">
+        Static analysis of the calcom-monorepo using ESLint with <span class="mono">eslint-plugin-security</span> &mdash;
+        a one-shot security visibility pass, delivered without disrupting the existing Biome-based linter pipeline.
+      </p>
+      <div class="meta-row">
+        <div class="meta-item">
+          <span class="meta-label">Audience</span>
+          Engineering Leadership
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Scope</span>
+          calcom-monorepo &middot; one-shot SAST
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Posture</span>
+          Read-only &middot; no host changes
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 2 — HEADLINE FINDINGS (KPI)
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="activity"></i>
+        <span class="eyebrow">Headline Findings</span>
+      </div>
+      <h2>At a Glance</h2>
+      <p class="lede">1,038 of 7,378 fully linted (14%).</p>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon"><i data-lucide="folder-tree"></i></div>
+          <div><span class="kpi-value">7,378</span></div>
+          <div class="kpi-label">File Results</div>
+          <div class="kpi-sub">ESLint entries</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><i data-lucide="check-circle-2"></i></div>
+          <div><span class="kpi-value">1,038</span></div>
+          <div class="kpi-label">Linted</div>
+          <div class="kpi-sub">14% tokenized</div>
+        </div>
+        <div class="kpi-card kpi-accent">
+          <div class="kpi-tag">Material</div>
+          <div class="kpi-icon"><i data-lucide="alert-triangle"></i></div>
+          <div><span class="kpi-value">19</span></div>
+          <div class="kpi-label">Findings</div>
+          <div class="kpi-sub">9 source files</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><i data-lucide="alert-octagon"></i></div>
+          <div><span class="kpi-value">6,340</span></div>
+          <div class="kpi-label">Parse-Limited</div>
+          <div class="kpi-sub">TS parser gap</div>
+        </div>
+      </div>
+
+      <div class="severity-bar" aria-label="Severity profile">
+        <div class="seg"><span class="seg-label">Critical</span></div>
+        <div class="seg seg-active"><span class="seg-label">High</span></div>
+        <div class="seg"><span class="seg-label">Medium</span></div>
+        <div class="seg"><span class="seg-label">Low</span></div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 3 — ARCHITECTURE OVERVIEW (Mermaid)
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="git-branch"></i>
+        <span class="eyebrow">Architecture Overview</span>
+      </div>
+      <h2>How the Scan Runs</h2>
+      <p class="lede">Three sequential phases. Install is isolated in a sandbox, the scan reads the monorepo, and the normalizer emits a single deterministic findings file.</p>
+
+      <pre class="mermaid">
+flowchart LR
+    A["Phase 1 &middot; Sandbox Install"] --> B["Phase 2 &middot; Configured Scan"]
+    B --> C["Phase 3 &middot; Normalize and Emit"]
+    C --> D[("findings-config-e.json")]
+    A -.uses.-> E[(npm registry)]
+    B -.reads.-> F[/calcom-monorepo/]
+    B --> G[(results-eslint.json)]
+      </pre>
+    </section>
+
+    <!-- ============================================
+         SLIDE 4 — DIVIDER: SCOPE OF WORK
+         ============================================ -->
+    <section class="slide-divider" data-slide-type="divider">
+      <div class="hero-icon"><i data-lucide="target"></i></div>
+      <span class="eyebrow">Section 01</span>
+      <h2>Scope of Work</h2>
+      <div class="divider-rule"></div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 5 — WHAT WAS DONE
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="check-circle-2"></i>
+        <span class="eyebrow">What Was Done</span>
+      </div>
+      <h2>Three Directives, Three Artifacts</h2>
+      <ul>
+        <li><strong>Installed</strong> ESLint and security plugin in isolated sandbox.</li>
+        <li><strong>Executed</strong> 14 <code>security/*</code> rules across JS-parseable files.</li>
+        <li><strong>Normalized</strong> findings to a single-line, five-field JSON.</li>
+        <li><strong>Delivered</strong> findings JSON, decision log, and this deck.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================
+         SLIDE 6 — WHY IT MATTERS
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="trending-up"></i>
+        <span class="eyebrow">Business Value</span>
+      </div>
+      <h2>Why It Matters</h2>
+      <p class="lede">Second-opinion SAST that augments Biome without disruption.</p>
+
+      <div class="icon-row">
+        <div class="icon-item">
+          <i data-lucide="gauge"></i>
+          <div class="icon-item-title">SAST Hygiene</div>
+          <div class="icon-item-body">Injection, path, ReDoS patterns.</div>
+        </div>
+        <div class="icon-item">
+          <i data-lucide="users"></i>
+          <div class="icon-item-title">Dev Hand-Off</div>
+          <div class="icon-item-body">Feeds triage queues directly.</div>
+        </div>
+        <div class="icon-item">
+          <i data-lucide="clipboard-check"></i>
+          <div class="icon-item-title">Audit Trail</div>
+          <div class="icon-item-body">Every choice documented.</div>
+        </div>
+        <div class="icon-item">
+          <i data-lucide="scale"></i>
+          <div class="icon-item-title">Fair Compare</div>
+          <div class="icon-item-body">Stable schema for scoring.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 7 — DIVIDER: RULE COVERAGE
+         ============================================ -->
+    <section class="slide-divider" data-slide-type="divider">
+      <div class="hero-icon"><i data-lucide="list-checks"></i></div>
+      <span class="eyebrow">Section 02</span>
+      <h2>Rule Coverage</h2>
+      <div class="divider-rule"></div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 8 — RULE INVENTORY (Styled Table)
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="shield"></i>
+        <span class="eyebrow">Rule Inventory</span>
+      </div>
+      <h2>14 Security Rules Applied</h2>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table compact">
+          <thead>
+            <tr><th>Rule</th><th>Detects</th><th>CWE</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>detect-bidi-characters</td><td>Unicode bidi trojan attacks</td><td class="cwe-cell">CWE-1007</td></tr>
+            <tr><td>detect-buffer-noassert</td><td>Buffer calls with noAssert flag</td><td class="cwe-cell">CWE-754</td></tr>
+            <tr><td>detect-child-process</td><td>Non-literal exec / child_process calls</td><td class="cwe-cell">CWE-78</td></tr>
+            <tr><td>detect-disable-mustache-escape</td><td>Disabled HTML entity escaping</td><td class="cwe-cell">CWE-79</td></tr>
+            <tr><td>detect-eval-with-expression</td><td>eval(variable) usage</td><td class="cwe-cell">CWE-95</td></tr>
+            <tr><td>detect-new-buffer</td><td>new Buffer(variable) usage</td><td class="cwe-cell">CWE-665</td></tr>
+            <tr><td>detect-no-csrf-before-method-override</td><td>CSRF before method-override</td><td class="cwe-cell">CWE-352</td></tr>
+            <tr><td>detect-non-literal-fs-filename</td><td>fs.* with variable filename</td><td class="cwe-cell">CWE-22</td></tr>
+            <tr><td>detect-non-literal-regexp</td><td>RegExp(variable) (ReDoS surface)</td><td class="cwe-cell">CWE-1333</td></tr>
+            <tr><td>detect-non-literal-require</td><td>require(variable)</td><td class="cwe-cell">CWE-829</td></tr>
+            <tr><td>detect-object-injection</td><td>Dynamic property access obj[var]</td><td class="cwe-cell">CWE-1321</td></tr>
+            <tr><td>detect-possible-timing-attacks</td><td>Insecure secret comparisons</td><td class="cwe-cell">CWE-208</td></tr>
+            <tr><td>detect-pseudoRandomBytes</td><td>pseudoRandomBytes usage</td><td class="cwe-cell">CWE-338</td></tr>
+            <tr><td>detect-unsafe-regex</td><td>Catastrophic-backtracking regex</td><td class="cwe-cell">CWE-1333</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 9 — CWE MAP AT A GLANCE
+         A 3x3 grid of CWE-family cards; the required
+         non-text visual is the styled card grid plus
+         icons. The card layout was chosen over a
+         Mermaid flowchart so all 9 weakness families
+         fit comfortably in a single glance.
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="map"></i>
+        <span class="eyebrow">CWE Map</span>
+      </div>
+      <h2>Weakness Coverage by Family</h2>
+      <p class="lede">Nine weakness families covered by 14 rules. Injection and ReDoS lead the breadth; every family ties to a precise CWE identifier.</p>
+
+      <div class="cwe-grid">
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="terminal-square"></i><span class="cwe-family">Injection</span><span class="cwe-id">CWE-78 / 95 / 829 / 1321</span></div>
+          <div class="cwe-rules">child-process &middot; eval &middot; require &middot; object-injection</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="code-2"></i><span class="cwe-family">XSS</span><span class="cwe-id">CWE-79</span></div>
+          <div class="cwe-rules">disable-mustache-escape</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="folder-tree"></i><span class="cwe-family">Path Traversal</span><span class="cwe-id">CWE-22</span></div>
+          <div class="cwe-rules">non-literal-fs-filename</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="shield-alert"></i><span class="cwe-family">CSRF</span><span class="cwe-id">CWE-352</span></div>
+          <div class="cwe-rules">no-csrf-before-method-override</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="key-round"></i><span class="cwe-family">Crypto / RNG</span><span class="cwe-id">CWE-338</span></div>
+          <div class="cwe-rules">pseudoRandomBytes</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="database"></i><span class="cwe-family">Buffer / Init</span><span class="cwe-id">CWE-665 / 754</span></div>
+          <div class="cwe-rules">new-buffer &middot; buffer-noassert</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="regex"></i><span class="cwe-family">ReDoS</span><span class="cwe-id">CWE-1333</span></div>
+          <div class="cwe-rules">non-literal-regexp &middot; unsafe-regex</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="clock-4"></i><span class="cwe-family">Timing</span><span class="cwe-id">CWE-208</span></div>
+          <div class="cwe-rules">possible-timing-attacks</div>
+        </div>
+        <div class="cwe-card">
+          <div class="cwe-card-head"><i data-lucide="languages"></i><span class="cwe-family">Trojan Source</span><span class="cwe-id">CWE-1007</span></div>
+          <div class="cwe-rules">bidi-characters</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 10 — DIVIDER: HOW WE STAY SAFE
+         ============================================ -->
+    <section class="slide-divider" data-slide-type="divider">
+      <div class="hero-icon"><i data-lucide="shield"></i></div>
+      <span class="eyebrow">Section 03</span>
+      <h2>How We Stay Safe</h2>
+      <div class="divider-rule"></div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 11 — ARCHITECTURAL CONTAINMENT
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="layers"></i>
+        <span class="eyebrow">Containment</span>
+      </div>
+      <h2>Sandboxed by Design</h2>
+      <div class="two-col">
+        <div>
+          <ul>
+            <li><strong>Isolated sandbox</strong> &mdash; ESLint installed in <code>.blitzy-eslint-sandbox/</code>.</li>
+            <li><strong>No lockfile drift</strong> &mdash; host manifests are read-only.</li>
+            <li><strong>No CI integration</strong> &mdash; existing workflows unchanged.</li>
+            <li><strong>Biome remains canonical</strong> &mdash; this scan augments, never replaces.</li>
+          </ul>
+        </div>
+        <div>
+          <pre class="mermaid">
+flowchart TB
+    S["Sandbox &middot; ESLint + Security Plugin"]
+    H["Host calcom-monorepo &middot; Biome &middot; CI"]
+    O["findings-config-e.json"]
+    S -. reads .-> H
+    S -. emits .-> O
+          </pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 12 — RISKS &amp; MITIGATIONS
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="shield-alert"></i>
+        <span class="eyebrow">Risks &amp; Mitigations</span>
+      </div>
+      <h2>Operational Risk Posture</h2>
+
+      <div class="styled-table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr><th class="col-risk">Risk</th><th>Mitigation</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Parser-limited TS coverage</td>
+              <td>Add <code>@typescript-eslint/parser</code> to widen scan.</td>
+            </tr>
+            <tr>
+              <td>Host dependency contamination</td>
+              <td>Sandboxed install; manifests read-only.</td>
+            </tr>
+            <tr>
+              <td>False positives at scale</td>
+              <td>Syntax-only plugin; triage before fix.</td>
+            </tr>
+            <tr>
+              <td>Severity skew to high</td>
+              <td>Policy; schema reserves critical/low.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 13 — DIVIDER: DELIVERABLES
+         ============================================ -->
+    <section class="slide-divider" data-slide-type="divider">
+      <div class="hero-icon"><i data-lucide="package"></i></div>
+      <span class="eyebrow">Section 04</span>
+      <h2>Deliverables</h2>
+      <div class="divider-rule"></div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 14 — DELIVERABLES MAP
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="boxes"></i>
+        <span class="eyebrow">Artifacts</span>
+      </div>
+      <h2>What You Receive</h2>
+
+      <div class="deliverable-grid">
+        <div class="deliverable-card">
+          <div class="deliverable-icon"><i data-lucide="file-json"></i></div>
+          <div>
+            <div class="deliverable-name">findings-config-e.json</div>
+            <p class="deliverable-desc">Single-line JSON; machine input for triage.</p>
+            <span class="deliverable-tag">Primary</span>
+          </div>
+        </div>
+        <div class="deliverable-card">
+          <div class="deliverable-icon"><i data-lucide="book-open"></i></div>
+          <div>
+            <div class="deliverable-name">decision-log-config-e.md</div>
+            <p class="deliverable-desc">Every choice, alternative, and risk recorded.</p>
+            <span class="deliverable-tag">Required</span>
+          </div>
+        </div>
+        <div class="deliverable-card">
+          <div class="deliverable-icon"><i data-lucide="presentation"></i></div>
+          <div>
+            <div class="deliverable-name">executive-summary-config-e.html</div>
+            <p class="deliverable-desc">This deck; leadership readout.</p>
+            <span class="deliverable-tag">Required</span>
+          </div>
+        </div>
+        <div class="deliverable-card is-transient">
+          <div class="deliverable-icon"><i data-lucide="folder-cog"></i></div>
+          <div>
+            <div class="deliverable-name">.blitzy-eslint-sandbox/</div>
+            <p class="deliverable-desc">Transient install root; never committed.</p>
+            <span class="deliverable-tag">Transient</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 15 — ONBOARDING &amp; NEXT STEPS
+         ============================================ -->
+    <section class="slide-light" data-slide-type="content">
+      <div class="slide-eyebrow-row">
+        <i data-lucide="rocket"></i>
+        <span class="eyebrow">Onboarding &amp; Next Steps</span>
+      </div>
+      <h2>From Inventory to Action</h2>
+
+      <div class="icon-row">
+        <div class="icon-item">
+          <i data-lucide="filter"></i>
+          <div class="icon-item-title">1. Triage</div>
+          <div class="icon-item-body">CWE first; path and injection.</div>
+        </div>
+        <div class="icon-item">
+          <i data-lucide="git-pull-request"></i>
+          <div class="icon-item-title">2. Decide</div>
+          <div class="icon-item-body">Fix, accept, or suppress.</div>
+        </div>
+        <div class="icon-item">
+          <i data-lucide="settings"></i>
+          <div class="icon-item-title">3. Re-Run</div>
+          <div class="icon-item-body">Sandbox re-runs cleanly.</div>
+        </div>
+        <div class="icon-item">
+          <i data-lucide="bar-chart-3"></i>
+          <div class="icon-item-title">4. Compare</div>
+          <div class="icon-item-body">Feed into the harness.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         SLIDE 16 — CLOSING
+         ============================================ -->
+    <section class="slide-closing" data-slide-type="closing">
+      <div class="closing-icon-row">
+        <i data-lucide="shield-check"></i>
+        <i data-lucide="file-check-2"></i>
+        <i data-lucide="clipboard-check"></i>
+      </div>
+      <span class="eyebrow">Closing</span>
+      <h2>Static Security Visibility, Without Disruption.</h2>
+      <span class="accent-bar"></span>
+      <ul>
+        <li><strong>Scan complete</strong> &mdash; 1,038 of 7,378 file results fully linted.</li>
+        <li><strong>Findings normalized</strong> &mdash; deterministic schema ready for triage.</li>
+        <li><strong>Audit ready</strong> &mdash; host workflows untouched.</li>
+      </ul>
+      <div class="closing-brand-row">
+        <span class="brand-lockup">
+          <span class="brand-dot"></span>
+          Blitzy &middot; Config E for calcom-monorepo
+        </span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Scripts: Mermaid (ESM), reveal.js (UMD), Lucide (UMD). See decision log entries 21-24 for design notes. -->
+<script>
+  window.__mermaidReady = new Promise(function (resolve) {
+    window.__mermaidReadyResolve = resolve;
+  });
+</script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#F2F0FE',
+      primaryTextColor: '#333333',
+      primaryBorderColor: '#5B39F3',
+      lineColor: '#999999',
+      secondaryColor: '#F4EFF6',
+      fontFamily: "'Inter', system-ui, sans-serif"
+    }
+  });
+  window.__mermaid = mermaid;
+  if (typeof window.__mermaidReadyResolve === 'function') {
+    window.__mermaidReadyResolve(mermaid);
+  }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+  var __fontsReadyPromise = (document.fonts && document.fonts.ready)
+    ? document.fonts.ready.catch(function () { return null; })
+    : Promise.resolve();
+
+  function fixMermaidClipping(scope) {
+    var root = scope || document;
+    var nodes = root.querySelectorAll('.mermaid svg .node');
+    nodes.forEach(function (node) {
+      var fo = node.querySelector('foreignObject');
+      if (!fo) return;
+      var inner = fo.querySelector('div');
+      if (inner && inner.style && /max-width\s*:\s*\d+px/i.test(inner.getAttribute('style') || '')) {
+        inner.style.maxWidth = 'none';
+        inner.style.width = 'auto';
+      }
+      var label = fo.querySelector('.nodeLabel') || fo.querySelector('span') || fo;
+      var p = label.querySelector('p') || label;
+      var contentLocal = p.scrollWidth || p.offsetWidth || 0;
+      var foW = parseFloat(fo.getAttribute('width') || '0');
+      if (!contentLocal || !foW) return;
+      var needed = contentLocal + 24;
+      if (needed <= foW + 4) return;
+      var delta = needed - foW;
+      var foX = parseFloat(fo.getAttribute('x') || '0');
+      fo.setAttribute('width', needed);
+      fo.setAttribute('x', foX - delta / 2);
+      var rect = node.querySelector(':scope > rect, :scope > g > rect');
+      if (rect) {
+        var rectW = parseFloat(rect.getAttribute('width') || '0');
+        if (rectW && needed > rectW - 16) {
+          var newRectW = needed + 32;
+          var rectX = parseFloat(rect.getAttribute('x') || '0');
+          rect.setAttribute('width', newRectW);
+          rect.setAttribute('x', rectX - (newRectW - rectW) / 2);
+        }
+      }
+    });
+  }
+
+  function cacheMermaidSources() {
+    // Idempotent: caches the original Mermaid source text on each .mermaid
+    // element the first time it is observed (before any render attempt). This
+    // allows resetErroredMermaid() to restore the syntax for a retry pass when
+    // an initial render produces an error-state SVG placeholder.
+    var all = document.querySelectorAll('.mermaid');
+    for (var i = 0; i < all.length; i++) {
+      if (!all[i].hasAttribute('data-mermaid-source')) {
+        all[i].setAttribute('data-mermaid-source', all[i].textContent);
+      }
+    }
+  }
+
+  function isMermaidBroken(el) {
+    // A processed .mermaid element is considered broken in any of these cases:
+    //   (a) It contains an explicit error placeholder (Mermaid wrote a
+    //       "Syntax error in text" SVG when the renderer failed outright).
+    //   (b) Its rendered SVG has aria-roledescription="error".
+    //   (c) Its rendered SVG has a degenerate viewBox or zero rendered size
+    //       even though the document type is flowchart — this happens when
+    //       Mermaid renders into a parent with zero layout dimensions and
+    //       falls back to a default 16x16 viewBox while the actual nodes are
+    //       positioned far outside that box (effectively invisible).
+    if (el.querySelector('svg .error-icon')) return true;
+    if (el.querySelector('svg .error-text')) return true;
+    if (el.querySelector('svg[aria-roledescription="error"]')) return true;
+    var svg = el.querySelector('svg');
+    if (!svg) return false;
+    var vb = svg.getAttribute('viewBox') || '';
+    var parts = vb.trim().split(/\s+/).map(parseFloat);
+    if (parts.length === 4) {
+      var w = parts[2];
+      var h = parts[3];
+      // Sentinel: a real flowchart viewBox is typically wider than 100 units.
+      // The fallback "broken" viewBox is around 16x16 with negative origin.
+      if (isFinite(w) && isFinite(h) && (w < 100 || h < 100)) {
+        // Confirm by checking node count: a real flowchart with multiple nodes
+        // cannot legitimately fit in <100x100 if it has >1 node.
+        var nodes = svg.querySelectorAll('.node');
+        if (nodes.length >= 2) return true;
+      }
+    }
+    return false;
+  }
+
+  function resetErroredMermaid() {
+    // Mermaid sets data-processed="true" even on failed renders. Detect both
+    // visible failures (error placeholder SVG) and silent failures (degenerate
+    // viewBox) and reset those nodes so the next renderMermaidPending pass
+    // picks them up. This recovers from transient layout-driven render
+    // failures (e.g., when a non-active reveal.js slide has zero viewport size
+    // during the initial render and Mermaid's path-router cannot compute edge
+    // geometry).
+    var processed = document.querySelectorAll('.mermaid[data-processed="true"]');
+    for (var i = 0; i < processed.length; i++) {
+      var el = processed[i];
+      if (!isMermaidBroken(el)) continue;
+      var src = el.getAttribute('data-mermaid-source');
+      if (!src) continue;
+      el.removeAttribute('data-processed');
+      el.textContent = src;
+    }
+  }
+
+  function isMermaidVisible(el) {
+    // Mermaid's dagre layout requires non-zero render geometry to compute
+    // edge routing. A reveal.js slide that is not currently active is scaled
+    // away (offsetWidth = 0 / offsetHeight = 0), and attempting to render
+    // there yields the broken "translate(undefined, NaN)" SVG. Only render
+    // mermaids whose container slide is currently laid out.
+    if (typeof el.getBoundingClientRect !== 'function') return true;
+    var r = el.getBoundingClientRect();
+    if (r && r.width > 0 && r.height > 0) return true;
+    var owOh = (el.offsetWidth || 0) + (el.offsetHeight || 0);
+    return owOh > 0;
+  }
+
+  function renderMermaidPending() {
+    var readiness = (window.__mermaidReady || Promise.resolve())
+      .then(function () { return __fontsReadyPromise; });
+    readiness.then(function () {
+      if (!window.__mermaid) return;
+      cacheMermaidSources();
+      resetErroredMermaid();
+      var allUnprocessed = Array.prototype.slice.call(
+        document.querySelectorAll('.mermaid:not([data-processed="true"])')
+      );
+      // Only attempt to render mermaids whose containing slide is currently
+      // visible. Inactive slides have zero-dimension layout and cannot be
+      // rendered reliably; they will be picked up by the next slidechanged
+      // event when the user navigates to them.
+      var nodes = allUnprocessed.filter(isMermaidVisible);
+      if (nodes.length === 0) {
+        fixMermaidClipping();
+        return;
+      }
+      (async function processOneByOne() {
+        for (var i = 0; i < nodes.length; i++) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            await window.__mermaid.run({ nodes: [nodes[i]] });
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('[mermaid] render error on node', i, err);
+          }
+        }
+        fixMermaidClipping();
+      })();
+    });
+  }
+
+  function renderLucide() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+
+  Reveal.initialize({
+    hash: true,
+    transition: 'slide',
+    controlsTutorial: false,
+    width: 1920,
+    height: 1080,
+    margin: 0.04,
+    slideNumber: 'c/t',
+    pdfSeparateFragments: false
+  }).then(function () {
+    renderMermaidPending();
+    renderLucide();
+    // Deeplink defense-in-depth: when a user lands directly on a slide that
+    // contains a Mermaid diagram (e.g., #/10 / Reveal.slide(10)), no
+    // 'slidechanged' event fires after the initial render. Schedule a follow-up
+    // render pass after layout has settled so resetErroredMermaid() can recover
+    // any diagrams whose first render attempt failed due to transient
+    // zero-dimension layout.
+    setTimeout(renderMermaidPending, 600);
+  });
+
+  Reveal.on('slidechanged', function () {
+    renderMermaidPending();
+    renderLucide();
+  });
+
+  Reveal.on('ready', function () {
+    renderMermaidPending();
+    renderLucide();
+  });
+</script>
+
+</body>
+</html>
+
+
+

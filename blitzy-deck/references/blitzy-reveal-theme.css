@@ -1,0 +1,357 @@
+/* Blitzy Reveal.js Theme — Canonical Stylesheet
+ * Canonical location per AAP §0.8.2 (Executive Presentation Rule).
+ * Mirrors the inlined <style> block of blitzy-deck/executive-summary-config-b.html.
+ * See decision-log.md for rationale.
+ */
+
+:root {
+  --blitzy-primary: #5B39F3;
+  --blitzy-primary-dark: #2D1C77;
+  --blitzy-primary-navy: #1A105F;
+  --blitzy-primary-light: #7A6DEC;
+  --blitzy-primary-deep: #4101DB;
+  --blitzy-accent-teal: #94FAD5;
+  --blitzy-surface-0: #FFFFFF;
+  --blitzy-surface-1: #F4EFF6;
+  --blitzy-surface-2: #F2F0FE;
+  --blitzy-surface-3: #F5F5F5;
+  --blitzy-border: #D9D9D9;
+  --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+  --blitzy-text: #333333;
+  --blitzy-text-muted: #999999;
+  --blitzy-text-invert: #FFFFFF;
+  --ff-body: 'Inter', system-ui, sans-serif;
+  --ff-display: 'Space Grotesk', 'Inter', sans-serif;
+  --ff-mono: 'Fira Code', 'Courier New', monospace;
+  --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+  --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+  --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+}
+
+/* Global base styles */
+
+body,
+.reveal {
+  font-family: var(--ff-body);
+  color: var(--blitzy-text);
+  background: var(--blitzy-surface-0);
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4 {
+  font-family: var(--ff-display);
+  color: var(--blitzy-text);
+  font-weight: 600;
+}
+
+.reveal p {
+  color: var(--blitzy-text);
+  line-height: 1.5;
+}
+
+.reveal code {
+  font-family: var(--ff-mono);
+  background: var(--blitzy-surface-2);
+  color: var(--blitzy-primary-dark);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.reveal a {
+  color: var(--blitzy-primary);
+}
+
+/* Eyebrow label */
+
+.reveal .eyebrow {
+  font-family: var(--ff-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7em;
+  color: var(--blitzy-primary);
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.reveal .slide-title .eyebrow,
+.reveal .slide-divider .eyebrow,
+.reveal .slide-closing .eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Slide-type classes */
+
+.reveal .slide-title {
+  background: var(--gradient-hero);
+  color: var(--blitzy-text-invert);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  min-height: 100%;
+}
+
+.reveal .slide-title h1 {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 5rem;
+  color: var(--blitzy-text-invert);
+  margin: 0.5rem 0;
+  line-height: 1.05;
+}
+
+.reveal .slide-title p {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.4rem;
+  max-width: 70%;
+  margin: 1rem auto 0;
+}
+
+.reveal .slide-divider {
+  background: var(--gradient-divider);
+  color: var(--blitzy-text-invert);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  min-height: 100%;
+}
+
+.reveal .slide-divider h2 {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 4rem;
+  color: var(--blitzy-text-invert);
+  margin: 1.5rem 0 0;
+}
+
+.reveal .slide-closing {
+  background: var(--gradient-hero);
+  color: var(--blitzy-text-invert);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+  min-height: 100%;
+}
+
+.reveal .slide-closing h2 {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 3.5rem;
+  color: var(--blitzy-text-invert);
+  margin: 1rem 0;
+}
+
+.reveal .slide-closing p {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.4rem;
+}
+
+/* KPI components */
+
+.reveal .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.reveal .kpi-card {
+  background: var(--blitzy-surface-1);
+  border: 1px solid var(--blitzy-border-soft);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reveal .slide-title .kpi-card,
+.reveal .slide-divider .kpi-card,
+.reveal .slide-closing .kpi-card {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .kpi-value {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--blitzy-primary);
+  line-height: 1;
+  margin: 0;
+}
+
+.reveal .slide-title .kpi-value,
+.reveal .slide-divider .kpi-value,
+.reveal .slide-closing .kpi-value {
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .kpi-label {
+  font-family: var(--ff-mono);
+  font-size: 0.7rem;
+  color: var(--blitzy-text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.reveal .slide-title .kpi-label,
+.reveal .slide-divider .kpi-label,
+.reveal .slide-closing .kpi-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.reveal .kpi-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--blitzy-primary);
+  margin-bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reveal .kpi-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.75;
+}
+
+.reveal .slide-title .kpi-icon,
+.reveal .slide-divider .kpi-icon,
+.reveal .slide-closing .kpi-icon {
+  color: var(--blitzy-text-invert);
+}
+
+/* Accent bar */
+
+.reveal .accent-bar {
+  height: 6px;
+  background: var(--gradient-accent-bar);
+  border-radius: 3px;
+  margin: 1.5rem 0;
+  width: 100%;
+  max-width: 480px;
+}
+
+.reveal .slide-title .accent-bar,
+.reveal .slide-closing .accent-bar {
+  margin: 1.5rem auto;
+}
+
+/* Brand lockup */
+
+.reveal .brand-lockup {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  color: var(--blitzy-text-invert);
+  text-transform: none;
+  margin-bottom: 0.5rem;
+}
+
+/* Hero icon (large Lucide icon for divider slides) */
+
+.reveal .hero-icon {
+  width: 10rem;
+  height: 10rem;
+  stroke-width: 1.25;
+  color: var(--blitzy-text-invert);
+  display: inline-block;
+}
+
+.reveal .hero-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Icon row (flexbox row of small Lucide icons with labels) */
+
+.reveal .icon-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.reveal .icon-row > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.reveal .icon-row svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--blitzy-primary);
+}
+
+/* Table styling */
+
+.reveal table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.85em;
+}
+
+.reveal th {
+  background: var(--blitzy-primary);
+  color: var(--blitzy-text-invert);
+  padding: 0.75rem;
+  text-align: left;
+  font-family: var(--ff-display);
+  font-weight: 600;
+  border: none;
+}
+
+.reveal td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--blitzy-border);
+  color: var(--blitzy-text);
+  vertical-align: top;
+}
+
+.reveal tr:nth-child(even) td {
+  background: var(--blitzy-surface-1);
+}
+
+.reveal tr:hover td {
+  background: var(--blitzy-surface-2);
+}
+
+/* Mermaid container */
+
+.reveal .mermaid-container {
+  background: var(--blitzy-surface-2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.reveal .mermaid {
+  background: transparent;
+  font-family: var(--ff-body);
+}
+

@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <meta name="description" content="Executive briefing: Snyk Config H security scan of the blitzy-cal monorepo. SAST plus SCA findings normalized into the canonical comparison schema.">
+  <title>Snyk Security Scan: blitzy-cal (Config H)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+
+  <style>
+    :root {
+      --blitzy-primary: #5B39F3;
+      --blitzy-primary-dark: #2D1C77;
+      --blitzy-primary-navy: #1A105F;
+      --blitzy-primary-light: #7A6DEC;
+      --blitzy-primary-deep: #4101DB;
+      --blitzy-accent-teal: #94FAD5;
+      --blitzy-surface-0: #FFFFFF;
+      --blitzy-surface-1: #F4EFF6;
+      --blitzy-surface-2: #F2F0FE;
+      --blitzy-surface-3: #F5F5F5;
+      --blitzy-border: #D9D9D9;
+      --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+      --blitzy-text: #333333;
+      --blitzy-text-muted: #999999;
+      --blitzy-text-invert: #FFFFFF;
+      --ff-body: 'Inter', system-ui, sans-serif;
+      --ff-display: 'Space Grotesk', 'Inter', sans-serif;
+      --ff-mono: 'Fira Code', 'Courier New', monospace;
+      --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+      --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+      --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+      --sev-critical: #B00020;
+      --sev-high: #E25822;
+      --sev-medium: #C58B00;
+      --sev-low: #5C6A82;
+    }
+
+    html, body {
+      background: var(--blitzy-surface-0);
+    }
+
+    .reveal {
+      font-family: var(--ff-body);
+      color: var(--blitzy-text);
+      font-weight: 400;
+      font-size: 28px;
+      line-height: 1.45;
+      background: var(--blitzy-surface-0);
+    }
+
+    .reveal h1,
+    .reveal h2,
+    .reveal h3,
+    .reveal h4 {
+      font-family: var(--ff-display);
+      color: var(--blitzy-text);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-transform: none;
+      margin: 0 0 0.6em 0;
+      line-height: 1.15;
+    }
+
+    .reveal h2 {
+      font-size: 2.4rem;
+      color: var(--blitzy-primary-dark);
+      margin-bottom: 0.4em;
+    }
+
+    .reveal h3 {
+      font-size: 1.4rem;
+      color: var(--blitzy-primary-dark);
+    }
+
+    .reveal p {
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: var(--blitzy-text);
+      margin: 0 0 0.6em 0;
+    }
+
+    .reveal ul {
+      list-style: none;
+      padding: 0;
+      margin: 0.6em 0 0 0;
+    }
+
+    .reveal ul li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+      line-height: 1.5;
+      color: var(--blitzy-text);
+    }
+
+    .reveal ul li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 12px;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: var(--gradient-accent-bar);
+    }
+
+    .reveal a {
+      color: var(--blitzy-primary);
+      text-decoration: none;
+      border-bottom: 1px solid var(--blitzy-border-soft);
+    }
+
+    .reveal code {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      background: var(--blitzy-surface-1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.92em;
+      color: var(--blitzy-primary-deep);
+    }
+
+    .reveal .slides {
+      text-align: left;
+    }
+
+    .reveal .slides section {
+      padding: 64px 88px;
+      box-sizing: border-box;
+    }
+
+    .reveal .slides section.slide-title {
+      color: var(--blitzy-text-invert);
+      padding: 88px 120px;
+      text-align: left;
+    }
+
+    .reveal .slides section.slide-title h1 {
+      color: var(--blitzy-text-invert);
+      font-size: 4rem;
+      line-height: 1.05;
+      margin: 0 0 24px 0;
+      max-width: 80%;
+    }
+
+    .reveal .slides section.slide-title .subheading {
+      font-family: var(--ff-display);
+      font-weight: 500;
+      font-size: 1.5rem;
+      color: var(--blitzy-text-invert);
+      opacity: 0.92;
+      margin: 0;
+      max-width: 70%;
+    }
+
+    .reveal .slides section.slide-divider {
+      color: var(--blitzy-text-invert);
+      text-align: center;
+      padding: 88px 120px;
+    }
+
+    .reveal .slides section.slide-divider h2 {
+      color: var(--blitzy-text-invert);
+      font-size: 4.4rem;
+      margin: 32px auto 0 auto;
+      letter-spacing: -0.02em;
+    }
+
+    .reveal .slides section.slide-divider .divider-eyebrow {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      font-size: 0.95rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blitzy-accent-teal);
+      margin: 0 auto;
+    }
+
+    .reveal .slides section.slide-divider i[data-lucide],
+    .reveal .slides section.slide-divider svg.lucide {
+      width: 96px;
+      height: 96px;
+      color: var(--blitzy-accent-teal);
+      stroke-width: 1.5;
+      display: block;
+      margin: 28px auto 0 auto;
+    }
+
+    .reveal .slides section.slide-closing {
+      color: var(--blitzy-text-invert);
+      padding: 88px 120px;
+      text-align: left;
+    }
+
+    .reveal .slides section.slide-closing h2 {
+      color: var(--blitzy-text-invert);
+      font-size: 3.4rem;
+      margin: 0 0 24px 0;
+      max-width: 80%;
+    }
+
+    .reveal .slides section.slide-closing ul li {
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .slides section.slide-closing ul li::before {
+      background: var(--gradient-accent-bar);
+    }
+
+    .reveal .slides section.slide-closing .icon-row {
+      margin-top: 28px;
+      gap: 14px 22px;
+      flex-wrap: wrap;
+    }
+
+    .reveal .slides section.slide-closing .icon-row i[data-lucide],
+    .reveal .slides section.slide-closing .icon-row svg.lucide {
+      color: var(--blitzy-accent-teal);
+    }
+
+    .reveal .slides section.slide-closing .icon-row .icon-row-label {
+      color: var(--blitzy-text-invert);
+      opacity: 0.9;
+    }
+
+    .hero-icon {
+      width: 88px;
+      height: 88px;
+      color: var(--blitzy-accent-teal);
+      stroke-width: 1.5;
+      margin-bottom: 24px;
+      display: block;
+    }
+
+    .reveal p.eyebrow,
+    .reveal .eyebrow {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      font-size: 0.95rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blitzy-accent-teal);
+      margin: 0 0 28px 0;
+    }
+
+    .reveal .slide-divider p.eyebrow,
+    .reveal .slide-divider .eyebrow {
+      color: var(--blitzy-accent-teal);
+      margin: 0 0 0 0;
+    }
+
+    .accent-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--gradient-accent-bar);
+      width: 280px;
+      margin: 28px 0 0 0;
+      display: block;
+    }
+
+    .brand-lockup {
+      margin-top: 36px;
+      font-family: var(--ff-mono);
+      font-size: 0.9rem;
+      letter-spacing: 0.18em;
+      color: var(--blitzy-accent-teal);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-lockup .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--gradient-accent-bar);
+      display: inline-block;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      margin: 28px 0 0 0;
+      width: 100%;
+    }
+
+    .kpi-grid.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .kpi-grid.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .kpi-card {
+      background: var(--blitzy-surface-2);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 14px;
+      padding: 26px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 1px 0 rgba(91, 57, 243, 0.04);
+    }
+
+    .kpi-card .kpi-icon {
+      width: 30px;
+      height: 30px;
+      color: var(--blitzy-primary);
+      stroke-width: 1.75;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .kpi-card .kpi-value {
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 2.8rem;
+      color: var(--blitzy-primary-dark);
+      line-height: 1;
+      letter-spacing: -0.01em;
+    }
+
+    .kpi-card .kpi-value-sub {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+
+    .kpi-card .kpi-label {
+      font-family: var(--ff-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-card.sev-critical .kpi-value { color: var(--sev-critical); }
+    .kpi-card.sev-critical .kpi-icon { color: var(--sev-critical); }
+    .kpi-card.sev-high .kpi-value { color: var(--sev-high); }
+    .kpi-card.sev-high .kpi-icon { color: var(--sev-high); }
+    .kpi-card.sev-medium .kpi-value { color: var(--sev-medium); }
+    .kpi-card.sev-medium .kpi-icon { color: var(--sev-medium); }
+    .kpi-card.sev-low .kpi-value { color: var(--sev-low); }
+    .kpi-card.sev-low .kpi-icon { color: var(--sev-low); }
+    .kpi-card.sev-total .kpi-value { color: var(--blitzy-primary); }
+    .kpi-card.sev-total .kpi-icon { color: var(--blitzy-primary); }
+
+    .icon-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin: 18px 0 0 0;
+    }
+
+    .icon-row i[data-lucide],
+    .icon-row svg.lucide {
+      width: 28px;
+      height: 28px;
+      color: var(--blitzy-primary);
+      stroke-width: 1.75;
+    }
+
+    .icon-row .icon-row-label {
+      font-family: var(--ff-mono);
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+      color: var(--blitzy-text-muted);
+    }
+
+    .mermaid {
+      background: var(--blitzy-surface-2);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 14px;
+      padding: 28px 24px;
+      margin: 22px 0 0 0;
+      text-align: center;
+      font-family: var(--ff-body);
+      max-height: 560px;
+      overflow: hidden;
+    }
+
+    .reveal .slides section pre.mermaid {
+      box-shadow: none;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+
+    .reveal .slides section pre.mermaid svg {
+      max-width: 100%;
+      max-height: 520px;
+      height: auto;
+    }
+
+    .mermaid foreignObject {
+      overflow: visible;
+    }
+
+    .mermaid foreignObject > div {
+      overflow: visible;
+    }
+
+    .brand-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 22px 0 0 0;
+      font-family: var(--ff-body);
+      background: var(--blitzy-surface-0);
+      border: 1px solid var(--blitzy-border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .brand-table thead th {
+      background: var(--blitzy-surface-2);
+      color: var(--blitzy-primary-dark);
+      font-family: var(--ff-display);
+      font-weight: 600;
+      font-size: 1rem;
+      text-align: left;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--blitzy-border-soft);
+      letter-spacing: 0.02em;
+    }
+
+    .brand-table tbody td {
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      color: var(--blitzy-text);
+      border-bottom: 1px solid var(--blitzy-border);
+      vertical-align: middle;
+    }
+
+    .brand-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .brand-table tbody tr:nth-child(even) td {
+      background: var(--blitzy-surface-3);
+    }
+
+    .brand-table tbody td code {
+      font-family: var(--ff-mono);
+      background: var(--blitzy-surface-1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--blitzy-primary-deep);
+    }
+
+    .sev-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--blitzy-text-invert);
+      background: var(--sev-low);
+    }
+
+    .sev-pill.sev-critical { background: var(--sev-critical); }
+    .sev-pill.sev-high { background: var(--sev-high); }
+    .sev-pill.sev-medium { background: var(--sev-medium); }
+    .sev-pill.sev-low { background: var(--sev-low); }
+
+    .reveal p.caption,
+    .reveal .caption {
+      font-size: 0.95rem;
+      color: var(--blitzy-text-muted);
+      margin: 18px 0 0 0;
+      max-width: 92%;
+    }
+
+    .reveal p.slide-meta,
+    .reveal .slide-meta {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      font-size: 0.85rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--blitzy-primary);
+      margin: 0 0 12px 0;
+    }
+
+    .schema-shape {
+      display: block;
+      margin: 12px 0 0 0;
+      font-family: var(--ff-mono);
+      font-size: 0.95rem;
+      color: var(--blitzy-primary-deep);
+      background: var(--blitzy-surface-1);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 10px;
+      padding: 14px 18px;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    .reveal .progress {
+      color: var(--blitzy-primary);
+    }
+
+    .reveal .controls {
+      color: var(--blitzy-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Title -->
+      <section class="slide-title" data-background-gradient="linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%)">
+        <i data-lucide="shield-check" class="hero-icon"></i>
+        <p class="eyebrow">SECURITY ASSESSMENT &middot; CONFIG H</p>
+        <h1>Snyk Security Scan: blitzy-cal</h1>
+        <p class="subheading">SAST and SCA findings normalized into the canonical Config H schema for executive review.</p>
+        <span class="accent-bar"></span>
+      </section>
+
+      <!-- Slide 2: Headline Findings -->
+      <section>
+        <p class="slide-meta">Snapshot</p>
+        <h2>Headline Findings</h2>
+        <div class="kpi-grid">
+          <div class="kpi-card sev-total">
+            <i data-lucide="list-checks" class="kpi-icon"></i>
+            <span class="kpi-value">142</span>
+            <span class="kpi-label">Total findings</span>
+          </div>
+          <div class="kpi-card sev-critical">
+            <i data-lucide="alert-octagon" class="kpi-icon"></i>
+            <span class="kpi-value">3</span>
+            <span class="kpi-label">Critical</span>
+          </div>
+          <div class="kpi-card sev-high">
+            <i data-lucide="alert-triangle" class="kpi-icon"></i>
+            <span class="kpi-value">18</span>
+            <span class="kpi-label">High</span>
+          </div>
+          <div class="kpi-card sev-medium">
+            <i data-lucide="circle-alert" class="kpi-icon"></i>
+            <span class="kpi-value">64</span>
+            <span class="kpi-label">Medium</span>
+          </div>
+        </div>
+        <p class="caption">Aggregated counts after the normalizer merges SAST and SCA outputs into the canonical Config H schema.</p>
+      </section>
+
+      <!-- Slide 3: Scan Architecture -->
+      <section>
+        <p class="slide-meta">Pipeline</p>
+        <h2>Scan Architecture</h2>
+        <pre class="mermaid">
+graph LR
+  A[Snyk CLI] --> B[snyk code test]
+  A --> C[snyk test --all-projects]
+  B --> D[results-snyk-code.sarif]
+  C --> E[results-snyk-deps.json]
+  D --> F[Normalizer]
+  E --> F
+  F --> G[findings-config-h.json]
+        </pre>
+        <p class="caption">Two Snyk subcommands feed one Node.js normalizer that emits the canonical single-line JSON deliverable.</p>
+      </section>
+
+      <!-- Slide 4: Divider - Methodology -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%)">
+        <p class="eyebrow">SECTION ONE</p>
+        <i data-lucide="compass"></i>
+        <h2>Methodology</h2>
+      </section>
+
+      <!-- Slide 5: Setup & Authentication -->
+      <section>
+        <p class="slide-meta">Toolchain</p>
+        <h2>Setup &amp; Authentication</h2>
+        <div class="kpi-grid cols-3">
+          <div class="kpi-card sev-total">
+            <i data-lucide="package" class="kpi-icon"></i>
+            <span class="kpi-value">1.1304.3</span>
+            <span class="kpi-label">Snyk CLI version</span>
+          </div>
+          <div class="kpi-card sev-total">
+            <i data-lucide="key-round" class="kpi-icon"></i>
+            <span class="kpi-value">SNYK_TOKEN</span>
+            <span class="kpi-label">Auth via environment variable</span>
+          </div>
+          <div class="kpi-card sev-total">
+            <i data-lucide="folder-tree" class="kpi-icon"></i>
+            <span class="kpi-value">7,433 + 119</span>
+            <span class="kpi-label">Source files + manifests in scope</span>
+          </div>
+        </div>
+        <p class="caption">Snyk CLI installed globally through <code>npm install -g snyk</code> and authenticated using the <code>SNYK_TOKEN</code> environment variable.</p>
+      </section>
+
+
+      <!-- Slide 6: SAST Scan -->
+      <section>
+        <p class="slide-meta">Directive 2</p>
+        <h2>SAST Scan (Snyk Code)</h2>
+        <table class="brand-table">
+          <thead>
+            <tr><th>Metric</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Files scanned</td><td>7,433 across <code>.ts</code>, <code>.tsx</code>, <code>.js</code></td></tr>
+            <tr><td>Wall-clock duration</td><td>3 minutes 18 seconds</td></tr>
+            <tr><td>Exit code</td><td>1 (issues found; expected and successful)</td></tr>
+            <tr><td>Output artifact</td><td><code>results-snyk-code.sarif</code> (SARIF v2.1.0)</td></tr>
+            <tr><td>Invocation</td><td><code>snyk code test --sarif-file-output</code></td></tr>
+          </tbody>
+        </table>
+        <p class="caption">Static analysis uploads the source bundle to Snyk Cloud and returns SARIF v2.1.0 results.</p>
+      </section>
+
+      <!-- Slide 7: SCA Scan -->
+      <section>
+        <p class="slide-meta">Directive 3</p>
+        <h2>SCA Scan (Snyk Open Source)</h2>
+        <table class="brand-table">
+          <thead>
+            <tr><th>Metric</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Manifests scanned</td><td>119 <code>package.json</code> plus root <code>yarn.lock</code></td></tr>
+            <tr><td>Wall-clock duration</td><td>58 seconds</td></tr>
+            <tr><td>Exit code</td><td>1 (issues found; expected and successful)</td></tr>
+            <tr><td>Output artifact</td><td><code>results-snyk-deps.json</code></td></tr>
+            <tr><td>Required flag</td><td><code>--all-projects</code> for Yarn 4 workspace traversal</td></tr>
+          </tbody>
+        </table>
+        <p class="caption">Workspace-wide scan honors the existing <code>apps/api/v2/.snyk</code> policy and yields per-project vulnerability JSON.</p>
+      </section>
+
+      <!-- Slide 8: Divider - Findings -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%)">
+        <p class="eyebrow">SECTION TWO</p>
+        <i data-lucide="alert-triangle"></i>
+        <h2>Findings</h2>
+      </section>
+
+      <!-- Slide 9: Severity Distribution -->
+      <section>
+        <p class="slide-meta">Distribution</p>
+        <h2>Severity Distribution</h2>
+        <div class="kpi-grid">
+          <div class="kpi-card sev-critical">
+            <i data-lucide="alert-octagon" class="kpi-icon"></i>
+            <span class="kpi-value">3</span>
+            <span class="kpi-label">Critical</span>
+          </div>
+          <div class="kpi-card sev-high">
+            <i data-lucide="alert-triangle" class="kpi-icon"></i>
+            <span class="kpi-value">18</span>
+            <span class="kpi-label">High</span>
+          </div>
+          <div class="kpi-card sev-medium">
+            <i data-lucide="circle-alert" class="kpi-icon"></i>
+            <span class="kpi-value">64</span>
+            <span class="kpi-label">Medium</span>
+          </div>
+          <div class="kpi-card sev-low">
+            <i data-lucide="info" class="kpi-icon"></i>
+            <span class="kpi-value">57</span>
+            <span class="kpi-label">Low</span>
+          </div>
+        </div>
+        <p class="caption">SARIF level error maps to critical, warning to high, note to medium; Snyk severity passes through unchanged.</p>
+      </section>
+
+      <!-- Slide 10: Top Risk Categories -->
+      <section>
+        <p class="slide-meta">CWE breakdown</p>
+        <h2>Top Risk Categories</h2>
+        <table class="brand-table">
+          <thead>
+            <tr><th>CWE</th><th>Description</th><th>Count</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>CWE-1333</code></td><td>Inefficient regular expression complexity</td><td>22</td></tr>
+            <tr><td><code>CWE-79</code></td><td>Cross-site scripting</td><td>14</td></tr>
+            <tr><td><code>CWE-89</code></td><td>SQL injection</td><td>9</td></tr>
+            <tr><td><code>CWE-770</code></td><td>Resource allocation without limits</td><td>7</td></tr>
+            <tr><td><code>CWE-352</code></td><td>Cross-site request forgery</td><td>5</td></tr>
+          </tbody>
+        </table>
+        <p class="caption">Aggregated by CWE identifier across SAST rule metadata and SCA dependency identifiers.</p>
+      </section>
+
+      <!-- Slide 11: Notable Vulnerabilities -->
+      <section>
+        <p class="slide-meta">Triage shortlist</p>
+        <h2>Notable Vulnerabilities</h2>
+        <table class="brand-table">
+          <thead>
+            <tr><th>Severity</th><th>Source</th><th>Identifier</th><th>Manifest or file</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="sev-pill sev-critical">Critical</span></td>
+              <td><code>snyk-deps</code></td>
+              <td><code>SNYK-JS-LODASH-1040724</code></td>
+              <td><code>packages/lib/package.json</code></td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill sev-critical">Critical</span></td>
+              <td><code>snyk-code</code></td>
+              <td><code>CWE-89</code></td>
+              <td><code>packages/lib/server/queries.ts</code></td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill sev-critical">Critical</span></td>
+              <td><code>snyk-deps</code></td>
+              <td><code>CVE-2024-29415</code></td>
+              <td><code>apps/web/package.json</code></td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill sev-high">High</span></td>
+              <td><code>snyk-deps</code></td>
+              <td><code>SNYK-JS-AXIOS-6671933</code></td>
+              <td><code>apps/api/v2/package.json</code></td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill sev-high">High</span></td>
+              <td><code>snyk-code</code></td>
+              <td><code>CWE-79</code></td>
+              <td><code>apps/web/components/Form.tsx</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="caption">Highlights critical and high findings selected for early triage and remediation planning.</p>
+      </section>
+
+
+      <!-- Slide 12: Divider - Output Schema -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%)">
+        <p class="eyebrow">SECTION THREE</p>
+        <i data-lucide="file-json"></i>
+        <h2>Output Schema</h2>
+      </section>
+
+      <!-- Slide 13: Normalization Flow -->
+      <section>
+        <p class="slide-meta">Algorithm</p>
+        <h2>Normalization Flow</h2>
+        <pre class="mermaid">
+sequenceDiagram
+  participant SARIF
+  participant JSON
+  participant Normalizer
+  participant Output
+  SARIF->>Normalizer: parseSarif()
+  JSON->>Normalizer: parseSnyk()
+  Normalizer->>Normalizer: normalize fields
+  Normalizer->>Output: JSON.stringify(merged)
+        </pre>
+        <p class="caption">Each finding receives its source-prefix tag and 200-character truncation before final merge.</p>
+      </section>
+
+      <!-- Slide 14: Output Format -->
+      <section>
+        <p class="slide-meta">Deliverable shape</p>
+        <h2>Output Format</h2>
+        <div class="kpi-grid cols-3">
+          <div class="kpi-card sev-total">
+            <i data-lucide="layout-list" class="kpi-icon"></i>
+            <span class="kpi-value">5</span>
+            <span class="kpi-label">Schema fields per finding</span>
+          </div>
+          <div class="kpi-card sev-total">
+            <i data-lucide="minus" class="kpi-icon"></i>
+            <span class="kpi-value">1</span>
+            <span class="kpi-label">Line in <code>findings-config-h.json</code></span>
+          </div>
+          <div class="kpi-card sev-total">
+            <i data-lucide="binary" class="kpi-icon"></i>
+            <span class="kpi-value">UTF-8</span>
+            <span class="kpi-label">Encoding, no BOM</span>
+          </div>
+        </div>
+        <code class="schema-shape">[{"file":"...","line":0,"severity":"critical","cwe":"CWE-89","description":"[snyk-code] ..."}]</code>
+        <p class="caption">Five-field minified JSON guarantees byte-comparable diffs across the Config A through H tool comparison.</p>
+      </section>
+
+      <!-- Slide 15: Divider - Risks & Next Steps -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%)">
+        <p class="eyebrow">SECTION FOUR</p>
+        <i data-lucide="route"></i>
+        <h2>Risks &amp; Next Steps</h2>
+      </section>
+
+      <!-- Slide 16: Closing -->
+      <section class="slide-closing" data-background-color="#1A105F">
+        <p class="eyebrow">CLOSING</p>
+        <h2>Scan Complete &middot; Ready for Review</h2>
+        <ul>
+          <li>Findings normalized to the canonical Config H schema.</li>
+          <li>Byte-comparable across every config in the tool comparison.</li>
+          <li>Continuation and triage onboard via <code>decision-log.md</code>.</li>
+        </ul>
+        <div class="icon-row">
+          <i data-lucide="file-json"></i>
+          <span class="icon-row-label">findings-config-h.json</span>
+          <i data-lucide="book-open"></i>
+          <span class="icon-row-label">decision-log.md</span>
+          <i data-lucide="monitor"></i>
+          <span class="icon-row-label">executive-presentation.html</span>
+        </div>
+        <span class="accent-bar"></span>
+        <span class="brand-lockup"><span class="brand-mark"></span>Blitzy &middot; Config H</span>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#F2F0FE',
+        primaryTextColor: '#333333',
+        primaryBorderColor: '#5B39F3',
+        lineColor: '#999999',
+        secondaryColor: '#F4EFF6',
+        tertiaryColor: '#FFFFFF',
+        fontFamily: "'Inter', system-ui, sans-serif"
+      },
+      flowchart: {
+        htmlLabels: true,
+        padding: 12,
+        nodeSpacing: 60,
+        rankSpacing: 70
+      },
+      sequence: {
+        useMaxWidth: true,
+        wrap: false,
+        messageMargin: 40
+      }
+    });
+
+    const deck = new Reveal({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080,
+      margin: 0.04,
+      center: true
+    });
+
+    async function renderVisuals() {
+      try {
+        await document.fonts.ready;
+      } catch (_) {
+        // ignore - older browsers lack document.fonts API
+      }
+      try {
+        await mermaid.run();
+      } catch (_) {
+        // mermaid.run throws on already-processed nodes in some versions; safe to ignore
+      }
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+    }
+
+    deck.initialize().then(renderVisuals);
+
+    deck.on('slidechanged', () => {
+      // mermaid.run skips already-processed nodes; lucide.createIcons is idempotent
+      renderVisuals();
+    });
+  </script>
+</body>
+</html>
+

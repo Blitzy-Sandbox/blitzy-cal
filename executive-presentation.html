@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
   <meta name="description" content="Executive briefing: Snyk Config H security scan of the blitzy-cal monorepo. SAST plus SCA findings normalized into the canonical comparison schema.">
   <title>Snyk Security Scan: blitzy-cal (Config H)</title>
+  <link rel="icon" href="data:,">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -289,6 +290,11 @@
       width: 100%;
     }
 
+    .kpi-grid.cols-5 {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 18px;
+    }
+
     .kpi-grid.cols-3 {
       grid-template-columns: repeat(3, 1fr);
     }
@@ -520,7 +526,7 @@
       <section>
         <p class="slide-meta">Snapshot</p>
         <h2>Headline Findings</h2>
-        <div class="kpi-grid">
+        <div class="kpi-grid cols-5">
           <div class="kpi-card sev-total">
             <i data-lucide="list-checks" class="kpi-icon" aria-hidden="true"></i>
             <span class="kpi-value">&mdash;</span>
@@ -540,6 +546,11 @@
             <i data-lucide="circle-alert" class="kpi-icon" aria-hidden="true"></i>
             <span class="kpi-value">&mdash;</span>
             <span class="kpi-label">Medium &middot; scan did not complete</span>
+          </div>
+          <div class="kpi-card sev-low">
+            <i data-lucide="info" class="kpi-icon" aria-hidden="true"></i>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Low &middot; scan did not complete</span>
           </div>
         </div>
         <p class="caption">Snyk authentication failed (<code>SNYK_TOKEN</code> not provisioned). Counts unavailable; artifact is not security-complete.</p>

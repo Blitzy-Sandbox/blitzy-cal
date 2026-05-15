@@ -24,7 +24,13 @@ function parseSarif(sarifText) {
     for (const result of run.results ?? []) {
       const loc = result.locations?.[0]?.physicalLocation;
       const file = loc?.artifactLocation?.uri ?? "";
-      const line = loc?.region?.startLine ?? 0;
+      const rawStartLine = loc?.region?.startLine;
+      let line;
+      if (Number.isInteger(rawStartLine)) {
+        line = rawStartLine;
+      } else {
+        line = 0;
+      }
       const level = result.level ?? "warning";
       const severity = mapSarifSeverity(level);
       const cwe = ruleIndex[result.ruleId]?.properties?.cwe?.[0] ?? "";

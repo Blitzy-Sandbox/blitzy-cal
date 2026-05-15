@@ -35,6 +35,12 @@
       --bz-white: #FFFFFF;
       --bz-purple-tint: #F2F0FE;
 
+      /* Canonical gradient-stop and tint-purple aliases (see D28) */
+      --bz-gradient-start: #7A6DEC;
+      --bz-gradient-mid: #5B39F3;
+      --bz-gradient-end: #4101DB;
+      --bz-tint-purple: #F2F0FE;
+
       /* Severity palette (visually distinct from brand purple) */
       --sev-critical: #B71C1C;
       --sev-high: #E65100;
@@ -222,14 +228,14 @@
       border-radius: 4px;
     }
 
-    /* SECTION DIVIDER */
+    /* SECTION DIVIDER (see D27) */
     .reveal .slides > section.slide-divider {
       background: linear-gradient(135deg, var(--bz-primary-dark) 0%, var(--bz-navy) 100%);
       color: var(--bz-white);
       padding: 80px 130px;
       justify-content: center;
-      align-items: flex-start;
-      text-align: left;
+      align-items: center;
+      text-align: center;
     }
     .reveal .slides > section.slide-divider .divider-icon {
       width: 110px; height: 110px;
@@ -238,7 +244,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 44px;
+      margin: 0 auto 44px auto;
       border: 2px solid var(--bz-teal);
     }
     .reveal .slides > section.slide-divider .divider-icon i {
@@ -250,6 +256,7 @@
       color: var(--bz-white);
       font-size: 5rem;
       margin: 0;
+      text-align: center;
     }
     .reveal .slides > section.slide-divider .divider-sub {
       color: rgba(255,255,255,0.78);
@@ -258,12 +265,13 @@
       letter-spacing: 0.16em;
       text-transform: uppercase;
       margin-top: 22px;
+      text-align: center;
     }
     .reveal .slides > section.slide-divider .accent-line {
       width: 120px;
       height: 5px;
       background: var(--bz-teal);
-      margin-top: 36px;
+      margin: 36px auto 0 auto;
       border-radius: 4px;
     }
 
@@ -378,8 +386,9 @@
       margin-top: 16px;
       font-size: 1.1rem;
     }
+    /* .styled-table th uses primary-dark per D29 */
     .styled-table th {
-      background: var(--bz-primary);
+      background: var(--bz-primary-dark);
       color: var(--bz-white);
       text-align: left;
       padding: 12px 16px;
@@ -961,7 +970,7 @@ graph LR
           <i data-lucide="file-text"></i>
           <div>
             <span class="item-title">Read the decision log</span>
-            <span class="item-body">Twenty-six entries in <code>findings-config-i.decisions.md</code> explain every deviation from a literal interpretation of the directives, including the Node-heap and auth-token forced changes.</span>
+            <span class="item-body">Thirty entries in <code>findings-config-i.decisions.md</code> explain every deviation from a literal interpretation of the directives, including the Node-heap and auth-token forced changes.</span>
           </div>
         </li>
       </ul>
@@ -1028,11 +1037,11 @@ graph TB
          ============================================================ -->
     <section class="slide-closing">
       <p class="eyebrow"><span class="icon-wrap"><i data-lucide="flag"></i></span>Key Takeaway</p>
-      <h2>One ephemeral scan. Three deliverables. Ready to diff.</h2>
+      <h2>One scan. Three deliverables.</h2>
       <ul>
         <li><strong>263 findings</strong> normalized into the 5-field comparison schema; PASSED the default quality gate; valid JSON, one line, UTF-8.</li>
         <li><strong>One high-leverage CRITICAL</strong> in <code>packages/lib/crypto.ts</code> &mdash; CWE-327, secure mode &amp; padding. Everything else is structural or test-hygiene.</li>
-        <li><strong>26 documented decisions</strong> &mdash; auth-token, Node-heap, exclusions, CWE tiers &mdash; covering every deviation from a literal reading of the directives.</li>
+        <li><strong>30 documented decisions</strong> &mdash; auth-token, Node-heap, exclusions, CWE tiers &mdash; covering every deviation from a literal reading of the directives.</li>
       </ul>
       <div class="brand-lockup">
         <span class="dot"></span>

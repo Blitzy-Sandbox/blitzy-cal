@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1920, initial-scale=1, user-scalable=yes" />
+  <title>Config F · OSV-Scanner · blitzy-cal Vulnerability Scan</title>
+  <meta name="description" content="Executive briefing for the Config F (OSV-Scanner) vulnerability scan of the Cal.com (blitzy-cal) monorepo. Part of the multi-config security tool comparison series." />
+
+  <!-- Pinned CDN versions per AAP §0.7.2 Executive Presentation rule -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="reveal-base-theme" />
+
+  <!-- Google Fonts: Inter (body), Space Grotesk (display), Fira Code (mono/eyebrows) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Inline Blitzy reveal.js theme. The canonical theme file blitzy-deck/references/blitzy-reveal-theme.css does NOT exist in this repository, so the full theme is inlined per the rule. -->
+  <style>
+    :root {
+      --blitzy-primary: #5B39F3;
+      --blitzy-primary-dark: #2D1C77;
+      --blitzy-primary-navy: #1A105F;
+      --blitzy-primary-light: #7A6DEC;
+      --blitzy-primary-deep: #4101DB;
+      --blitzy-accent-teal: #94FAD5;
+      --blitzy-surface-0: #FFFFFF;
+      --blitzy-surface-1: #F4EFF6;
+      --blitzy-surface-2: #F2F0FE;
+      --blitzy-surface-3: #F5F5F5;
+      --blitzy-border: #D9D9D9;
+      --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+      --blitzy-text: #333333;
+      --blitzy-text-muted: #999999;
+      --blitzy-text-invert: #FFFFFF;
+      --ff-body: 'Inter', system-ui, sans-serif;
+      --ff-display: 'Space Grotesk', 'Inter', sans-serif;
+      --ff-mono: 'Fira Code', 'Courier New', monospace;
+      --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+      --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+      --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+    }
+
+    /* -------- Reveal base overrides -------- */
+    .reveal {
+      font-family: var(--ff-body);
+      color: var(--blitzy-text);
+      font-size: 30px;
+      font-weight: 400;
+      line-height: 1.45;
+    }
+    .reveal .slides {
+      text-align: left;
+    }
+    .reveal .slides section {
+      padding: 56px 96px;
+      box-sizing: border-box;
+      background: var(--blitzy-surface-0);
+    }
+    /* Reveal.js sets inline `top` and `width`/`height` for centering math.
+       We avoid overriding those for content slides so navigation works
+       correctly. Full-bleed slides expand via min-height + negative margins. */
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5 {
+      font-family: var(--ff-display);
+      color: var(--blitzy-text);
+      letter-spacing: -0.01em;
+      line-height: 1.18;
+      text-transform: none;
+      margin: 0 0 24px 0;
+      font-weight: 600;
+    }
+    .reveal h1 { font-size: 88px; font-weight: 700; }
+    .reveal h2 { font-size: 60px; font-weight: 700; }
+    .reveal h3 { font-size: 44px; }
+    .reveal h4 { font-size: 32px; }
+    .reveal p { margin: 0 0 16px 0; }
+    .reveal ul, .reveal ol { margin: 0 0 16px 24px; padding: 0; }
+    .reveal li { margin: 10px 0; }
+    .reveal strong { color: var(--blitzy-primary-dark); font-weight: 600; }
+    .reveal code,
+    .reveal :not(pre) > code {
+      font-family: var(--ff-mono);
+      font-size: 0.86em;
+      background: var(--blitzy-surface-2);
+      color: var(--blitzy-primary-dark);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--blitzy-border-soft);
+      white-space: nowrap;
+    }
+    .reveal a { color: var(--blitzy-primary); text-decoration: none; }
+    .reveal a:hover { color: var(--blitzy-primary-deep); }
+    .reveal .progress { color: var(--blitzy-primary); }
+    .reveal .controls { color: var(--blitzy-primary); }
+
+    /* -------- Lucide SVG icon defaults --------
+       Lucide's createIcons() replaces <i data-lucide="name"></i> with a sized
+       <svg data-lucide="name"> element. Selectors target the replaced SVG
+       directly. Pre-replacement <i> tags also receive an inline-flex display
+       so the initial paint (before Lucide runs) does not collapse to zero.
+       Each container below explicitly sets its own size via direct child
+       svg[data-lucide] rules. */
+    .reveal i[data-lucide],
+    .reveal svg[data-lucide] {
+      display: inline-flex;
+      vertical-align: middle;
+      width: 1em;
+      height: 1em;
+      stroke-width: 1.75;
+    }
+
+    /* -------- Eyebrow (Fira Code, small, uppercase) -------- */
+    .eyebrow {
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--blitzy-primary);
+      margin-bottom: 24px;
+      display: inline-block;
+    }
+
+    /* -------- Slide: Title -------- */
+    /* Full-bleed: 1920x1080 with hero gradient. min-height ensures the
+       gradient fills the slide; reveal.js already gives every section
+       `position: absolute`, which acts as the containing block for the
+       absolutely-positioned `.footer-eyebrow` inside this slide — so we
+       deliberately DO NOT override `position` here. */
+    .reveal section.slide-title {
+      background: var(--gradient-hero);
+      color: var(--blitzy-text-invert);
+      padding: 96px 120px 120px 120px;
+      min-height: 1080px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .reveal section.slide-title h1 {
+      color: var(--blitzy-text-invert);
+      font-size: 104px;
+      letter-spacing: -0.02em;
+      max-width: 1500px;
+    }
+    .reveal section.slide-title h3,
+    .reveal section.slide-title p {
+      color: var(--blitzy-text-invert);
+    }
+    .reveal section.slide-title .eyebrow {
+      color: var(--blitzy-accent-teal);
+    }
+    .reveal section.slide-title .hero-icon {
+      color: var(--blitzy-accent-teal);
+      font-size: 96px;
+      line-height: 1;
+      margin-bottom: 32px;
+    }
+    .reveal section.slide-title .hero-icon svg[data-lucide],
+    .reveal section.slide-title .hero-icon i[data-lucide] > svg {
+      width: 96px;
+      height: 96px;
+      stroke-width: 1.5;
+    }
+    .reveal section.slide-title .footer-eyebrow {
+      position: absolute;
+      bottom: 64px;
+      left: 120px;
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.86);
+    }
+    .reveal section.slide-title .title-meta {
+      margin-top: 32px;
+      font-family: var(--ff-display);
+      font-size: 32px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    /* -------- Slide: Divider -------- */
+    .reveal section.slide-divider {
+      background: var(--gradient-divider);
+      color: var(--blitzy-text-invert);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 96px;
+      min-height: 1080px;
+      box-sizing: border-box;
+    }
+    .reveal section.slide-divider .eyebrow {
+      color: var(--blitzy-accent-teal);
+      margin-bottom: 16px;
+    }
+    .reveal section.slide-divider .divider-icon {
+      color: var(--blitzy-accent-teal);
+      font-size: 96px;
+      line-height: 1;
+      margin-bottom: 32px;
+    }
+    .reveal section.slide-divider .divider-icon svg[data-lucide],
+    .reveal section.slide-divider .divider-icon i[data-lucide] > svg {
+      width: 96px;
+      height: 96px;
+      stroke-width: 1.5;
+    }
+    .reveal section.slide-divider h2 {
+      color: var(--blitzy-text-invert);
+      font-size: 96px;
+      line-height: 1.1;
+      max-width: 1500px;
+      letter-spacing: -0.015em;
+    }
+
+    /* -------- Slide: Closing -------- */
+    /* Reveal.js already gives every section `position: absolute`, which acts
+       as the containing block for the absolutely-positioned `.accent-bar`
+       and `.brand-lockup` children — so we deliberately DO NOT override
+       `position` here. */
+    .reveal section.slide-closing {
+      background: var(--blitzy-primary-navy);
+      color: var(--blitzy-text-invert);
+      padding: 120px 120px 160px 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 1080px;
+      box-sizing: border-box;
+    }
+    .reveal section.slide-closing h2 {
+      color: var(--blitzy-text-invert);
+      font-size: 92px;
+      max-width: 1500px;
+      line-height: 1.05;
+    }
+    .reveal section.slide-closing p,
+    .reveal section.slide-closing li {
+      color: rgba(255, 255, 255, 0.92);
+    }
+    .reveal section.slide-closing .eyebrow {
+      color: var(--blitzy-accent-teal);
+    }
+    .reveal section.slide-closing .hero-icon {
+      color: var(--blitzy-accent-teal);
+      font-size: 72px;
+      line-height: 1;
+      margin-bottom: 24px;
+    }
+    .reveal section.slide-closing .hero-icon svg[data-lucide],
+    .reveal section.slide-closing .hero-icon i[data-lucide] > svg {
+      width: 72px;
+      height: 72px;
+      stroke-width: 1.5;
+    }
+    /* Closing-slide accent bar: full-bleed 1920px gradient strip across
+       the top edge. Overrides the generic 120px-wide .accent-bar via
+       higher specificity, including explicit width:auto and margin:0 to
+       neutralize the generic rule. */
+    .reveal section.slide-closing .accent-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: auto;
+      height: 12px;
+      margin: 0;
+      border-radius: 0;
+      background: var(--gradient-accent-bar);
+    }
+    .reveal section.slide-closing .accent-bar.bottom {
+      top: auto;
+      bottom: 0;
+    }
+    .reveal section.slide-closing .brand-lockup {
+      position: absolute;
+      bottom: 64px;
+      left: 120px;
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.78);
+    }
+    .reveal section.slide-closing .brand-lockup strong {
+      color: var(--blitzy-accent-teal);
+      font-weight: 500;
+    }
+
+    /* -------- KPI cards & grid -------- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin: 24px 0;
+    }
+    .kpi-grid.kpi-grid-2x2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .kpi-grid.kpi-grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .kpi-card {
+      background: var(--blitzy-surface-2);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 16px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: var(--gradient-accent-bar);
+      opacity: 0.9;
+    }
+    .kpi-card .kpi-icon {
+      color: var(--blitzy-primary);
+      font-size: 36px;
+      line-height: 1;
+    }
+    .kpi-card .kpi-icon svg[data-lucide],
+    .kpi-card .kpi-icon i[data-lucide] > svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.75;
+    }
+    .kpi-card .kpi-value {
+      font-family: var(--ff-display);
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--blitzy-primary-dark);
+      letter-spacing: -0.02em;
+    }
+    .kpi-card .kpi-label {
+      font-family: var(--ff-body);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--blitzy-text);
+      line-height: 1.35;
+    }
+    .kpi-card .kpi-sub {
+      font-family: var(--ff-mono);
+      font-size: 14px;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* Severity tints for KPI cards */
+    .kpi-card.severity-critical { background: linear-gradient(155deg, #FFF1F1 0%, #FBE6E6 100%); border-color: rgba(180, 25, 30, 0.18); }
+    .kpi-card.severity-critical::before { background: linear-gradient(90deg, #B4191E 0%, #5B39F3 100%); }
+    .kpi-card.severity-critical .kpi-value { color: #7A1014; }
+    .kpi-card.severity-critical .kpi-icon { color: #B4191E; }
+
+    .kpi-card.severity-high { background: linear-gradient(155deg, #FFF6EC 0%, #FBE9D6 100%); border-color: rgba(196, 102, 0, 0.18); }
+    .kpi-card.severity-high::before { background: linear-gradient(90deg, #C46600 0%, #5B39F3 100%); }
+    .kpi-card.severity-high .kpi-value { color: #7A3F00; }
+    .kpi-card.severity-high .kpi-icon { color: #C46600; }
+
+    .kpi-card.severity-medium { background: linear-gradient(155deg, #F4EFF6 0%, #F2F0FE 100%); border-color: rgba(91, 57, 243, 0.18); }
+    .kpi-card.severity-medium::before { background: var(--gradient-accent-bar); }
+    .kpi-card.severity-medium .kpi-value { color: var(--blitzy-primary-dark); }
+    .kpi-card.severity-medium .kpi-icon { color: var(--blitzy-primary); }
+
+    .kpi-card.severity-low { background: linear-gradient(155deg, #F5F5F5 0%, #EFEFEF 100%); border-color: var(--blitzy-border); }
+    .kpi-card.severity-low::before { background: linear-gradient(90deg, #999999 0%, #5B39F3 100%); }
+    .kpi-card.severity-low .kpi-value { color: #4D4D4D; }
+    .kpi-card.severity-low .kpi-icon { color: #666666; }
+
+    /* -------- Icon row -------- */
+    .icon-row {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      margin-top: 24px;
+      color: var(--blitzy-primary);
+      font-size: 40px;
+      line-height: 1;
+    }
+    .icon-row svg[data-lucide],
+    .icon-row i[data-lucide] > svg {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+    }
+    .icon-row .icon-label {
+      font-family: var(--ff-mono);
+      font-size: 14px;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 8px;
+      display: block;
+      text-align: center;
+    }
+    .icon-row .icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* -------- Accent bar (slim divider element) -------- */
+    .accent-bar {
+      height: 4px;
+      background: var(--gradient-accent-bar);
+      border-radius: 2px;
+      margin: 16px 0;
+      width: 120px;
+    }
+
+    /* -------- Brand lockup (closing slide signature) -------- */
+    .brand-lockup {
+      font-family: var(--ff-mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* -------- Tables -------- */
+    .reveal table.blitzy-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: var(--ff-body);
+      font-size: 22px;
+      margin: 16px 0;
+      background: var(--blitzy-surface-0);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(45, 28, 119, 0.08);
+    }
+    .reveal table.blitzy-table thead th {
+      background: var(--blitzy-primary-dark);
+      color: var(--blitzy-text-invert);
+      font-family: var(--ff-display);
+      font-size: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 16px 20px;
+      text-align: left;
+      border: none;
+    }
+    .reveal table.blitzy-table tbody td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--blitzy-border);
+      vertical-align: top;
+      color: var(--blitzy-text);
+    }
+    .reveal table.blitzy-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .reveal table.blitzy-table tbody tr:nth-child(odd) td {
+      background: var(--blitzy-surface-3);
+    }
+    .reveal table.blitzy-table .sev-pill {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-family: var(--ff-mono);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .reveal table.blitzy-table .sev-pill.critical { background: #B4191E; color: #FFFFFF; }
+    .reveal table.blitzy-table .sev-pill.high { background: #C46600; color: #FFFFFF; }
+    .reveal table.blitzy-table .sev-pill.medium { background: var(--blitzy-primary); color: #FFFFFF; }
+    .reveal table.blitzy-table .sev-pill.low { background: #6B7280; color: #FFFFFF; }
+
+    /* -------- Mermaid container --------
+       Use the same font family Mermaid uses for measurement (Inter) so the
+       rendered node boxes are sized correctly. Setting --mermaid-font-family
+       at this scope keeps Mermaid 11's text-measurement and SVG-rendering
+       paths in sync, which prevents the trailing-character clipping that
+       occurs when measurement uses one font and rendering uses another. */
+    .reveal pre.mermaid {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--blitzy-surface-2);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 16px;
+      padding: 32px;
+      margin: 16px auto;
+      max-width: 1700px;
+      min-height: 360px;
+      font-family: var(--ff-body);
+      --mermaid-font-family: 'Inter', system-ui, sans-serif;
+      box-shadow: 0 2px 12px rgba(45, 28, 119, 0.06);
+    }
+    .reveal pre.mermaid svg {
+      max-width: 100%;
+      height: auto;
+      font-family: 'Inter', system-ui, sans-serif !important;
+    }
+    .reveal pre.mermaid svg .node rect,
+    .reveal pre.mermaid svg .node polygon,
+    .reveal pre.mermaid svg .node ellipse {
+      fill: var(--blitzy-surface-2) !important;
+      stroke: var(--blitzy-primary) !important;
+    }
+    .reveal pre.mermaid svg .node .label foreignObject {
+      overflow: visible !important;
+    }
+    .reveal pre.mermaid svg .node .label foreignObject > div {
+      white-space: nowrap !important;
+    }
+
+    /* -------- Two-column comparison layout -------- */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin: 24px 0;
+    }
+    .compare-card {
+      background: var(--blitzy-surface-1);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 16px;
+      padding: 32px;
+      position: relative;
+    }
+    .compare-card.right {
+      background: var(--blitzy-surface-2);
+    }
+    .compare-card .compare-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .compare-card .compare-header .kpi-icon {
+      font-size: 32px;
+      color: var(--blitzy-primary);
+      line-height: 1;
+    }
+    .compare-card .compare-header .kpi-icon svg[data-lucide],
+    .compare-card .compare-header .kpi-icon i[data-lucide] > svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.75;
+    }
+    .compare-card h4 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--blitzy-primary-dark);
+    }
+    .compare-card ul {
+      margin: 0;
+      padding-left: 22px;
+      font-size: 20px;
+      color: var(--blitzy-text);
+    }
+    .compare-card ul li {
+      margin: 8px 0;
+    }
+
+    /* -------- Caption / footer text -------- */
+    .caption {
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+      margin-top: 24px;
+    }
+    .footer-note {
+      font-family: var(--ff-mono);
+      font-size: 16px;
+      color: var(--blitzy-text-muted);
+      margin-top: 16px;
+    }
+
+    /* -------- Metric row (small Fira Code text bar) -------- */
+    .metric-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      font-family: var(--ff-mono);
+      font-size: 18px;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.04em;
+      margin-top: 28px;
+      padding: 16px 24px;
+      background: var(--blitzy-surface-3);
+      border-left: 4px solid var(--blitzy-primary);
+      border-radius: 8px;
+    }
+    .metric-row .metric strong {
+      color: var(--blitzy-primary-dark);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    /* -------- Zero-findings callout -------- */
+    .zero-callout {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 48px;
+      background: linear-gradient(135deg, #F2F0FE 0%, #F4EFF6 100%);
+      border: 2px dashed var(--blitzy-primary-light);
+      border-radius: 16px;
+      margin: 32px 0;
+    }
+    .zero-callout .kpi-icon {
+      color: var(--blitzy-primary);
+      font-size: 72px;
+      line-height: 1;
+    }
+    .zero-callout .kpi-icon svg[data-lucide],
+    .zero-callout .kpi-icon i[data-lucide] > svg {
+      width: 72px;
+      height: 72px;
+    }
+    .zero-callout .zero-text {
+      font-family: var(--ff-display);
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--blitzy-primary-dark);
+    }
+
+    /* -------- Heading + accent bar combo -------- */
+    .heading-block {
+      margin-bottom: 32px;
+    }
+    .heading-block .accent-bar {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    /* -------- Ordered list with circular markers -------- */
+    .reveal ol.steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      counter-reset: step;
+    }
+    .reveal ol.steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 16px 0 16px 64px;
+      font-size: 24px;
+      border-bottom: 1px solid var(--blitzy-border-soft);
+    }
+    .reveal ol.steps li:last-child {
+      border-bottom: none;
+    }
+    .reveal ol.steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--gradient-accent-bar);
+      color: var(--blitzy-primary-dark);
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!--
+        ============================================================
+        SLIDE 1 — TITLE
+        Hero gradient · white text · Fira Code teal eyebrow · Lucide
+        ============================================================
+      -->
+      <section class="slide-title">
+        <div class="hero-icon"><i data-lucide="shield-check"></i></div>
+        <div class="eyebrow">Config F &middot; OSV-Scanner</div>
+        <h1>blitzy-cal Vulnerability Scan</h1>
+        <div class="title-meta">Yarn Berry monorepo &middot; normalized findings artifact</div>
+        <div class="footer-eyebrow">Executive Briefing &middot; Non-technical Leadership</div>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 2 — HEADLINE KPI (Findings at a Glance)
+        Data-injected: critical=5, high=104, medium=89, low=30
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Headline</div>
+          <h2>Findings at a Glance</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card severity-critical">
+            <div class="kpi-icon"><i data-lucide="alert-octagon"></i></div>
+            <div class="kpi-value">5</div>
+            <div class="kpi-label">Critical</div>
+            <div class="kpi-sub">CVSS &ge; 9.0</div>
+          </div>
+          <div class="kpi-card severity-high">
+            <div class="kpi-icon"><i data-lucide="alert-triangle"></i></div>
+            <div class="kpi-value">104</div>
+            <div class="kpi-label">High</div>
+            <div class="kpi-sub">CVSS 7.0&ndash;8.9</div>
+          </div>
+          <div class="kpi-card severity-medium">
+            <div class="kpi-icon"><i data-lucide="info"></i></div>
+            <div class="kpi-value">89</div>
+            <div class="kpi-label">Medium</div>
+            <div class="kpi-sub">CVSS 4.0&ndash;6.9</div>
+          </div>
+          <div class="kpi-card severity-low">
+            <div class="kpi-icon"><i data-lucide="circle"></i></div>
+            <div class="kpi-value">30</div>
+            <div class="kpi-label">Low</div>
+            <div class="kpi-sub">CVSS &lt; 4.0</div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <span class="metric"><strong>Total:</strong> 228 findings</span>
+          <span class="metric"><strong>Duration:</strong> 5 s wall-clock</span>
+          <span class="metric"><strong>Scanner:</strong> osv-scanner 2.3.8</span>
+          <span class="metric"><strong>Mode:</strong> Online (api.osv.dev)</span>
+        </div>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 3 — ARCHITECTURE OVERVIEW (Mermaid)
+        Install -> Scan -> Normalize -> Presentation pipeline
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Architecture</div>
+          <h2>How Config F Works</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <pre class="mermaid">
+flowchart LR
+  A([osv-scanner binary]) --> B[osv-scanner --format json]
+  B --> C[results-osv.json]
+  C --> D{Normalizer jq / python}
+  D --> E[findings-config-f.json]
+  A --> F[decisions-config-f.md]
+  D --> F
+  E --> G["executive-summary<br/>config-f.html"]
+  F --> G
+        </pre>
+
+        <p class="caption">Three CRITICAL directives &rarr; four artifacts at repository root.</p>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 4 — SECTION DIVIDER: SCOPE
+        ============================================================
+      -->
+      <section class="slide-divider">
+        <div class="divider-icon"><i data-lucide="target"></i></div>
+        <div class="eyebrow">Section 1</div>
+        <h2>1. Scope</h2>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 5 — CONTENT: SCOPE DETAILS
+        Bullets + Lucide icon row
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Scope</div>
+          <h2>What Was Scanned</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <ul>
+          <li>Yarn Berry v8 monorepo &middot; <code>yarn.lock</code> 40,303 lines &middot; 1.43 MB</li>
+          <li>73+ workspace <code>package.json</code> manifests across <code>apps/</code>, <code>packages/</code>, <code>example-apps/</code></li>
+          <li>Recursive scan from repository root &mdash; single lockfile discovered, 3,725 packages</li>
+          <li>Read-only operation &middot; zero modifications to existing files</li>
+        </ul>
+
+        <div class="icon-row">
+          <div class="icon-item">
+            <i data-lucide="package"></i>
+            <span class="icon-label">Packages</span>
+          </div>
+          <div class="icon-item">
+            <i data-lucide="folder-tree"></i>
+            <span class="icon-label">Workspaces</span>
+          </div>
+          <div class="icon-item">
+            <i data-lucide="lock"></i>
+            <span class="icon-label">Lockfile</span>
+          </div>
+          <div class="icon-item">
+            <i data-lucide="shield"></i>
+            <span class="icon-label">Read-only</span>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 6 — SECTION DIVIDER: FINDINGS DISTRIBUTION
+        ============================================================
+      -->
+      <section class="slide-divider">
+        <div class="divider-icon"><i data-lucide="bar-chart-3"></i></div>
+        <div class="eyebrow">Section 2</div>
+        <h2>2. Findings Distribution</h2>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 7 — CONTENT: DISTRIBUTION BREAKDOWN
+        Severity + ecosystem table (data-injected)
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Distribution</div>
+          <h2>Severity &amp; Ecosystem Breakdown</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <table class="blitzy-table">
+          <thead>
+            <tr>
+              <th style="width: 25%">Severity</th>
+              <th style="width: 20%">Count</th>
+              <th style="width: 20%">Share</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="sev-pill critical">Critical</span></td>
+              <td>5</td>
+              <td>2.2%</td>
+              <td>CVSS &ge; 9.0 &mdash; immediate attention candidates</td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill high">High</span></td>
+              <td>104</td>
+              <td>45.6%</td>
+              <td>CVSS 7.0&ndash;8.9 &mdash; the bulk of the risk surface</td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill medium">Medium</span></td>
+              <td>89</td>
+              <td>39.0%</td>
+              <td>CVSS 4.0&ndash;6.9 &mdash; track-and-monitor cohort</td>
+            </tr>
+            <tr>
+              <td><span class="sev-pill low">Low</span></td>
+              <td>30</td>
+              <td>13.2%</td>
+              <td>CVSS &lt; 4.0 (incl. records missing a numeric score)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="metric-row">
+          <span class="metric"><strong>Ecosystem:</strong> npm 100%</span>
+          <span class="metric"><strong>Source:</strong> single Yarn Berry lockfile</span>
+          <span class="metric"><strong>Unique packages:</strong> 88 with at least one finding</span>
+          <span class="metric"><strong>Total:</strong> 228 findings</span>
+        </div>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 8 — SECTION DIVIDER: RISK REGISTER
+        ============================================================
+      -->
+      <section class="slide-divider">
+        <div class="divider-icon"><i data-lucide="alert-triangle"></i></div>
+        <div class="eyebrow">Section 3</div>
+        <h2>3. Risk Register</h2>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 9 — CONTENT: TOP FINDINGS BY CVSS
+        Top 5 unique critical+high (data-injected from results-osv.json)
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Risk Register</div>
+          <h2>Top Findings by CVSS Score</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <table class="blitzy-table">
+          <thead>
+            <tr>
+              <th style="width: 24%">Package</th>
+              <th style="width: 22%">CVE / CWE</th>
+              <th style="width: 14%">Severity</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>immutable@3.7.6</code></td>
+              <td>CVE-2026-29063 &middot; CWE-1321</td>
+              <td><span class="sev-pill critical">Critical 9.8</span></td>
+              <td>Transitive, not pinned &middot; monitor upstream for fixed release</td>
+            </tr>
+            <tr>
+              <td><code>protobufjs@7.4.0</code></td>
+              <td>CVE-2026-41242 &middot; CWE-94</td>
+              <td><span class="sev-pill critical">Critical 9.8</span></td>
+              <td>Pending upstream release &middot; track <code>protobufjs &gt; 7.4.0</code></td>
+            </tr>
+            <tr>
+              <td><code>fast-xml-parser@4.4.1</code></td>
+              <td>CVE-2026-25896 &middot; CWE-185</td>
+              <td><span class="sev-pill critical">Critical 9.3</span></td>
+              <td>Accepted exception &mdash; <code>npmAuditIgnoreAdvisories: ["1113407"]</code></td>
+            </tr>
+            <tr>
+              <td><code>sanitize-html@2.17.0</code></td>
+              <td>CVE-2026-44990 &middot; CWE-79</td>
+              <td><span class="sev-pill critical">Critical 9.3</span></td>
+              <td>Pending upstream release &middot; verify dependents do not pass <code>xmp</code></td>
+            </tr>
+            <tr>
+              <td><code>next@14.2.35</code></td>
+              <td>CVE-2026-44578 &middot; CWE-918</td>
+              <td><span class="sev-pill high">High 8.6</span></td>
+              <td>Newer Next versions in lockfile &middot; consolidate via workspace upgrade</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="caption">5 unique critical IDs; remainder of risk register lives in <code>findings-config-f.json</code>.</p>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 10 — SECTION DIVIDER: COMPARISON CONTEXT
+        ============================================================
+      -->
+      <section class="slide-divider">
+        <div class="divider-icon"><i data-lucide="git-compare"></i></div>
+        <div class="eyebrow">Section 4</div>
+        <h2>4. Comparison Context</h2>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 11 — CONTENT: OSV-SCANNER vs YARN AUDIT
+        Two-column compare; explicit reference to security-audit.yml
+        and npmAuditIgnoreAdvisories exception
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Comparison</div>
+          <h2>OSV-Scanner vs Existing Yarn Audit Gate</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <div class="compare-grid">
+          <div class="compare-card">
+            <div class="compare-header">
+              <div class="kpi-icon"><i data-lucide="shield"></i></div>
+              <h4>Existing &middot; <code>.github/workflows/security-audit.yml</code></h4>
+            </div>
+            <ul>
+              <li><code>yarn npm audit --all --recursive</code> &mdash; informational phase</li>
+              <li><code>--severity critical</code> &mdash; build-failing phase</li>
+              <li>One accepted exception: <code>npmAuditIgnoreAdvisories: ["1113407"]</code> for <code>fast-xml-parser 4.4.1</code></li>
+              <li>Source: Yarn audit database</li>
+            </ul>
+          </div>
+          <div class="compare-card right">
+            <div class="compare-header">
+              <div class="kpi-icon"><i data-lucide="scan-search"></i></div>
+              <h4>Config F &middot; OSV-Scanner</h4>
+            </div>
+            <ul>
+              <li>Aggregates GHSA, RustSec, PyPA, Go vuln DB, OSV.dev</li>
+              <li>Read-only &middot; no policy enforcement (artifact-only)</li>
+              <li>Surfaces findings beyond the Yarn audit database</li>
+              <li>Source: <code>osv.dev</code> federated index</li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="caption">Both posture gates run independently &middot; Config F is a comparison artifact, not a policy gate.</p>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 12 — SECTION DIVIDER: OPERATIONAL HANDOFF
+        ============================================================
+      -->
+      <section class="slide-divider">
+        <div class="divider-icon"><i data-lucide="book-open"></i></div>
+        <div class="eyebrow">Section 5</div>
+        <h2>5. Operational Handoff</h2>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 13 — CONTENT: REPRODUCE & RE-RUN
+        Numbered steps (no fenced code blocks; inline <code> only)
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Reproducibility</div>
+          <h2>Reproduce &amp; Re-Run</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <ol class="steps">
+          <li><strong>Install</strong>: <code>apt-get install -y osv-scanner</code> or <code>go install github.com/google/osv-scanner/cmd/osv-scanner@latest</code></li>
+          <li><strong>Scan</strong>: <code>osv-scanner --format json --output results-osv.json .</code> from repo root</li>
+          <li><strong>Normalize</strong>: re-run the inline jq/python pipeline documented in <code>decisions-config-f.md</code></li>
+          <li><strong>Verify</strong>: <code>cat findings-config-f.json | wc -l</code> returns <code>1</code></li>
+        </ol>
+
+        <div class="icon-row">
+          <div class="icon-item">
+            <i data-lucide="download"></i>
+            <span class="icon-label">Install</span>
+          </div>
+          <div class="icon-item">
+            <i data-lucide="play"></i>
+            <span class="icon-label">Scan</span>
+          </div>
+          <div class="icon-item">
+            <i data-lucide="wand"></i>
+            <span class="icon-label">Normalize</span>
+          </div>
+          <div class="icon-item">
+            <i data-lucide="check-circle-2"></i>
+            <span class="icon-label">Verify</span>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 14 — SECTION DIVIDER: DECISION HIGHLIGHTS
+        ============================================================
+      -->
+      <section class="slide-divider">
+        <div class="divider-icon"><i data-lucide="clipboard-check"></i></div>
+        <div class="eyebrow">Section 6</div>
+        <h2>6. Decision Highlights</h2>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 15 — CONTENT: 4 KEY DECISIONS (2x2 KPI grid)
+        Install method, severity mapping, CWE precedence, dedup
+        ============================================================
+      -->
+      <section>
+        <div class="heading-block">
+          <div class="eyebrow">Decisions</div>
+          <h2>Key Decisions Recorded</h2>
+          <div class="accent-bar"></div>
+        </div>
+
+        <div class="kpi-grid kpi-grid-2x2">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="download-cloud"></i></div>
+            <div class="kpi-label" style="font-size: 22px; font-weight: 600; color: var(--blitzy-primary-dark);">Install method</div>
+            <div class="kpi-sub" style="font-size: 18px; color: var(--blitzy-text);">Prebuilt <code>linux_amd64</code> binary from GitHub releases &mdash; apt unavailable on Ubuntu 25.10, Go absent.</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="gauge"></i></div>
+            <div class="kpi-label" style="font-size: 22px; font-weight: 600; color: var(--blitzy-primary-dark);">Severity mapping</div>
+            <div class="kpi-sub" style="font-size: 18px; color: var(--blitzy-text);">CVSS V3 vector &rarr; numeric base score &rarr; bucket: <code>&ge;9</code> critical, <code>&ge;7</code> high, <code>&ge;4</code> medium.</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="tag"></i></div>
+            <div class="kpi-label" style="font-size: 22px; font-weight: 600; color: var(--blitzy-primary-dark);">CWE precedence</div>
+            <div class="kpi-sub" style="font-size: 18px; color: var(--blitzy-text);"><code>affected[].database_specific.cwe_ids[0]</code> &rarr; top-level <code>cwe_ids[0]</code> &rarr; CVE alias &rarr; OSV id.</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="combine"></i></div>
+            <div class="kpi-label" style="font-size: 22px; font-weight: 600; color: var(--blitzy-primary-dark);">Deduplication</div>
+            <div class="kpi-sub" style="font-size: 18px; color: var(--blitzy-text);">Collapse aliased records via <code>groups[]</code> &mdash; one finding per group. No-op on this corpus.</div>
+          </div>
+        </div>
+
+        <p class="footer-note">Full decision table &rarr; <code>decisions-config-f.md</code></p>
+      </section>
+
+      <!--
+        ============================================================
+        SLIDE 16 — CLOSING
+        Navy background · gradient accent bar · brand lockup
+        ============================================================
+      -->
+      <section class="slide-closing">
+        <div class="accent-bar"></div>
+        <div class="hero-icon"><i data-lucide="check-circle-2"></i></div>
+        <div class="eyebrow">Closing</div>
+        <h2>Config F &middot; Comparison-Ready</h2>
+
+        <ul>
+          <li>Findings artifact: <code>findings-config-f.json</code> &mdash; single line, schema-compliant</li>
+          <li>Decision log: <code>decisions-config-f.md</code> &mdash; Explainability rule</li>
+          <li>Re-run: scriptless, idempotent</li>
+        </ul>
+
+        <div class="brand-lockup"><strong>Blitzy</strong> &times; Cal.com &middot; Config F &middot; OSV-Scanner</div>
+      </section>
+
+    </div>
+  </div>
+
+  <!--
+    ============================================================
+    Pinned CDN scripts (per AAP §0.7.2 Executive Presentation rule)
+    reveal.js 5.1.0 · Mermaid 11.4.0 · Lucide 0.460.0
+    ============================================================
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    // Initialize Mermaid first so it is ready when reveal.js fires `ready`.
+    // Theme variables match the exact values required by the Executive Presentation rule.
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#F2F0FE',
+        primaryTextColor: '#333333',
+        primaryBorderColor: '#5B39F3',
+        lineColor: '#999999',
+        secondaryColor: '#F4EFF6',
+        fontFamily: "'Inter', system-ui, sans-serif"
+      }
+    });
+
+    // Initialize reveal.js with the exact config required by the rule.
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080
+    });
+
+    // Helper: render Mermaid diagrams + Lucide icons. Run on initial `ready`
+    // and on every slide change so dynamically-revealed slides also paint.
+    function paintVisuals() {
+      try {
+        // Mermaid 11 renders every <pre class="mermaid"> that has not yet been processed.
+        if (typeof mermaid !== 'undefined' && mermaid.run) {
+          mermaid.run({ querySelector: 'pre.mermaid:not([data-processed="true"])' });
+        }
+      } catch (e) {
+        // Mermaid render errors are non-fatal for the rest of the deck; log to console.
+        console.warn('Mermaid render failed:', e);
+      }
+      try {
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+          lucide.createIcons();
+        }
+      } catch (e) {
+        console.warn('Lucide render failed:', e);
+      }
+    }
+
+    // Helper: pin full-bleed slides (title, dividers, closing) to top:0 and
+    // 1080px min-height so their backgrounds fill the entire 1920x1080 viewport.
+    // Reveal.js's default `center: true` behavior vertically centers each slide
+    // based on its measured content height, which leaves whitespace above and
+    // below dividers. Overriding top + min-height + display via !important
+    // makes the gradient/navy backgrounds full-bleed without disabling reveal's
+    // centering for ordinary content slides.
+    function fillFullBleedSlides() {
+      const selector = '.slides > section.slide-title, .slides > section.slide-divider, .slides > section.slide-closing';
+      document.querySelectorAll(selector).forEach((el) => {
+        el.style.setProperty('top', '0px', 'important');
+        el.style.setProperty('left', '0px', 'important');
+        el.style.setProperty('min-height', '1080px', 'important');
+        el.style.setProperty('width', '1920px', 'important');
+        el.style.setProperty('display', 'flex', 'important');
+        el.style.setProperty('flex-direction', 'column', 'important');
+        if (el.classList.contains('slide-divider')) {
+          el.style.setProperty('align-items', 'center', 'important');
+        }
+        el.style.setProperty('justify-content', 'center', 'important');
+      });
+    }
+
+    function refresh() {
+      fillFullBleedSlides();
+      paintVisuals();
+    }
+
+    Reveal.on('ready', refresh);
+    Reveal.on('slidechanged', refresh);
+    Reveal.on('resize', fillFullBleedSlides);
+  </script>
+</body>
+</html>
+

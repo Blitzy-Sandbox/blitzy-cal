@@ -748,8 +748,8 @@
           <span class="eyebrow">Headline KPIs</span>
           <h2>At a glance</h2>
           <p class="lede">
-            Thirty-six CWE-classified findings across twenty-seven inspected source files
-            spanning twenty-one weakness families — zero existing source modified.
+            Thirty-nine CWE-classified findings across thirty inspected source files
+            spanning twenty-two weakness families — zero existing source modified.
           </p>
         </div>
 
@@ -768,7 +768,7 @@
           </div>
           <div class="kpi-card kpi-medium">
             <span class="kpi-icon"><i data-lucide="alert-circle"></i></span>
-            <div class="kpi-value">12</div>
+            <div class="kpi-value">15</div>
             <div class="kpi-label">Medium</div>
             <div class="kpi-sub">Schedule</div>
           </div>
@@ -780,19 +780,19 @@
           </div>
           <div class="kpi-card kpi-total">
             <span class="kpi-icon"><i data-lucide="layers"></i></span>
-            <div class="kpi-value">36</div>
+            <div class="kpi-value">39</div>
             <div class="kpi-label">Total findings</div>
             <div class="kpi-sub">CWE-classified</div>
           </div>
           <div class="kpi-card kpi-info">
             <span class="kpi-icon"><i data-lucide="library"></i></span>
-            <div class="kpi-value">21</div>
+            <div class="kpi-value">22</div>
             <div class="kpi-label">Distinct CWEs</div>
             <div class="kpi-sub">Leaf-node preferred</div>
           </div>
           <div class="kpi-card kpi-info">
             <span class="kpi-icon"><i data-lucide="file-search"></i></span>
-            <div class="kpi-value">27</div>
+            <div class="kpi-value">30</div>
             <div class="kpi-label">Source files inspected</div>
             <div class="kpi-sub">Findings-bearing files</div>
           </div>
@@ -970,7 +970,7 @@ flowchart LR
 pie showData
     title Findings by severity
     "High" : 18
-    "Medium" : 12
+    "Medium" : 15
     "Critical" : 4
     "Low" : 2
           </pre>
@@ -1025,6 +1025,11 @@ pie showData
               <td class="col-num">3</td>
             </tr>
             <tr>
+              <td class="col-cwe">CWE-347</td>
+              <td>Improper verification of cryptographic signature (JWT)</td>
+              <td class="col-num">3</td>
+            </tr>
+            <tr>
               <td class="col-cwe">CWE-250</td>
               <td>Execution with unnecessary privileges (container root)</td>
               <td class="col-num">2</td>
@@ -1041,7 +1046,7 @@ pie showData
             </tr>
             <tr>
               <td class="col-cwe">14 others</td>
-              <td>Singletons (CWE-916, 601, 208, 532, 1188, 918, 326, 348, 347, 1240, 345, 521, 328, 307)</td>
+              <td>Singletons (CWE-916, 601, 208, 532, 1188, 918, 326, 348, 1240, 345, 521, 328, 307, 636)</td>
               <td class="col-num">14</td>
             </tr>
           </tbody>
@@ -1078,15 +1083,15 @@ pie showData
         <div class="mermaid-wrap">
           <pre class="mermaid">
 flowchart TB
-    Root["Codebase<br/>36 findings"] --> C1["Container<br/>Build"]
+    Root["Codebase<br/>39 findings"] --> C1["Container<br/>Build"]
     Root --> C2["Cryptography"]
     Root --> C3["Web edge"]
     Root --> C4["Supply<br/>chain"]
     Root --> C5["Auth<br/>Identity"]
     Root --> C6["Webhooks<br/>Integrations"]
     C1 --> N1["6 total<br/>3 critical"]
-    C2 --> N2["10 total<br/>1 critical"]
-    C3 --> N3["11 total<br/>5 high"]
+    C2 --> N2["12 total<br/>1 critical"]
+    C3 --> N3["12 total<br/>5 high"]
     C4 --> N4["3 total<br/>1 high"]
     C5 --> N5["3 total<br/>2 high"]
     C6 --> N6["3 total<br/>2 high"]
@@ -1305,7 +1310,7 @@ flowchart LR
         <span class="eyebrow">Takeaway</span>
         <h2>Measure. Then mitigate.</h2>
         <ul>
-          <li>Thirty-six findings establish a deterministic baseline for the comparison study.</li>
+          <li>Thirty-nine findings establish a deterministic baseline for the comparison study.</li>
           <li>No existing source files were modified — application runtime behavior is unchanged by this audit.</li>
           <li>Next configurations measure tool lift against this evidence — not against intuition.</li>
         </ul>

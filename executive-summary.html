@@ -748,27 +748,27 @@
           <span class="eyebrow">Headline KPIs</span>
           <h2>At a glance</h2>
           <p class="lede">
-            Thirty-eight CWE-classified findings across twenty-eight inspected source files
-            spanning seventeen weakness families — zero existing source modified.
+            Thirty-six CWE-classified findings across twenty-seven inspected source files
+            spanning twenty-one weakness families — zero existing source modified.
           </p>
         </div>
 
         <div class="kpi-grid">
           <div class="kpi-card kpi-critical">
             <span class="kpi-icon"><i data-lucide="alert-octagon"></i></span>
-            <div class="kpi-value">6</div>
+            <div class="kpi-value">4</div>
             <div class="kpi-label">Critical</div>
             <div class="kpi-sub">Highest priority</div>
           </div>
           <div class="kpi-card kpi-high">
             <span class="kpi-icon"><i data-lucide="alert-triangle"></i></span>
-            <div class="kpi-value">19</div>
+            <div class="kpi-value">18</div>
             <div class="kpi-label">High</div>
             <div class="kpi-sub">Plan near-term</div>
           </div>
           <div class="kpi-card kpi-medium">
             <span class="kpi-icon"><i data-lucide="alert-circle"></i></span>
-            <div class="kpi-value">11</div>
+            <div class="kpi-value">12</div>
             <div class="kpi-label">Medium</div>
             <div class="kpi-sub">Schedule</div>
           </div>
@@ -780,19 +780,19 @@
           </div>
           <div class="kpi-card kpi-total">
             <span class="kpi-icon"><i data-lucide="layers"></i></span>
-            <div class="kpi-value">38</div>
+            <div class="kpi-value">36</div>
             <div class="kpi-label">Total findings</div>
             <div class="kpi-sub">CWE-classified</div>
           </div>
           <div class="kpi-card kpi-info">
             <span class="kpi-icon"><i data-lucide="library"></i></span>
-            <div class="kpi-value">17</div>
+            <div class="kpi-value">21</div>
             <div class="kpi-label">Distinct CWEs</div>
             <div class="kpi-sub">Leaf-node preferred</div>
           </div>
           <div class="kpi-card kpi-info">
             <span class="kpi-icon"><i data-lucide="file-search"></i></span>
-            <div class="kpi-value">28</div>
+            <div class="kpi-value">27</div>
             <div class="kpi-label">Source files inspected</div>
             <div class="kpi-sub">Findings-bearing files</div>
           </div>
@@ -969,9 +969,9 @@ flowchart LR
 %%{init: { 'theme': 'base', 'themeVariables': { 'pie1': '#C81E1E', 'pie2': '#DD6B20', 'pie3': '#B7791F', 'pie4': '#4A5568' } }}%%
 pie showData
     title Findings by severity
-    "Critical" : 6
-    "High" : 19
-    "Medium" : 11
+    "Critical" : 4
+    "High" : 18
+    "Medium" : 12
     "Low" : 2
           </pre>
         </div>
@@ -990,8 +990,8 @@ pie showData
           <span class="eyebrow">Where the weight sits</span>
           <h2>CWE concentration</h2>
           <p class="lede">
-            Eight CWE families account for the majority of findings;
-            secrets, supply chain, and insufficient transport-layer hardening lead the list.
+            Seven CWE families account for the majority of findings;
+            hardcoded credentials, broken cryptography, and weakened browser protections lead the list.
           </p>
         </div>
 
@@ -1010,39 +1010,39 @@ pie showData
               <td class="col-num">5</td>
             </tr>
             <tr>
-              <td class="col-cwe">CWE-1104</td>
-              <td>Use of unmaintained or vulnerable component</td>
+              <td class="col-cwe">CWE-327</td>
+              <td>Use of a broken or risky cryptographic algorithm</td>
               <td class="col-num">5</td>
             </tr>
             <tr>
-              <td class="col-cwe">CWE-1021</td>
-              <td>Improper restriction of UI layers / framing</td>
-              <td class="col-num">4</td>
-            </tr>
-            <tr>
-              <td class="col-cwe">CWE-732</td>
-              <td>Incorrect permission assignment for critical resource</td>
-              <td class="col-num">4</td>
-            </tr>
-            <tr>
-              <td class="col-cwe">CWE-918</td>
-              <td>Server-side request forgery (SSRF)</td>
-              <td class="col-num">3</td>
-            </tr>
-            <tr>
-              <td class="col-cwe">CWE-79</td>
-              <td>Cross-site scripting (XSS) sink coverage</td>
+              <td class="col-cwe">CWE-942</td>
+              <td>Permissive cross-domain policy with untrusted domains</td>
               <td class="col-num">3</td>
             </tr>
             <tr>
               <td class="col-cwe">CWE-693</td>
-              <td>Protection mechanism failure (headers / CSP)</td>
+              <td>Protection mechanism failure (CSP / headers)</td>
               <td class="col-num">3</td>
+            </tr>
+            <tr>
+              <td class="col-cwe">CWE-250</td>
+              <td>Execution with unnecessary privileges (container root)</td>
+              <td class="col-num">2</td>
+            </tr>
+            <tr>
+              <td class="col-cwe">CWE-79</td>
+              <td>Cross-site scripting (XSS) sink coverage</td>
+              <td class="col-num">2</td>
             </tr>
             <tr>
               <td class="col-cwe">CWE-829</td>
               <td>Inclusion of functionality from untrusted control sphere</td>
-              <td class="col-num">3</td>
+              <td class="col-num">2</td>
+            </tr>
+            <tr>
+              <td class="col-cwe">14 others</td>
+              <td>Singletons (CWE-916, 601, 208, 532, 1188, 918, 326, 348, 347, 1240, 345, 521, 328, 307)</td>
+              <td class="col-num">14</td>
             </tr>
           </tbody>
         </table>
@@ -1078,18 +1078,18 @@ pie showData
         <div class="mermaid-wrap">
           <pre class="mermaid">
 flowchart TB
-    Root[Codebase] --> C1[Container]
+    Root["Codebase · 36 findings"] --> C1[Container/Build]
     Root --> C2[Cryptography]
     Root --> C3[Web edge]
     Root --> C4[Supply chain]
-    Root --> C5[Auth]
-    Root --> C6[Webhooks]
-    C1 --> N1["6 critical"]
-    C2 --> N2["7 high"]
-    C3 --> N3["6 high"]
-    C4 --> N4["8 high"]
-    C5 --> N5["6 medium"]
-    C6 --> N6["5 medium"]
+    Root --> C5[Auth/Identity]
+    Root --> C6[Webhooks/Integrations]
+    C1 --> N1["6 total · 3 critical"]
+    C2 --> N2["10 total · 1 critical"]
+    C3 --> N3["11 total · 5 high"]
+    C4 --> N4["3 total · 1 high"]
+    C5 --> N5["3 total · 2 high"]
+    C6 --> N6["3 total · 2 high"]
     classDef root fill:#F2F0FE,stroke:#5B39F3,stroke-width:2px,color:#333333;
     classDef cluster fill:#F4EFF6,stroke:#5B39F3,stroke-width:1.5px,color:#333333;
     classDef critical fill:#C81E1E,stroke:#1A105F,color:#FFFFFF,stroke-width:2px;
@@ -1098,9 +1098,8 @@ flowchart TB
     classDef low fill:#4A5568,stroke:#1A105F,color:#FFFFFF,stroke-width:2px;
     class Root root;
     class C1,C2,C3,C4,C5,C6 cluster;
-    class N1 critical;
-    class N2,N3,N4 high;
-    class N5,N6 medium;
+    class N1,N2 critical;
+    class N3,N4,N5,N6 high;
           </pre>
         </div>
 

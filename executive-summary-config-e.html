@@ -935,7 +935,7 @@ flowchart LR
 flowchart TB
     S["Sandbox &middot; ESLint + Security Plugin"]
     H["Host calcom-monorepo &middot; Biome &middot; CI"]
-    O[("findings-config-e.json")]
+    O["findings-config-e.json"]
     S -. reads .-> H
     S -. emits .-> O
           </pre>
@@ -1165,14 +1165,98 @@ flowchart TB
     });
   }
 
+  function cacheMermaidSources() {
+    // Idempotent: caches the original Mermaid source text on each .mermaid
+    // element the first time it is observed (before any render attempt). This
+    // allows resetErroredMermaid() to restore the syntax for a retry pass when
+    // an initial render produces an error-state SVG placeholder.
+    var all = document.querySelectorAll('.mermaid');
+    for (var i = 0; i < all.length; i++) {
+      if (!all[i].hasAttribute('data-mermaid-source')) {
+        all[i].setAttribute('data-mermaid-source', all[i].textContent);
+      }
+    }
+  }
+
+  function isMermaidBroken(el) {
+    // A processed .mermaid element is considered broken in any of these cases:
+    //   (a) It contains an explicit error placeholder (Mermaid wrote a
+    //       "Syntax error in text" SVG when the renderer failed outright).
+    //   (b) Its rendered SVG has aria-roledescription="error".
+    //   (c) Its rendered SVG has a degenerate viewBox or zero rendered size
+    //       even though the document type is flowchart — this happens when
+    //       Mermaid renders into a parent with zero layout dimensions and
+    //       falls back to a default 16x16 viewBox while the actual nodes are
+    //       positioned far outside that box (effectively invisible).
+    if (el.querySelector('svg .error-icon')) return true;
+    if (el.querySelector('svg .error-text')) return true;
+    if (el.querySelector('svg[aria-roledescription="error"]')) return true;
+    var svg = el.querySelector('svg');
+    if (!svg) return false;
+    var vb = svg.getAttribute('viewBox') || '';
+    var parts = vb.trim().split(/\s+/).map(parseFloat);
+    if (parts.length === 4) {
+      var w = parts[2];
+      var h = parts[3];
+      // Sentinel: a real flowchart viewBox is typically wider than 100 units.
+      // The fallback "broken" viewBox is around 16x16 with negative origin.
+      if (isFinite(w) && isFinite(h) && (w < 100 || h < 100)) {
+        // Confirm by checking node count: a real flowchart with multiple nodes
+        // cannot legitimately fit in <100x100 if it has >1 node.
+        var nodes = svg.querySelectorAll('.node');
+        if (nodes.length >= 2) return true;
+      }
+    }
+    return false;
+  }
+
+  function resetErroredMermaid() {
+    // Mermaid sets data-processed="true" even on failed renders. Detect both
+    // visible failures (error placeholder SVG) and silent failures (degenerate
+    // viewBox) and reset those nodes so the next renderMermaidPending pass
+    // picks them up. This recovers from transient layout-driven render
+    // failures (e.g., when a non-active reveal.js slide has zero viewport size
+    // during the initial render and Mermaid's path-router cannot compute edge
+    // geometry).
+    var processed = document.querySelectorAll('.mermaid[data-processed="true"]');
+    for (var i = 0; i < processed.length; i++) {
+      var el = processed[i];
+      if (!isMermaidBroken(el)) continue;
+      var src = el.getAttribute('data-mermaid-source');
+      if (!src) continue;
+      el.removeAttribute('data-processed');
+      el.textContent = src;
+    }
+  }
+
+  function isMermaidVisible(el) {
+    // Mermaid's dagre layout requires non-zero render geometry to compute
+    // edge routing. A reveal.js slide that is not currently active is scaled
+    // away (offsetWidth = 0 / offsetHeight = 0), and attempting to render
+    // there yields the broken "translate(undefined, NaN)" SVG. Only render
+    // mermaids whose container slide is currently laid out.
+    if (typeof el.getBoundingClientRect !== 'function') return true;
+    var r = el.getBoundingClientRect();
+    if (r && r.width > 0 && r.height > 0) return true;
+    var owOh = (el.offsetWidth || 0) + (el.offsetHeight || 0);
+    return owOh > 0;
+  }
+
   function renderMermaidPending() {
     var readiness = (window.__mermaidReady || Promise.resolve())
       .then(function () { return __fontsReadyPromise; });
     readiness.then(function () {
       if (!window.__mermaid) return;
-      var nodes = Array.prototype.slice.call(
+      cacheMermaidSources();
+      resetErroredMermaid();
+      var allUnprocessed = Array.prototype.slice.call(
         document.querySelectorAll('.mermaid:not([data-processed="true"])')
       );
+      // Only attempt to render mermaids whose containing slide is currently
+      // visible. Inactive slides have zero-dimension layout and cannot be
+      // rendered reliably; they will be picked up by the next slidechanged
+      // event when the user navigates to them.
+      var nodes = allUnprocessed.filter(isMermaidVisible);
       if (nodes.length === 0) {
         fixMermaidClipping();
         return;
@@ -1210,6 +1294,13 @@ flowchart TB
   }).then(function () {
     renderMermaidPending();
     renderLucide();
+    // Deeplink defense-in-depth: when a user lands directly on a slide that
+    // contains a Mermaid diagram (e.g., #/10 / Reveal.slide(10)), no
+    // 'slidechanged' event fires after the initial render. Schedule a follow-up
+    // render pass after layout has settled so resetErroredMermaid() can recover
+    // any diagrams whose first render attempt failed due to transient
+    // zero-dimension layout.
+    setTimeout(renderMermaidPending, 600);
   });
 
   Reveal.on('slidechanged', function () {

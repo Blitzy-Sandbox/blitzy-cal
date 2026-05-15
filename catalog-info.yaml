@@ -2,11 +2,14 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: blitzy-cal
-  description: "AI-generated Calendly/Cal.com parity — 5 sprints of scheduling infrastructure, event types, availability management, and calendar integrations"
+  description: AI-generated Calendly/Cal.com parity — 5 sprints of scheduling infrastructure,
+    event types, availability management, and calendar integrations
   tags:
-    - typescript
-    - web-app
-    - new-feature
+  - audit
+  - new-feature
+  - security
+  - typescript
+  - web-app
   labels:
     blitzy.com/language: typescript
   annotations:
@@ -14,26 +17,26 @@ metadata:
     github.com/project-slug: Blitzy-Sandbox/blitzy-cal
     backstage.io/source-location: url:https://github.com/Blitzy-Sandbox/blitzy-cal/tree/main/
   links:
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal
-      title: GitHub Repository
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/1
-      title: "PR #1: Calendly Gap Analysis & Sprint Roadmap"
-      icon: github
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/2
-      title: "PR #2: Sprint 1 — Availability & Scheduling"
-      icon: github
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/3
-      title: "PR #3: Sprint 3 — Calendar Integrations"
-      icon: github
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/4
-      title: "PR #4: Sprint 2 — Event Types"
-      icon: github
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/5
-      title: "PR #5: Fix Orphaned Buffer Time Events"
-      icon: github
-    - url: https://github.com/Blitzy-Sandbox/blitzy-cal/tree/main/blitzy/documentation
-      title: Blitzy Documentation
-      icon: docs
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal
+    title: GitHub Repository
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/1
+    title: 'PR #1: Calendly Gap Analysis & Sprint Roadmap'
+    icon: github
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/2
+    title: 'PR #2: Sprint 1 — Availability & Scheduling'
+    icon: github
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/3
+    title: 'PR #3: Sprint 3 — Calendar Integrations'
+    icon: github
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/4
+    title: 'PR #4: Sprint 2 — Event Types'
+    icon: github
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal/pull/5
+    title: 'PR #5: Fix Orphaned Buffer Time Events'
+    icon: github
+  - url: https://github.com/Blitzy-Sandbox/blitzy-cal/tree/main/blitzy/documentation
+    title: Blitzy Documentation
+    icon: docs
 spec:
   type: website
   lifecycle: production

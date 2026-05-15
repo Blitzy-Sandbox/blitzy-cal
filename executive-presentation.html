@@ -494,20 +494,6 @@
       margin: 0 0 12px 0;
     }
 
-    .schema-shape {
-      display: block;
-      margin: 12px 0 0 0;
-      font-family: var(--ff-mono);
-      font-size: 0.95rem;
-      color: var(--blitzy-primary-deep);
-      background: var(--blitzy-surface-1);
-      border: 1px solid var(--blitzy-border-soft);
-      border-radius: 10px;
-      padding: 14px 18px;
-      word-break: break-word;
-      white-space: normal;
-    }
-
     .reveal .progress {
       color: var(--blitzy-primary);
     }
@@ -792,7 +778,18 @@ sequenceDiagram
             <span class="kpi-label">Encoding, no BOM</span>
           </div>
         </div>
-        <code class="schema-shape">[{"file":"&lt;relative path&gt;","line":&lt;integer&gt;,"severity":"&lt;critical|high|medium|low&gt;","cwe":"&lt;CWE-ID&gt;","description":"&lt;max 200 chars&gt;"}]</code>
+        <table class="brand-table">
+          <thead>
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>file</code></td><td>string</td><td>Relative source or manifest path</td></tr>
+            <tr><td><code>line</code></td><td>integer</td><td>SARIF start line; <code>0</code> for SCA findings</td></tr>
+            <tr><td><code>severity</code></td><td>enum</td><td>One of <code>critical</code>, <code>high</code>, <code>medium</code>, <code>low</code></td></tr>
+            <tr><td><code>cwe</code></td><td>string</td><td>CWE-ID, with CVE-ID fallback for SCA</td></tr>
+            <tr><td><code>description</code></td><td>string</td><td>Source-prefix tag plus message, truncated to 200 chars</td></tr>
+          </tbody>
+        </table>
         <p class="caption">Five-field minified JSON guarantees byte-comparable diffs across the Config A through H tool comparison.</p>
       </section>
 
@@ -828,7 +825,7 @@ sequenceDiagram
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
   <script>
@@ -865,28 +862,30 @@ sequenceDiagram
       height: 1080
     });
 
-    async function renderVisuals() {
-      // Font readiness wait
+    // Initial visual hydration after Reveal.js `ready` (deck.initialize resolves after the ready event)
+    deck.initialize().then(async () => {
       try {
         await document.fonts.ready;
       } catch (_) {
       }
-      // Mermaid render pass
       try {
         await mermaid.run();
       } catch (_) {
       }
-      // Lucide icon hydration
       if (window.lucide && typeof lucide.createIcons === 'function') {
         lucide.createIcons();
       }
-    }
-
-    deck.initialize().then(renderVisuals);
+    });
 
     // Re-run visual hydration on every slide change
-    deck.on('slidechanged', () => {
-      renderVisuals();
+    deck.on('slidechanged', async () => {
+      try {
+        await mermaid.run();
+      } catch (_) {
+      }
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
     });
   </script>
 </body>

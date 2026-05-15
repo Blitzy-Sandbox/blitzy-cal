@@ -826,9 +826,10 @@ flowchart LR
         </div>
         <ol>
           <li><code>pip install semgrep==1.163.0</code></li>
-          <li><code>mkdir -p /tmp/semgrep-rules &amp;&amp; curl -fSL https://semgrep.dev/c/p/security-audit -o /tmp/semgrep-rules/security-audit.yml &amp;&amp; curl -fSL https://semgrep.dev/c/p/secrets -o /tmp/semgrep-rules/secrets.yml &amp;&amp; curl -fSL https://semgrep.dev/c/p/owasp -o /tmp/semgrep-rules/owasp.yml</code></li>
+          <li><code>mkdir -p /tmp/semgrep-rules &amp;&amp; curl -fSL https://semgrep.dev/c/p/security-audit -o /tmp/semgrep-rules/security-audit.yml &amp;&amp; curl -fSL https://semgrep.dev/c/p/secrets -o /tmp/semgrep-rules/secrets.yml &amp;&amp; curl -fSL https://semgrep.dev/c/p/owasp-top-ten -o /tmp/semgrep-rules/owasp.yml</code></li>
           <li><code>semgrep scan --config=/tmp/semgrep-rules --sarif -o results-semgrep.sarif --metrics=off .</code></li>
         </ol>
+        <p class="footnote">The user-named pack <code>p/owasp</code> is fetched via the canonical Semgrep Registry alias <code>p/owasp-top-ten</code> (the short-name endpoint <code>/c/p/owasp</code> returns HTTP 404); the cached filename retains the user-named <code>owasp.yml</code> form so <code>--config=/tmp/semgrep-rules</code> aligns with the directive's pack list. See <code>decision-log.md</code> Decision Table row "Use the canonical Semgrep Registry URL <code>p/owasp-top-ten</code>...".</p>
       </section>
 
       <!-- Slide 14: Severity Mapping Reference -->

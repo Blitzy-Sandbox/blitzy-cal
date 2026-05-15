@@ -32,6 +32,16 @@ This document is mandated by the user-specified **Explainability rule** (AAP §0
 | **18.** No autofix policy (corollary) | Combine the scan and an autofix pass in one ESLint invocation. | Scan-only; ESLint is invoked without `--fix`. | See decision 6 — the deliverable is an inventory, and auto-fixing security findings is a developer-review concern with regression risk. | See decision 6. |
 | **19.** Exit-code handling | Treat any non-zero ESLint exit code as a hard failure and abort the pipeline. | Capture the exit code in this log but treat the run as successful for normalization purposes as long as `results-eslint.json` is valid JSON. ESLint v9 returns exit code `1` whenever any rule fires at `error` severity, which is the *expected* outcome here. | Every `security/*` rule is pinned to `error`, so a successful scan that finds at least one violation exits non-zero by design. The actual run exits with code `1` and produces 19 findings — the expected state. The normalizer post-validates the JSON before transforming. | Catastrophic ESLint crashes that still emit partial JSON could be misclassified as successful. Mitigated by the normalizer's `JSON.parse` validation of the on-disk file before transform, and by the on-disk self-verify of the output (newline count, key set, description length) before the normalizer exits. |
 | **20.** Sandbox path vs Yarn workspaces | Place the sandbox inside an existing workspace (e.g., `packages/.blitzy-eslint-sandbox/`) so workspace tooling could discover it. | Top-level `.blitzy-eslint-sandbox/` at the repo root, outside every Yarn `workspaces` glob. | The Yarn `workspaces` array in root `package.json` is `["apps/*", "apps/api/*", "packages/*", "packages/embeds/*", "packages/features/*", "packages/app-store", "packages/app-store/*", "packages/platform/*", "packages/platform/examples/base", "example-apps/*"]`. A top-level dot-prefixed directory matches none of these globs, so the sandbox is invisible to `yarn install`, `yarn workspaces foreach`, and `turbo run` filters. This guarantees the sandbox cannot accidentally pollute host workflows. | Future `yarn workspaces foreach` invocations would skip the sandbox by design — which is the intent. No risk to host operations. |
+| **21.** Executive deck Mermaid initialization order | (a) Load Mermaid synchronously via UMD `<script>` alongside reveal.js and Lucide. (b) Set `mermaid.initialize({ startOnLoad: true })` so Mermaid renders diagrams as soon as the DOM is parsed. | Load Mermaid as a deferred ESM module via `import` from the official ESM bundle (`mermaid@11.4.0/dist/mermaid.esm.min.mjs`), set `startOnLoad: false`, and expose a `window.__mermaidReady` Promise that the UMD-loaded boot code awaits before calling `mermaid.run()`. | Mermaid's official 11.4.0 distribution recommends the ESM bundle for tree-shaking and correct module semantics. The ESM module loads asynchronously, so a deferred UMD reveal.js boot path can finish initialization before Mermaid is even available on `window`. The explicit readiness Promise eliminates the race; reveal.js can call `renderMermaidPending()` from its `ready` / `slidechanged` handlers without checking module state. `startOnLoad: false` is mandated by the Executive Presentation rule. | None of substance; the Promise resolves once and is cheap. If a future Mermaid release exposes a synchronous global, the Promise still resolves and the boot path remains correct. |
+| **22.** Web-font readiness gate before Mermaid render | Render Mermaid diagrams immediately after Mermaid is ready, regardless of font load state. | Gate the first Mermaid render on `document.fonts.ready` (with a `null` fallback on browsers without the Font Loading API). | Mermaid measures the rendered width of node-label text at render time and embeds those measurements as SVG `width` attributes. If Inter / Space Grotesk are still loading when the measurement happens, Mermaid uses a fallback font, and labels overflow their measured rectangles once the real font paints. Gating render on `document.fonts.ready` removes that class of mismeasurement entirely. | Render is delayed by the time it takes Google Fonts to deliver the woff2 files. Mitigated because the deck is small (3 font families) and reveal.js preconnects to `fonts.gstatic.com`; on a warm cache the delay is sub-100ms. |
+| **23.** Mermaid foreignObject clipping reconciliation | Accept Mermaid's default measurement; tolerate occasional clipped node labels. | After Mermaid completes, traverse every `.node` in the rendered SVG, lift the inlined `max-width: 200px` ceiling on the inner `<div>`, compare the natural `scrollWidth` of the label `<p>` against the `foreignObject` `width` attribute, and widen the `foreignObject` (and surrounding `rect`) when the label overflows. The pass is idempotent, additive (never shrinks), and applies a 24-pixel horizontal padding. | Mermaid's hidden measurement element occasionally underestimates the rendered text width — especially with custom font families. The post-render reconciliation is a deterministic, in-process fix that does not depend on any external library or further version bumps; it is also safe to call repeatedly because nodes already fitting are left alone. | The pass uses `scrollWidth` which forces a layout. With 4 small diagrams in the deck the cost is negligible (<10ms total). Rectangular nodes are widened; cylinder/parallelogram and other parametric shapes are intentionally left to Mermaid's own resize logic. |
+| **24.** Serial Mermaid diagram rendering | Render all pending diagrams in parallel via `mermaid.run({ nodes: [...all] })` for minimum total render time. | Process each diagram serially via `await window.__mermaid.run({ nodes: [nodes[i]] })` inside a `for` loop. | Mermaid generates SVG element IDs from a millisecond-precision timestamp. Running multiple diagrams in the same batch (or sub-millisecond window) can produce ID collisions where the second diagram clobbers the first and surfaces a "syntax error" overlay even though the diagram source is valid. Serial rendering guarantees each timestamp is unique. | Serial render is slower than parallel by roughly N× the per-diagram render cost; for the 4 diagrams in this deck the absolute delta is well under 100ms. Acceptable because correctness is the dominant concern. |
+| **25.** Reveal.js `ready` + `slidechanged` re-render | Render Mermaid + Lucide only once, at `Reveal.initialize().then()`. | Re-invoke `renderMermaidPending()` and `renderLucide()` from both `Reveal.on('ready', ...)` and `Reveal.on('slidechanged', ...)` handlers. | reveal.js fires `ready` after the initial slide is laid out, which covers programmatic deep-link navigation (`#/4` hash on first load) that places the user on a non-first slide where the diagram may not have been visible at `initialize` time. `slidechanged` covers all subsequent navigation. Both `renderMermaidPending` and `renderLucide` are idempotent (they skip already-processed nodes), so the redundancy is safe and inexpensive. | None of substance. |
+| **26.** Removed rationale from deck code comments | Leave the originally-written rationale paragraphs inside the deck's `<script>` and `<style>` blocks. | Strip all "why" rationale from `executive-summary-config-e.html` and migrate the substantive design notes to this decision log (decisions 21–25). Keep only neutral function labels and tool directives (`eslint-disable-next-line`) in the deck source. | The user-specified Explainability rule states verbatim "Do not embed rationale in code comments. The decision log is the single source of truth for 'why' decisions." The deck previously contained extended rationale paragraphs explaining the Mermaid readiness gate, font gating, clipping fix, serial render, and deep-link handling — all of which are non-trivial decisions a competent engineer could have made differently. They now appear here as decisions 21–25. | Future maintainers reading the deck source see less in-line context. Mitigated by the script section's introductory comment "See decision log entries 21–24 for design notes" which points readers to this file as the canonical source. |
+| **27.** Inline `style` attributes replaced with CSS classes | Use inline `style=` attributes for one-off styling decisions (font family, table column width, brand-row spacing). | Define utility CSS classes `.mono`, `.col-risk`, `.closing-brand-row`, `.closing-icon-row` inside the embedded `<style>` block and reference them via `class=`. | Inline styles bypass the design-token system (CSS custom properties) and reduce maintainability — each one-off declaration becomes an exception. Utility classes keep the deck's styling system internally consistent and align with the project's UI standard of preferring named classes over inline `style` attributes. | Slightly more CSS overall; negligible payload increase. The deck remains self-contained — no external stylesheet introduced. |
+| **28.** Honest coverage reporting in the executive deck | Present "7,378 files scanned" / "Coverage is broad" framing for leadership impact. | Present "7,378 file results · 1,035 fully linted (14%) · 6,343 parse-limited" framing across the headline KPI grid, the deliverables narrative, the risks table, and the closing slide. Add an explicit "Parser-limited TS coverage" risk row pointing to `@typescript-eslint/parser` as the next step. | Decision 7 in this log discloses that 6,343 file results emit fatal parser messages and so are not fully linted for security rules. The original deck wording overstated coverage — a material misrepresentation for a non-technical leadership audience. Honest reporting is mandatory under the Explainability rule and aligns the deck with the decision log's authoritative metrics. | Headline numbers look less impressive at first glance. Mitigated by the deck explicitly framing the parse-limit as a follow-on roadmap item (add `@typescript-eslint/parser`) rather than as a failure. |
+| **29.** Closing slide visual marker | Rely on the slide's accent bar and brand lockup as the visual element. | Add a dedicated `.closing-icon-row` containing three Lucide icons (`shield-check`, `file-check-2`, `clipboard-check`) at the top of the closing slide. | The Executive Presentation rule requires every slide to contain at least one approved non-text visual marker (Mermaid diagram, KPI card, styled table, or Lucide SVG icon). The reviewer's automated check did not credit the accent bar or brand lockup as one of the approved markers. The Lucide icon row satisfies the explicit marker list and complements the navy/teal brand palette without competing with the headline text. | None of substance. The icons sit above the eyebrow and are sized at 44×44 px with subtle teal-tinted background; they reinforce the slide's "audit/compliance/visibility" message without adding emoji or color clashes. |
+| **30.** Content slide word budgets | Permit prose paragraphs and detailed table cells to communicate full context. | Hold every content slide to ≤40 visible body-text words and ≤4 bullets per the Executive Presentation rule. Condense ledes to one-line statements, tighten icon-row bodies to ≤7 words, and trim table cell mitigations to fragments. | The Executive Presentation rule sets a hard ceiling because non-technical leadership readers cannot absorb long paragraphs at slide-pace. Excess density was previously flagged on slides 2, 12, 14, 15. The condensation maintains intent (each KPI, risk, deliverable, and onboarding step still communicates) while staying within the rule. | Subtleties dropped from the deck still live in the decision log and `findings-config-e.json`. The deck remains the executive narrative; the decision log remains the source of operational detail. |
 
 ## Forward-Only Traceability Table (Rule → CWE)
 
@@ -80,18 +90,254 @@ This table maps each rule registered by `eslint-plugin-security@4.0.0` to the CW
 
 ## Re-Run Instructions
 
-The deliverable can be regenerated deterministically by following these steps from the repository root. The sandbox is transient and is recreated from scratch each time.
+The deliverable can be regenerated deterministically by copy-pasting the commands below from the repository root. Every step is an executable shell command. The sandbox is transient and is recreated from scratch each time. The three sandbox files are emitted via heredocs whose content is the canonical, byte-for-byte source — no manual authoring step is required.
 
-1. `mkdir -p .blitzy-eslint-sandbox`
-2. Author `.blitzy-eslint-sandbox/package.json` declaring `"dependencies": { "eslint": "^9.39.4", "eslint-plugin-security": "^4.0.0" }` and `"type": "module"`.
-3. Author `.blitzy-eslint-sandbox/eslint.config.mjs` that imports `eslint-plugin-security`, registers it under the `security` namespace, and pins every rule in `Object.keys(security.rules)` to `"error"`. Include the `ignores` glob list documented in decision 9.
-4. Author `.blitzy-eslint-sandbox/normalize-findings.mjs` that loads `.blitzy-eslint-sandbox/results-eslint.json`, applies the CWE map documented in the traceability table above, truncates each `description` via `String(...).slice(0, 200)`, sorts findings deterministically by `(file, line, cwe, description)`, and writes `findings-config-e.json` as `JSON.stringify(findings) + "\n"` (or `"[]\n"` when empty).
-5. `npm install --prefix .blitzy-eslint-sandbox`
-6. `time .blitzy-eslint-sandbox/node_modules/.bin/eslint --config .blitzy-eslint-sandbox/eslint.config.mjs --no-config-lookup -f json -o .blitzy-eslint-sandbox/results-eslint.json .` — exit code `1` is the expected success signal when any rule fires.
-7. `node .blitzy-eslint-sandbox/normalize-findings.mjs`
-8. Verify Directive 3 gates:
-   - `cat findings-config-e.json | wc -l` must return `1`.
-   - `node -e "JSON.parse(require('fs').readFileSync('findings-config-e.json','utf8'))"` must exit `0`.
-   - `node -e "const j=JSON.parse(require('fs').readFileSync('findings-config-e.json','utf8'));for(const x of j){if(['file','line','severity','cwe','description'].some(k=>!(k in x)))throw new Error('missing field');if(x.description.length>200)throw new Error('description >200');}"` must exit `0`.
+### Step 1 — Create the sandbox directory
+
+```bash
+mkdir -p .blitzy-eslint-sandbox
+```
+
+### Step 2 — Write the sandbox `package.json`
+
+```bash
+cat > .blitzy-eslint-sandbox/package.json <<'EOF'
+{
+  "name": "blitzy-eslint-sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Transient ESLint sandbox for Config E security scan. Not part of the host calcom-monorepo. Not committed.",
+  "dependencies": {
+    "eslint": "^9.39.4",
+    "eslint-plugin-security": "^4.0.0"
+  }
+}
+EOF
+```
+
+### Step 3 — Write the flat-config `eslint.config.mjs`
+
+```bash
+cat > .blitzy-eslint-sandbox/eslint.config.mjs <<'EOF'
+import security from "eslint-plugin-security";
+
+const allSecurityRulesAsErrors = Object.fromEntries(
+  Object.keys(security.rules).map((rule) => [`security/${rule}`, "error"])
+);
+
+export default [
+  {
+    ignores: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/.turbo/**",
+      "**/.yarn/**",
+      "**/.git/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/out/**",
+      "**/coverage/**",
+      "**/lint-results/**",
+      "**/test-results/**",
+      "**/*.d.ts",
+      "**/public/**",
+      "apps/web/public/embed/**",
+      "packages/prisma/zod/**",
+      "packages/prisma/enums/**",
+      ".blitzy-eslint-sandbox/**",
+    ],
+  },
+  {
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],
+    plugins: { security },
+    rules: allSecurityRulesAsErrors,
+  },
+];
+EOF
+```
+
+### Step 4 — Write the normalizer `normalize-findings.mjs`
+
+```bash
+cat > .blitzy-eslint-sandbox/normalize-findings.mjs <<'EOF'
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
+
+const CWE_MAP = {
+  "security/detect-bidi-characters": "CWE-1007",
+  "security/detect-buffer-noassert": "CWE-754",
+  "security/detect-child-process": "CWE-78",
+  "security/detect-disable-mustache-escape": "CWE-79",
+  "security/detect-eval-with-expression": "CWE-95",
+  "security/detect-new-buffer": "CWE-665",
+  "security/detect-no-csrf-before-method-override": "CWE-352",
+  "security/detect-non-literal-fs-filename": "CWE-22",
+  "security/detect-non-literal-regexp": "CWE-1333",
+  "security/detect-non-literal-require": "CWE-829",
+  "security/detect-object-injection": "CWE-1321",
+  "security/detect-possible-timing-attacks": "CWE-208",
+  "security/detect-pseudoRandomBytes": "CWE-338",
+  "security/detect-unsafe-regex": "CWE-1333",
+};
+const CWE_FALLBACK = "CWE-693";
+const DESCRIPTION_MAX_LEN = 200;
+const RESULTS_PATH = ".blitzy-eslint-sandbox/results-eslint.json";
+const OUTPUT_PATH = "findings-config-e.json";
+
+function fail(msg, err) {
+  const detail = err && err.message ? `: ${err.message}` : "";
+  process.stderr.write(`normalize-findings: FATAL ${msg}${detail}\n`);
+  process.exit(1);
+}
+
+if (!existsSync(RESULTS_PATH)) {
+  fail(`Missing ${RESULTS_PATH}. Run the ESLint scan first.`);
+}
+
+let raw;
+try {
+  raw = JSON.parse(readFileSync(RESULTS_PATH, "utf8"));
+} catch (err) {
+  fail(`Unable to parse ${RESULTS_PATH} as JSON`, err);
+}
+if (!Array.isArray(raw)) {
+  fail(`Expected ${RESULTS_PATH} to be a JSON array at the top level`);
+}
+
+const cwd = process.cwd();
+const cwdWithSep = cwd.endsWith("/") ? cwd : `${cwd}/`;
+
+function toRepoRelative(filePath) {
+  if (typeof filePath !== "string" || filePath.length === 0) return "";
+  let rel = filePath;
+  if (rel.startsWith(cwdWithSep)) {
+    rel = rel.slice(cwdWithSep.length);
+  } else if (rel === cwd) {
+    rel = "";
+  } else {
+    try {
+      const abs = resolve(rel);
+      if (abs.startsWith(cwdWithSep)) rel = abs.slice(cwdWithSep.length);
+    } catch {
+      /* fall through */
+    }
+  }
+  return rel.replace(/^\.\/+/, "").replace(/^\/+/, "");
+}
+
+function toSeverity(numeric) {
+  return numeric === 2 ? "high" : "medium";
+}
+
+function buildFinding(fileResult, msg) {
+  const ruleId = msg && typeof msg.ruleId === "string" ? msg.ruleId : null;
+  if (!ruleId || !ruleId.startsWith("security/")) return null;
+  return {
+    file: toRepoRelative(fileResult.filePath),
+    line: Number.isInteger(msg.line) && msg.line >= 0 ? msg.line : 0,
+    severity: toSeverity(msg.severity),
+    cwe: CWE_MAP[ruleId] || CWE_FALLBACK,
+    description: String(msg.message ?? "").slice(0, DESCRIPTION_MAX_LEN),
+  };
+}
+
+const findings = [];
+for (const fileResult of raw) {
+  if (!fileResult || typeof fileResult !== "object") continue;
+  const messages = Array.isArray(fileResult.messages) ? fileResult.messages : [];
+  for (const msg of messages) {
+    const finding = buildFinding(fileResult, msg);
+    if (finding !== null) findings.push(finding);
+  }
+}
+
+findings.sort((a, b) => {
+  if (a.file !== b.file) return a.file < b.file ? -1 : 1;
+  if (a.line !== b.line) return a.line - b.line;
+  if (a.cwe !== b.cwe) return a.cwe < b.cwe ? -1 : 1;
+  return a.description < b.description ? -1 : a.description > b.description ? 1 : 0;
+});
+
+for (const f of findings) {
+  if (typeof f.file !== "string") fail(`finding.file is not a string: ${JSON.stringify(f)}`);
+  if (!Number.isInteger(f.line)) fail(`finding.line is not an integer: ${JSON.stringify(f)}`);
+  if (!["critical", "high", "medium", "low"].includes(f.severity)) {
+    fail(`finding.severity not in enum: ${JSON.stringify(f)}`);
+  }
+  if (!/^CWE-\d+$/.test(f.cwe)) fail(`finding.cwe malformed: ${JSON.stringify(f)}`);
+  if (typeof f.description !== "string") fail(`finding.description not a string: ${JSON.stringify(f)}`);
+  if (f.description.length > DESCRIPTION_MAX_LEN) {
+    fail(`finding.description exceeds ${DESCRIPTION_MAX_LEN} chars: ${JSON.stringify(f)}`);
+  }
+}
+
+const jsonBody = findings.length > 0 ? JSON.stringify(findings) : "[]";
+writeFileSync(OUTPUT_PATH, `${jsonBody}\n`, "utf8");
+
+const onDisk = readFileSync(OUTPUT_PATH, "utf8");
+const newlineCount = (onDisk.match(/\n/g) || []).length;
+if (newlineCount !== 1) fail(`Output has ${newlineCount} newline byte(s); expected 1.`);
+if (!onDisk.endsWith("\n")) fail("Output is not newline-terminated.");
+if (onDisk.slice(0, -1).includes("\n")) fail("Output contains an internal newline.");
+let parsed;
+try { parsed = JSON.parse(onDisk); } catch (err) { fail("Output does not round-trip", err); }
+if (findings.length === 0 && onDisk !== "[]\n") {
+  fail(`Empty case must be "[]\\n"; got ${JSON.stringify(onDisk)}`);
+}
+if (!Array.isArray(parsed)) fail("Top-level JSON is not an array.");
+const REQUIRED_KEYS = ["file", "line", "severity", "cwe", "description"].sort();
+for (const obj of parsed) {
+  const keys = Object.keys(obj).sort();
+  if (keys.length !== REQUIRED_KEYS.length || keys.some((k, i) => k !== REQUIRED_KEYS[i])) {
+    fail(`Object has wrong key set ${JSON.stringify(keys)}: ${JSON.stringify(obj)}`);
+  }
+  if (typeof obj.description === "string" && obj.description.length > DESCRIPTION_MAX_LEN) {
+    fail(`description exceeds ${DESCRIPTION_MAX_LEN} chars: ${JSON.stringify(obj)}`);
+  }
+}
+process.stdout.write(
+  `normalize-findings: wrote ${OUTPUT_PATH} (${findings.length} findings, ${onDisk.length} bytes, ${newlineCount} newline).\n`
+);
+EOF
+```
+
+### Step 5 — Install the sandbox dependency tree
+
+```bash
+npm install --prefix .blitzy-eslint-sandbox
+```
+
+### Step 6 — Run the ESLint security scan
+
+```bash
+time .blitzy-eslint-sandbox/node_modules/.bin/eslint \
+  --config .blitzy-eslint-sandbox/eslint.config.mjs \
+  --no-config-lookup \
+  -f json \
+  -o .blitzy-eslint-sandbox/results-eslint.json \
+  .
+```
+
+Exit code `1` is the expected success signal when any `security/*` rule fires at `error` severity (see decision 19). The raw JSON output is written to `.blitzy-eslint-sandbox/results-eslint.json`.
+
+### Step 7 — Normalize findings into the deliverable
+
+```bash
+node .blitzy-eslint-sandbox/normalize-findings.mjs
+```
+
+### Step 8 — Verify Directive 3 pass/fail gates
+
+```bash
+test "$(cat findings-config-e.json | wc -l)" = "1" \
+  && echo "wc -l == 1 OK" \
+  || (echo "wc -l != 1 FAIL" && exit 1)
+
+node -e "JSON.parse(require('fs').readFileSync('findings-config-e.json','utf8'))" \
+  && echo "valid JSON OK"
+
+node -e "const j=JSON.parse(require('fs').readFileSync('findings-config-e.json','utf8'));for(const x of j){if(['file','line','severity','cwe','description'].some(k=>!(k in x)))throw new Error('missing field: '+JSON.stringify(x));if(x.description.length>200)throw new Error('description >200: '+JSON.stringify(x));}console.log('schema + length OK ('+j.length+' findings)');"
+```
 
 The sandbox directory is intentionally not committed; `git status` should remain clean for `.blitzy-eslint-sandbox/` because the global `.gitignore` excludes `node_modules` and the parent dot-prefixed directory is never `git add`ed.

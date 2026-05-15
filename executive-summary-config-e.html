@@ -218,11 +218,29 @@
     .slide-closing ul li { color: rgba(255,255,255,0.92); }
     .slide-closing ul li + li { border-top: 1px solid rgba(255,255,255,0.12); }
     .slide-closing ul li::before { background: var(--gradient-accent-bar); }
-    /* The global `.reveal strong` color (primary-dark) is invisible on the
-       navy closing background. Promote bullet labels to the teal accent so
-       the headline pattern (label · em-dash · body) reads cleanly. */
     .slide-closing strong { color: var(--blitzy-accent-teal); font-weight: 600; }
     .slide-closing .accent-bar { width: 240px; margin: 28px 0 48px 0; }
+    .slide-closing .closing-icon-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 20px;
+      padding: 14px 18px;
+      background: rgba(148, 250, 213, 0.08);
+      border: 1px solid rgba(148, 250, 213, 0.22);
+      border-radius: 16px;
+    }
+    .slide-closing .closing-icon-row svg {
+      width: 44px;
+      height: 44px;
+      color: var(--blitzy-accent-teal);
+      stroke-width: 1.5;
+    }
+    .slide-closing .closing-brand-row { margin-top: 48px; }
+
+    /* Utility classes. */
+    .mono { font-family: var(--ff-mono); }
+    table.styled-table th.col-risk { width: 30%; }
 
     /* ---------- Hero icon (large Lucide on title / divider) ---------- */
     .hero-icon svg {
@@ -552,12 +570,6 @@
     }
     .mermaid svg { max-width: 100% !important; height: auto !important; }
 
-    /* Pin Mermaid's foreignObject-based labels to the same Inter
-       font used elsewhere in the deck so measurement and paint
-       are visually consistent. Sub-pixel discrepancies between
-       Mermaid's hidden measurement element and the final SVG-
-       embedded element are fixed up by the post-render JS pass
-       (fixMermaidClipping) defined further down. */
     .mermaid .nodeLabel,
     .mermaid .label,
     .mermaid .edgeLabel,
@@ -639,7 +651,7 @@
       <span class="eyebrow">Security Tooling Sweep &mdash; Config E</span>
       <h1>Config E: ESLint Security Scan</h1>
       <p class="subtitle">
-        Static analysis of the calcom-monorepo using ESLint with <span style="font-family:var(--ff-mono);">eslint-plugin-security</span> &mdash;
+        Static analysis of the calcom-monorepo using ESLint with <span class="mono">eslint-plugin-security</span> &mdash;
         a one-shot security visibility pass, delivered without disrupting the existing Biome-based linter pipeline.
       </p>
       <div class="meta-row">
@@ -667,41 +679,41 @@
         <span class="eyebrow">Headline Findings</span>
       </div>
       <h2>At a Glance</h2>
-      <p class="lede">The scan completed in seconds. Coverage is broad, the rule set is comprehensive, and findings are concentrated in a small number of script files.</p>
+      <p class="lede">1,035 of 7,378 fully linted (14%).</p>
 
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-icon"><i data-lucide="folder-tree"></i></div>
           <div><span class="kpi-value">7,378</span></div>
-          <div class="kpi-label">Files Scanned</div>
-          <div class="kpi-sub">Across apps, packages, scripts</div>
+          <div class="kpi-label">File Results</div>
+          <div class="kpi-sub">ESLint entries</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-icon"><i data-lucide="list-checks"></i></div>
-          <div><span class="kpi-value">14</span></div>
-          <div class="kpi-label">Rules Applied</div>
-          <div class="kpi-sub">Every <code>security/*</code> rule at <code>error</code></div>
+          <div class="kpi-icon"><i data-lucide="check-circle-2"></i></div>
+          <div><span class="kpi-value">1,035</span></div>
+          <div class="kpi-label">Linted</div>
+          <div class="kpi-sub">14% tokenized</div>
         </div>
         <div class="kpi-card kpi-accent">
           <div class="kpi-tag">Material</div>
           <div class="kpi-icon"><i data-lucide="alert-triangle"></i></div>
           <div><span class="kpi-value">19</span></div>
           <div class="kpi-label">Findings</div>
-          <div class="kpi-sub">All severity <strong>high</strong> &middot; 9 source files</div>
+          <div class="kpi-sub">9 source files</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-icon"><i data-lucide="timer"></i></div>
-          <div><span class="kpi-value">3.6<span class="kpi-unit">sec</span></span></div>
-          <div class="kpi-label">Scan Duration</div>
-          <div class="kpi-sub">Median of three repeat runs</div>
+          <div class="kpi-icon"><i data-lucide="alert-octagon"></i></div>
+          <div><span class="kpi-value">6,343</span></div>
+          <div class="kpi-label">Parse-Limited</div>
+          <div class="kpi-sub">TS parser gap</div>
         </div>
       </div>
 
       <div class="severity-bar" aria-label="Severity profile">
-        <div class="seg"><span class="seg-label">Critical &middot; reserved</span></div>
-        <div class="seg seg-active"><span class="seg-label">High &middot; 19</span></div>
-        <div class="seg"><span class="seg-label">Medium &middot; reserved</span></div>
-        <div class="seg"><span class="seg-label">Low &middot; reserved</span></div>
+        <div class="seg"><span class="seg-label">Critical</span></div>
+        <div class="seg seg-active"><span class="seg-label">High</span></div>
+        <div class="seg"><span class="seg-label">Medium</span></div>
+        <div class="seg"><span class="seg-label">Low</span></div>
       </div>
     </section>
 
@@ -747,10 +759,10 @@ flowchart LR
       </div>
       <h2>Three Directives, Three Artifacts</h2>
       <ul>
-        <li><strong>Installed</strong> ESLint and the security plugin in an isolated sandbox.</li>
-        <li><strong>Executed</strong> every <code>security/*</code> rule at <code>error</code> severity across the monorepo.</li>
-        <li><strong>Normalized</strong> findings into a single-line JSON document with five fields.</li>
-        <li><strong>Delivered</strong> findings JSON, decision log, and this executive deck.</li>
+        <li><strong>Installed</strong> ESLint and security plugin in isolated sandbox.</li>
+        <li><strong>Executed</strong> 14 <code>security/*</code> rules across JS-parseable files.</li>
+        <li><strong>Normalized</strong> findings to a single-line, five-field JSON.</li>
+        <li><strong>Delivered</strong> findings JSON, decision log, and this deck.</li>
       </ul>
     </section>
 
@@ -763,28 +775,28 @@ flowchart LR
         <span class="eyebrow">Business Value</span>
       </div>
       <h2>Why It Matters</h2>
-      <p class="lede">A second, independent perspective on security hygiene that augments the team's existing Biome workflow without disrupting it.</p>
+      <p class="lede">Second-opinion SAST that augments Biome without disruption.</p>
 
       <div class="icon-row">
         <div class="icon-item">
           <i data-lucide="gauge"></i>
           <div class="icon-item-title">SAST Hygiene</div>
-          <div class="icon-item-body">Surfaces injection, path, and ReDoS patterns Biome does not check.</div>
+          <div class="icon-item-body">Injection, path, ReDoS patterns.</div>
         </div>
         <div class="icon-item">
           <i data-lucide="users"></i>
           <div class="icon-item-title">Dev Hand-Off</div>
-          <div class="icon-item-body">Normalized output feeds straight into triage and remediation queues.</div>
+          <div class="icon-item-body">Feeds triage queues directly.</div>
         </div>
         <div class="icon-item">
           <i data-lucide="clipboard-check"></i>
           <div class="icon-item-title">Audit Trail</div>
-          <div class="icon-item-body">Decision log records every choice for compliance review.</div>
+          <div class="icon-item-body">Every choice documented.</div>
         </div>
         <div class="icon-item">
           <i data-lucide="scale"></i>
           <div class="icon-item-title">Fair Compare</div>
-          <div class="icon-item-body">Stable schema enables apples-to-apples scoring across configs.</div>
+          <div class="icon-item-body">Stable schema for scoring.</div>
         </div>
       </div>
     </section>
@@ -944,24 +956,24 @@ flowchart TB
       <div class="styled-table-wrap">
         <table class="styled-table">
           <thead>
-            <tr><th style="width:30%;">Risk</th><th>Mitigation</th></tr>
+            <tr><th class="col-risk">Risk</th><th>Mitigation</th></tr>
           </thead>
           <tbody>
             <tr>
+              <td>Parser-limited TS coverage</td>
+              <td>Add <code>@typescript-eslint/parser</code> to widen scan.</td>
+            </tr>
+            <tr>
               <td>Host dependency contamination</td>
-              <td>All ESLint files live in <code>.blitzy-eslint-sandbox/</code>. The host <code>package.json</code>, <code>yarn.lock</code>, and <code>biome.json</code> are never modified. <code>engine-strict</code> would block any in-place attempt.</td>
+              <td>Sandboxed install; manifests read-only.</td>
             </tr>
             <tr>
               <td>False positives at scale</td>
-              <td>Plugin operates on syntax, not types. Findings are inventory, not auto-applied. Triage step routes each item before any remediation lands.</td>
+              <td>Syntax-only plugin; triage before fix.</td>
             </tr>
             <tr>
-              <td>Severity skew toward "high"</td>
-              <td>By policy every rule is pinned to <code>error</code>, so every finding maps to high. Schema reserves critical and low for sibling configs; the deck calls this convention out explicitly.</td>
-            </tr>
-            <tr>
-              <td>Description truncation at 200 chars</td>
-              <td>Hard slice per directive; the full ESLint message remains in the raw <code>results-eslint.json</code> for any item needing context during triage.</td>
+              <td>Severity skew to high</td>
+              <td>Policy; schema reserves critical/low.</td>
             </tr>
           </tbody>
         </table>
@@ -993,7 +1005,7 @@ flowchart TB
           <div class="deliverable-icon"><i data-lucide="file-json"></i></div>
           <div>
             <div class="deliverable-name">findings-config-e.json</div>
-            <p class="deliverable-desc">Minified single-line JSON array of findings &mdash; the primary, machine-readable artifact for triage and comparison.</p>
+            <p class="deliverable-desc">Single-line JSON; machine input for triage.</p>
             <span class="deliverable-tag">Primary</span>
           </div>
         </div>
@@ -1001,7 +1013,7 @@ flowchart TB
           <div class="deliverable-icon"><i data-lucide="book-open"></i></div>
           <div>
             <div class="deliverable-name">decision-log-config-e.md</div>
-            <p class="deliverable-desc">Markdown decision log capturing every non-trivial choice, alternatives weighed, and risks accepted.</p>
+            <p class="deliverable-desc">Every choice, alternative, and risk recorded.</p>
             <span class="deliverable-tag">Required</span>
           </div>
         </div>
@@ -1009,7 +1021,7 @@ flowchart TB
           <div class="deliverable-icon"><i data-lucide="presentation"></i></div>
           <div>
             <div class="deliverable-name">executive-summary-config-e.html</div>
-            <p class="deliverable-desc">Self-contained reveal.js deck &mdash; this document. Sized for non-technical leadership readouts.</p>
+            <p class="deliverable-desc">This deck; leadership readout.</p>
             <span class="deliverable-tag">Required</span>
           </div>
         </div>
@@ -1017,7 +1029,7 @@ flowchart TB
           <div class="deliverable-icon"><i data-lucide="folder-cog"></i></div>
           <div>
             <div class="deliverable-name">.blitzy-eslint-sandbox/</div>
-            <p class="deliverable-desc">Transient install root holding ESLint, the plugin, and intermediate raw output. Not committed; safe to delete after triage.</p>
+            <p class="deliverable-desc">Transient install root; never committed.</p>
             <span class="deliverable-tag">Transient</span>
           </div>
         </div>
@@ -1033,28 +1045,27 @@ flowchart TB
         <span class="eyebrow">Onboarding &amp; Next Steps</span>
       </div>
       <h2>From Inventory to Action</h2>
-      <p class="lede">A practical sequence for engineering managers to convert this scan into measurable risk reduction.</p>
 
       <div class="icon-row">
         <div class="icon-item">
           <i data-lucide="filter"></i>
           <div class="icon-item-title">1. Triage</div>
-          <div class="icon-item-body">Group findings by CWE; prioritize path and injection classes first.</div>
+          <div class="icon-item-body">CWE first; path and injection.</div>
         </div>
         <div class="icon-item">
           <i data-lucide="git-pull-request"></i>
           <div class="icon-item-title">2. Decide</div>
-          <div class="icon-item-body">For each finding, choose: fix, accept with rationale, or suppress at the rule level.</div>
+          <div class="icon-item-body">Fix, accept, or suppress.</div>
         </div>
         <div class="icon-item">
           <i data-lucide="settings"></i>
           <div class="icon-item-title">3. Re-Run</div>
-          <div class="icon-item-body">Sandbox is reproducible &mdash; re-run on demand without altering host workflows.</div>
+          <div class="icon-item-body">Sandbox re-runs cleanly.</div>
         </div>
         <div class="icon-item">
           <i data-lucide="bar-chart-3"></i>
           <div class="icon-item-title">4. Compare</div>
-          <div class="icon-item-body">Feed normalized JSON into the multi-config comparison harness.</div>
+          <div class="icon-item-body">Feed into the harness.</div>
         </div>
       </div>
     </section>
@@ -1063,15 +1074,20 @@ flowchart TB
          SLIDE 16 — CLOSING
          ============================================ -->
     <section class="slide-closing" data-slide-type="closing">
+      <div class="closing-icon-row">
+        <i data-lucide="shield-check"></i>
+        <i data-lucide="file-check-2"></i>
+        <i data-lucide="clipboard-check"></i>
+      </div>
       <span class="eyebrow">Closing</span>
       <h2>Static Security Visibility, Without Disruption.</h2>
       <span class="accent-bar"></span>
       <ul>
-        <li><strong>Scan complete</strong> &mdash; 7,378 files reviewed in roughly four seconds.</li>
-        <li><strong>Findings normalized</strong> &mdash; deterministic schema ready for triage and comparison.</li>
-        <li><strong>Audit ready</strong> &mdash; decision log explains every choice; host workflows untouched.</li>
+        <li><strong>Scan complete</strong> &mdash; 1,035 of 7,378 file results fully linted.</li>
+        <li><strong>Findings normalized</strong> &mdash; deterministic schema ready for triage.</li>
+        <li><strong>Audit ready</strong> &mdash; host workflows untouched.</li>
       </ul>
-      <div style="margin-top:48px;">
+      <div class="closing-brand-row">
         <span class="brand-lockup">
           <span class="brand-dot"></span>
           Blitzy &middot; Config E for calcom-monorepo
@@ -1082,19 +1098,8 @@ flowchart TB
   </div>
 </div>
 
-<!-- ============================================================
-     SCRIPTS: Mermaid (ESM) + reveal.js (UMD) + Lucide (UMD)
-     Initialization mirrors the AAP spec exactly.
-     ============================================================ -->
+<!-- Scripts: Mermaid (ESM), reveal.js (UMD), Lucide (UMD). See decision log entries 21-24 for design notes. -->
 <script>
-  /**
-   * Cross-script readiness signal for the asynchronously-loaded
-   * Mermaid ESM module. The module script below assigns
-   * window.__mermaid and resolves this promise once initialize()
-   * completes — the deck's renderMermaidPending() awaits it before
-   * touching any diagram so the inline UMD reveal.js boot path never
-   * loses a race with the deferred ESM import.
-   */
   window.__mermaidReady = new Promise(function (resolve) {
     window.__mermaidReadyResolve = resolve;
   });
@@ -1121,41 +1126,16 @@ flowchart TB
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script>
-  /**
-   * Track whether web fonts have settled. Mermaid measures SVG text
-   * widths at render time; if Inter / Space Grotesk are still loading
-   * when mermaid.run() is called, the measured widths use a fallback
-   * font and the rendered text overflows its rect. We gate the first
-   * render on document.fonts.ready and then re-run idempotently.
-   */
   var __fontsReadyPromise = (document.fonts && document.fonts.ready)
     ? document.fonts.ready.catch(function () { return null; })
     : Promise.resolve();
 
-  /**
-   * After Mermaid renders, traverse every node in the produced SVG
-   * and reconcile the foreignObject + parent shape widths with the
-   * actual scrollWidth of the inner <p> label. Mermaid's hidden
-   * measurement element occasionally underestimates the rendered
-   * text width — especially with custom font-families — which
-   * results in node labels being clipped by foreignObject's
-   * implicit overflow rectangle. This pass detects the
-   * underestimation via scrollWidth > clientWidth and re-attributes
-   * the foreignObject (and the surrounding rect/polygon where
-   * applicable) so the full label is visible. The fix is purely
-   * additive: nodes that already fit are left alone, and the
-   * function is idempotent across re-runs.
-   */
   function fixMermaidClipping(scope) {
     var root = scope || document;
     var nodes = root.querySelectorAll('.mermaid svg .node');
     nodes.forEach(function (node) {
       var fo = node.querySelector('foreignObject');
       if (!fo) return;
-      // Mermaid inlines `max-width: 200px` on its inner table-cell
-      // div, which clips long labels regardless of how wide the
-      // surrounding foreignObject is. Lift that ceiling first so the
-      // p element can naturally claim the room it needs.
       var inner = fo.querySelector('div');
       if (inner && inner.style && /max-width\s*:\s*\d+px/i.test(inner.getAttribute('style') || '')) {
         inner.style.maxWidth = 'none';
@@ -1163,26 +1143,15 @@ flowchart TB
       }
       var label = fo.querySelector('.nodeLabel') || fo.querySelector('span') || fo;
       var p = label.querySelector('p') || label;
-      // After lifting the inner max-width, the p element's
-      // scrollWidth reflects its true content width in CSS pixels.
-      // The foreignObject's SVG `width` attribute is in the same
-      // coordinate space (1 attr-unit == 1 CSS pixel inside the
-      // foreignObject), so the two values are directly comparable.
       var contentLocal = p.scrollWidth || p.offsetWidth || 0;
       var foW = parseFloat(fo.getAttribute('width') || '0');
       if (!contentLocal || !foW) return;
-      // Add a small horizontal padding so the text never kisses the edge.
       var needed = contentLocal + 24;
-      // Only enlarge — never shrink. Apply a 4-pixel buffer before
-      // deciding the foreignObject is too narrow.
       if (needed <= foW + 4) return;
       var delta = needed - foW;
       var foX = parseFloat(fo.getAttribute('x') || '0');
       fo.setAttribute('width', needed);
       fo.setAttribute('x', foX - delta / 2);
-      // Widen the surrounding rect (rectangular nodes only). Other
-      // shapes (cylinder/db, parallelogram, etc.) use parametric
-      // paths that resize when Mermaid re-runs; leave them alone.
       var rect = node.querySelector(':scope > rect, :scope > g > rect');
       if (rect) {
         var rectW = parseFloat(rect.getAttribute('width') || '0');
@@ -1196,19 +1165,6 @@ flowchart TB
     });
   }
 
-  /**
-   * Render Mermaid diagrams that have not yet been processed.
-   * Mermaid sets `data-processed="true"` on completion; we only
-   * dispatch work to nodes that lack the marker so re-renders on
-   * slide change are inexpensive and idempotent. The render is
-   * gated on (a) the ESM Mermaid import resolving (because this
-   * UMD-loaded boot path can lose the race against the deferred
-   * module) and (b) document.fonts.ready settling, so that SVG
-   * text widths are measured with the same Inter font that
-   * ultimately paints them. After Mermaid completes, a
-   * post-render reconciliation pass widens any node whose
-   * actual rendered text overflows its measured foreignObject.
-   */
   function renderMermaidPending() {
     var readiness = (window.__mermaidReady || Promise.resolve())
       .then(function () { return __fontsReadyPromise; });
@@ -1218,16 +1174,9 @@ flowchart TB
         document.querySelectorAll('.mermaid:not([data-processed="true"])')
       );
       if (nodes.length === 0) {
-        // Still re-run the clipping fix in case the layout shifted.
         fixMermaidClipping();
         return;
       }
-      // Process each diagram serially. Mermaid generates SVG element IDs
-      // from a timestamp; running multiple diagrams in the same batch
-      // (or sub-millisecond window) can produce collisions where the
-      // second diagram clobbers the first. Awaiting each run() in turn
-      // guarantees unique IDs and avoids the collision-driven syntax
-      // error overlay.
       (async function processOneByOne() {
         for (var i = 0; i < nodes.length; i++) {
           try {
@@ -1243,10 +1192,6 @@ flowchart TB
     });
   }
 
-  /**
-   * Materialize Lucide SVG icons from any <i data-lucide="name"></i>
-   * placeholders that are not yet expanded. Safe to call repeatedly.
-   */
   function renderLucide() {
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
@@ -1272,7 +1217,6 @@ flowchart TB
     renderLucide();
   });
 
-  // Catch programmatic deep links / hash navigation arriving before ready.
   Reveal.on('ready', function () {
     renderMermaidPending();
     renderLucide();

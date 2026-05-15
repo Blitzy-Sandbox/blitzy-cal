@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Config B: Semgrep Security Scan of blitzy-cal</title>
+  <link rel="icon" href="data:,">
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
@@ -927,7 +928,7 @@ flowchart LR
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
   <script>
@@ -956,13 +957,7 @@ flowchart LR
       lucide.createIcons();
     }
 
-    Reveal.initialize({
-      hash: true,
-      transition: 'slide',
-      controlsTutorial: false,
-      width: 1920,
-      height: 1080
-    }).then(() => {
+    Reveal.on('ready', () => {
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(renderVisuals);
       } else {
@@ -973,6 +968,14 @@ flowchart LR
     Reveal.on('slidechanged', () => {
       mermaid.run();
       lucide.createIcons();
+    });
+
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080
     });
   </script>
 </body>

@@ -13,6 +13,17 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap">
 
   <style>
+    /* Blitzy Reveal.js Theme — Canonical Stylesheet
+     * Canonical location per AAP §0.8.2 (Executive Presentation Rule).
+     * Single source of truth: this stylesheet is the authoritative theme.
+     * Inlined byte/functionally equivalent into the deck's <style> block so a
+     * file-system-only download of the deck still renders correctly without
+     * loading this file. Every rule, selector, and value below MUST also be
+     * present in the deck's inline <style> block; equivalence is enforced by
+     * the validation steps documented in decision-log.md.
+     * Rationale for every non-trivial decision lives in decision-log.md.
+     */
+
     :root {
       --blitzy-primary: #5B39F3;
       --blitzy-primary-dark: #2D1C77;
@@ -37,13 +48,19 @@
       --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
     }
 
-    body, .reveal {
+    /* Global base styles */
+
+    body,
+    .reveal {
       font-family: var(--ff-body);
       color: var(--blitzy-text);
       background: var(--blitzy-surface-0);
     }
 
-    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+    .reveal h1,
+    .reveal h2,
+    .reveal h3,
+    .reveal h4 {
       font-family: var(--ff-display);
       color: var(--blitzy-text);
       font-weight: 600;
@@ -51,20 +68,25 @@
       letter-spacing: -0.01em;
     }
 
-    .reveal h1 { font-size: 4.2rem; font-weight: 700; line-height: 1.05; }
-    .reveal h2 { font-size: 2.4rem; line-height: 1.15; margin-bottom: 1.25rem; }
-    .reveal h3 { font-size: 1.6rem; }
-    .reveal p  { line-height: 1.55; font-size: 1.15rem; }
+    .reveal h1 {
+      font-size: 4.2rem;
+      font-weight: 700;
+      line-height: 1.05;
+    }
 
-    .reveal .eyebrow,
-    .reveal .slides section .eyebrow {
-      font-family: var(--ff-mono);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-size: 0.7em;
-      color: var(--blitzy-primary);
-      display: inline-block;
-      margin-bottom: 1rem;
+    .reveal h2 {
+      font-size: 2.4rem;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+
+    .reveal h3 {
+      font-size: 1.6rem;
+    }
+
+    .reveal p {
+      line-height: 1.55;
+      font-size: 1.15rem;
     }
 
     .reveal code {
@@ -76,7 +98,9 @@
       font-size: 0.88em;
     }
 
-    .reveal a { color: var(--blitzy-primary); }
+    .reveal a {
+      color: var(--blitzy-primary);
+    }
 
     .reveal .slides {
       text-align: left;
@@ -88,7 +112,32 @@
       height: 100%;
     }
 
-    .slide-title {
+    .reveal ol,
+    .reveal ul {
+      margin: 0.75rem 0 0.75rem 1.5rem;
+      line-height: 1.55;
+      font-size: 1.05rem;
+    }
+
+    .reveal li {
+      margin-bottom: 0.35rem;
+    }
+
+    /* Eyebrow label */
+
+    .reveal .eyebrow {
+      font-family: var(--ff-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.7em;
+      color: var(--blitzy-primary);
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    /* Slide-type classes */
+
+    .reveal .slide-title {
       background: var(--gradient-hero);
       color: var(--blitzy-text-invert);
       display: flex !important;
@@ -97,28 +146,32 @@
       align-items: flex-start;
       text-align: left;
     }
-    .slide-title h1,
-    .slide-title h2,
-    .slide-title h3,
-    .slide-title p {
+
+    .reveal .slide-title h1,
+    .reveal .slide-title h2,
+    .reveal .slide-title h3,
+    .reveal .slide-title p {
       color: var(--blitzy-text-invert);
     }
-    .slide-title .eyebrow {
+
+    .reveal .slide-title .eyebrow {
       color: var(--blitzy-accent-teal);
     }
-    .slide-title h1 {
+
+    .reveal .slide-title h1 {
       font-size: 5rem;
       font-weight: 700;
       max-width: 80%;
       margin: 0 0 1rem 0;
     }
-    .slide-title p {
+
+    .reveal .slide-title p {
       font-size: 1.4rem;
       max-width: 70%;
       opacity: 0.95;
     }
 
-    .slide-divider {
+    .reveal .slide-divider {
       background: var(--gradient-divider);
       color: var(--blitzy-text-invert);
       display: flex !important;
@@ -127,18 +180,20 @@
       align-items: center;
       text-align: center;
     }
-    .slide-divider h1,
-    .slide-divider h2,
-    .slide-divider h3 {
+
+    .reveal .slide-divider h1,
+    .reveal .slide-divider h2,
+    .reveal .slide-divider h3 {
       color: var(--blitzy-text-invert);
     }
-    .slide-divider h2 {
+
+    .reveal .slide-divider h2 {
       font-size: 3.6rem;
       font-weight: 700;
       margin-top: 1.5rem;
     }
 
-    .slide-closing {
+    .reveal .slide-closing {
       background: var(--gradient-hero);
       color: var(--blitzy-text-invert);
       display: flex !important;
@@ -147,30 +202,38 @@
       align-items: center;
       text-align: center;
     }
-    .slide-closing h1,
-    .slide-closing h2,
-    .slide-closing p {
+
+    .reveal .slide-closing h1,
+    .reveal .slide-closing h2,
+    .reveal .slide-closing p {
       color: var(--blitzy-text-invert);
     }
-    .slide-closing h2 {
+
+    .reveal .slide-closing h2 {
       font-size: 3.4rem;
       font-weight: 700;
       margin: 1rem 0;
     }
-    .slide-closing p { font-size: 1.3rem; }
-    .slide-closing code {
+
+    .reveal .slide-closing p {
+      font-size: 1.3rem;
+    }
+
+    .reveal .slide-closing code {
       background: rgba(255, 255, 255, 0.18);
       color: var(--blitzy-text-invert);
     }
 
-    .kpi-grid {
+    /* KPI components */
+
+    .reveal .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 1.5rem;
       margin: 1.5rem 0;
     }
 
-    .kpi-card {
+    .reveal .kpi-card {
       background: var(--blitzy-surface-1);
       border: 1px solid var(--blitzy-border-soft);
       border-radius: 12px;
@@ -180,17 +243,18 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 0.5rem;
     }
 
-    .slide-title .kpi-card,
-    .slide-divider .kpi-card,
-    .slide-closing .kpi-card {
+    .reveal .slide-title .kpi-card,
+    .reveal .slide-divider .kpi-card,
+    .reveal .slide-closing .kpi-card {
       background: rgba(255, 255, 255, 0.14);
       border: 1px solid rgba(255, 255, 255, 0.35);
       color: var(--blitzy-text-invert);
     }
 
-    .kpi-value {
+    .reveal .kpi-value {
       font-family: var(--ff-display);
       font-weight: 700;
       font-size: 3rem;
@@ -199,7 +263,7 @@
       margin: 0.25rem 0;
     }
 
-    .kpi-label {
+    .reveal .kpi-label {
       font-family: var(--ff-mono);
       font-size: 0.7rem;
       color: var(--blitzy-text-muted);
@@ -208,7 +272,7 @@
       margin-top: 0.25rem;
     }
 
-    .kpi-icon {
+    .reveal .kpi-icon {
       width: 32px;
       height: 32px;
       color: var(--blitzy-primary);
@@ -217,29 +281,34 @@
       align-items: center;
       justify-content: center;
     }
-    .kpi-icon svg {
+
+    .reveal .kpi-icon svg {
       width: 32px;
       height: 32px;
       stroke: currentColor;
     }
 
-    .slide-title .kpi-value,
-    .slide-divider .kpi-value,
-    .slide-closing .kpi-value {
+    .reveal .slide-title .kpi-value,
+    .reveal .slide-divider .kpi-value,
+    .reveal .slide-closing .kpi-value {
       color: var(--blitzy-text-invert);
     }
-    .slide-title .kpi-label,
-    .slide-divider .kpi-label,
-    .slide-closing .kpi-label {
-      color: var(--blitzy-accent-teal);
-    }
-    .slide-title .kpi-icon,
-    .slide-divider .kpi-icon,
-    .slide-closing .kpi-icon {
+
+    .reveal .slide-title .kpi-label,
+    .reveal .slide-divider .kpi-label,
+    .reveal .slide-closing .kpi-label {
       color: var(--blitzy-accent-teal);
     }
 
-    .accent-bar {
+    .reveal .slide-title .kpi-icon,
+    .reveal .slide-divider .kpi-icon,
+    .reveal .slide-closing .kpi-icon {
+      color: var(--blitzy-accent-teal);
+    }
+
+    /* Accent bar */
+
+    .reveal .accent-bar {
       height: 6px;
       background: var(--gradient-accent-bar);
       border-radius: 3px;
@@ -247,7 +316,13 @@
       width: 220px;
     }
 
-    .brand-lockup {
+    .reveal .accent-bar.accent-bar--wide {
+      width: 320px;
+    }
+
+    /* Brand lockup */
+
+    .reveal .brand-lockup {
       font-family: var(--ff-display);
       font-weight: 700;
       font-size: 1.6rem;
@@ -256,29 +331,53 @@
       margin-bottom: 1rem;
     }
 
-    .hero-icon {
+    /* Hero icon (large Lucide icon used on divider/closing slides) */
+
+    .reveal .hero-icon {
       width: 10rem;
       height: 10rem;
       stroke-width: 1.25;
       color: var(--blitzy-text-invert);
     }
-    .hero-icon svg {
+
+    .reveal .hero-icon svg {
       width: 10rem;
       height: 10rem;
       stroke-width: 1.25;
       stroke: currentColor;
     }
 
-    .icon-row {
+    /* Icon row (small Lucide icons in a flex row) */
+
+    .reveal .icon-row {
       display: flex;
       gap: 1.5rem;
       align-items: center;
     }
-    .icon-row svg {
+
+    .reveal .icon-row svg {
       width: 24px;
       height: 24px;
       stroke: var(--blitzy-primary);
     }
+
+    /* Inline icon utilities (replace ad-hoc style="" sizing in the deck) */
+
+    .reveal .inline-icon-sm {
+      width: 1em;
+      height: 1em;
+      vertical-align: -0.1em;
+      margin-right: 0.35em;
+    }
+
+    .reveal .brand-icon {
+      width: 1.2em;
+      height: 1.2em;
+      vertical-align: -0.2em;
+      margin-right: 0.4em;
+    }
+
+    /* Table styling */
 
     .reveal table {
       border-collapse: collapse;
@@ -289,6 +388,7 @@
       overflow: hidden;
       box-shadow: 0 0 0 1px var(--blitzy-border-soft);
     }
+
     .reveal th {
       background: var(--blitzy-primary);
       color: var(--blitzy-text-invert);
@@ -298,27 +398,47 @@
       font-weight: 600;
       letter-spacing: 0.01em;
     }
+
     .reveal td {
       padding: 0.6rem 0.75rem;
       border-bottom: 1px solid var(--blitzy-border);
       vertical-align: top;
     }
+
     .reveal tr:nth-child(even) td {
       background: var(--blitzy-surface-1);
     }
+
     .reveal tr:last-child td {
       border-bottom: none;
     }
+
     .reveal td code,
     .reveal th code {
       font-size: 0.9em;
     }
+
     .reveal .table-emphasis {
       background: var(--blitzy-surface-2);
       font-weight: 600;
     }
 
-    .mermaid-container {
+    /* Column-width utility classes (replace ad-hoc style="width: N%" overrides) */
+
+    .reveal .col-w-8  { width: 8%; }
+    .reveal .col-w-14 { width: 14%; }
+    .reveal .col-w-18 { width: 18%; }
+    .reveal .col-w-25 { width: 25%; }
+    .reveal .col-w-30 { width: 30%; }
+    .reveal .col-w-35 { width: 35%; }
+    .reveal .col-w-38 { width: 38%; }
+    .reveal .col-w-40 { width: 40%; }
+    .reveal .col-w-42 { width: 42%; }
+    .reveal .col-w-50 { width: 50%; }
+
+    /* Mermaid container */
+
+    .reveal .mermaid-container {
       background: var(--blitzy-surface-2);
       border-radius: 12px;
       padding: 1.5rem;
@@ -328,33 +448,31 @@
       margin: 1rem 0;
       border: 1px solid var(--blitzy-border-soft);
     }
-    .mermaid-container pre.mermaid {
+
+    .reveal .mermaid-container pre.mermaid {
       background: transparent;
       box-shadow: none;
       margin: 0;
       width: 100%;
       text-align: center;
     }
+
     .reveal pre.mermaid {
       background: transparent;
       box-shadow: none;
       font-size: 1rem;
     }
+
     .reveal pre.mermaid svg .nodeLabel,
     .reveal pre.mermaid svg .label foreignObject div {
       padding: 0 4px;
     }
+
     .reveal pre.mermaid svg foreignObject {
       overflow: visible !important;
     }
 
-    .reveal ol,
-    .reveal ul {
-      margin: 0.75rem 0 0.75rem 1.5rem;
-      line-height: 1.55;
-      font-size: 1.05rem;
-    }
-    .reveal li { margin-bottom: 0.35rem; }
+    /* Footnote (small attribution / source-link block) */
 
     .reveal .footnote {
       font-family: var(--ff-mono);
@@ -364,12 +482,16 @@
       letter-spacing: 0.02em;
     }
 
+    /* Section intro paragraph (lead-in below a section heading) */
+
     .reveal .section-intro {
       color: var(--blitzy-text-muted);
       font-size: 1.05rem;
       max-width: 80%;
       margin-bottom: 1rem;
     }
+
+    /* Comparison callout block (icon + note) */
 
     .reveal .comparison-note {
       display: flex;
@@ -382,12 +504,15 @@
       margin-top: 1rem;
       font-size: 0.95rem;
     }
+
     .reveal .comparison-note svg {
       width: 24px;
       height: 24px;
       flex-shrink: 0;
       stroke: var(--blitzy-primary);
     }
+
+    /* Severity pill (inline-block badge with severity-level modifiers) */
 
     .reveal .severity-pill {
       display: inline-block;
@@ -399,10 +524,13 @@
       color: var(--blitzy-text-invert);
       background: var(--blitzy-primary);
     }
+
     .reveal .severity-pill.critical { background: var(--blitzy-primary-deep); }
     .reveal .severity-pill.high     { background: var(--blitzy-primary); }
     .reveal .severity-pill.medium   { background: var(--blitzy-primary-light); }
     .reveal .severity-pill.low      { background: var(--blitzy-text-muted); }
+
+    /* Step card (grid item showing an ordered step with number / icon / label) */
 
     .reveal .step-card {
       background: var(--blitzy-surface-1);
@@ -414,6 +542,7 @@
       gap: 0.85rem;
       align-items: flex-start;
     }
+
     .reveal .step-card .step-number {
       font-family: var(--ff-display);
       font-weight: 700;
@@ -421,11 +550,13 @@
       color: var(--blitzy-primary);
       line-height: 1;
     }
+
     .reveal .step-card .step-icon svg {
       width: 28px;
       height: 28px;
       stroke: var(--blitzy-primary);
     }
+
     .reveal .step-card .step-label {
       font-family: var(--ff-body);
       font-size: 0.95rem;
@@ -448,7 +579,7 @@
 
       <!-- Slide 1: Title -->
       <section class="slide-title">
-        <div class="eyebrow"><i data-lucide="radar" style="width:1em;height:1em;vertical-align:-0.1em;margin-right:0.35em;"></i>Security Operations &middot; Config B</div>
+        <div class="eyebrow"><i data-lucide="radar" class="inline-icon-sm"></i>Security Operations &middot; Config B</div>
         <h1>Semgrep Security Scan of blitzy-cal</h1>
         <div class="accent-bar"></div>
         <p>Telemetry-free static analysis using three Semgrep Registry rule packs.</p>
@@ -518,9 +649,9 @@ flowchart LR
         <table>
           <thead>
             <tr>
-              <th style="width: 8%;">#</th>
-              <th style="width: 42%;">Action</th>
-              <th style="width: 50%;">Pass / Fail Criterion</th>
+              <th class="col-w-8">#</th>
+              <th class="col-w-42">Action</th>
+              <th class="col-w-50">Pass / Fail Criterion</th>
             </tr>
           </thead>
           <tbody>
@@ -558,9 +689,9 @@ flowchart LR
         <table>
           <thead>
             <tr>
-              <th style="width: 25%;">Config</th>
-              <th style="width: 40%;">Tool</th>
-              <th style="width: 35%;">Status</th>
+              <th class="col-w-25">Config</th>
+              <th class="col-w-40">Tool</th>
+              <th class="col-w-35">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -596,7 +727,7 @@ flowchart LR
       <!-- Slide 9: New Artifacts, No Source Changes -->
       <section>
         <h2>New Artifacts, No Source Changes</h2>
-        <p class="section-intro">The work is additive only: new artifacts are created at the repository root; application source, project dependencies, and CI workflows remain untouched.</p>
+        <p class="section-intro">The work is additive only: new artifacts are placed at the repository root and under <code>blitzy-deck/</code>; application source, project dependencies, and CI workflows remain untouched.</p>
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="x-circle"></i></div>
@@ -606,7 +737,7 @@ flowchart LR
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="file-plus-2"></i></div>
             <div class="kpi-value">4</div>
-            <div class="kpi-label">New Files Committed</div>
+            <div class="kpi-label">Core AAP Deliverables</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="package"></i></div>
@@ -619,7 +750,7 @@ flowchart LR
             <div class="kpi-label">CI Workflows Touched</div>
           </div>
         </div>
-        <p class="footnote">New artifacts: <code>findings-config-b.json</code>, <code>decision-log.md</code>, <code>blitzy-deck/executive-summary-config-b.html</code>, <code>blitzy-deck/references/blitzy-reveal-theme.css</code>.</p>
+        <p class="footnote">Core AAP deliverables (4): <code>findings-config-b.json</code> (root), <code>decision-log.md</code> (root), <code>blitzy-deck/executive-summary-config-b.html</code>, <code>blitzy-deck/references/blitzy-reveal-theme.css</code>. Additionally retained at repository root as pipeline-evidence / auditability artifacts: <code>results-semgrep.sarif</code> and <code>normalize-sarif.py</code> (see <code>decision-log.md</code> &sect;Scope Reconciliation).</p>
       </section>
 
       <!-- Slide 10: Divider - Risks and Mitigations -->
@@ -635,8 +766,8 @@ flowchart LR
         <table>
           <thead>
             <tr>
-              <th style="width: 50%;">Risk</th>
-              <th style="width: 50%;">Mitigation</th>
+              <th class="col-w-50">Risk</th>
+              <th class="col-w-50">Mitigation</th>
             </tr>
           </thead>
           <tbody>
@@ -706,8 +837,8 @@ flowchart LR
         <table>
           <thead>
             <tr>
-              <th style="width: 50%;">SARIF level</th>
-              <th style="width: 50%;">Normalized severity</th>
+              <th class="col-w-50">SARIF level</th>
+              <th class="col-w-50">Normalized severity</th>
             </tr>
           </thead>
           <tbody>
@@ -743,10 +874,10 @@ flowchart LR
         <table>
           <thead>
             <tr>
-              <th style="width: 18%;">Field</th>
-              <th style="width: 14%;">Type</th>
-              <th style="width: 30%;">Source</th>
-              <th style="width: 38%;">Constraint</th>
+              <th class="col-w-18">Field</th>
+              <th class="col-w-14">Type</th>
+              <th class="col-w-30">Source</th>
+              <th class="col-w-38">Constraint</th>
             </tr>
           </thead>
           <tbody>
@@ -786,9 +917,9 @@ flowchart LR
 
       <!-- Slide 16: Closing - Findings Ready for Triage -->
       <section class="slide-closing">
-        <div class="brand-lockup"><i data-lucide="shield-check" style="width:1.2em;height:1.2em;vertical-align:-0.2em;margin-right:0.4em;"></i>Blitzy &middot; Security</div>
+        <div class="brand-lockup"><i data-lucide="shield-check" class="brand-icon"></i>Blitzy &middot; Security</div>
         <h2>Findings Ready for Triage</h2>
-        <div class="accent-bar" style="width: 320px;"></div>
+        <div class="accent-bar accent-bar--wide"></div>
         <p>Config B output: <code>findings-config-b.json</code></p>
       </section>
 
@@ -796,7 +927,7 @@ flowchart LR
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.0/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
   <script>

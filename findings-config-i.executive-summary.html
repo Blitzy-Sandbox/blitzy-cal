@@ -103,6 +103,22 @@
       color: var(--bz-primary-dark);
       font-weight: 600;
     }
+    /* Strong text on dark-background slides — use teal accent for legibility
+       (dark purple #2D1C77 is too close in tone to navy #1A105F to read well). */
+    .reveal .slides > section.slide-title strong,
+    .reveal .slides > section.slide-divider strong,
+    .reveal .slides > section.slide-closing strong {
+      color: var(--bz-teal);
+      font-weight: 600;
+    }
+    /* Inline <code> on dark backgrounds — needs lighter background and brighter ink */
+    .reveal .slides > section.slide-title code,
+    .reveal .slides > section.slide-divider code,
+    .reveal .slides > section.slide-closing code {
+      background: rgba(255,255,255,0.12);
+      color: var(--bz-teal);
+      border: 1px solid rgba(148,250,213,0.25);
+    }
 
     .reveal code {
       font-family: var(--font-mono);
@@ -355,129 +371,6 @@
     .kpi-card.kpi-teal .kpi-label,
     .kpi-card.kpi-teal .kpi-value { color: var(--bz-primary-dark); }
 
-    /* CSS PIPELINE DIAGRAM (replaces Mermaid for slide 3 reliability) */
-    .css-pipeline {
-      margin-top: 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-    }
-    .pipeline-row {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 16px;
-      align-items: stretch;
-    }
-    .pipeline-step {
-      background: var(--bz-purple-tint);
-      border: 2px solid var(--bz-primary);
-      border-radius: 12px;
-      padding: 22px 18px 20px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      box-shadow: 0 2px 6px rgba(91, 57, 243, 0.08);
-    }
-    .pipeline-step .step-num {
-      position: absolute;
-      top: -14px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bz-primary);
-      color: #FFFFFF;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      padding: 4px 12px;
-      border-radius: 12px;
-      white-space: nowrap;
-    }
-    .pipeline-step .step-icon {
-      width: 36px;
-      height: 36px;
-      color: var(--bz-primary);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .pipeline-step .step-icon i {
-      width: 32px;
-      height: 32px;
-    }
-    .pipeline-step .step-title {
-      font-family: var(--font-display);
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--bz-primary-dark);
-      line-height: 1.2;
-      margin-bottom: 6px;
-    }
-    .pipeline-step .step-meta {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--bz-primary);
-      letter-spacing: 0.04em;
-      margin-top: 4px;
-    }
-    .pipeline-arrows {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 16px;
-      align-items: center;
-      padding: 0 30px;
-    }
-    .pipeline-arrow {
-      grid-column: span 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      color: var(--bz-muted);
-      letter-spacing: 0.03em;
-      position: relative;
-      padding: 8px 0;
-    }
-    .pipeline-arrow::before {
-      content: '';
-      position: absolute;
-      left: -6px;
-      right: -6px;
-      top: 50%;
-      height: 2px;
-      background: var(--bz-border);
-      z-index: 0;
-    }
-    .pipeline-arrow span {
-      position: relative;
-      z-index: 1;
-      background: var(--bz-white);
-      padding: 2px 10px;
-      border-radius: 4px;
-      color: var(--bz-primary-dark);
-      font-weight: 500;
-    }
-    .pipeline-arrow .arrow-tip {
-      position: absolute;
-      right: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 0;
-      height: 0;
-      border-left: 8px solid var(--bz-border);
-      border-top: 6px solid transparent;
-      border-bottom: 6px solid transparent;
-      z-index: 0;
-    }
-    .pipeline-arrow.spacer { background: transparent; }
-    .pipeline-arrow.spacer::before,
-    .pipeline-arrow.spacer .arrow-tip { display: none; }
-
     /* Tables */
     .styled-table {
       width: 100%;
@@ -524,14 +417,63 @@
 
     /* Mermaid container */
     .reveal pre.mermaid {
-      background: transparent;
-      box-shadow: none;
-      padding: 0;
-      margin: 18px 0 0 0;
+      background: var(--bz-purple-tint);
+      box-shadow: 0 1px 3px rgba(45,28,119,0.08);
+      padding: 26px 30px;
+      margin: 22px 0 14px 0;
       text-align: center;
       font-family: var(--font-mono);
-      max-height: 720px;
+      font-size: 14px;
+      max-height: 600px;
       overflow: visible;
+      border-radius: 10px;
+      border: 1px solid rgba(91,57,243,0.12);
+    }
+    .reveal pre.mermaid svg {
+      max-width: 100%;
+      max-height: 540px;
+      width: auto !important;
+      height: auto !important;
+      display: block;
+      margin: 0 auto;
+    }
+    /* Mermaid 11.4.0 produces foreignObjects whose inner <div> has an inline
+       max-width:200px (the markdownAutoWrap limit). When the label's longest line
+       happens to span close to 200 px, table-cell sizing rounds the rendered div
+       a few pixels wider than the foreignObject viewport, clipping the final glyph.
+       Allowing the foreignObject to overflow visibly removes the visible clip
+       without changing Mermaid's layout. */
+    .reveal pre.mermaid foreignObject {
+      overflow: visible !important;
+    }
+    .reveal pre.mermaid foreignObject > div {
+      overflow: visible !important;
+    }
+    .reveal pre.mermaid .edgePath path {
+      stroke-width: 1.6px !important;
+    }
+    /* Caption row beneath a Mermaid diagram */
+    .pipeline-caption {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 12px 18px;
+      background: var(--bz-mist);
+      border-left: 4px solid var(--bz-primary);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 1.02rem;
+      color: var(--bz-ink);
+    }
+    .pipeline-caption i {
+      color: var(--bz-primary);
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+    }
+    .pipeline-caption strong {
+      color: var(--bz-primary-dark);
+      font-weight: 600;
     }
 
     /* Two-column layout */
@@ -749,54 +691,27 @@
       </div>
       <h2>Five sequential directives, one pass</h2>
       <p>The pipeline is strictly topological — every directive's pass/fail gate must hold before the next directive runs. The container is created and destroyed inside the run; nothing persists beyond <code>findings-config-i.json</code>.</p>
-      <div class="css-pipeline">
-        <div class="pipeline-row">
-          <div class="pipeline-step">
-            <span class="step-num">D1</span>
-            <span class="step-icon"><i data-lucide="package-check"></i></span>
-            <span class="step-title">Install<br>Toolchain</span>
-            <span class="step-meta">apt + docker pull</span>
-          </div>
-          <div class="pipeline-step">
-            <span class="step-num">D2</span>
-            <span class="step-icon"><i data-lucide="server"></i></span>
-            <span class="step-title">Start<br>Server</span>
-            <span class="step-meta">UP in 35.3s</span>
-          </div>
-          <div class="pipeline-step">
-            <span class="step-num">D3</span>
-            <span class="step-icon"><i data-lucide="scan-search"></i></span>
-            <span class="step-title">Execute<br>Scan</span>
-            <span class="step-meta">gate PASSED</span>
-          </div>
-          <div class="pipeline-step">
-            <span class="step-num">D4</span>
-            <span class="step-icon"><i data-lucide="download"></i></span>
-            <span class="step-title">Export<br>Findings</span>
-            <span class="step-meta">263 issues</span>
-          </div>
-          <div class="pipeline-step">
-            <span class="step-num">D5a</span>
-            <span class="step-icon"><i data-lucide="file-json"></i></span>
-            <span class="step-title">Normalize<br>&amp; Write</span>
-            <span class="step-meta">54,966 bytes</span>
-          </div>
-          <div class="pipeline-step">
-            <span class="step-num">D5b</span>
-            <span class="step-icon"><i data-lucide="power-off"></i></span>
-            <span class="step-title">Teardown<br>&nbsp;</span>
-            <span class="step-meta">stop + rm</span>
-          </div>
-        </div>
-        <div class="pipeline-arrows">
-          <div class="pipeline-arrow"><span>sonar-scanner</span><span class="arrow-tip"></span></div>
-          <div class="pipeline-arrow"><span>35.3 s</span><span class="arrow-tip"></span></div>
-          <div class="pipeline-arrow"><span>752.1 s</span><span class="arrow-tip"></span></div>
-          <div class="pipeline-arrow"><span>1 page</span><span class="arrow-tip"></span></div>
-          <div class="pipeline-arrow"><span>1 line, UTF-8</span><span class="arrow-tip"></span></div>
-          <div class="pipeline-arrow spacer">&nbsp;</div>
-        </div>
-      </div>
+      <pre class="mermaid">
+graph LR
+  A["D1 Install Toolchain<br/>apt + docker pull"] --&gt; B["D2 Start Server<br/>docker run -d"]
+  B --&gt; C{"Poll /api/system/status<br/>until UP, &le;120s"}
+  C --&gt;|"UP at 35.3 s"| D["D3 sonar-scanner<br/>qualitygate.wait=true"]
+  C --&gt;|"Timeout"| F["FAIL<br/>Directive 2"]
+  D --&gt; E["D4 Export<br/>/api/issues/search"]
+  E --&gt; G["D5 Normalize<br/>severity + CWE"]
+  G --&gt; H["Write JSON<br/>findings-config-i.json"]
+  H --&gt; I["Teardown<br/>docker stop + rm"]
+  classDef active fill:#F2F0FE,stroke:#5B39F3,stroke-width:2px,color:#1A105F;
+  classDef gate fill:#94FAD5,stroke:#2D1C77,stroke-width:2px,color:#1A105F;
+  classDef fail fill:#FFE0E0,stroke:#B71C1C,stroke-width:2px,color:#B71C1C;
+  class A,B,D,E,G,H,I active
+  class C gate
+  class F fail
+      </pre>
+      <p class="pipeline-caption">
+        <i data-lucide="timer"></i>
+        <span>Cold-start <strong>35.3&nbsp;s</strong> &middot; Scan <strong>752.1&nbsp;s</strong> &middot; Export <strong>1 page</strong> &middot; Write <strong>54,966 bytes</strong> &middot; Teardown clean.</span>
+      </p>
     </section>
 
     <!-- ============================================================
@@ -1063,18 +978,33 @@
     </section>
 
     <!-- ============================================================
-         Slide 15 — CONTENT: Config I is one of N
+         Slide 15 — CONTENT: Config I is one of N (Mermaid graph TB)
          ============================================================ -->
     <section>
       <div class="slide-header">
-        <p class="eyebrow"><span class="icon-wrap"><i data-lucide="grid-3x3"></i></span>Diff Contract</p>
+        <p class="eyebrow"><span class="icon-wrap"><i data-lucide="grid-3x3"></i></span>Comparison Fabric</p>
         <span class="config-id">Slide 15 &middot; Context</span>
       </div>
-      <h2>Why the schema is the contract</h2>
-      <p>This deliverable is <strong>one</strong> of several configurations. Downstream evaluators diff <code>findings-config-i.json</code> against <code>findings-config-ii.json</code>, <code>iii.json</code>, &hellip; on the five fields below. Any deviation from this shape breaks the comparison.</p>
+      <h2>This is Config I</h2>
+      <p>Each configuration writes a <code>findings-config-&lt;id&gt;.json</code> with the same 5-field schema; downstream evaluators diff across configs to compare tool coverage, accuracy, and operational cost.</p>
       <div class="two-col">
         <div>
-          <h4>The 5-field shape</h4>
+          <pre class="mermaid">
+graph TB
+  C1[Config I<br/>SonarQube Community<br/>FINISHED]:::done
+  C2[Config II<br/>TBD<br/>pending]:::pending
+  C3[Config III<br/>TBD<br/>pending]:::pending
+  C4[Config IV<br/>TBD<br/>pending]:::pending
+  C1 --&gt; R[Multi-config<br/>diff and comparison]
+  C2 --&gt; R
+  C3 --&gt; R
+  C4 --&gt; R
+  classDef done fill:#94FAD5,stroke:#2D1C77,stroke-width:3px,color:#1A105F;
+  classDef pending fill:#F4EFF6,stroke:#999999,stroke-width:1.5px,color:#666666,stroke-dasharray:6 4;
+          </pre>
+        </div>
+        <div>
+          <h4>The 5-field comparison shape</h4>
           <table class="styled-table">
             <thead><tr><th>Field</th><th>Source</th></tr></thead>
             <tbody>
@@ -1085,32 +1015,10 @@
               <tr><td><code>description</code></td><td>Message, max 200 chars</td></tr>
             </tbody>
           </table>
-        </div>
-        <div>
-          <h4>Output guarantees</h4>
-          <ul class="icon-list" style="margin-top: 12px;">
-            <li>
-              <i data-lucide="file-check"></i>
-              <div>
-                <span class="item-title">One line, minified</span>
-                <span class="item-body"><code>wc -l findings-config-i.json</code> = 1; 54,966 bytes; UTF-8.</span>
-              </div>
-            </li>
-            <li>
-              <i data-lucide="check"></i>
-              <div>
-                <span class="item-title">All 263 entries schema-valid</span>
-                <span class="item-body">22/22 ad-hoc validation checks pass.</span>
-              </div>
-            </li>
-            <li>
-              <i data-lucide="trash-2"></i>
-              <div>
-                <span class="item-title">Container destroyed</span>
-                <span class="item-body"><code>docker ps -a</code> shows no <code>sonarqube-test</code> after Directive 5 teardown.</span>
-              </div>
-            </li>
-          </ul>
+          <div class="callout">
+            <div class="callout-title"><i data-lucide="file-check"></i>Output guarantees</div>
+            <p>One line, 54,966 bytes, UTF-8; all 263 entries schema-valid; container destroyed at teardown.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -1143,6 +1051,9 @@
 
 <script>
   // Mermaid init per Executive Presentation rule
+  // startOnLoad: false because reveal.js controls slide lifecycle and would otherwise
+  // render diagrams on hidden slides at the wrong time. The five theme variables
+  // below are exactly those mandated by the Executive Presentation rule.
   mermaid.initialize({
     startOnLoad: false,
     theme: 'base',
@@ -1152,13 +1063,18 @@
       primaryBorderColor: '#5B39F3',
       lineColor: '#999999',
       secondaryColor: '#F4EFF6',
-      fontFamily: "'Inter', system-ui, sans-serif"
+      // Match the SVG render font to the page font used during off-screen text
+      // measurement (body uses Inter via Google Fonts). Trebuchet (Mermaid's default)
+      // is wider than Inter, which produces undersized foreignObjects and clipped
+      // labels. Setting fontFamily here keeps measurement and render in sync.
+      fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", sans-serif'
     },
-    flowchart: { curve: 'basis', padding: 12 },
-    pie:       { textPosition: 0.7 }
+    flowchart: { curve: 'basis', padding: 16, useMaxWidth: true, htmlLabels: true, nodeSpacing: 36, rankSpacing: 64 },
+    securityLevel: 'loose'
   });
 
   // Reveal.js config per Executive Presentation rule
+  // hash, transition, controlsTutorial, width, height are all the verbatim spec values.
   Reveal.initialize({
     hash: true,
     transition: 'slide',
@@ -1167,15 +1083,34 @@
     height: 1080,
     margin: 0.04,
     pdfSeparateFragments: false
-  }).then(() => {
-    if (window.lucide) { window.lucide.createIcons(); }
-    if (window.mermaid) { window.mermaid.run({ querySelector: 'pre.mermaid' }); }
   });
 
-  Reveal.on('slidechanged', () => {
-    if (window.lucide) { window.lucide.createIcons(); }
-    if (window.mermaid) { window.mermaid.run({ querySelector: 'pre.mermaid' }); }
-  });
+  // renderMermaid waits for web fonts to fully load before running Mermaid so the
+  // diagram's measured text widths match the rendered widths (Mermaid sizes node
+  // rectangles by measuring text; if the web font has not loaded, the fallback
+  // metrics produce undersized rectangles that clip text after the font swaps in).
+  function renderMermaid() {
+    if (typeof mermaid === 'undefined' || !mermaid.run) return;
+    var pending = document.querySelectorAll('pre.mermaid:not([data-processed="true"])');
+    if (pending.length === 0) return;
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function() { mermaid.run({ nodes: pending }); });
+    } else {
+      mermaid.run({ nodes: pending });
+    }
+  }
+
+  // refreshDynamicContent re-runs Lucide and Mermaid renderers; both are bound to
+  // the reveal.js 'ready' and 'slidechanged' lifecycle hooks per the rule.
+  function refreshDynamicContent() {
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      lucide.createIcons();
+    }
+    renderMermaid();
+  }
+
+  Reveal.on('ready', refreshDynamicContent);
+  Reveal.on('slidechanged', refreshDynamicContent);
 </script>
 </body>
 </html>

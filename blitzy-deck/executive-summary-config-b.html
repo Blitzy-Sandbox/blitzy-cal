@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Config B: Semgrep Security Scan of blitzy-cal</title>
+  <link rel="icon" href="data:,">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap">
+
+  <style>
+    /* Blitzy Reveal.js Theme — Canonical Stylesheet
+     * Canonical location per AAP §0.8.2 (Executive Presentation Rule).
+     * Single source of truth: this stylesheet is the authoritative theme.
+     * Inlined byte/functionally equivalent into the deck's <style> block so a
+     * file-system-only download of the deck still renders correctly without
+     * loading this file. Every rule, selector, and value below MUST also be
+     * present in the deck's inline <style> block; equivalence is enforced by
+     * the validation steps documented in decision-log.md.
+     * Rationale for every non-trivial decision lives in decision-log.md.
+     */
+
+    :root {
+      --blitzy-primary: #5B39F3;
+      --blitzy-primary-dark: #2D1C77;
+      --blitzy-primary-navy: #1A105F;
+      --blitzy-primary-light: #7A6DEC;
+      --blitzy-primary-deep: #4101DB;
+      --blitzy-accent-teal: #94FAD5;
+      --blitzy-surface-0: #FFFFFF;
+      --blitzy-surface-1: #F4EFF6;
+      --blitzy-surface-2: #F2F0FE;
+      --blitzy-surface-3: #F5F5F5;
+      --blitzy-border: #D9D9D9;
+      --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+      --blitzy-text: #333333;
+      --blitzy-text-muted: #999999;
+      --blitzy-text-invert: #FFFFFF;
+      --ff-body: 'Inter', system-ui, sans-serif;
+      --ff-display: 'Space Grotesk', 'Inter', sans-serif;
+      --ff-mono: 'Fira Code', 'Courier New', monospace;
+      --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+      --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+      --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+    }
+
+    /* Global base styles */
+
+    body,
+    .reveal {
+      font-family: var(--ff-body);
+      color: var(--blitzy-text);
+      background: var(--blitzy-surface-0);
+    }
+
+    .reveal h1,
+    .reveal h2,
+    .reveal h3,
+    .reveal h4 {
+      font-family: var(--ff-display);
+      color: var(--blitzy-text);
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: -0.01em;
+    }
+
+    .reveal h1 {
+      font-size: 4.2rem;
+      font-weight: 700;
+      line-height: 1.05;
+    }
+
+    .reveal h2 {
+      font-size: 2.4rem;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+
+    .reveal h3 {
+      font-size: 1.6rem;
+    }
+
+    .reveal p {
+      line-height: 1.55;
+      font-size: 1.15rem;
+    }
+
+    .reveal code {
+      font-family: var(--ff-mono);
+      background: var(--blitzy-surface-2);
+      color: var(--blitzy-primary-dark);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+      font-size: 0.88em;
+    }
+
+    .reveal a {
+      color: var(--blitzy-primary);
+    }
+
+    .reveal .slides {
+      text-align: left;
+    }
+
+    .reveal .slides section {
+      padding: 2.5rem 3rem;
+      box-sizing: border-box;
+      height: 100%;
+    }
+
+    .reveal ol,
+    .reveal ul {
+      margin: 0.75rem 0 0.75rem 1.5rem;
+      line-height: 1.55;
+      font-size: 1.05rem;
+    }
+
+    .reveal li {
+      margin-bottom: 0.35rem;
+    }
+
+    /* Eyebrow label */
+
+    .reveal .eyebrow {
+      font-family: var(--ff-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.7em;
+      color: var(--blitzy-primary);
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    /* Slide-type classes */
+
+    .reveal .slide-title {
+      background: var(--gradient-hero);
+      color: var(--blitzy-text-invert);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .reveal .slide-title h1,
+    .reveal .slide-title h2,
+    .reveal .slide-title h3,
+    .reveal .slide-title p {
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .slide-title .eyebrow {
+      color: var(--blitzy-accent-teal);
+    }
+
+    .reveal .slide-title h1 {
+      font-size: 5rem;
+      font-weight: 700;
+      max-width: 80%;
+      margin: 0 0 1rem 0;
+    }
+
+    .reveal .slide-title p {
+      font-size: 1.4rem;
+      max-width: 70%;
+      opacity: 0.95;
+    }
+
+    .reveal .slide-divider {
+      background: var(--gradient-divider);
+      color: var(--blitzy-text-invert);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .reveal .slide-divider h1,
+    .reveal .slide-divider h2,
+    .reveal .slide-divider h3 {
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .slide-divider h2 {
+      font-size: 3.6rem;
+      font-weight: 700;
+      margin-top: 1.5rem;
+    }
+
+    .reveal .slide-closing {
+      background: var(--gradient-hero);
+      color: var(--blitzy-text-invert);
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .reveal .slide-closing h1,
+    .reveal .slide-closing h2,
+    .reveal .slide-closing p {
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .slide-closing h2 {
+      font-size: 3.4rem;
+      font-weight: 700;
+      margin: 1rem 0;
+    }
+
+    .reveal .slide-closing p {
+      font-size: 1.3rem;
+    }
+
+    .reveal .slide-closing code {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--blitzy-text-invert);
+    }
+
+    /* KPI components */
+
+    .reveal .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .reveal .kpi-card {
+      background: var(--blitzy-surface-1);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .reveal .slide-title .kpi-card,
+    .reveal .slide-divider .kpi-card,
+    .reveal .slide-closing .kpi-card {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .kpi-value {
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 3rem;
+      color: var(--blitzy-primary);
+      line-height: 1.1;
+      margin: 0.25rem 0;
+    }
+
+    .reveal .kpi-label {
+      font-family: var(--ff-mono);
+      font-size: 0.7rem;
+      color: var(--blitzy-text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    .reveal .kpi-icon {
+      width: 32px;
+      height: 32px;
+      color: var(--blitzy-primary);
+      margin-bottom: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reveal .kpi-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: currentColor;
+    }
+
+    .reveal .slide-title .kpi-value,
+    .reveal .slide-divider .kpi-value,
+    .reveal .slide-closing .kpi-value {
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .slide-title .kpi-label,
+    .reveal .slide-divider .kpi-label,
+    .reveal .slide-closing .kpi-label {
+      color: var(--blitzy-accent-teal);
+    }
+
+    .reveal .slide-title .kpi-icon,
+    .reveal .slide-divider .kpi-icon,
+    .reveal .slide-closing .kpi-icon {
+      color: var(--blitzy-accent-teal);
+    }
+
+    /* Accent bar */
+
+    .reveal .accent-bar {
+      height: 6px;
+      background: var(--gradient-accent-bar);
+      border-radius: 3px;
+      margin: 1.5rem 0;
+      width: 220px;
+    }
+
+    .reveal .accent-bar.accent-bar--wide {
+      width: 320px;
+    }
+
+    /* Brand lockup */
+
+    .reveal .brand-lockup {
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 1.6rem;
+      letter-spacing: 0.04em;
+      color: var(--blitzy-text-invert);
+      margin-bottom: 1rem;
+    }
+
+    /* Hero icon (large Lucide icon used on divider/closing slides) */
+
+    .reveal .hero-icon {
+      width: 10rem;
+      height: 10rem;
+      stroke-width: 1.25;
+      color: var(--blitzy-text-invert);
+    }
+
+    .reveal .hero-icon svg {
+      width: 10rem;
+      height: 10rem;
+      stroke-width: 1.25;
+      stroke: currentColor;
+    }
+
+    /* Icon row (small Lucide icons in a flex row) */
+
+    .reveal .icon-row {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .reveal .icon-row svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--blitzy-primary);
+    }
+
+    /* Inline icon utilities (replace ad-hoc style="" sizing in the deck) */
+
+    .reveal .inline-icon-sm {
+      width: 1em;
+      height: 1em;
+      vertical-align: -0.1em;
+      margin-right: 0.35em;
+    }
+
+    .reveal .brand-icon {
+      width: 1.2em;
+      height: 1.2em;
+      vertical-align: -0.2em;
+      margin-right: 0.4em;
+    }
+
+    /* Table styling */
+
+    .reveal table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px var(--blitzy-border-soft);
+    }
+
+    .reveal th {
+      background: var(--blitzy-primary);
+      color: var(--blitzy-text-invert);
+      padding: 0.75rem;
+      text-align: left;
+      font-family: var(--ff-display);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .reveal td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--blitzy-border);
+      vertical-align: top;
+    }
+
+    .reveal tr:nth-child(even) td {
+      background: var(--blitzy-surface-1);
+    }
+
+    .reveal tr:last-child td {
+      border-bottom: none;
+    }
+
+    .reveal td code,
+    .reveal th code {
+      font-size: 0.9em;
+    }
+
+    .reveal .table-emphasis {
+      background: var(--blitzy-surface-2);
+      font-weight: 600;
+    }
+
+    /* Column-width utility classes (replace ad-hoc style="width: N%" overrides) */
+
+    .reveal .col-w-8  { width: 8%; }
+    .reveal .col-w-14 { width: 14%; }
+    .reveal .col-w-18 { width: 18%; }
+    .reveal .col-w-25 { width: 25%; }
+    .reveal .col-w-30 { width: 30%; }
+    .reveal .col-w-35 { width: 35%; }
+    .reveal .col-w-38 { width: 38%; }
+    .reveal .col-w-40 { width: 40%; }
+    .reveal .col-w-42 { width: 42%; }
+    .reveal .col-w-50 { width: 50%; }
+
+    /* Mermaid container */
+
+    .reveal .mermaid-container {
+      background: var(--blitzy-surface-2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 1rem 0;
+      border: 1px solid var(--blitzy-border-soft);
+    }
+
+    .reveal .mermaid-container pre.mermaid {
+      background: transparent;
+      box-shadow: none;
+      margin: 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    .reveal pre.mermaid {
+      background: transparent;
+      box-shadow: none;
+      font-size: 1rem;
+    }
+
+    .reveal pre.mermaid svg .nodeLabel,
+    .reveal pre.mermaid svg .label foreignObject div {
+      padding: 0 4px;
+    }
+
+    .reveal pre.mermaid svg foreignObject {
+      overflow: visible !important;
+    }
+
+    /* Footnote (small attribution / source-link block) */
+
+    .reveal .footnote {
+      font-family: var(--ff-mono);
+      font-size: 0.75rem;
+      color: var(--blitzy-text-muted);
+      margin-top: 1rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* Section intro paragraph (lead-in below a section heading) */
+
+    .reveal .section-intro {
+      color: var(--blitzy-text-muted);
+      font-size: 1.05rem;
+      max-width: 80%;
+      margin-bottom: 1rem;
+    }
+
+    /* Comparison callout block (icon + note) */
+
+    .reveal .comparison-note {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--blitzy-surface-2);
+      border-left: 4px solid var(--blitzy-primary);
+      padding: 0.85rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .reveal .comparison-note svg {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      stroke: var(--blitzy-primary);
+    }
+
+    /* Severity pill (inline-block badge with severity-level modifiers) */
+
+    .reveal .severity-pill {
+      display: inline-block;
+      padding: 0.1em 0.55em;
+      border-radius: 999px;
+      font-family: var(--ff-mono);
+      font-size: 0.78em;
+      font-weight: 500;
+      color: var(--blitzy-text-invert);
+      background: var(--blitzy-primary);
+    }
+
+    .reveal .severity-pill.critical { background: var(--blitzy-primary-deep); }
+    .reveal .severity-pill.high     { background: var(--blitzy-primary); }
+    .reveal .severity-pill.medium   { background: var(--blitzy-primary-light); }
+    .reveal .severity-pill.low      { background: var(--blitzy-text-muted); }
+
+    /* Step card (grid item showing an ordered step with number / icon / label) */
+
+    .reveal .step-card {
+      background: var(--blitzy-surface-1);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: left;
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+    }
+
+    .reveal .step-card .step-number {
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--blitzy-primary);
+      line-height: 1;
+    }
+
+    .reveal .step-card .step-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--blitzy-primary);
+    }
+
+    .reveal .step-card .step-label {
+      font-family: var(--ff-body);
+      font-size: 0.95rem;
+      color: var(--blitzy-text);
+      line-height: 1.35;
+    }
+
+    .reveal .step-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Title -->
+      <section class="slide-title">
+        <div class="eyebrow"><i data-lucide="radar" class="inline-icon-sm"></i>Security Operations &middot; Config B</div>
+        <h1>Semgrep Security Scan of blitzy-cal</h1>
+        <div class="accent-bar"></div>
+        <p>Telemetry-free static analysis using three Semgrep Registry rule packs.</p>
+      </section>
+
+      <!-- Slide 2: Headline Findings -->
+      <section>
+        <h2>Headline Findings</h2>
+        <p class="section-intro">Measured outcomes from the Config B scan run against the blitzy-cal repository root.</p>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="timer"></i></div>
+            <div class="kpi-value">84.9s</div>
+            <div class="kpi-label">Scan Duration</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="files"></i></div>
+            <div class="kpi-value">10,015</div>
+            <div class="kpi-label">Files Scanned</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="alert-circle"></i></div>
+            <div class="kpi-value">32</div>
+            <div class="kpi-label">Total Findings</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="shield-alert"></i></div>
+            <div class="kpi-value">32</div>
+            <div class="kpi-label">Critical + High</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="package-check"></i></div>
+            <div class="kpi-value">3</div>
+            <div class="kpi-label">Rule Packs</div>
+          </div>
+        </div>
+        <p class="footnote">Source: Pipeline Observability Record in <code>decision-log.md</code>.</p>
+      </section>
+
+      <!-- Slide 3: Pipeline Architecture -->
+      <section>
+        <h2>Pipeline Architecture</h2>
+        <p class="section-intro">A five-stage, additive pipeline that introduces no application source changes.</p>
+        <div class="mermaid-container">
+          <pre class="mermaid">
+flowchart LR
+    A["Preflight"] --&gt; B["Install<br/>Semgrep 1.163.0"]
+    B --&gt; C["Cache<br/>3 Rule Packs"]
+    C --&gt; D["Dry-Run<br/>Preflight"]
+    D --&gt; E["Execute<br/>Scan"]
+    E --&gt; F["SARIF<br/>Artifact"]
+    F --&gt; G["Normalize to<br/>findings-config-b.json"]
+          </pre>
+        </div>
+      </section>
+
+      <!-- Slide 4: Divider - What Was Done -->
+      <section class="slide-divider">
+        <i data-lucide="shield-check" class="hero-icon"></i>
+        <h2>What Was Done</h2>
+      </section>
+
+      <!-- Slide 5: Three CRITICAL Directives -->
+      <section>
+        <h2>Three CRITICAL Directives</h2>
+        <p class="section-intro">Each directive carries an independent pass / fail gate that was evaluated against the produced artifacts.</p>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-w-8">#</th>
+              <th class="col-w-42">Action</th>
+              <th class="col-w-50">Pass / Fail Criterion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Install Semgrep and cache rule packs locally</td>
+              <td><code>--dryrun</code> exits <code>0</code> with no network calls</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Execute scan and produce SARIF</td>
+              <td><code>results-semgrep.sarif</code> is valid JSON with a <code>runs</code> array</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Normalize to single-line JSON</td>
+              <td><code>wc -l findings-config-b.json</code> returns <code>1</code>; every finding has all five fields populated</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="footnote">All three gates were evaluated and passed; results retained at repository root.</p>
+      </section>
+
+
+      <!-- Slide 6: Divider - Why It Was Done -->
+      <section class="slide-divider">
+        <i data-lucide="git-compare" class="hero-icon"></i>
+        <h2>Why It Was Done</h2>
+      </section>
+
+      <!-- Slide 7: Multi-Config Comparison Role -->
+      <section>
+        <h2>Multi-Config Comparison Role</h2>
+        <p class="section-intro">Config B is one entry in a multi-tool security comparison series. Sibling configurations are produced by separate scan jobs and are out of scope here.</p>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-w-25">Config</th>
+              <th class="col-w-40">Tool</th>
+              <th class="col-w-35">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Config A</td>
+              <td>(sibling)</td>
+              <td>Out of scope here</td>
+            </tr>
+            <tr class="table-emphasis">
+              <td><strong>Config B</strong></td>
+              <td><strong>Semgrep CE 1.163.0</strong></td>
+              <td><strong>This work</strong></td>
+            </tr>
+            <tr>
+              <td>Config C</td>
+              <td>(sibling)</td>
+              <td>Out of scope here</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="comparison-note">
+          <i data-lucide="users"></i>
+          <span>This work produces one input to the downstream multi-config comparison harness. The harness consumes <code>findings-config-b.json</code> alongside sibling configurations to produce cross-tool insights.</span>
+        </div>
+      </section>
+
+      <!-- Slide 8: Divider - What Changed Architecturally -->
+      <section class="slide-divider">
+        <i data-lucide="file-plus" class="hero-icon"></i>
+        <h2>What Changed Architecturally</h2>
+      </section>
+
+      <!-- Slide 9: New Artifacts, No Source Changes -->
+      <section>
+        <h2>New Artifacts, No Source Changes</h2>
+        <p class="section-intro">The work is additive only: new artifacts are placed at the repository root and under <code>blitzy-deck/</code>; application source, project dependencies, and CI workflows remain untouched.</p>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="x-circle"></i></div>
+            <div class="kpi-value">0</div>
+            <div class="kpi-label">Source Files Modified</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="file-plus-2"></i></div>
+            <div class="kpi-value">4</div>
+            <div class="kpi-label">Core AAP Deliverables</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="package"></i></div>
+            <div class="kpi-value">0</div>
+            <div class="kpi-label">Project Deps Changed</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="settings"></i></div>
+            <div class="kpi-value">0</div>
+            <div class="kpi-label">CI Workflows Touched</div>
+          </div>
+        </div>
+        <p class="footnote">Core AAP deliverables (4): <code>findings-config-b.json</code> (root), <code>decision-log.md</code> (root), <code>blitzy-deck/executive-summary-config-b.html</code>, <code>blitzy-deck/references/blitzy-reveal-theme.css</code>. Additionally retained at repository root as pipeline-evidence / auditability artifacts: <code>results-semgrep.sarif</code> and <code>normalize-sarif.py</code> (see <code>decision-log.md</code> &sect;Scope Reconciliation).</p>
+      </section>
+
+      <!-- Slide 10: Divider - Risks and Mitigations -->
+      <section class="slide-divider">
+        <i data-lucide="alert-triangle" class="hero-icon"></i>
+        <h2>Risks and Mitigations</h2>
+      </section>
+
+      <!-- Slide 11: Risk Register -->
+      <section>
+        <h2>Risk Register</h2>
+        <p class="section-intro">Each risk identified during the pipeline design has a corresponding mitigation captured here and in the decision log.</p>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-w-50">Risk</th>
+              <th class="col-w-50">Mitigation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rule-pack drift on the Semgrep Registry</td>
+              <td>Local cache at <code>/tmp/semgrep-rules/</code>; snapshot timestamp recorded in <code>decision-log.md</code></td>
+            </tr>
+            <tr>
+              <td>CWE inference miss for a novel rule</td>
+              <td>Deterministic keyword table; <code>CWE-693</code> fallback for unmatched rules</td>
+            </tr>
+            <tr>
+              <td>Future Semgrep severity addition mis-categorized</td>
+              <td>Default to <code>low</code>; mapping documented in <code>decision-log.md</code></td>
+            </tr>
+            <tr>
+              <td>Findings ordering changes between runs</td>
+              <td>Preserve Semgrep emission order; no re-sorting</td>
+            </tr>
+            <tr>
+              <td>Pinned Semgrep version 1.163.0 ages out</td>
+              <td>Re-run requires an explicit pin bump documented in the decision log</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+
+      <!-- Slide 12: Divider - How the Team Onboards -->
+      <section class="slide-divider">
+        <i data-lucide="book-open" class="hero-icon"></i>
+        <h2>How the Team Onboards</h2>
+      </section>
+
+      <!-- Slide 13: Re-Running Config B -->
+      <section>
+        <h2>Re-Running Config B</h2>
+        <p class="section-intro">Three commands reproduce the pipeline end-to-end. Re-runs against the same rule-pack snapshot produce a bit-for-bit identical <code>findings-config-b.json</code>.</p>
+        <div class="step-grid">
+          <div class="step-card">
+            <div class="step-number">1.</div>
+            <div class="step-icon"><i data-lucide="download"></i></div>
+            <div class="step-label">Install Semgrep 1.163.0 via pip</div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">2.</div>
+            <div class="step-icon"><i data-lucide="folder-down"></i></div>
+            <div class="step-label">Cache 3 packs to <code>/tmp/semgrep-rules/</code></div>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3.</div>
+            <div class="step-icon"><i data-lucide="play"></i></div>
+            <div class="step-label">Execute scan with <code>--metrics=off</code></div>
+          </div>
+        </div>
+        <ol>
+          <li><code>pip install semgrep==1.163.0</code></li>
+          <li><code>mkdir -p /tmp/semgrep-rules &amp;&amp; curl -fSL https://semgrep.dev/c/p/security-audit -o /tmp/semgrep-rules/security-audit.yml &amp;&amp; curl -fSL https://semgrep.dev/c/p/secrets -o /tmp/semgrep-rules/secrets.yml &amp;&amp; curl -fSL https://semgrep.dev/c/p/owasp-top-ten -o /tmp/semgrep-rules/owasp.yml</code></li>
+          <li><code>semgrep scan --config=/tmp/semgrep-rules --sarif -o results-semgrep.sarif --metrics=off .</code></li>
+        </ol>
+        <p class="footnote">The user-named pack <code>p/owasp</code> is fetched via the canonical Semgrep Registry alias <code>p/owasp-top-ten</code> (the short-name endpoint <code>/c/p/owasp</code> returns HTTP 404); the cached filename retains the user-named <code>owasp.yml</code> form so <code>--config=/tmp/semgrep-rules</code> aligns with the directive's pack list. See <code>decision-log.md</code> Decision Table row "Use the canonical Semgrep Registry URL <code>p/owasp-top-ten</code>...".</p>
+      </section>
+
+      <!-- Slide 14: Severity Mapping Reference -->
+      <section>
+        <h2>Severity Mapping Reference</h2>
+        <p class="section-intro">The four-level user-supplied mapping is exhaustive over the severities Semgrep emits, with a documented default for the rarely-emitted SARIF <code>none</code> level.</p>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-w-50">SARIF level</th>
+              <th class="col-w-50">Normalized severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>error</code></td>
+              <td><span class="severity-pill critical">critical</span></td>
+            </tr>
+            <tr>
+              <td><code>warning</code></td>
+              <td><span class="severity-pill high">high</span></td>
+            </tr>
+            <tr>
+              <td><code>note</code></td>
+              <td><span class="severity-pill medium">medium</span></td>
+            </tr>
+            <tr>
+              <td><code>info</code></td>
+              <td><span class="severity-pill low">low</span></td>
+            </tr>
+            <tr>
+              <td><code>none</code> / unknown</td>
+              <td><span class="severity-pill low">low</span> (default)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="footnote">Source: AAP &sect;0.6.3 &mdash; verbatim user mapping plus default for SARIF <code>none</code> / unknown.</p>
+      </section>
+
+      <!-- Slide 15: Output Schema Reference -->
+      <section>
+        <h2>Output Schema Reference</h2>
+        <p class="section-intro">The closed five-field schema of <code>findings-config-b.json</code>. Every finding has all five fields populated; no additional fields are emitted.</p>
+        <table>
+          <thead>
+            <tr>
+              <th class="col-w-18">Field</th>
+              <th class="col-w-14">Type</th>
+              <th class="col-w-30">Source</th>
+              <th class="col-w-38">Constraint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>file</code></td>
+              <td>string</td>
+              <td>SARIF location</td>
+              <td>Relative path from repository root</td>
+            </tr>
+            <tr>
+              <td><code>line</code></td>
+              <td>integer</td>
+              <td><code>region.startLine</code></td>
+              <td>&ge; 1</td>
+            </tr>
+            <tr>
+              <td><code>severity</code></td>
+              <td>string</td>
+              <td>Severity mapping</td>
+              <td>One of: critical, high, medium, low</td>
+            </tr>
+            <tr>
+              <td><code>cwe</code></td>
+              <td>string</td>
+              <td>Rule metadata or inference</td>
+              <td>Matches <code>^CWE-\d+$</code></td>
+            </tr>
+            <tr>
+              <td><code>description</code></td>
+              <td>string</td>
+              <td>SARIF <code>message.text</code></td>
+              <td>&le; 200 characters (UTF-8 safe truncation)</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Slide 16: Closing - Findings Ready for Triage -->
+      <section class="slide-closing">
+        <div class="brand-lockup"><i data-lucide="shield-check" class="brand-icon"></i>Blitzy &middot; Security</div>
+        <h2>Findings Ready for Triage</h2>
+        <div class="accent-bar accent-bar--wide"></div>
+        <p>Config B output: <code>findings-config-b.json</code></p>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis',
+        padding: 20,
+        nodeSpacing: 40,
+        rankSpacing: 60
+      },
+      themeVariables: {
+        primaryColor: '#F2F0FE',
+        primaryTextColor: '#333333',
+        primaryBorderColor: '#5B39F3',
+        lineColor: '#999999',
+        secondaryColor: '#F4EFF6'
+      }
+    });
+
+    function renderVisuals() {
+      mermaid.run();
+      lucide.createIcons();
+    }
+
+    Reveal.on('ready', () => {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(renderVisuals);
+      } else {
+        renderVisuals();
+      }
+    });
+
+    Reveal.on('slidechanged', () => {
+      mermaid.run();
+      lucide.createIcons();
+    });
+
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080
+    });
+  </script>
+</body>
+</html>
+

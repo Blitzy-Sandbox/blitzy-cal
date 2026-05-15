@@ -1,0 +1,557 @@
+/* Blitzy Reveal.js Theme — Canonical Stylesheet
+ * Canonical location per AAP §0.8.2 (Executive Presentation Rule).
+ * Single source of truth: this stylesheet is the authoritative theme.
+ * Inlined byte/functionally equivalent into the deck's <style> block so a
+ * file-system-only download of the deck still renders correctly without
+ * loading this file. Every rule, selector, and value below MUST also be
+ * present in the deck's inline <style> block; equivalence is enforced by
+ * the validation steps documented in decision-log.md.
+ * Rationale for every non-trivial decision lives in decision-log.md.
+ */
+
+:root {
+  --blitzy-primary: #5B39F3;
+  --blitzy-primary-dark: #2D1C77;
+  --blitzy-primary-navy: #1A105F;
+  --blitzy-primary-light: #7A6DEC;
+  --blitzy-primary-deep: #4101DB;
+  --blitzy-accent-teal: #94FAD5;
+  --blitzy-surface-0: #FFFFFF;
+  --blitzy-surface-1: #F4EFF6;
+  --blitzy-surface-2: #F2F0FE;
+  --blitzy-surface-3: #F5F5F5;
+  --blitzy-border: #D9D9D9;
+  --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+  --blitzy-text: #333333;
+  --blitzy-text-muted: #999999;
+  --blitzy-text-invert: #FFFFFF;
+  --ff-body: 'Inter', system-ui, sans-serif;
+  --ff-display: 'Space Grotesk', 'Inter', sans-serif;
+  --ff-mono: 'Fira Code', 'Courier New', monospace;
+  --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+  --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+  --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+}
+
+/* Global base styles */
+
+body,
+.reveal {
+  font-family: var(--ff-body);
+  color: var(--blitzy-text);
+  background: var(--blitzy-surface-0);
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4 {
+  font-family: var(--ff-display);
+  color: var(--blitzy-text);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+.reveal h1 {
+  font-size: 4.2rem;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.reveal h2 {
+  font-size: 2.4rem;
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
+}
+
+.reveal h3 {
+  font-size: 1.6rem;
+}
+
+.reveal p {
+  line-height: 1.55;
+  font-size: 1.15rem;
+}
+
+.reveal code {
+  font-family: var(--ff-mono);
+  background: var(--blitzy-surface-2);
+  color: var(--blitzy-primary-dark);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.88em;
+}
+
+.reveal a {
+  color: var(--blitzy-primary);
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section {
+  padding: 2.5rem 3rem;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.reveal ol,
+.reveal ul {
+  margin: 0.75rem 0 0.75rem 1.5rem;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.reveal li {
+  margin-bottom: 0.35rem;
+}
+
+/* Eyebrow label */
+
+.reveal .eyebrow {
+  font-family: var(--ff-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7em;
+  color: var(--blitzy-primary);
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+/* Slide-type classes */
+
+.reveal .slide-title {
+  background: var(--gradient-hero);
+  color: var(--blitzy-text-invert);
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.reveal .slide-title h1,
+.reveal .slide-title h2,
+.reveal .slide-title h3,
+.reveal .slide-title p {
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .slide-title .eyebrow {
+  color: var(--blitzy-accent-teal);
+}
+
+.reveal .slide-title h1 {
+  font-size: 5rem;
+  font-weight: 700;
+  max-width: 80%;
+  margin: 0 0 1rem 0;
+}
+
+.reveal .slide-title p {
+  font-size: 1.4rem;
+  max-width: 70%;
+  opacity: 0.95;
+}
+
+.reveal .slide-divider {
+  background: var(--gradient-divider);
+  color: var(--blitzy-text-invert);
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.reveal .slide-divider h1,
+.reveal .slide-divider h2,
+.reveal .slide-divider h3 {
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .slide-divider h2 {
+  font-size: 3.6rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+}
+
+.reveal .slide-closing {
+  background: var(--gradient-hero);
+  color: var(--blitzy-text-invert);
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.reveal .slide-closing h1,
+.reveal .slide-closing h2,
+.reveal .slide-closing p {
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .slide-closing h2 {
+  font-size: 3.4rem;
+  font-weight: 700;
+  margin: 1rem 0;
+}
+
+.reveal .slide-closing p {
+  font-size: 1.3rem;
+}
+
+.reveal .slide-closing code {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--blitzy-text-invert);
+}
+
+/* KPI components */
+
+.reveal .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.reveal .kpi-card {
+  background: var(--blitzy-surface-1);
+  border: 1px solid var(--blitzy-border-soft);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.reveal .slide-title .kpi-card,
+.reveal .slide-divider .kpi-card,
+.reveal .slide-closing .kpi-card {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .kpi-value {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--blitzy-primary);
+  line-height: 1.1;
+  margin: 0.25rem 0;
+}
+
+.reveal .kpi-label {
+  font-family: var(--ff-mono);
+  font-size: 0.7rem;
+  color: var(--blitzy-text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+.reveal .kpi-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--blitzy-primary);
+  margin-bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reveal .kpi-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: currentColor;
+}
+
+.reveal .slide-title .kpi-value,
+.reveal .slide-divider .kpi-value,
+.reveal .slide-closing .kpi-value {
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .slide-title .kpi-label,
+.reveal .slide-divider .kpi-label,
+.reveal .slide-closing .kpi-label {
+  color: var(--blitzy-accent-teal);
+}
+
+.reveal .slide-title .kpi-icon,
+.reveal .slide-divider .kpi-icon,
+.reveal .slide-closing .kpi-icon {
+  color: var(--blitzy-accent-teal);
+}
+
+/* Accent bar */
+
+.reveal .accent-bar {
+  height: 6px;
+  background: var(--gradient-accent-bar);
+  border-radius: 3px;
+  margin: 1.5rem 0;
+  width: 220px;
+}
+
+.reveal .accent-bar.accent-bar--wide {
+  width: 320px;
+}
+
+/* Brand lockup */
+
+.reveal .brand-lockup {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  color: var(--blitzy-text-invert);
+  margin-bottom: 1rem;
+}
+
+/* Hero icon (large Lucide icon used on divider/closing slides) */
+
+.reveal .hero-icon {
+  width: 10rem;
+  height: 10rem;
+  stroke-width: 1.25;
+  color: var(--blitzy-text-invert);
+}
+
+.reveal .hero-icon svg {
+  width: 10rem;
+  height: 10rem;
+  stroke-width: 1.25;
+  stroke: currentColor;
+}
+
+/* Icon row (small Lucide icons in a flex row) */
+
+.reveal .icon-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.reveal .icon-row svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--blitzy-primary);
+}
+
+/* Inline icon utilities (replace ad-hoc style="" sizing in the deck) */
+
+.reveal .inline-icon-sm {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.1em;
+  margin-right: 0.35em;
+}
+
+.reveal .brand-icon {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.2em;
+  margin-right: 0.4em;
+}
+
+/* Table styling */
+
+.reveal table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--blitzy-border-soft);
+}
+
+.reveal th {
+  background: var(--blitzy-primary);
+  color: var(--blitzy-text-invert);
+  padding: 0.75rem;
+  text-align: left;
+  font-family: var(--ff-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.reveal td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--blitzy-border);
+  vertical-align: top;
+}
+
+.reveal tr:nth-child(even) td {
+  background: var(--blitzy-surface-1);
+}
+
+.reveal tr:last-child td {
+  border-bottom: none;
+}
+
+.reveal td code,
+.reveal th code {
+  font-size: 0.9em;
+}
+
+.reveal .table-emphasis {
+  background: var(--blitzy-surface-2);
+  font-weight: 600;
+}
+
+/* Column-width utility classes (replace ad-hoc style="width: N%" overrides) */
+
+.reveal .col-w-8  { width: 8%; }
+.reveal .col-w-14 { width: 14%; }
+.reveal .col-w-18 { width: 18%; }
+.reveal .col-w-25 { width: 25%; }
+.reveal .col-w-30 { width: 30%; }
+.reveal .col-w-35 { width: 35%; }
+.reveal .col-w-38 { width: 38%; }
+.reveal .col-w-40 { width: 40%; }
+.reveal .col-w-42 { width: 42%; }
+.reveal .col-w-50 { width: 50%; }
+
+/* Mermaid container */
+
+.reveal .mermaid-container {
+  background: var(--blitzy-surface-2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+  border: 1px solid var(--blitzy-border-soft);
+}
+
+.reveal .mermaid-container pre.mermaid {
+  background: transparent;
+  box-shadow: none;
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.reveal pre.mermaid {
+  background: transparent;
+  box-shadow: none;
+  font-size: 1rem;
+}
+
+.reveal pre.mermaid svg .nodeLabel,
+.reveal pre.mermaid svg .label foreignObject div {
+  padding: 0 4px;
+}
+
+.reveal pre.mermaid svg foreignObject {
+  overflow: visible !important;
+}
+
+/* Footnote (small attribution / source-link block) */
+
+.reveal .footnote {
+  font-family: var(--ff-mono);
+  font-size: 0.75rem;
+  color: var(--blitzy-text-muted);
+  margin-top: 1rem;
+  letter-spacing: 0.02em;
+}
+
+/* Section intro paragraph (lead-in below a section heading) */
+
+.reveal .section-intro {
+  color: var(--blitzy-text-muted);
+  font-size: 1.05rem;
+  max-width: 80%;
+  margin-bottom: 1rem;
+}
+
+/* Comparison callout block (icon + note) */
+
+.reveal .comparison-note {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--blitzy-surface-2);
+  border-left: 4px solid var(--blitzy-primary);
+  padding: 0.85rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.reveal .comparison-note svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  stroke: var(--blitzy-primary);
+}
+
+/* Severity pill (inline-block badge with severity-level modifiers) */
+
+.reveal .severity-pill {
+  display: inline-block;
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+  font-family: var(--ff-mono);
+  font-size: 0.78em;
+  font-weight: 500;
+  color: var(--blitzy-text-invert);
+  background: var(--blitzy-primary);
+}
+
+.reveal .severity-pill.critical { background: var(--blitzy-primary-deep); }
+.reveal .severity-pill.high     { background: var(--blitzy-primary); }
+.reveal .severity-pill.medium   { background: var(--blitzy-primary-light); }
+.reveal .severity-pill.low      { background: var(--blitzy-text-muted); }
+
+/* Step card (grid item showing an ordered step with number / icon / label) */
+
+.reveal .step-card {
+  background: var(--blitzy-surface-1);
+  border: 1px solid var(--blitzy-border-soft);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: left;
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.reveal .step-card .step-number {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--blitzy-primary);
+  line-height: 1;
+}
+
+.reveal .step-card .step-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--blitzy-primary);
+}
+
+.reveal .step-card .step-label {
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  color: var(--blitzy-text);
+  line-height: 1.35;
+}
+
+.reveal .step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}

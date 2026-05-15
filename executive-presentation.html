@@ -523,26 +523,26 @@
         <div class="kpi-grid">
           <div class="kpi-card sev-total">
             <i data-lucide="list-checks" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">Total findings &middot; populated in Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Total &middot; scan did not complete</span>
           </div>
           <div class="kpi-card sev-critical">
             <i data-lucide="alert-octagon" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">Critical &middot; populated in Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Critical &middot; scan did not complete</span>
           </div>
           <div class="kpi-card sev-high">
             <i data-lucide="alert-triangle" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">High &middot; populated in Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">High &middot; scan did not complete</span>
           </div>
           <div class="kpi-card sev-medium">
             <i data-lucide="circle-alert" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">Medium &middot; populated in Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Medium &middot; scan did not complete</span>
           </div>
         </div>
-        <p class="caption">Counts will be populated once the normalizer merges real SAST and SCA outputs into the canonical Config H schema in Checkpoint 2.</p>
+        <p class="caption">Snyk authentication failed (<code>SNYK_TOKEN</code> not provisioned). Counts unavailable; artifact is not security-complete.</p>
       </section>
 
       <!-- Slide 3: Scan Architecture -->
@@ -579,10 +579,10 @@ graph LR
             <span class="kpi-value">1.1304.3</span>
             <span class="kpi-label">Snyk CLI installed globally</span>
           </div>
-          <div class="kpi-card sev-total">
+          <div class="kpi-card sev-critical">
             <i data-lucide="key-round" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label"><code>SNYK_TOKEN</code> export &amp; <code>snyk auth check</code> &middot; Checkpoint 2</span>
+            <span class="kpi-value">AUTH FAILED</span>
+            <span class="kpi-label"><code>snyk auth check</code> exit 2 &middot; <code>SNYK_TOKEN</code> not provisioned</span>
           </div>
           <div class="kpi-card sev-total">
             <i data-lucide="folder-tree" class="kpi-icon" aria-hidden="true"></i>
@@ -590,7 +590,7 @@ graph LR
             <span class="kpi-label">Source files + manifests in scope</span>
           </div>
         </div>
-        <p class="caption">Snyk CLI is installed globally through <code>npm install -g snyk</code>. Authentication via the <code>SNYK_TOKEN</code> environment variable and the <code>snyk auth check</code> handshake are scheduled for Checkpoint 2 once the token is provisioned.</p>
+        <p class="caption">CLI install passes Directive 1; authentication fails because no <code>SNYK_TOKEN</code> is present in the environment or Snyk configstore.</p>
       </section>
 
 
@@ -603,14 +603,14 @@ graph LR
             <tr><th>Metric</th><th>Value</th></tr>
           </thead>
           <tbody>
-            <tr><td>Files in scan scope</td><td>7,433 across <code>.ts</code>, <code>.tsx</code>, <code>.js</code></td></tr>
-            <tr><td>Wall-clock duration</td><td>Pending &middot; recorded during Checkpoint 2 execution</td></tr>
-            <tr><td>Exit code</td><td>Pending &middot; expected 0 (clean) or 1 (issues found)</td></tr>
-            <tr><td>Output artifact</td><td><code>results-snyk-code.sarif</code> (SARIF v2.1.0)</td></tr>
-            <tr><td>Invocation</td><td><code>snyk code test --sarif-file-output</code></td></tr>
+            <tr><td>Files in scope</td><td>7,433</td></tr>
+            <tr><td>Duration</td><td>Not measured</td></tr>
+            <tr><td>Exit code</td><td><strong>2</strong> &middot; auth failed</td></tr>
+            <tr><td>SARIF artifact</td><td>Not produced</td></tr>
+            <tr><td>Invocation</td><td><code>snyk code test</code></td></tr>
           </tbody>
         </table>
-        <p class="caption">Static analysis will upload the source bundle to Snyk Cloud and return SARIF v2.1.0 results once executed in Checkpoint 2.</p>
+        <p class="caption">Authentication failure blocked the SAST scan.</p>
       </section>
 
       <!-- Slide 7: SCA Scan -->
@@ -622,14 +622,14 @@ graph LR
             <tr><th>Metric</th><th>Value</th></tr>
           </thead>
           <tbody>
-            <tr><td>Manifests in scan scope</td><td>119 <code>package.json</code> plus root <code>yarn.lock</code></td></tr>
-            <tr><td>Wall-clock duration</td><td>Pending &middot; recorded during Checkpoint 2 execution</td></tr>
-            <tr><td>Exit code</td><td>Pending &middot; expected 0 (clean) or 1 (issues found)</td></tr>
-            <tr><td>Output artifact</td><td><code>results-snyk-deps.json</code></td></tr>
-            <tr><td>Required flag</td><td><code>--all-projects</code> for Yarn 4 workspace traversal</td></tr>
+            <tr><td>Manifests in scope</td><td>119 + <code>yarn.lock</code></td></tr>
+            <tr><td>Duration</td><td>Not measured</td></tr>
+            <tr><td>Exit code</td><td><strong>2</strong> &middot; auth-failure JSON returned</td></tr>
+            <tr><td>JSON artifact</td><td>Auth-failure stub only</td></tr>
+            <tr><td>Required flag</td><td><code>--all-projects</code></td></tr>
           </tbody>
         </table>
-        <p class="caption">Workspace-wide scan will honor the existing <code>apps/api/v2/.snyk</code> policy and yield per-project vulnerability JSON once executed in Checkpoint 2.</p>
+        <p class="caption">Authentication failure blocked the SCA scan.</p>
       </section>
 
       <!-- Slide 8: Divider - Findings -->
@@ -646,26 +646,26 @@ graph LR
         <div class="kpi-grid">
           <div class="kpi-card sev-critical">
             <i data-lucide="alert-octagon" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">Critical &middot; Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Critical &middot; scan did not complete</span>
           </div>
           <div class="kpi-card sev-high">
             <i data-lucide="alert-triangle" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">High &middot; Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">High &middot; scan did not complete</span>
           </div>
           <div class="kpi-card sev-medium">
             <i data-lucide="circle-alert" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">Medium &middot; Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Medium &middot; scan did not complete</span>
           </div>
           <div class="kpi-card sev-low">
             <i data-lucide="info" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">Pending</span>
-            <span class="kpi-label">Low &middot; Checkpoint 2</span>
+            <span class="kpi-value">&mdash;</span>
+            <span class="kpi-label">Low &middot; scan did not complete</span>
           </div>
         </div>
-        <p class="caption">Mapping rule: SARIF level error to critical, warning to high, note to medium; Snyk dependency severity passes through unchanged. Counts will be populated from real scan output in Checkpoint 2.</p>
+        <p class="caption">Mapping rule preserved: SARIF error&rarr;critical, warning&rarr;high, note&rarr;medium; SCA severity passthrough. No counts available.</p>
       </section>
 
       <!-- Slide 10: Top Risk Categories -->
@@ -677,14 +677,10 @@ graph LR
             <tr><th>CWE</th><th>Description</th><th>Count</th></tr>
           </thead>
           <tbody>
-            <tr><td>Pending</td><td>Top CWE category &middot; populated from real scan output</td><td>Pending</td></tr>
-            <tr><td>Pending</td><td>Second category &middot; populated from real scan output</td><td>Pending</td></tr>
-            <tr><td>Pending</td><td>Third category &middot; populated from real scan output</td><td>Pending</td></tr>
-            <tr><td>Pending</td><td>Fourth category &middot; populated from real scan output</td><td>Pending</td></tr>
-            <tr><td>Pending</td><td>Fifth category &middot; populated from real scan output</td><td>Pending</td></tr>
+            <tr><td>&mdash;</td><td>Scan did not complete &middot; categories cannot be aggregated without scan output</td><td>&mdash;</td></tr>
           </tbody>
         </table>
-        <p class="caption">Once the SAST rule metadata and SCA dependency identifiers are aggregated by CWE in Checkpoint 2, the top five categories and their counts will be substituted into this table.</p>
+        <p class="caption">CWE aggregation requires SARIF rule metadata and SCA dependency identifiers from successful scans. Re-run after provisioning <code>SNYK_TOKEN</code>.</p>
       </section>
 
       <!-- Slide 11: Notable Vulnerabilities -->
@@ -697,38 +693,14 @@ graph LR
           </thead>
           <tbody>
             <tr>
-              <td><span class="sev-pill sev-critical">Pending</span></td>
-              <td><code>snyk-deps</code></td>
-              <td>Populated in Checkpoint 2</td>
-              <td>Resolved from real scan output</td>
-            </tr>
-            <tr>
-              <td><span class="sev-pill sev-critical">Pending</span></td>
-              <td><code>snyk-code</code></td>
-              <td>Populated in Checkpoint 2</td>
-              <td>Resolved from real scan output</td>
-            </tr>
-            <tr>
-              <td><span class="sev-pill sev-high">Pending</span></td>
-              <td><code>snyk-deps</code></td>
-              <td>Populated in Checkpoint 2</td>
-              <td>Resolved from real scan output</td>
-            </tr>
-            <tr>
-              <td><span class="sev-pill sev-high">Pending</span></td>
-              <td><code>snyk-code</code></td>
-              <td>Populated in Checkpoint 2</td>
-              <td>Resolved from real scan output</td>
-            </tr>
-            <tr>
-              <td><span class="sev-pill sev-medium">Pending</span></td>
-              <td><code>snyk-deps</code></td>
-              <td>Populated in Checkpoint 2</td>
-              <td>Resolved from real scan output</td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>Scan did not complete</td>
+              <td>No findings available to triage</td>
             </tr>
           </tbody>
         </table>
-        <p class="caption">Critical and high findings will be selected from the real <code>findings-config-h.json</code> array in Checkpoint 2 for early triage and remediation planning.</p>
+        <p class="caption">Triage requires populated <code>findings-config-h.json</code>. Current file is the AAP empty-state <code>[]</code>; rerun pipeline to populate.</p>
       </section>
 
 
@@ -765,17 +737,17 @@ sequenceDiagram
           <div class="kpi-card sev-total">
             <i data-lucide="layout-list" class="kpi-icon" aria-hidden="true"></i>
             <span class="kpi-value">5</span>
-            <span class="kpi-label">Schema fields per finding</span>
+            <span class="kpi-label">Schema fields</span>
           </div>
           <div class="kpi-card sev-total">
             <i data-lucide="minus" class="kpi-icon" aria-hidden="true"></i>
-            <span class="kpi-value">1</span>
-            <span class="kpi-label">Line in <code>findings-config-h.json</code></span>
+            <span class="kpi-value">3 bytes</span>
+            <span class="kpi-label">Current size &middot; 1 line (<code>[]\n</code>)</span>
           </div>
           <div class="kpi-card sev-total">
             <i data-lucide="binary" class="kpi-icon" aria-hidden="true"></i>
             <span class="kpi-value">UTF-8</span>
-            <span class="kpi-label">Encoding, no BOM</span>
+            <span class="kpi-label">No BOM</span>
           </div>
         </div>
         <table class="brand-table">
@@ -783,14 +755,14 @@ sequenceDiagram
             <tr><th>Field</th><th>Type</th><th>Description</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>file</code></td><td>string</td><td>Relative source or manifest path</td></tr>
-            <tr><td><code>line</code></td><td>integer</td><td>SARIF start line; <code>0</code> for SCA findings</td></tr>
-            <tr><td><code>severity</code></td><td>enum</td><td>One of <code>critical</code>, <code>high</code>, <code>medium</code>, <code>low</code></td></tr>
-            <tr><td><code>cwe</code></td><td>string</td><td>CWE-ID, with CVE-ID fallback for SCA</td></tr>
-            <tr><td><code>description</code></td><td>string</td><td>Source-prefix tag plus message, truncated to 200 chars</td></tr>
+            <tr><td><code>file</code></td><td>string</td><td>Relative path</td></tr>
+            <tr><td><code>line</code></td><td>integer</td><td>SARIF line; <code>0</code> for SCA</td></tr>
+            <tr><td><code>severity</code></td><td>enum</td><td><code>critical</code>/<code>high</code>/<code>medium</code>/<code>low</code></td></tr>
+            <tr><td><code>cwe</code></td><td>string</td><td>CWE-ID; CVE fallback</td></tr>
+            <tr><td><code>description</code></td><td>string</td><td>Prefix + message, &le;200 chars</td></tr>
           </tbody>
         </table>
-        <p class="caption">Five-field minified JSON guarantees byte-comparable diffs across the Config A through H tool comparison.</p>
+        <p class="caption">Empty <code>[]\n</code> reflects auth-failure, not zero findings.</p>
       </section>
 
       <!-- Slide 15: Divider - Risks & Next Steps -->
@@ -803,15 +775,15 @@ sequenceDiagram
       <!-- Slide 16: Closing -->
       <section class="slide-closing" data-background-color="#1A105F">
         <p class="eyebrow">CLOSING</p>
-        <h2>Governance Ready &middot; Scan Execution Next</h2>
+        <h2>Scan Incomplete &middot; Awaiting Credentials</h2>
         <ul>
-          <li>Decision log and executive deck delivered at Checkpoint 1.</li>
-          <li>Normalizer and final <code>findings-config-h.json</code> scheduled for Checkpoint 2.</li>
-          <li>Continuation and triage onboard via <code>decision-log.md</code>.</li>
+          <li>Snyk authentication failed; <code>findings-config-h.json</code> is empty (<code>[]</code>) and not security-complete.</li>
+          <li>Operator must provision <code>SNYK_TOKEN</code> and rerun the four directives.</li>
+          <li>Full remediation runbook in <code>decision-log.md</code> row 30.</li>
         </ul>
         <div class="icon-row">
           <i data-lucide="file-json" aria-hidden="true"></i>
-          <span class="icon-row-label">findings-config-h.json &middot; pending</span>
+          <span class="icon-row-label">findings-config-h.json &middot; empty-state</span>
           <i data-lucide="book-open" aria-hidden="true"></i>
           <span class="icon-row-label">decision-log.md</span>
           <i data-lucide="monitor" aria-hidden="true"></i>

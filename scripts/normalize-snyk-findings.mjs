@@ -4,17 +4,18 @@
 
 import fs from "node:fs";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
-export function mapSarifSeverity(level) {
+function mapSarifSeverity(level) {
   const map = { error: "critical", warning: "high", note: "medium" };
   return map[level] ?? "low";
 }
 
-export function truncate(s, max) {
+function truncate(s, max) {
   return String(s ?? "").slice(0, max);
 }
 
-export function parseSarif(sarifText) {
+function parseSarif(sarifText) {
   const sarif = JSON.parse(sarifText);
   const findings = [];
   for (const run of sarif.runs ?? []) {
@@ -27,7 +28,7 @@ export function parseSarif(sarifText) {
       const level = result.level ?? "warning";
       const severity = mapSarifSeverity(level);
       const cwe = ruleIndex[result.ruleId]?.properties?.cwe?.[0] ?? "";
-      const msg = "[snyk-code] " + (result.message?.text ?? "");
+      const msg = `[snyk-code] ${result.message?.text ?? ""}`;
       const description = truncate(msg, 200);
       findings.push({ file, line, severity, cwe, description });
     }
@@ -35,9 +36,14 @@ export function parseSarif(sarifText) {
   return findings;
 }
 
-export function parseSnyk(snykText) {
+function parseSnyk(snykText) {
   const snyk = JSON.parse(snykText);
-  const projects = Array.isArray(snyk) ? snyk : [snyk];
+  let projects;
+  if (Array.isArray(snyk)) {
+    projects = snyk;
+  } else {
+    projects = [snyk];
+  }
   const findings = [];
   for (const project of projects) {
     const manifest = project?.displayTargetFile ?? project?.targetFile ?? "";
@@ -46,7 +52,7 @@ export function parseSnyk(snykText) {
       const line = 0;
       const severity = v.severity;
       const cwe = v.identifiers?.CWE?.[0] ?? v.identifiers?.CVE?.[0] ?? "";
-      const msg = "[snyk-deps] " + (v.title ?? "");
+      const msg = `[snyk-deps] ${v.title ?? ""}`;
       const description = truncate(msg, 200);
       findings.push({ file, line, severity, cwe, description });
     }
@@ -54,7 +60,7 @@ export function parseSnyk(snykText) {
   return findings;
 }
 
-export function main() {
+function main() {
   const sarifPath = process.argv[2] ?? "results-snyk-code.sarif";
   const snykPath = process.argv[3] ?? "results-snyk-deps.json";
   const outPath = process.argv[4] ?? "findings-config-h.json";
@@ -75,10 +81,29 @@ export function main() {
   const scaFindings = parseSnyk(snykText);
 
   const merged = [...sastFindings, ...scaFindings];
-  const out = merged.length === 0 ? "[]" : JSON.stringify(merged);
-  fs.writeFileSync(outPath, out + "\n", { encoding: "utf8" });
+  let out;
+  if (merged.length === 0) {
+    out = "[]";
+  } else {
+    out = JSON.stringify(merged);
+  }
+  fs.writeFileSync(outPath, `${out}\n`, { encoding: "utf8" });
 
   process.stderr.write(`wrote ${merged.length} finding(s) to ${outPath}\n`);
 }
 
-main();
+// Entrypoint guard — main() only runs when this module is invoked directly as a
+// CLI script (node scripts/normalize-snyk-findings.mjs ...). When the module is
+// dynamically imported (for testing or programmatic reuse), no side-effecting
+// I/O is performed and consumers can call the exported helpers in isolation.
+const isMainModule =
+  typeof process !== "undefined" &&
+  Array.isArray(process.argv) &&
+  process.argv[1] !== undefined &&
+  fileURLToPath(import.meta.url) === fs.realpathSync(process.argv[1]);
+
+if (isMainModule) {
+  main();
+}
+
+export { mapSarifSeverity, truncate, parseSarif, parseSnyk, main };

@@ -966,12 +966,12 @@ flowchart LR
 
         <div class="mermaid-wrap">
           <pre class="mermaid">
-%%{init: { 'theme': 'base', 'themeVariables': { 'pie1': '#C81E1E', 'pie2': '#DD6B20', 'pie3': '#B7791F', 'pie4': '#4A5568' } }}%%
+%%{init: { 'theme': 'base', 'themeVariables': { 'pie1': '#DD6B20', 'pie2': '#B7791F', 'pie3': '#C81E1E', 'pie4': '#4A5568', 'pieStrokeColor': '#FFFFFF', 'pieStrokeWidth': '2px', 'pieOuterStrokeColor': '#D9D9D9', 'pieTitleTextSize': '20px', 'pieSectionTextSize': '15px', 'pieLegendTextSize': '15px' } }}%%
 pie showData
     title Findings by severity
-    "Critical" : 4
     "High" : 18
     "Medium" : 12
+    "Critical" : 4
     "Low" : 2
           </pre>
         </div>
@@ -1070,34 +1070,36 @@ pie showData
           <span class="eyebrow">Cluster view</span>
           <h2>Risk heatmap</h2>
           <p class="lede">
-            Four clusters absorb most of the residual risk:
-            container secrets, cryptographic boundaries, web edge, and the third-party supply chain.
+            Six clusters carry the findings; container secrets, cryptographic boundaries,
+            web edge, and the supply chain lead the risk profile.
           </p>
         </div>
 
         <div class="mermaid-wrap">
           <pre class="mermaid">
 flowchart TB
-    Root["Codebase · 36 findings"] --> C1[Container/Build]
-    Root --> C2[Cryptography]
-    Root --> C3[Web edge]
-    Root --> C4[Supply chain]
-    Root --> C5[Auth/Identity]
-    Root --> C6[Webhooks/Integrations]
-    C1 --> N1["6 total · 3 critical"]
-    C2 --> N2["10 total · 1 critical"]
-    C3 --> N3["11 total · 5 high"]
-    C4 --> N4["3 total · 1 high"]
-    C5 --> N5["3 total · 2 high"]
-    C6 --> N6["3 total · 2 high"]
+    Root["Codebase<br/>36 findings"] --> C1["Container<br/>Build"]
+    Root --> C2["Cryptography"]
+    Root --> C3["Web edge"]
+    Root --> C4["Supply<br/>chain"]
+    Root --> C5["Auth<br/>Identity"]
+    Root --> C6["Webhooks<br/>Integrations"]
+    C1 --> N1["6 total<br/>3 critical"]
+    C2 --> N2["10 total<br/>1 critical"]
+    C3 --> N3["11 total<br/>5 high"]
+    C4 --> N4["3 total<br/>1 high"]
+    C5 --> N5["3 total<br/>2 high"]
+    C6 --> N6["3 total<br/>2 high"]
     classDef root fill:#F2F0FE,stroke:#5B39F3,stroke-width:2px,color:#333333;
-    classDef cluster fill:#F4EFF6,stroke:#5B39F3,stroke-width:1.5px,color:#333333;
+    classDef leading fill:#F4EFF6,stroke:#5B39F3,stroke-width:2.5px,color:#333333;
+    classDef supplementary fill:#F5F5F5,stroke:#D9D9D9,stroke-width:1px,color:#666666;
     classDef critical fill:#C81E1E,stroke:#1A105F,color:#FFFFFF,stroke-width:2px;
     classDef high fill:#DD6B20,stroke:#1A105F,color:#FFFFFF,stroke-width:2px;
     classDef medium fill:#B7791F,stroke:#1A105F,color:#FFFFFF,stroke-width:2px;
     classDef low fill:#4A5568,stroke:#1A105F,color:#FFFFFF,stroke-width:2px;
     class Root root;
-    class C1,C2,C3,C4,C5,C6 cluster;
+    class C1,C2,C3,C4 leading;
+    class C5,C6 supplementary;
     class N1,N2 critical;
     class N3,N4,N5,N6 high;
           </pre>
@@ -1303,7 +1305,7 @@ flowchart LR
         <span class="eyebrow">Takeaway</span>
         <h2>Measure. Then mitigate.</h2>
         <ul>
-          <li>Thirty-eight findings establish a deterministic baseline for the comparison study.</li>
+          <li>Thirty-six findings establish a deterministic baseline for the comparison study.</li>
           <li>No existing source files were modified — application runtime behavior is unchanged by this audit.</li>
           <li>Next configurations measure tool lift against this evidence — not against intuition.</li>
         </ul>

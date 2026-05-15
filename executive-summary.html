@@ -168,6 +168,27 @@
       flex-direction: column;
       justify-content: center;
       align-items: flex-start;
+      position: relative;
+    }
+
+    .slide-title .title-brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      background: rgba(148, 250, 213, 0.12);
+      border: 2px solid rgba(148, 250, 213, 0.32);
+      color: var(--blitzy-teal);
+      margin-bottom: 32px;
+      box-shadow: 0 18px 48px rgba(13, 6, 56, 0.28);
+    }
+
+    .slide-title .title-brand-mark svg {
+      width: 56px;
+      height: 56px;
+      stroke-width: 1.6;
     }
 
     .slide-title h1 {
@@ -339,7 +360,7 @@
     /* ===== KPI grid ===== */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 24px;
       margin-top: 32px;
     }
@@ -461,6 +482,25 @@
       color: var(--blitzy-primary-dark);
       white-space: nowrap;
     }
+
+    /* ===== Footnote (counting-method disclosure under tables) ===== */
+    .reveal .footnote {
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--neutral-500);
+      margin-top: 16px;
+      line-height: 1.4;
+    }
+
+    .reveal .footnote code {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--neutral-500);
+      background: var(--neutral-50);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
 
     /* ===== Icon list (consumption guide) ===== */
     .icon-list {
@@ -673,6 +713,7 @@
            Slide 1 — Title (hero gradient)
            ========================================================= -->
       <section class="slide-title">
+        <span class="title-brand-mark" aria-hidden="true"><i data-lucide="shield-check"></i></span>
         <span class="eyebrow">Config A · Baseline Measurement</span>
         <h1>blitzy-cal Security Audit</h1>
         <div class="subtitle">
@@ -686,7 +727,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-label">Surface</span>
-            <span class="meta-value">7,399 source files · 588 migrations</span>
+            <span class="meta-value">7,399 source files · 589 migrations</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Output</span>
@@ -700,15 +741,15 @@
       </section>
 
       <!-- =========================================================
-           Slide 2 — Headline KPIs (8 cards)
+           Slide 2 — Headline KPIs (9 cards)
            ========================================================= -->
       <section>
         <div class="content-head">
           <span class="eyebrow">Headline KPIs</span>
           <h2>At a glance</h2>
           <p class="lede">
-            Thirty-eight CWE-classified findings spanning seventeen distinct weakness families,
-            with zero source files modified during the audit pass.
+            Thirty-eight CWE-classified findings across twenty-eight inspected source files
+            spanning seventeen weakness families — zero existing source modified.
           </p>
         </div>
 
@@ -748,6 +789,12 @@
             <div class="kpi-value">17</div>
             <div class="kpi-label">Distinct CWEs</div>
             <div class="kpi-sub">Leaf-node preferred</div>
+          </div>
+          <div class="kpi-card kpi-info">
+            <span class="kpi-icon"><i data-lucide="file-search"></i></span>
+            <div class="kpi-value">28</div>
+            <div class="kpi-label">Source files inspected</div>
+            <div class="kpi-sub">Findings-bearing files</div>
           </div>
           <div class="kpi-card kpi-info">
             <span class="kpi-icon"><i data-lucide="file-x"></i></span>
@@ -840,24 +887,24 @@ flowchart LR
             <tr>
               <th>Area</th>
               <th>What lives here</th>
-              <th class="col-num">Scale</th>
+              <th class="col-num">Scale<sup>*</sup></th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><code>apps/web</code></td>
               <td>Next.js 16 web app · App + Pages routers · edge proxy · CSP builder</td>
-              <td class="col-num">143 API dirs</td>
+              <td class="col-num">180 API route dirs</td>
             </tr>
             <tr>
               <td><code>apps/api/v1</code></td>
               <td>Legacy Next.js API · <code>verifyApiKey</code> · rate-limit hooks</td>
-              <td class="col-num">23 groups</td>
+              <td class="col-num">37 endpoint groups</td>
             </tr>
             <tr>
               <td><code>apps/api/v2</code></td>
               <td>NestJS API · guards · OAuth2 · webhooks · billing</td>
-              <td class="col-num">36 modules</td>
+              <td class="col-num">35 modules</td>
             </tr>
             <tr>
               <td><code>packages/lib</code> · <code>packages/features</code></td>
@@ -867,7 +914,7 @@ flowchart LR
             <tr>
               <td><code>packages/app-store</code></td>
               <td>Third-party integrations · inbound webhook handlers</td>
-              <td class="col-num">151 adapters</td>
+              <td class="col-num">110 adapter dirs</td>
             </tr>
             <tr>
               <td><code>Dockerfile</code> · <code>docker-compose.yml</code> · <code>.github/workflows</code></td>
@@ -881,6 +928,12 @@ flowchart LR
             </tr>
           </tbody>
         </table>
+        <div class="footnote">
+          <sup>*</sup> Scale = directory or file count from a single counting method: directories enumerated at all depths under
+          <code>apps/web/{pages,app}/api</code>, depth-2 directories under <code>apps/api/v1/pages/api</code>, top-level module
+          directories under <code>apps/api/v2/src/modules</code>, top-level directories under <code>packages/app-store</code>,
+          YAML files under <code>.github/workflows</code>, and non-<code>node_modules</code> <code>package.json</code> manifests.
+        </div>
 
         <div class="slide-footer">
           <span class="sf-brand">blitzy-cal · Config A baseline</span>
@@ -1195,7 +1248,7 @@ flowchart LR
               <div class="track-title">Secrets &amp; cryptography</div>
             </div>
             <div class="track-body">
-              Replace the default <code>ARG=secret</code> placeholders in the container build,
+              Replace the default secret-placeholder <code>ARG</code> declarations in the container build,
               audit keyring rotation hygiene, and confirm constant-time comparisons end-to-end.
             </div>
             <div class="track-meta">Container · keyring · auth</div>
@@ -1252,7 +1305,7 @@ flowchart LR
         <h2>Measure. Then mitigate.</h2>
         <ul>
           <li>Thirty-eight findings establish a deterministic baseline for the comparison study.</li>
-          <li>Zero source files were modified — the codebase is byte-identical before and after.</li>
+          <li>No existing source files were modified — application runtime behavior is unchanged by this audit.</li>
           <li>Next configurations measure tool lift against this evidence — not against intuition.</li>
         </ul>
         <div class="brand-lockup">

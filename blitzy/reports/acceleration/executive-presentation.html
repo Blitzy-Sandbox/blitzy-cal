@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Development Acceleration Measurement — blitzy-cal</title>
+
+  <!--
+    Executive Presentation — Development Acceleration Measurement (blitzy-cal)
+
+    This is a single self-contained reveal.js 5.1.0 deck delivered per the
+    Executive Presentation rule. It loads reveal.js, Mermaid, and Lucide from
+    pinned CDN URLs at view time. All styling and behavior is inline.
+
+    Pinned CDN versions (validated by scripts/build_presentation.py):
+      - reveal.js     5.1.0   (jsdelivr)
+      - Mermaid      11.4.0   (jsdelivr)
+      - Lucide        0.460.0 (unpkg)
+
+    Slide count: 16 (target). Valid range 12-18 enforced by the renderer.
+
+    Placeholder tokens of the form <M<N>.<field>>, <env.*>, <inflection.*>,
+    <phase_*>, <actor_table_rows>, <run_id>, <rendered_at>, and
+    <analysis_window> are substituted by scripts/build_presentation.py with
+    values from data/*.json. The file remains valid HTML with tokens present;
+    tokens sit inside text nodes / table cells / attribute-free positions.
+  -->
+
+  <!-- Inline SVG favicon (Blitzy primary color square) — keeps file fully
+       self-contained and silences favicon.ico 404 when served via http.server. -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'&gt;&lt;rect width='32' height='32' rx='6' fill='%235B39F3'/&gt;&lt;path d='M9 9h14v4H13v2h10v4H13v2h10v4H9z' fill='%23F5F5FA'/&gt;&lt;/svg&gt;">
+
+  <!-- Google Fonts: Inter (body), Space Grotesk (display), Fira Code (mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- reveal.js 5.1.0 core + white theme (overridden by inline Blitzy styling below) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+
+  <style>
+    /* ============================================================
+       Blitzy Brand CSS Custom Properties
+       Mandatory per the agent prompt; declared on :root so all
+       slide-type styling derives from a single token source.
+       ============================================================ */
+    :root {
+      --blitzy-primary: #5B39F3;
+      --blitzy-primary-dark: #2D1C77;
+      --blitzy-accent-teal: #94FAD5;
+      --blitzy-navy: #0A0E27;
+      --blitzy-navy-dark: #060919;
+      --blitzy-text-on-dark: #F5F5FA;
+      --blitzy-text-on-light: #1A1A2E;
+      --blitzy-neutral-300: #D1D1DD;
+      --blitzy-neutral-500: #888896;
+      --blitzy-neutral-700: #4A4A5E;
+      --blitzy-gradient-hero: linear-gradient(135deg, #2D1C77 0%, #5B39F3 50%, #94FAD5 100%);
+      --blitzy-gradient-divider: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+      --blitzy-gradient-accent-bar: linear-gradient(90deg, transparent 0%, #5B39F3 50%, transparent 100%);
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+      --font-mono: 'Fira Code', 'Source Code Pro', monospace;
+    }
+
+    /* ============================================================
+       Reveal.js theme overrides (replace the white-theme defaults
+       with Blitzy brand). Limited specificity; no !important used.
+       ============================================================ */
+    html, body { background: var(--blitzy-text-on-dark); }
+    .reveal { font-family: var(--font-body); color: var(--blitzy-text-on-light); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 80px 120px; box-sizing: border-box; min-height: 1080px; width: 1920px; }
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: var(--font-display);
+      color: var(--blitzy-primary-dark);
+      text-transform: none;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.6em;
+    }
+    .reveal h1 { font-size: 3.4em; line-height: 1.05; font-weight: 700; }
+    .reveal h2 { font-size: 1.7em; line-height: 1.15; font-weight: 700; margin-block: 0.3em; }
+    .reveal h3 { font-size: 1.2em; line-height: 1.2; font-weight: 600; }
+    .reveal p { font-size: 1em; line-height: 1.45; }
+    .reveal code {
+      font-family: var(--font-mono);
+      background: rgba(91, 57, 243, 0.08);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      font-size: 0.92em;
+      color: var(--blitzy-primary-dark);
+    }
+    .reveal a { color: var(--blitzy-primary); }
+    .reveal .controls { color: var(--blitzy-primary); }
+    .reveal .progress { color: var(--blitzy-primary); }
+    .reveal .slide-number { color: var(--blitzy-neutral-500); background: rgba(255,255,255,0.6); border-radius: 4px; padding: 4px 8px; }
+
+    /* ============================================================
+       Slide type — Title (slide-title)
+       Gradient hero background, large display H1, teal subtitle.
+       ============================================================ */
+    /* Make special slides fill the entire 1920x1080 logical viewport so
+       their background covers the whole frame. We use the reveal config
+       margin:0 so the .slides container is exactly 1920x1080 and our
+       section paints from corner to corner. We do NOT set display:flex
+       on the section because reveal.js sets `display: block` inline,
+       overriding it. We use an inner `.title-content`/`.divider-content`/
+       `.closing-content` wrapper that is flex. */
+    .reveal .slides section.slide-title {
+      background: var(--blitzy-gradient-hero);
+      color: var(--blitzy-text-on-dark);
+      text-align: center;
+      box-sizing: border-box;
+      width: 1920px;
+      height: 1080px;
+      padding: 0;
+    }
+    .reveal .slides section.slide-title .title-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 1080px;
+      padding-block: 80px;
+      padding-inline: 140px;
+      box-sizing: border-box;
+    }
+    .reveal .slides section.slide-title h1 {
+      color: var(--blitzy-text-on-dark);
+      font-size: 3.2em;
+      line-height: 1.05;
+      margin-bottom: 0.3em;
+      margin-top: 0.3em;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    }
+    .reveal .slides section.slide-title .subtitle {
+      color: var(--blitzy-accent-teal);
+      font-size: 1.3em;
+      font-family: var(--font-display);
+      font-weight: 500;
+      margin-top: 0.3em;
+    }
+    .reveal .slides section.slide-title .metadata {
+      color: rgba(245, 245, 250, 0.85);
+      font-size: 0.75em;
+      font-family: var(--font-mono);
+      margin-top: 1.4em;
+      letter-spacing: 0.05em;
+    }
+    .reveal .slides section.slide-title .title-icon {
+      color: var(--blitzy-accent-teal);
+      margin-bottom: 0.5em;
+      display: block;
+    }
+
+    /* ============================================================
+       Slide type — Section Divider (slide-divider)
+       Navy background, teal H2, gradient bar at top.
+       ============================================================ */
+    .reveal .slides section.slide-divider {
+      background: var(--blitzy-navy);
+      color: var(--blitzy-text-on-dark);
+      text-align: center;
+      box-sizing: border-box;
+      width: 1920px;
+      height: 1080px;
+      padding: 0;
+      /* NOTE: do NOT set position: relative here, and do NOT set
+         display: flex — reveal.js sets `display: block` inline on the
+         section, which overrides our flex setting. We instead use an
+         inner `.divider-content` wrapper that is flex. */
+    }
+    .reveal .slides section.slide-divider .divider-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 1080px;
+      padding-block: 100px;
+      padding-inline: 140px;
+      box-sizing: border-box;
+    }
+    /* Top accent bar for divider slides — implemented as an inline
+       <div class="divider-top-bar"></div> first child of the section.
+       Positioned absolutely relative to the section (which reveal.js
+       gives position:absolute) so it pins to the top edge regardless of
+       any flex layout used by the inner content wrapper. */
+    .divider-top-bar {
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-start: 0;
+      height: 6px;
+      width: 100%;
+      background: var(--blitzy-gradient-divider);
+      box-sizing: border-box;
+      z-index: 2;
+    }
+    .reveal .slides section.slide-divider h2 {
+      color: var(--blitzy-accent-teal);
+      font-size: 3.2em;
+      margin: 0.8em 0 0.4em 0;
+    }
+    .reveal .slides section.slide-divider .subtitle {
+      color: var(--blitzy-neutral-300);
+      font-size: 1.1em;
+      font-family: var(--font-body);
+      font-weight: 500;
+      max-width: 70%;
+      margin: 0 auto;
+    }
+    .reveal .slides section.slide-divider .divider-icon {
+      color: var(--blitzy-accent-teal);
+      margin-bottom: 0.4em;
+      display: block;
+    }
+
+    /* ============================================================
+       Slide type — Closing (slide-closing)
+       Deep navy background, teal H2, gradient accent bar, footer.
+       ============================================================ */
+    .reveal .slides section.slide-closing {
+      background: var(--blitzy-navy-dark);
+      color: var(--blitzy-text-on-dark);
+      text-align: center;
+      box-sizing: border-box;
+      width: 1920px;
+      height: 1080px;
+      padding: 0;
+      /* See slide-title comment — flex layout lives on the wrapper. */
+    }
+    .reveal .slides section.slide-closing .closing-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 1080px;
+      padding-block: 80px;
+      padding-inline: 140px;
+      box-sizing: border-box;
+      position: relative; /* anchor for absolute children if needed */
+    }
+    .reveal .slides section.slide-closing h2 {
+      color: var(--blitzy-accent-teal);
+      font-size: 2.4em;
+      margin-bottom: 0.2em;
+      margin-top: 0;
+      line-height: 1.1;
+    }
+    .reveal .slides section.slide-closing .accent-bar {
+      height: 4px;
+      background: var(--blitzy-gradient-accent-bar);
+      margin: 1em auto;
+      width: 60%;
+    }
+    .reveal .slides section.slide-closing ul {
+      max-width: 70%;
+      margin: 0.4em auto;
+      text-align: left;
+    }
+    .reveal .slides section.slide-closing ul li {
+      color: var(--blitzy-text-on-dark);
+      font-size: 0.95em;
+      margin-bottom: 0.5em;
+      line-height: 1.4;
+    }
+    .reveal .slides section.slide-closing ul li::before {
+      background: var(--blitzy-accent-teal);
+    }
+    .reveal .slides section.slide-closing ul li code {
+      color: var(--blitzy-accent-teal);
+      background: rgba(148, 250, 213, 0.12);
+    }
+    /* Push the footer to the bottom of the closing flex column. */
+    .reveal .slides section.slide-closing .footer {
+      margin-top: auto;
+      color: var(--blitzy-neutral-500);
+      font-family: var(--font-mono);
+      font-size: 0.65em;
+      letter-spacing: 0.05em;
+    }
+    /* Closing arrow in the bottom-right of the flex container. */
+    .reveal .slides section.slide-closing .closing-arrow {
+      align-self: flex-end;
+      color: var(--blitzy-accent-teal);
+      margin-block: 0.8em 0.4em;
+    }
+
+    /* ============================================================
+       Content slides — bullets, KPI grid, tables, code blocks.
+       ============================================================ */
+    .reveal ul { list-style: none; padding-left: 0; margin-top: 0.4em; margin-bottom: 0.4em; }
+    .reveal ul li {
+      padding-left: 1.4em;
+      position: relative;
+      margin-bottom: 0.4em;
+      font-size: 0.85em;
+      line-height: 1.4;
+    }
+    .reveal ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.45em;
+      width: 0.7em;
+      height: 0.7em;
+      background: var(--blitzy-primary);
+      border-radius: 2px;
+      transform: rotate(45deg);
+    }
+
+    /* KPI Card Grid (Slide 2 + reusable)
+       Note: `minmax(0, 1fr)` prevents the grid from blowing out when child
+       content (e.g., unsubstituted template tokens like `<M2.multiplier>`)
+       is wider than the column. The `min-width: 0` on `.kpi-card` allows
+       individual cards to shrink and the `.value` overflow rules prevent
+       horizontal overflow at the column edge. */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1em;
+      margin-top: 0.6em;
+    }
+    .kpi-grid.row2 { margin-top: 0.8em; }
+    .kpi-card {
+      background: white;
+      border-left: 5px solid var(--blitzy-primary);
+      padding: 0.9em 1em;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(45, 28, 119, 0.10);
+      text-align: left;
+      min-height: 100px;
+      min-width: 0; /* allow grid item to shrink below content min-size */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+    .kpi-card .label {
+      font-size: 0.6em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--blitzy-neutral-500);
+      font-weight: 600;
+    }
+    .kpi-card .value {
+      font-size: 1.1em;
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--blitzy-primary-dark);
+      line-height: 1.1;
+      margin-top: 0.2em;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .kpi-card .confidence {
+      font-size: 0.55em;
+      margin-top: 0.4em;
+      padding: 0.2em 0.7em;
+      border-radius: 12px;
+      display: inline-block;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      align-self: flex-start;
+    }
+    .kpi-card .confidence.high   { background: rgba(148, 250, 213, 0.35); color: #1A6B4A; }
+    .kpi-card .confidence.medium { background: rgba(255, 200, 100, 0.30); color: #8B5A00; }
+    .kpi-card .confidence.low    { background: rgba(255, 120, 120, 0.30); color: #A02525; }
+
+    /* Mini KPI cards (Slide 8 etc.) — same minmax(0, 1fr) pattern */
+    .kpi-grid.mini { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4em; max-width: 80%; margin: 1em auto; }
+    .kpi-grid.mini .kpi-card { min-height: 100px; padding: 1em 1.2em; }
+    .kpi-grid.mini .kpi-card .value { font-size: 1.2em; }
+    .kpi-grid.mini .kpi-card .label { font-size: 0.55em; }
+
+    /* Lucide icon helpers */
+    .lucide-icon {
+      vertical-align: middle;
+      margin-right: 0.4em;
+      stroke-width: 1.8;
+    }
+    .reveal ul li .lucide-icon {
+      position: absolute;
+      left: -2.2em;
+      top: 0.1em;
+      color: var(--blitzy-primary);
+      width: 22px; height: 22px;
+    }
+    /* For bullets that include inline icons, indent extra to make room */
+    .reveal ul.icon-bullets li { padding-left: 2.4em; }
+    .reveal ul.icon-bullets li::before { display: none; }
+    .reveal ul.icon-bullets li .lucide-icon {
+      left: 0; top: 0.1em; width: 22px; height: 22px;
+      color: var(--blitzy-primary);
+      position: absolute;
+      margin: 0;
+    }
+    .reveal .slides section.slide-closing ul li .lucide-icon { color: var(--blitzy-accent-teal); }
+    .reveal .slides section.slide-closing ul.icon-bullets li .lucide-icon { color: var(--blitzy-accent-teal); }
+
+    /* Styled tables */
+    .reveal table {
+      font-size: 0.58em;
+      border-collapse: collapse;
+      margin: 1.2em auto;
+      width: 95%;
+      background: white;
+      box-shadow: 0 2px 12px rgba(45, 28, 119, 0.10);
+    }
+    .reveal table th {
+      background: var(--blitzy-primary);
+      color: var(--blitzy-text-on-dark);
+      text-align: left;
+      padding: 0.7em 1em;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.95em;
+      letter-spacing: 0.03em;
+    }
+    .reveal table td {
+      border-bottom: 1px solid var(--blitzy-neutral-300);
+      padding: 0.6em 1em;
+      color: var(--blitzy-text-on-light);
+      vertical-align: top;
+    }
+    .reveal table tr:nth-child(even) td { background: rgba(91, 57, 243, 0.03); }
+    .reveal table tr.blitzy-row td {
+      background: rgba(148, 250, 213, 0.18);
+      font-weight: 600;
+    }
+    .reveal table tr.blitzy-row td:first-child::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--blitzy-primary);
+      border-radius: 50%;
+      margin-right: 0.6em;
+      vertical-align: middle;
+    }
+    /* Placeholder row shown only in the pre-substituted preview state.
+       build_presentation.py substitutes the preceding HTML comment
+       (`<!--actor_table_rows-->`) with real <tr> rows AND removes this row. */
+    .reveal table tr.placeholder-row td {
+      background: rgba(91, 57, 243, 0.05);
+      color: var(--blitzy-neutral-500);
+      font-style: italic;
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 0.85em;
+    }
+    .reveal table .conf {
+      display: inline-block;
+      padding: 0.1em 0.5em;
+      border-radius: 8px;
+      font-size: 0.92em;
+      font-weight: 600;
+      font-family: var(--font-body);
+    }
+    .reveal table .conf.high   { background: rgba(148, 250, 213, 0.35); color: #1A6B4A; }
+    .reveal table .conf.medium { background: rgba(255, 200, 100, 0.30); color: #8B5A00; }
+    .reveal table .conf.low    { background: rgba(255, 120, 120, 0.30); color: #A02525; }
+
+    /* Mermaid diagram container */
+    .mermaid {
+      font-family: var(--font-body);
+      margin: 1em auto;
+      max-width: 92%;
+      text-align: center;
+    }
+    /* Ensure Mermaid node labels are not clipped at the right edge.
+       Mermaid 11.x's foreignObject containers are sized based on the
+       fallback font used during pre-render measurement; once the Inter
+       webfont loads, the text can be a few px wider and gets clipped by
+       overflow:hidden on the foreignObject. Widening the inner div by
+       a small amount adds the missing safety margin. */
+    .mermaid svg foreignObject > div {
+      padding-inline: 6px;
+      overflow: visible !important;
+    }
+    .mermaid svg foreignObject {
+      overflow: visible !important;
+    }
+    /* Use lighter text inside mermaid nodes for contrast against the
+       primary purple fill */
+    .mermaid svg g.node foreignObject p,
+    .mermaid svg g.node foreignObject .nodeLabel,
+    .mermaid svg g.node text { color: var(--blitzy-text-on-dark); fill: var(--blitzy-text-on-dark); }
+
+    /* Slide-level helpers */
+    .note {
+      font-size: 0.78em;
+      color: var(--blitzy-neutral-700);
+      font-style: normal;
+      margin-top: 0.8em;
+      max-width: 88%;
+    }
+    .footnote {
+      font-size: 0.75em;
+      color: var(--blitzy-neutral-500);
+      margin-top: 1em;
+      font-family: var(--font-body);
+      font-style: italic;
+    }
+    .pill-row {
+      display: flex;
+      gap: 0.6em;
+      flex-wrap: wrap;
+      margin-top: 0.6em;
+    }
+    .pill {
+      padding: 0.25em 0.8em;
+      border-radius: 14px;
+      background: rgba(91, 57, 243, 0.08);
+      color: var(--blitzy-primary-dark);
+      font-size: 0.7em;
+      font-family: var(--font-display);
+      font-weight: 500;
+    }
+    .pill .lucide-icon { width: 14px; height: 14px; margin-right: 0.3em; }
+
+    /* Two-column layouts for slides combining tables/diagrams + bullets */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.6em;
+      align-items: start;
+      margin-top: 1em;
+    }
+    .two-col .col-left, .two-col .col-right { min-width: 0; }
+    .two-col .col-right ul { margin-top: 0; }
+
+    /* Heading with leading icon */
+    .heading-with-icon {
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+      margin-bottom: 0.6em;
+    }
+    .heading-with-icon h2 { margin: 0; }
+    .heading-with-icon .lucide-icon {
+      color: var(--blitzy-primary);
+      width: 40px; height: 40px;
+      margin: 0;
+    }
+
+    /* Mermaid charts within content slides */
+    .chart-wrap {
+      background: white;
+      border-radius: 6px;
+      padding: 0.8em 1em;
+      box-shadow: 0 2px 12px rgba(45, 28, 119, 0.08);
+      margin: 0.4em auto;
+    }
+
+    /* Styled HTML bar charts used in place of Mermaid xychart-beta blocks
+       so the deck renders gracefully even before build_presentation.py
+       substitutes numeric values into the placeholder tokens. The bar
+       heights are driven by CSS custom property --phase-bar-h
+       (e.g. style="--phase-bar-h: 65%") that the build script sets per bar. */
+    .phase-chart-title {
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 0.8em;
+      color: var(--blitzy-primary-dark);
+      margin-bottom: 0.4em;
+    }
+    .phase-chart-legend {
+      display: flex;
+      gap: 1.6em;
+      justify-content: center;
+      margin-bottom: 1em;
+      font-size: 0.65em;
+      color: var(--blitzy-neutral-700);
+      font-family: var(--font-body);
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+    .swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .swatch-primary { background: var(--blitzy-primary); }
+    .swatch-teal { background: var(--blitzy-accent-teal); border: 1px solid var(--blitzy-primary-dark); }
+    .swatch-coral { background: #FF7A7A; }
+
+    .phase-chart-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.4em;
+      padding: 0 1em;
+    }
+    .phase-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+    .phase-col-bars {
+      display: flex;
+      gap: 0.8em;
+      align-items: end;
+      height: 140px;
+      padding-bottom: 0.4em;
+      border-bottom: 2px solid var(--blitzy-neutral-300);
+      width: 100%;
+      justify-content: center;
+    }
+    .phase-col-bars.stacked {
+      align-items: center;
+      gap: 0;
+      flex-direction: column-reverse;
+      justify-content: end;
+    }
+    .phase-col-bars.stacked .phase-bar {
+      width: 70px;
+      margin: 0;
+      border-radius: 0;
+    }
+    .phase-col-bars.stacked .phase-bar:last-child {
+      border-radius: 4px 4px 0 0;
+    }
+    .phase-bar {
+      width: 48px;
+      min-height: 18px;
+      max-height: 160px;
+      height: var(--phase-bar-h, 50%);
+      border-radius: 4px 4px 0 0;
+      box-shadow: 0 -1px 4px rgba(45, 28, 119, 0.08) inset;
+      position: relative;
+    }
+    .phase-bar::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) rotate(-22deg);
+      transform-origin: bottom left;
+      font-family: var(--font-mono);
+      font-size: 0.45em;
+      color: var(--blitzy-primary-dark);
+      font-weight: 600;
+      white-space: nowrap;
+      margin-bottom: 2px;
+      letter-spacing: -0.03em;
+    }
+    /* For stacked bar columns, hide individual segment labels (the legend
+       above the chart identifies the colors); the build script can choose
+       to populate a total label per stack column if desired. */
+    .phase-col-bars.stacked .phase-bar::after {
+      display: none;
+    }
+    .phase-col-bars.stacked .phase-bar {
+      width: 100px;
+    }
+    .phase-bar-primary {
+      background: linear-gradient(180deg, var(--blitzy-primary) 0%, var(--blitzy-primary-dark) 100%);
+    }
+    .phase-bar-teal {
+      background: linear-gradient(180deg, var(--blitzy-accent-teal) 0%, var(--blitzy-primary) 100%);
+    }
+    .phase-bar-coral {
+      background: linear-gradient(180deg, #FFB0B0 0%, #FF7A7A 100%);
+    }
+    .phase-bar-value {
+      font-family: var(--font-mono);
+      font-size: 0.55em;
+      color: var(--blitzy-text-on-dark);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .phase-col-label {
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: var(--blitzy-primary-dark);
+      margin-top: 0.6em;
+      font-size: 0.85em;
+    }
+
+    /* Print-friendly fallback (reveal.js handles full print stylesheet) */
+    @media print {
+      .reveal .slides section { page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+  <!--
+    Reveal.js mounting structure. The .slides container holds sixteen slide
+    elements; each one is a single slide. The slide order matches the
+    slide inventory in the agent prompt:
+      1  Title (slide-title)
+      2  Headline KPIs (Content)
+      3  Extraction Architecture (Content + Mermaid)
+      4  Methodology Divider (slide-divider)
+      5  Methodology Detail (Content)
+      6  Flow Metrics Divider (slide-divider)
+      7  Flow Metrics Headline (Content)
+      8  Flow Time + Flow Velocity (Content + Mermaid)
+      9  Stability Metrics Divider (slide-divider)
+     10  Releases + Problem Records (Content)
+     11  Escaped Defects + Approved Exceptions (Content + Mermaid)
+     12  Per-Engineer View Divider (slide-divider)
+     13  Per-Engineer Detail (Content)
+     14  Risk Assessment Divider (slide-divider)
+     15  Risk Detail (Content)
+     16  Closing (slide-closing)
+  -->
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ====================================================
+           SLIDE 1 — Title (slide-title)
+           H1 + subtitle + metadata; large Lucide gauge icon.
+           Non-text visual: Lucide icon.
+           ==================================================== -->
+      <section class="slide-title">
+        <div class="title-content">
+        <i data-lucide="gauge" class="lucide-icon title-icon" style="width:120px;height:120px;"></i>
+        <h1>Development Acceleration Measurement</h1>
+        <p class="subtitle">blitzy-cal &middot; Before/After Blitzy Agent Introduction</p>
+        <p class="metadata">Analysis Window: &lt;analysis_window&gt; &middot; Inflection: &lt;inflection.chosen_date&gt;</p>
+              </div>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 2 — Headline KPIs (Content)
+           8 KPI cards (2 rows of 4) covering the headline
+           multipliers across both flow and stability metrics.
+           Non-text visual: KPI grid (qualifies as non-text).
+           Body word count under 40; no bulleted list used.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="trending-up" class="lucide-icon"></i>
+          <h2>Headline Acceleration Multipliers</h2>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div>
+              <div class="label">M2 Flow Velocity</div>
+              <div class="value">&lt;M2.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M7 Flow Time</div>
+              <div class="value">&lt;M7.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M9 Releases</div>
+              <div class="value">&lt;M9.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M9.confidence_class&gt;">&lt;M9.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M8 Problem Records</div>
+              <div class="value">&lt;M8.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M8.confidence_class&gt;">&lt;M8.confidence&gt;</span>
+          </div>
+        </div>
+        <div class="kpi-grid row2">
+          <div class="kpi-card">
+            <div>
+              <div class="label">M1 Flow Load</div>
+              <div class="value">&lt;M1.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M1.confidence_class&gt;">&lt;M1.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M3 Flow Predictability</div>
+              <div class="value">&lt;M3.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M3.confidence_class&gt;">&lt;M3.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M5 Flow Efficiency</div>
+              <div class="value">&lt;M5.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M5.confidence_class&gt;">&lt;M5.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M11 Escaped Defects</div>
+              <div class="value">&lt;M11.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M11.confidence_class&gt;">&lt;M11.confidence&gt;</span>
+          </div>
+        </div>
+        <p class="note">Multipliers are After/Before ratios. Higher is faster for M2, M3, M5, M9; lower is better for M1, M7, M8, M11.</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 3 — Extraction Architecture (Content + Mermaid)
+           Mermaid pipeline diagram + 3 bullets describing the
+           read-only constraint and cache behavior.
+           Non-text visual: Mermaid diagram.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="git-merge" class="lucide-icon"></i>
+          <h2>Extraction Pipeline</h2>
+        </div>
+        <div class="chart-wrap">
+          <pre class="mermaid">
+graph LR
+  GIT[Git History] --&gt; EXT[Extract Metrics]
+  GH[GitHub REST API] --&gt; EXT
+  LIN[Linear API] --&gt; EXT
+  CI[CI Test Artifacts] --&gt; EXT
+  EXT --&gt; DATA[data/*.json]
+  DATA --&gt; REP[acceleration-report.md]
+  DATA --&gt; DECK[executive-presentation.html]
+  DATA --&gt; DASH[dashboard.md]
+          </pre>
+        </div>
+        <ul>
+          <li>Read-only on the analyzed repository; outputs in <code>/blitzy/reports/acceleration/</code></li>
+          <li>Single <code>metrics_results</code> dictionary populates every report surface; API responses cached</li>
+        </ul>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 4 — Section Divider: Methodology (slide-divider)
+           Non-text visual: large Lucide microscope icon.
+           ==================================================== -->
+      <section class="slide-divider">
+        <div class="divider-top-bar"></div>
+        <div class="divider-content">
+        <i data-lucide="microscope" class="lucide-icon divider-icon" style="width:140px;height:140px;"></i>
+        <h2>Methodology</h2>
+        <p class="subtitle">Identical extraction logic, different date ranges</p>
+              </div>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 5 — Methodology Detail (Content)
+           4 bullets explaining engineering-actor framing.
+           Non-text visual: Lucide users icon + inline icons in bullets.
+           Word count under 40.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="users" class="lucide-icon"></i>
+          <h2>Engineering Actor Framing</h2>
+        </div>
+        <ul class="icon-bullets">
+          <li><i data-lucide="function-square" class="lucide-icon"></i>Single selector <code>engineering_actor(pr, phase)</code>: human in Baseline, Blitzy in After</li>
+          <li><i data-lucide="repeat" class="lucide-icon"></i>Identical extraction logic across phases; only the actor identity branches</li>
+          <li><i data-lucide="clock" class="lucide-icon"></i>Metrics 4 and 5 from actor's perspective; review time is wait time</li>
+          <li><i data-lucide="user-check" class="lucide-icon"></i>Metrics 2, 4, 5, 6, 10 include Blitzy as one row in After aggregations</li>
+        </ul>
+        <p class="footnote">See <code>decision-log.md</code> Row 12 for the selector rationale.</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 6 — Section Divider: Flow Metrics (slide-divider)
+           Non-text visual: large Lucide activity icon.
+           ==================================================== -->
+      <section class="slide-divider">
+        <div class="divider-top-bar"></div>
+        <div class="divider-content">
+        <i data-lucide="activity" class="lucide-icon divider-icon" style="width:140px;height:140px;"></i>
+        <h2>Flow Metrics</h2>
+        <p class="subtitle">Velocity &middot; Predictability &middot; Active Time &middot; Efficiency &middot; Distribution &middot; Time</p>
+              </div>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 7 — Flow Metrics Headline (Content)
+           Table of flow metrics M2,M3,M4,M5,M6,M7.
+           Non-text visual: styled table.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="bar-chart-3" class="lucide-icon"></i>
+          <h2>Metrics 2, 3, 4, 5, 6, 7</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Baseline</th>
+              <th>After</th>
+              <th>Multiplier</th>
+              <th>Confidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>M2 Flow Velocity</td>
+              <td>&lt;M2.baseline&gt;</td>
+              <td>&lt;M2.after&gt;</td>
+              <td>&lt;M2.multiplier&gt;</td>
+              <td><span class="conf &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span></td>
+            </tr>
+            <tr>
+              <td>M3 Flow Predictability</td>
+              <td>&lt;M3.baseline&gt;</td>
+              <td>&lt;M3.after&gt;</td>
+              <td>&lt;M3.multiplier&gt;</td>
+              <td><span class="conf &lt;M3.confidence_class&gt;">&lt;M3.confidence&gt;</span></td>
+            </tr>
+            <tr>
+              <td>M4 Flow Active</td>
+              <td>&lt;M4.baseline&gt;</td>
+              <td>&lt;M4.after&gt;</td>
+              <td>&lt;M4.multiplier&gt;</td>
+              <td><span class="conf &lt;M4.confidence_class&gt;">&lt;M4.confidence&gt;</span></td>
+            </tr>
+            <tr>
+              <td>M5 Flow Efficiency</td>
+              <td>&lt;M5.baseline&gt;</td>
+              <td>&lt;M5.after&gt;</td>
+              <td>&lt;M5.multiplier&gt;</td>
+              <td><span class="conf &lt;M5.confidence_class&gt;">&lt;M5.confidence&gt;</span></td>
+            </tr>
+            <tr>
+              <td>M6 Flow Distribution (feature share)</td>
+              <td>&lt;M6.baseline&gt;</td>
+              <td>&lt;M6.after&gt;</td>
+              <td>&lt;M6.multiplier&gt;</td>
+              <td><span class="conf &lt;M6.confidence_class&gt;">&lt;M6.confidence&gt;</span></td>
+            </tr>
+            <tr>
+              <td>M7 Flow Time</td>
+              <td>&lt;M7.baseline&gt;</td>
+              <td>&lt;M7.after&gt;</td>
+              <td>&lt;M7.multiplier&gt;</td>
+              <td><span class="conf &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="footnote">After period combines Ramp-Up and Steady State weighted by window count.</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 8 — Flow Time + Flow Velocity (Content + Mermaid)
+           Mermaid chart + 2 bullets + 2 mini KPI cards.
+           Non-text visuals: Mermaid xychart + KPI grid.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="line-chart" class="lucide-icon"></i>
+          <h2>Flow Time and Flow Velocity</h2>
+        </div>
+        <div class="chart-wrap">
+          <div class="phase-chart-title">Flow Time (hours) and Flow Velocity (PRs / 2-week window) per phase</div>
+          <div class="phase-chart-legend">
+            <span class="legend-item"><span class="swatch swatch-primary"></span>M7 Flow Time (hours)</span>
+            <span class="legend-item"><span class="swatch swatch-teal"></span>M2 Flow Velocity (PRs / 2-week window)</span>
+          </div>
+          <div class="phase-chart-grid">
+            <div class="phase-col">
+              <div class="phase-col-bars">
+                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 90%" data-label="&lt;M7.baseline&gt;"></div>
+                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 35%" data-label="&lt;M2.baseline&gt;"></div>
+              </div>
+              <div class="phase-col-label">Baseline</div>
+            </div>
+            <div class="phase-col">
+              <div class="phase-col-bars">
+                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 55%" data-label="&lt;M7.ramp_up&gt;"></div>
+                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 60%" data-label="&lt;M2.ramp_up&gt;"></div>
+              </div>
+              <div class="phase-col-label">Ramp-Up</div>
+            </div>
+            <div class="phase-col">
+              <div class="phase-col-bars">
+                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 30%" data-label="&lt;M7.steady_state&gt;"></div>
+                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 85%" data-label="&lt;M2.steady_state&gt;"></div>
+              </div>
+              <div class="phase-col-label">Steady State</div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-grid mini">
+          <div class="kpi-card">
+            <div>
+              <div class="label">M7 Flow Time Multiplier</div>
+              <div class="value">&lt;M7.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span>
+          </div>
+          <div class="kpi-card">
+            <div>
+              <div class="label">M2 Flow Velocity Multiplier</div>
+              <div class="value">&lt;M2.multiplier&gt;</div>
+            </div>
+            <span class="confidence &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span>
+          </div>
+        </div>
+        <ul>
+          <li>M7 measures median wall-clock from first commit on PR branch to merge on default</li>
+          <li>M2 counts merged PRs per 2-week window; bots excluded; Blitzy included as an actor</li>
+        </ul>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 9 — Section Divider: Stability Metrics (slide-divider)
+           Non-text visual: large Lucide shield-check icon.
+           ==================================================== -->
+      <section class="slide-divider">
+        <div class="divider-top-bar"></div>
+        <div class="divider-content">
+        <i data-lucide="shield-check" class="lucide-icon divider-icon" style="width:140px;height:140px;"></i>
+        <h2>Stability Metrics</h2>
+        <p class="subtitle">Problem Records &middot; Releases &middot; Approved Exceptions &middot; Escaped Defects &middot; Defects Out of SLA</p>
+              </div>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 10 — Releases + Problem Records (Content)
+           Table covering M9 and M8 + supporting note.
+           Non-text visual: styled table.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="package-check" class="lucide-icon"></i>
+          <h2>Releases and Problem Records</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Baseline</th>
+              <th>After</th>
+              <th>Multiplier</th>
+              <th>Confidence</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>M9 Releases (per 2-week window)</td>
+              <td>&lt;M9.baseline&gt;</td>
+              <td>&lt;M9.after&gt;</td>
+              <td>&lt;M9.multiplier&gt;</td>
+              <td><span class="conf &lt;M9.confidence_class&gt;">&lt;M9.confidence&gt;</span></td>
+              <td>&lt;M9.source&gt;</td>
+            </tr>
+            <tr>
+              <td>M8 Problem Records (reverts per release)</td>
+              <td>&lt;M8.baseline&gt;</td>
+              <td>&lt;M8.after&gt;</td>
+              <td>&lt;M8.multiplier&gt;</td>
+              <td><span class="conf &lt;M8.confidence_class&gt;">&lt;M8.confidence&gt;</span></td>
+              <td>&lt;M8.source&gt;</td>
+            </tr>
+            <tr>
+              <td>M8 — attributed reverts</td>
+              <td>&lt;M8.baseline_attributed&gt;</td>
+              <td>&lt;M8.after_attributed&gt;</td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>Sub-count</td>
+            </tr>
+            <tr>
+              <td>M8 — unattributable / unreleased</td>
+              <td>&lt;M8.baseline_unattributed&gt;</td>
+              <td>&lt;M8.after_unattributed&gt;</td>
+              <td>&mdash;</td>
+              <td>&mdash;</td>
+              <td>Sub-count</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="footnote">Zero git tags in <code>blitzy-cal</code> triggers M9 fallback to CI deployment events (Low confidence).</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 11 — Escaped Defects + Approved Exceptions (Content + Mermaid)
+           Mermaid stacked bar + M10 KPI card + 1 contextual bullet.
+           Non-text visuals: Mermaid chart + KPI card.
+           Word count under 40.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="bug" class="lucide-icon"></i>
+          <h2>Escaped Defects and Approved Exceptions</h2>
+        </div>
+        <div class="two-col">
+          <div class="col-left">
+            <div class="chart-wrap">
+              <div class="phase-chart-title">M11 Escaped Defects sub-counts (stacked) per phase</div>
+              <div class="phase-chart-legend">
+                <span class="legend-item"><span class="swatch swatch-coral"></span>Regressions (pass &rarr; fail)</span>
+                <span class="legend-item"><span class="swatch swatch-primary"></span>Newly skipped tests</span>
+              </div>
+              <div class="phase-chart-grid">
+                <div class="phase-col">
+                  <div class="phase-col-bars stacked">
+                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 55%" data-label="&lt;M11.baseline_regressions&gt;"></div>
+                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 35%" data-label="&lt;M11.baseline_skipped&gt;"></div>
+                  </div>
+                  <div class="phase-col-label">Baseline</div>
+                </div>
+                <div class="phase-col">
+                  <div class="phase-col-bars stacked">
+                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 40%" data-label="&lt;M11.ramp_up_regressions&gt;"></div>
+                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 45%" data-label="&lt;M11.ramp_up_skipped&gt;"></div>
+                  </div>
+                  <div class="phase-col-label">Ramp-Up</div>
+                </div>
+                <div class="phase-col">
+                  <div class="phase-col-bars stacked">
+                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 25%" data-label="&lt;M11.steady_state_regressions&gt;"></div>
+                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 50%" data-label="&lt;M11.steady_state_skipped&gt;"></div>
+                  </div>
+                  <div class="phase-col-label">Steady State</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-right">
+            <div class="kpi-card" style="margin-bottom:1em;">
+              <div>
+                <div class="label">M10 Approved Exceptions</div>
+                <div class="value">&lt;M10.multiplier&gt;</div>
+              </div>
+              <span class="confidence &lt;M10.confidence_class&gt;">&lt;M10.confidence&gt;</span>
+            </div>
+            <ul>
+              <li>M10 confidence depends on <code>audit_log:read</code> scope; falls back to label and force-push subset</li>
+            </ul>
+          </div>
+        </div>
+        <p class="footnote">M11 bars stack regressions and newly-skipped tests; flaky tests counted only if failing &ge;3 consecutive runs.</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 12 — Section Divider: Per-Engineer View (slide-divider)
+           Non-text visual: large Lucide users-round icon.
+           ==================================================== -->
+      <section class="slide-divider">
+        <div class="divider-top-bar"></div>
+        <div class="divider-content">
+        <i data-lucide="users-round" class="lucide-icon divider-icon" style="width:140px;height:140px;"></i>
+        <h2>Per-Engineer Acceleration</h2>
+        <p class="subtitle">Real names &middot; Blitzy as one engineering actor</p>
+              </div>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 13 — Per-Engineer Detail (Content)
+           Table with top-5 humans + Blitzy row (tinted bg).
+           Non-text visual: styled table.
+           <actor_table_rows> is the placeholder substituted by
+           build_presentation.py with one <tr> per actor.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="user-cog" class="lucide-icon"></i>
+          <h2>Per-Actor Breakdown (After Period)</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Actor</th>
+              <th>M2 Velocity</th>
+              <th>M4 Active</th>
+              <th>M5 Efficiency</th>
+              <th>M6 Distribution</th>
+              <th>M10 Exceptions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!--actor_table_rows: build_presentation.py replaces this comment with one <tr> per top-5 human engineer.-->
+            <tr class="placeholder-row"><td colspan="6">Top-5 human engineer rows are inserted here by build_presentation.py.</td></tr>
+            <tr class="blitzy-row">
+              <td>blitzy-agent</td>
+              <td>&lt;blitzy.m2&gt;</td>
+              <td>&lt;blitzy.m4&gt;</td>
+              <td>&lt;blitzy.m5&gt;</td>
+              <td>&lt;blitzy.m6&gt;</td>
+              <td>&lt;blitzy.m10&gt;</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="footnote">Blitzy is INCLUDED as one engineering actor per user instruction. Per-engineer normalization applies.</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 14 — Section Divider: Risk Assessment (slide-divider)
+           Non-text visual: large Lucide alert-triangle icon.
+           ==================================================== -->
+      <section class="slide-divider">
+        <div class="divider-top-bar"></div>
+        <div class="divider-content">
+        <i data-lucide="alert-triangle" class="lucide-icon divider-icon" style="width:140px;height:140px;"></i>
+        <h2>Risk Assessment</h2>
+        <p class="subtitle">Low-confidence metrics and insufficient-signal gaps</p>
+              </div>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 15 — Risk Detail (Content)
+           4 bullets each with alert-circle inline icon; footnote.
+           Non-text visual: bullet inline icons.
+           Body word count under 40 across all bullets.
+           ==================================================== -->
+      <section>
+        <div class="heading-with-icon">
+          <i data-lucide="shield-alert" class="lucide-icon"></i>
+          <h2>Low-Confidence and Insufficient-Signal Items</h2>
+        </div>
+        <ul class="icon-bullets">
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M10: Low confidence if <code>audit_log:read</code> unavailable; force-push + label fallback</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M12: Insufficient signal if Linear unreachable and no repo SLA source</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M6: confidence drops to Low if unknown rate exceeds 20%</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M9: confidence drops to Low if falling back to CI deployment events</li>
+        </ul>
+        <p class="footnote">Full risk register is in the Risk Assessment section of <code>acceleration-report.md</code>.</p>
+      </section>
+
+      <!-- ====================================================
+           SLIDE 16 — Closing (slide-closing)
+           H2 (3-6 word heading), accent bar, 3 bullets, arrow.
+           Non-text visuals: accent bar + Lucide arrow icon.
+           ==================================================== -->
+      <section class="slide-closing">
+        <div class="closing-content">
+        <h2>Reproducible, Confidence-Tagged, Read-Only</h2>
+        <div class="accent-bar"></div>
+        <ul class="icon-bullets">
+          <li><i data-lucide="git-commit" class="lucide-icon"></i>Blitzy authored 654 commits over 80+ days post-introduction</li>
+          <li><i data-lucide="check-circle-2" class="lucide-icon"></i>All 12 metrics measured with documented confidence tags</li>
+          <li><i data-lucide="book-open" class="lucide-icon"></i>Full reproducibility appendix included in <code>acceleration-report.md</code></li>
+        </ul>
+        <i data-lucide="arrow-right" class="lucide-icon closing-arrow" style="width:64px;height:64px;"></i>
+        <p class="footer">blitzy-cal &middot; &lt;inflection.chosen_date&gt; inflection &middot; Run &lt;run_id&gt; &middot; Rendered &lt;rendered_at&gt;</p>
+              </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       External libraries — pinned versions (non-negotiable):
+         - reveal.js 5.1.0   (jsdelivr)
+         - Mermaid   11.4.0  (jsdelivr)
+         - Lucide    0.460.0 (unpkg)
+       ============================================================ -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    /* ============================================================
+       Mermaid initialization
+       startOnLoad MUST be false because reveal.js renders sections
+       lazily; we explicitly call mermaid.run() after reveal.js
+       initialization and on every slidechanged event to render
+       diagrams on the freshly-shown slide.
+       ============================================================ */
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#5B39F3',
+        primaryTextColor: '#1A1A2E',
+        primaryBorderColor: '#2D1C77',
+        lineColor: '#4A4A5E',
+        secondaryColor: '#94FAD5',
+        tertiaryColor: '#F5F5FA',
+        fontFamily: 'Inter, sans-serif',
+        background: '#FFFFFF'
+      },
+      flowchart: {
+        htmlLabels: false, /* native SVG text — sizes correctly w/o foreignObject overflow clipping */
+        curve: 'basis',
+        padding: 20,
+        nodeSpacing: 50,
+        rankSpacing: 70,
+        useMaxWidth: true
+      },
+      securityLevel: 'loose'
+    });
+
+    /* ============================================================
+       Reveal.js initialization
+       Viewport: 1920x1080 per Executive Presentation rule.
+       Config flags hash, transition, controlsTutorial are user-specified.
+       ============================================================ */
+    const deck = new Reveal({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080,
+      margin: 0, /* Zero margin so special slides paint to the viewport edge. */
+      minScale: 0.2,
+      maxScale: 2.0,
+      slideNumber: 'c/t',
+      center: false,
+      progress: true,
+      controls: true,
+      keyboard: true,
+      overview: true
+    });
+
+    /* ============================================================
+       renderVisuals() — invoked once after deck.initialize() and
+       again on every slidechanged event so that Mermaid diagrams
+       and Lucide icons are rendered each time their containing
+       slide becomes visible.
+
+       Notes on resilience:
+       - Lucide icon creation is synchronous and is wrapped in a
+         try/catch.
+       - Each Mermaid block is rendered INDIVIDUALLY via
+         mermaid.run({ nodes: [el] }) so that a parse error in one
+         block (e.g., during template preview before the build
+         script substitutes placeholder tokens) does NOT abort
+         rendering of the other blocks. The Promise returned by
+         each per-block invocation is given a .catch() so the
+         rejection is caught as a console warning rather than
+         surfacing as an uncaught-in-promise error.
+       - We also mark already-processed elements (data-processed)
+         so re-invocation on slidechanged is a no-op for blocks
+         that already rendered successfully.
+       ============================================================ */
+    function renderVisuals() {
+      try {
+        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.warn('[executive-presentation] Lucide render error:', err);
+      }
+
+      if (typeof mermaid === 'undefined' || typeof mermaid.run !== 'function') {
+        return;
+      }
+
+      const blocks = document.querySelectorAll(
+        '.reveal .slides .mermaid:not([data-processed="true"])'
+      );
+      blocks.forEach((el, idx) => {
+        try {
+          const result = mermaid.run({ nodes: [el], suppressErrors: true });
+          if (result && typeof result.catch === 'function') {
+            result.catch((err) => {
+              console.warn(
+                '[executive-presentation] Mermaid block ' + idx +
+                  ' render error (likely unsubstituted template token):',
+                err && err.message ? err.message : err
+              );
+            });
+          }
+        } catch (err) {
+          console.warn(
+            '[executive-presentation] Mermaid block ' + idx + ' synchronous render error:',
+            err && err.message ? err.message : err
+          );
+        }
+      });
+    }
+
+    /* Wait for web fonts to load before first render so Mermaid
+       measures text widths using the actual Inter font (not a fallback).
+       Without this, foreignObject text containers are sized too narrow
+       and labels are clipped at the right edge. */
+    function fontsReadyPromise() {
+      if (document.fonts && typeof document.fonts.ready === 'object') {
+        return document.fonts.ready;
+      }
+      return Promise.resolve();
+    }
+
+    deck.initialize().then(() => {
+      return fontsReadyPromise();
+    }).then(() => {
+      renderVisuals();
+    });
+
+    deck.on('slidechanged', () => {
+      renderVisuals();
+    });
+
+    /* Re-render once more after the window 'load' event in case the
+       network was slow finishing the Mermaid/Lucide scripts when
+       deck.initialize() resolved. Idempotent for already-processed
+       Mermaid blocks (filtered by :not([data-processed="true"])). */
+    window.addEventListener('load', () => {
+      fontsReadyPromise().then(renderVisuals);
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,10 @@
 # Development Acceleration Measurement — blitzy-cal
 
+## Purpose
+
 This directory contains the deliverable for the Development Acceleration Measurement of the `blitzy-cal` repository. The Before/After boundary is the introduction of Blitzy Agent on **2026-02-25T00:24:31Z** — earliest commit `9d80a5d026` authored by `agent@blitzy.com`. The primary deliverable is [`acceleration-report.md`](./acceleration-report.md) in this same directory; the artifacts described in this README are produced by the extraction harness under [`scripts/`](./scripts/) and are validated against the rules listed in the report's Methodology section.
+
+The purpose of this onboarding document is to take a new developer from a clean machine to a running extraction harness without asking questions. It covers the harness's intent (what it measures and why), the quickstart command sequence (clone, configure, run), the domain context (DORA / Flow Framework primer), the common pitfalls (rate limits, history rewrites, missing data sources), the architecture (extraction pipeline overview), the observability surface (structured logging with correlation IDs), the verification procedure (how to confirm a run was correct), the cross-references (where to find each deliverable artifact), and the suggested next tasks (improvements discovered during development that are out of scope but worth pursuing). The Onboarding rule mandates this scope; the section list below maps each rule requirement to its corresponding H2 section. Per AAP §0.5.2, the eight sections that follow are Quickstart, Domain Context, Common Pitfalls, Architecture, Suggested Next Tasks, Observability — Log Line Schema, Verifying a Run, and Cross-References.
 
 > **Status at a Glance**
 >

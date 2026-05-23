@@ -1,0 +1,17 @@
+# Exclude the GitHub REST API response cache from version control.
+# Rationale: per AAP §0.5.5 (Performance and security considerations) and
+# decision-log.md Row 17 (Cache-by-Default for GitHub API), the harness caches
+# every API response under data/cache/<endpoint>+<query-hash>.json so re-runs
+# are reproducible without exhausting the 5,000-requests-per-hour rate limit.
+# The cache directory is recreated by extract_metrics.py on each run and must
+# never be committed because its contents are environment-specific (token-
+# scoped, time-of-fetch dependent) and would needlessly inflate the repository.
+cache/
+
+# Exclude any per-run scratch files that extraction scripts may emit.
+# Persistent extraction outputs (data/environment.json, data/inflection.json,
+# data/windows.json, data/metric_<N>.json, data/consistency_report.json) are
+# committed normally; only ephemeral or environment-specific files are ignored.
+*.tmp
+*.bak
+.cache/

@@ -154,6 +154,91 @@ WINDOW_DAYS_DEFAULT: int = 14
 
 
 # ---------------------------------------------------------------------------
+# Section 5b — Run ID Validation (security enforcement)
+# ---------------------------------------------------------------------------
+#
+# Constraint authority for ``get_or_create_run_id()`` when a value is supplied
+# via the ``BLITZY_RUN_ID`` environment variable. The run_id is used directly
+# as a filesystem path component (``logs/<run_id>/``) so any value not in this
+# allow-listed character set or exceeding the length cap is rejected before
+# the path is constructed.
+#
+# Threat model (closed by this validation):
+#   * Path traversal — an attacker setting BLITZY_RUN_ID="../../../etc" would
+#     otherwise cause the harness to write log files outside the intended
+#     ``logs/<run_id>/`` scope. (QA Checkpoint B Issue #2.)
+#   * Filesystem ENAMETOOLONG — values longer than the system NAME_MAX limit
+#     would otherwise crash ``Path.mkdir()`` with ``OSError [Errno 36] File
+#     name too long``. (QA Checkpoint B Issue #3.)
+#   * Defense in depth — even though ensure_report_path() forbids absolute
+#     traversal at write boundaries, the per-run logs/ directory is created
+#     before any report-path check could intercept the run_id, so the run_id
+#     itself must be validated at the source.
+#
+# Allow-listed character set: ASCII letters, ASCII digits, dot, underscore,
+# and hyphen. This subset accommodates every common run_id source:
+#   * UUIDv4 strings emitted by the harness fallback path
+#     (e.g., ``3c07cc31-7597-43c6-bc68-80f4c8e159c5``).
+#   * CI-system identifiers such as GitHub Actions ``GITHUB_RUN_ID`` (a
+#     decimal integer) and ``GITHUB_RUN_NUMBER`` (a decimal integer).
+#   * Operator-chosen labels such as ``final-qa-B-1779533379`` or
+#     ``test-id-with-special.chars_123``.
+#
+# Disallowed by design (will fail validation): path separators ``/`` and
+# ``\\``, parent-directory references ``..``, null bytes, whitespace,
+# environment-variable interpolation tokens, and any character outside the
+# allow-list. The 64-character length cap is well below the Linux NAME_MAX
+# (255) but generous enough for UUIDv4 (36) and typical CI build IDs.
+#
+# Validation site: get_or_create_run_id() in this module. The pattern is
+# anchored (``^`` / ``$``) so partial matches are rejected. A violation
+# raises ValueError with a clear diagnostic message naming the variable,
+# the length observed, and the validation pattern; the diagnostic
+# deliberately does NOT echo the offending value to avoid log-injection
+# through error-handling paths.
+
+VALID_RUN_ID_RE: re.Pattern[str] = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+"""Compiled allow-list pattern for BLITZY_RUN_ID values.
+
+Matches one-to-sixty-four characters drawn from the ASCII set
+``[A-Za-z0-9._-]``. Used by :func:`get_or_create_run_id` to reject
+environment-supplied values before they participate in filesystem path
+construction. UUIDv4 strings (the harness's auto-generated fallback)
+match this pattern trivially.
+
+Closes QA Checkpoint B Issue #2 (path traversal via run_id) and Issue #3
+(filesystem ENAMETOOLONG via oversized run_id). See decision-log Row 23
+for the threat-model rationale and alternatives considered."""
+
+
+MAX_RUN_ID_LENGTH: int = 64
+"""Maximum permitted length of a BLITZY_RUN_ID env-var value, in characters.
+
+Mirrors the upper bound of the :data:`VALID_RUN_ID_RE` quantifier and is
+exposed as a module-level constant so error diagnostics can reference the
+limit symbolically rather than embedding a magic number."""
+
+
+RESERVED_RUN_IDS: frozenset[str] = frozenset({".", ".."})
+"""Pure-dot filesystem-reserved names that the regex would otherwise admit.
+
+The :data:`VALID_RUN_ID_RE` allow-list includes the literal ``.`` character
+because real-world run identifiers (UUIDv4 fragments, semver-style labels)
+contain dots. A side effect is that the regex alone admits the
+single-component strings ``.`` (current directory) and ``..`` (parent
+directory). When used in ``Path(LOGS_DIR / run_id)``, those literals would
+resolve to ``LOGS_DIR`` itself or its parent, allowing one level of escape
+above the intended ``logs/<run_id>/`` scope.
+
+Defense-in-depth: :func:`get_or_create_run_id` checks this set after the
+regex and rejects any membership with the same ``ValueError`` it raises
+for regex failures. This closes the residual hardening gap surfaced
+during QA Checkpoint B runtime re-verification (see decision-log Row 23,
+post-merge addendum). New entries should be added here rather than woven
+into the regex so the rationale remains discoverable in one place."""
+
+
+# ---------------------------------------------------------------------------
 # Section 6 — Git Read-Only Allowlist (security enforcement)
 # ---------------------------------------------------------------------------
 #
@@ -227,17 +312,98 @@ _RUN_ID_CACHE: str | None = None
 
 
 def get_or_create_run_id() -> str:
-    """Resolve and cache the run_id for this harness invocation.
+    """Resolve, validate, and cache the run_id for this harness invocation.
 
-    Resolution order: process cache → BLITZY_RUN_ID env var → fresh UUIDv4.
-    The per-run log directory logs/<run_id>/ is eagerly created so handlers
-    can attach without race conditions.
+    Resolution order:
+      1. Process-local cache — returned unchanged on every subsequent call so
+         every script in a single harness run uses the same correlation ID.
+      2. ``BLITZY_RUN_ID`` environment variable — when present and non-empty,
+         validated against :data:`VALID_RUN_ID_RE`. Values that fail
+         validation raise ``ValueError``; the diagnostic message names the
+         variable, the length observed, and the validation pattern so the
+         operator can correct the input without re-running. The offending
+         value itself is NOT echoed back to avoid log-injection paths in
+         caller error handling.
+      3. Fresh UUIDv4 — used when the env var is unset or empty. UUIDv4
+         strings (36 chars, ``[a-f0-9-]``) match :data:`VALID_RUN_ID_RE`
+         trivially, so the fallback never triggers the validation failure.
+
+    The validation step closes two QA Checkpoint B findings plus a
+    defense-in-depth refinement surfaced during runtime re-verification:
+      * **Issue #2 (Medium, path traversal).** Values containing ``/`` or
+        ``..`` would otherwise cause the harness to create the per-run
+        ``logs/`` subdirectory outside the report-directory scope. The
+        validator rejects every character outside ``[A-Za-z0-9._-]`` so
+        path separators are structurally impossible. In addition, the
+        :data:`RESERVED_RUN_IDS` post-check rejects the literal strings
+        ``"."`` and ``".."`` — the only pure-dot single-component values
+        the regex would otherwise admit — so a one-level parent escape
+        through ``Path(LOGS_DIR / "..")`` is also structurally prevented.
+      * **Issue #3 (Low, ENAMETOOLONG).** Values longer than 64 characters
+        would otherwise crash ``Path.mkdir()`` with
+        ``OSError [Errno 36] File name too long`` on Linux filesystems.
+        The 64-char cap is well below the system NAME_MAX (255) but
+        generous enough for UUIDv4 and typical CI build IDs.
+
+    Once a valid run_id is resolved (either via env var or fallback), the
+    per-run log directory ``logs/<run_id>/`` is eagerly created so logger
+    handlers can attach without race conditions.
+
+    Returns:
+        The validated run_id string. Safe to use directly as a filesystem
+        path component.
+
+    Raises:
+        ValueError: If ``BLITZY_RUN_ID`` is set to a value that does not
+            match :data:`VALID_RUN_ID_RE`, or if the value is a member of
+            :data:`RESERVED_RUN_IDS` (``"."`` or ``".."``). The exception
+            message names the environment variable, the observed length,
+            the maximum length (:data:`MAX_RUN_ID_LENGTH`), and the
+            allow-listed character pattern; reserved-name rejections name
+            the specific category instead. The offending value is
+            deliberately omitted from the message to keep error logs free
+            of attacker-controlled content; operators can recover it from
+            their shell history or the calling CI configuration.
     """
     global _RUN_ID_CACHE
     if _RUN_ID_CACHE is not None:
         return _RUN_ID_CACHE
     env_run_id = os.environ.get("BLITZY_RUN_ID", "").strip()
-    _RUN_ID_CACHE = env_run_id if env_run_id else str(uuid.uuid4())
+    if env_run_id:
+        # An env-supplied value is treated as untrusted input. Validate
+        # against the allow-list pattern before any filesystem operation
+        # uses the value. The Linux NAME_MAX is 255 bytes but Path.mkdir()
+        # will raise OSError ENAMETOOLONG before then on many filesystems;
+        # the 64-char cap is intentionally conservative.
+        if not VALID_RUN_ID_RE.fullmatch(env_run_id):
+            raise ValueError(
+                "BLITZY_RUN_ID is invalid: observed length "
+                f"{len(env_run_id)} (maximum "
+                f"{MAX_RUN_ID_LENGTH}); allowed characters are ASCII "
+                "letters, digits, '.', '_', and '-'; allow-list pattern "
+                f"is {VALID_RUN_ID_RE.pattern}. Unset BLITZY_RUN_ID to "
+                "have the harness generate a UUIDv4 automatically."
+            )
+        # Defense-in-depth: even though the regex admits the literal '.'
+        # character (so UUIDv4 fragments and semver-style labels pass),
+        # the pure-dot strings '.' and '..' must be rejected because they
+        # are filesystem-reserved path components that would resolve to
+        # LOGS_DIR itself or its parent. See RESERVED_RUN_IDS for the
+        # threat-model rationale.
+        if env_run_id in RESERVED_RUN_IDS:
+            raise ValueError(
+                "BLITZY_RUN_ID is invalid: the value is a filesystem-"
+                "reserved path component (current-directory '.' or "
+                "parent-directory '..') and would resolve outside the "
+                "intended logs/<run_id>/ scope. Choose a non-dot label "
+                "or unset BLITZY_RUN_ID to have the harness generate a "
+                "UUIDv4 automatically."
+            )
+        _RUN_ID_CACHE = env_run_id
+    else:
+        # Fallback path: a freshly-minted UUIDv4 always matches
+        # VALID_RUN_ID_RE so no second validation is required here.
+        _RUN_ID_CACHE = str(uuid.uuid4())
     (LOGS_DIR / _RUN_ID_CACHE).mkdir(parents=True, exist_ok=True)
     return _RUN_ID_CACHE
 

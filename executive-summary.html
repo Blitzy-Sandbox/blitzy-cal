@@ -19,9 +19,7 @@
 
   <style>
     /* ============================================================
-       Blitzy Reveal Theme — embedded inline per AAP §0.7 Rule 2
-       (canonical theme file blitzy-deck/references/blitzy-reveal-theme.css
-        does not exist in this repository; deviation logged in decision-log.md)
+       Blitzy Reveal Theme
        ============================================================ */
     :root {
       --blitzy-primary: #5B39F3;
@@ -39,6 +37,20 @@
       --blitzy-text: #333333;
       --blitzy-text-muted: #999999;
       --blitzy-text-invert: #FFFFFF;
+      /* Inverted text tokens for use on dark/gradient backgrounds.
+         Tokenized rgba layers preserve readability without hardcoding literals. */
+      --blitzy-text-invert-strong: rgba(255, 255, 255, 0.9);
+      --blitzy-text-invert-soft: rgba(255, 255, 255, 0.85);
+      --blitzy-text-invert-muted: rgba(255, 255, 255, 0.8);
+      --blitzy-text-invert-meta: rgba(255, 255, 255, 0.78);
+      --blitzy-text-invert-caption: rgba(255, 255, 255, 0.75);
+      --blitzy-text-invert-brand: rgba(255, 255, 255, 0.65);
+      /* Glass overlay tokens (tinted whites for chips/pills on gradient slides). */
+      --blitzy-overlay-glass-fill: rgba(255, 255, 255, 0.12);
+      --blitzy-overlay-glass-border: rgba(255, 255, 255, 0.22);
+      /* Shadow tokens derived from --blitzy-primary-dark (#2D1C77) for elevated cards/tables. */
+      --blitzy-shadow-card: 0 8px 24px rgba(45, 28, 119, 0.06);
+      --blitzy-shadow-table: 0 4px 16px rgba(45, 28, 119, 0.08);
       --ff-body: 'Inter', system-ui, sans-serif;
       --ff-display: 'Space Grotesk', 'Inter', sans-serif;
       --ff-mono: 'Fira Code', 'Courier New', monospace;
@@ -138,7 +150,7 @@
       margin-bottom: 32px;
     }
     .reveal section.slide-title .subhead {
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--blitzy-text-invert-muted);
       font-family: var(--ff-body);
       font-weight: 400;
       font-size: 32px;
@@ -151,7 +163,7 @@
       display: inline-flex;
       gap: 24px;
       align-items: center;
-      color: rgba(255, 255, 255, 0.75);
+      color: var(--blitzy-text-invert-caption);
       font-family: var(--ff-mono);
       font-size: 18px;
       letter-spacing: 0.08em;
@@ -182,7 +194,7 @@
     }
     .reveal section.slide-divider .hero-icon { color: var(--blitzy-text-invert); }
     .reveal section.slide-divider .divider-sub {
-      color: rgba(255, 255, 255, 0.78);
+      color: var(--blitzy-text-invert-meta);
       font-family: var(--ff-body);
       font-size: 28px;
       margin-top: 16px;
@@ -224,7 +236,7 @@
       margin-top: 24px;
     }
     .reveal section.slide-closing li {
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--blitzy-text-invert-strong);
       font-family: var(--ff-body);
       font-size: 28px;
       padding-left: 32px;
@@ -244,7 +256,7 @@
       margin-top: auto;
       font-family: var(--ff-mono);
       font-size: 18px;
-      color: rgba(255, 255, 255, 0.65);
+      color: var(--blitzy-text-invert-brand);
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -298,7 +310,7 @@
       border: 1px solid var(--blitzy-border-soft);
       border-radius: 12px;
       padding: 28px 24px;
-      box-shadow: 0 8px 24px rgba(45, 28, 119, 0.06);
+      box-shadow: var(--blitzy-shadow-card);
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -450,7 +462,7 @@
       font-size: 28px;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(45, 28, 119, 0.08);
+      box-shadow: var(--blitzy-shadow-table);
     }
     .sev-table thead th {
       background: var(--blitzy-primary);
@@ -482,9 +494,9 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
-    .sev-table .sev-pill.crit { background: var(--blitzy-primary-deep); color: #fff; }
-    .sev-table .sev-pill.high { background: var(--blitzy-primary); color: #fff; }
-    .sev-table .sev-pill.med  { background: var(--blitzy-primary-light); color: #fff; }
+    .sev-table .sev-pill.crit { background: var(--blitzy-primary-deep); color: var(--blitzy-text-invert); }
+    .sev-table .sev-pill.high { background: var(--blitzy-primary); color: var(--blitzy-text-invert); }
+    .sev-table .sev-pill.med  { background: var(--blitzy-primary-light); color: var(--blitzy-text-invert); }
     .sev-table .sev-pill.low  { background: var(--blitzy-accent-teal); color: var(--blitzy-primary-dark); }
 
     .sev-count { font-family: var(--ff-display); font-weight: 700; color: var(--blitzy-primary-dark); }
@@ -521,17 +533,17 @@
       overflow: visible !important;
       padding: 0 6px !important;
       box-sizing: content-box !important;
-      font-family: 'Inter', system-ui, sans-serif !important;
+      font-family: var(--ff-body) !important;
       font-size: 16px !important;
-      color: #2D1C77 !important;
+      color: var(--blitzy-primary-dark) !important;
       line-height: 1.2 !important;
     }
     .reveal .mermaid svg .nodeLabel,
     .reveal .mermaid svg .label {
       overflow: visible !important;
       white-space: nowrap !important;
-      color: #2D1C77 !important;
-      font-family: 'Inter', system-ui, sans-serif !important;
+      color: var(--blitzy-primary-dark) !important;
+      font-family: var(--ff-body) !important;
       font-size: 16px !important;
     }
     /* Pie chart styles (slide 11 fallback if used) */
@@ -666,13 +678,13 @@
       gap: 10px;
       padding: 6px 14px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: var(--blitzy-overlay-glass-fill);
+      border: 1px solid var(--blitzy-overlay-glass-border);
       font-family: var(--ff-mono);
       font-size: 16px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.85);
+      color: var(--blitzy-text-invert-soft);
     }
 
     /* Lucide global sizing on inline placeholders */
@@ -1182,9 +1194,6 @@ flowchart LR
           renderIconsAndDiagrams();
         });
       }
-
-      // Expose for debugging if needed
-      window.__deck = deck;
     })();
   </script>
 </body>

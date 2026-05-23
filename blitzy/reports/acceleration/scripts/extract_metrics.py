@@ -1739,6 +1739,16 @@ def extract_flow_efficiency(windows: list[dict],
     per phase. This matches the user's specification that Flow Efficiency
     is "Flow Active / Flow Time per PR, median across PRs per phase."
 
+    Per-actor breakdown (AAP §0.1.1 Per-Engineer Views):
+        The returned envelope includes a ``per_actor`` field with one entry
+        per engineering actor present in both ``m4.per_actor`` and
+        ``m7.per_actor``. Each cell is computed as
+        ``M4.per_actor[actor][phase] / M7.per_actor[actor][phase]`` — the
+        same identity that produces the overall phase values, applied
+        cell-by-cell. The overall confidence (``min(M4, M7)``) is inherited
+        by all per-actor cells (no per-cell confidence tagging — only the
+        upstream M4/M7 confidence flags determine reliability).
+
     Confidence inherits ``min(M4.confidence, M7.confidence)`` so a downgrade
     in either upstream metric is reflected here.
     """
@@ -1782,6 +1792,52 @@ def extract_flow_efficiency(windows: list[dict],
     else:
         phase_efficiencies["after"] = derive_after_value(phase_efficiencies)
 
+    # Per-actor efficiency — derived cell-by-cell from M4/M7 per-actor
+    # medians for every actor present in both upstream metrics.
+    # Actors present in only one upstream are skipped to avoid fabricating
+    # numerator/denominator from thin air.
+    m4_per_actor = m4.get("per_actor") or {}
+    m7_per_actor = m7.get("per_actor") or {}
+    per_actor_efficiencies: dict[str, dict[str, float | None]] = {}
+    shared_actors = sorted(set(m4_per_actor.keys()) & set(m7_per_actor.keys()))
+    for actor in shared_actors:
+        m4_cells = m4_per_actor.get(actor) or {}
+        m7_cells = m7_per_actor.get(actor) or {}
+        if not isinstance(m4_cells, dict) or not isinstance(m7_cells, dict):
+            continue
+        actor_phase_efficiencies: dict[str, float | None] = {}
+        for phase in ("baseline", "ramp_up", "steady_state", "post_intro"):
+            active_v = m4_cells.get(phase)
+            time_v = m7_cells.get(phase)
+            if active_v is None or time_v is None:
+                actor_phase_efficiencies[phase] = None
+                continue
+            try:
+                time_f = float(time_v)
+            except (TypeError, ValueError):
+                actor_phase_efficiencies[phase] = None
+                continue
+            if time_f == 0:
+                actor_phase_efficiencies[phase] = None
+                continue
+            actor_phase_efficiencies[phase] = float(active_v) / time_f
+        # After cell for the actor — prefer explicit cells from both
+        # upstream metrics; otherwise derive from non-baseline phases.
+        actor_m4_after = m4_cells.get("after")
+        actor_m7_after = m7_cells.get("after")
+        if actor_m4_after is not None and actor_m7_after is not None:
+            try:
+                m7_after_f = float(actor_m7_after)
+                actor_phase_efficiencies["after"] = (
+                    float(actor_m4_after) / m7_after_f if m7_after_f != 0 else None
+                )
+            except (TypeError, ValueError):
+                actor_phase_efficiencies["after"] = None
+        else:
+            actor_phase_efficiencies["after"] = derive_after_value(
+                actor_phase_efficiencies)
+        per_actor_efficiencies[actor] = actor_phase_efficiencies
+
     multiplier = compute_multiplier(phase_efficiencies, higher_is_better=True)
     confidence = min_confidence([
         m4.get("confidence", "Low"),
@@ -1800,6 +1856,7 @@ def extract_flow_efficiency(windows: list[dict],
         "after": phase_efficiencies.get("after"),
         "multiplier": multiplier,
         "direction": "higher-is-better",
+        "per_actor": per_actor_efficiencies,
         "primary_command": "derived from M4 (Flow Active) / M7 (Flow Time)",
         "m4_confidence": m4.get("confidence"),
         "m7_confidence": m7.get("confidence"),
@@ -2018,6 +2075,16 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
     seconds and groups by the window containing ``merged_at``. Reports the
     per-phase median plus the exclusion rate (PRs whose first commit could
     not be determined, e.g., due to history rewrites or deleted branches).
+
+    Per-actor breakdown:
+        The returned envelope includes a ``per_actor`` field mapping each
+        engineering actor (resolved via ``engineering_actor(pr, phase)``)
+        to a dict of per-phase medians. M7 is NOT listed in the AAP §0.1.1
+        Per-Engineer Views set, but M5 (Flow Efficiency) derives its own
+        per-actor breakdown as ``M4.per_actor / M7.per_actor`` — so the
+        cleanest, most consistent implementation is to compute M7's
+        per-actor medians here alongside the overall per-phase medians
+        (identical methodology — single loop, identical actor selector).
     """
     prs = fetch_all_prs(use_cache)
     if not prs:
@@ -2031,6 +2098,8 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
         raise InsufficientSignalError("no merged PRs available")
 
     per_phase_times: dict[str, list[float]] = defaultdict(list)
+    per_actor_phase_times: dict[str, dict[str, list[float]]] = defaultdict(
+        lambda: defaultdict(list))
     excluded_count = 0
     in_window_count = 0
     total_count = len(merged)
@@ -2050,6 +2119,10 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
             continue
         in_window_count += 1
         phase = window.get("phase") or "baseline"
+        # Resolve the engineering actor through the canonical selector so
+        # the identical-methodology guarantee (AAP §0.5.1) holds across
+        # M4 / M5 / M7 per-actor cells.
+        actor = engineering_actor(pr, phase)
 
         first_iso = compute_first_commit_on_pr_branch(pr, use_cache)
         if first_iso is None:
@@ -2066,6 +2139,7 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
             excluded_count += 1
             continue
         per_phase_times[phase].append(flow_time_seconds)
+        per_actor_phase_times[actor][phase].append(flow_time_seconds)
 
     if not any(per_phase_times.values()):
         raise InsufficientSignalError(
@@ -2082,6 +2156,29 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
             continue
         after_vals.extend(per_phase_times.get(phase, []))
     phase_medians["after"] = statistics.median(after_vals) if after_vals else None
+
+    # Per-actor medians — identical aggregation as the overall pass, just
+    # grouped by actor. Mirrors the M4 (Flow Active) per_actor envelope
+    # so M5 can divide cell-by-cell.
+    per_actor_results: dict[str, dict[str, float | None]] = {}
+    for actor, phase_data in per_actor_phase_times.items():
+        actor_phase_medians: dict[str, float | None] = {}
+        for phase in ALL_KNOWN_PHASES:
+            if phase == "after":
+                continue
+            vals = phase_data.get(phase, [])
+            actor_phase_medians[phase] = (
+                statistics.median(vals) if vals else None
+            )
+        actor_after_vals: list[float] = []
+        for phase in AFTER_PHASES:
+            if phase == "after":
+                continue
+            actor_after_vals.extend(phase_data.get(phase, []))
+        actor_phase_medians["after"] = (
+            statistics.median(actor_after_vals) if actor_after_vals else None
+        )
+        per_actor_results[actor] = actor_phase_medians
 
     multiplier = compute_multiplier(phase_medians, lower_is_better=True)
     denominator = max(in_window_count, 1)
@@ -2104,6 +2201,7 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
         "total_count": total_count,
         "in_window_count": in_window_count,
         "unit": "seconds",
+        "per_actor": per_actor_results,
         "baseline_n": len(per_phase_times.get("baseline", [])),
         "ramp_up_n": len(per_phase_times.get("ramp_up", [])),
         "steady_state_n": len(per_phase_times.get("steady_state", [])),

@@ -30,6 +30,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -277,6 +278,48 @@ class _StructuredJSONFormatter(logging.Formatter):
 _LOGGERS: dict[str, logging.Logger] = {}
 
 
+# Matches the "M<digits>" metric identifier convention used across the
+# extraction harness (M1..M12 in this codebase). Used by
+# ``_structured_logger_file_basename`` to route metric-scoped logger lines
+# to per-metric log files per AAP §0.6.2.
+_METRIC_ID_RE = re.compile(r"^M(\d+)$")
+
+
+def _structured_logger_file_basename(metric_id: str | None, phase: str) -> str:
+    """Resolve the on-disk log filename stem for ``structured_logger``.
+
+    AAP §0.6.2 mandates per-metric log files
+    (``logs/<run_id>/metric_<N>.log`` for N=1..12). This helper enforces
+    that contract:
+
+      * When ``metric_id`` matches the canonical ``M<digits>`` convention
+        (e.g., ``"M1"``..``"M12"``), the basename is ``metric_<N>``.
+      * Otherwise — including when ``metric_id`` is ``None`` — the
+        basename falls back to ``phase`` unchanged so lines emitted by
+        non-metric pipeline stages (``verify_environment``,
+        ``derive_inflection``, ``generate_windows``,
+        ``validate_consistency``, ``harness``, ``github_api``,
+        ``linear_api``) continue to land in their pipeline-stage log
+        files.
+
+    Args:
+        metric_id: The metric identifier in canonical ``"M<N>"`` form when
+            the logger is metric-scoped, otherwise ``None``.
+        phase: The pipeline-stage identifier used as the fallback
+            basename when ``metric_id`` is absent or does not match the
+            canonical convention.
+
+    Returns:
+        The filename stem (without the ``.log`` extension) for the
+        per-run log file the returned logger writes to.
+    """
+    if metric_id:
+        match = _METRIC_ID_RE.match(metric_id)
+        if match:
+            return f"metric_{match.group(1)}"
+    return phase
+
+
 class _MetricContextAdapter(logging.LoggerAdapter):
     """LoggerAdapter that injects _metric_id and _phase into every record."""
 
@@ -293,18 +336,48 @@ class _MetricContextAdapter(logging.LoggerAdapter):
 
 
 def structured_logger(metric_id: str | None = None, phase: str = "harness") -> logging.Logger:
-    """Return a cached logger emitting JSON records to logs/<run_id>/<phase>.log.
+    """Return a cached logger emitting JSON records to a per-run log file.
+
+    Log file naming follows AAP §0.6.2:
+
+      * When ``metric_id`` matches the ``M<digits>`` convention
+        (e.g., ``"M1"``..``"M12"``), the destination is
+        ``logs/<run_id>/metric_<N>.log`` — exactly one file per metric.
+      * Otherwise the destination is ``logs/<run_id>/<phase>.log`` so
+        lines emitted by non-metric pipeline stages remain co-located
+        in their pipeline-stage logs (verify_environment.log,
+        derive_inflection.log, generate_windows.log, extract_metrics.log
+        for harness-level orchestration lines, validate_consistency.log,
+        github_api.log, linear_api.log, harness.log).
 
     INFO and above are mirrored to stderr for interactive visibility.
-    Loggers are cached by (phase, run_id) so repeated calls do not duplicate
-    file handlers.
+
+    Loggers are cached by ``(file_basename, run_id)`` rather than by
+    ``(phase, run_id)`` so different metrics that share the same phase
+    label (``"extract_metrics"``) route their lines to distinct files
+    without duplicating handlers across calls. This is required for the
+    per-metric file structure mandated by the AAP — caching by phase
+    alone would funnel all 12 metrics into a single
+    ``extract_metrics.log`` (the defect this implementation closes).
+
+    Args:
+        metric_id: Identifier of the metric being extracted when the
+            caller is metric-scoped (e.g., ``"M5"``); ``None`` for
+            harness-level / pipeline-stage callers.
+        phase: Pipeline-stage identifier, used as the filename fallback
+            when ``metric_id`` is absent or unrecognized.
+
+    Returns:
+        A ``LoggerAdapter`` that emits JSON records carrying ``metric_id``
+        and ``phase`` as structured fields.
     """
     run_id = get_or_create_run_id()
-    cache_key = f"{phase}::{run_id}"
+    file_basename = _structured_logger_file_basename(metric_id, phase)
+    cache_key = f"{file_basename}::{run_id}"
     if cache_key in _LOGGERS:
         base_logger = _LOGGERS[cache_key]
     else:
-        log_path = LOGS_DIR / run_id / f"{phase}.log"
+        log_path = LOGS_DIR / run_id / f"{file_basename}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         base_logger = logging.getLogger(f"blitzy.acceleration.{cache_key}")
         base_logger.setLevel(logging.DEBUG)

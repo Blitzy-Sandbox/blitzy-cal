@@ -564,10 +564,21 @@ def validate_per_actor_sums(metrics: dict[str, dict[str, Any]]) -> list[str]:
       - M6 (distribution): each per-actor phase distribution should sum
         to ~1.0.
 
-    Skipped when:
+    Structural defects (ERROR — block release):
+      - The ``per_actor`` field is absent from a record listed in
+        METRICS_WITH_PER_ACTOR (AAP §0.1.1 Per-Engineer Views): per-engineer
+        breakdowns are required for M2, M4, M5, M6, M10 and the absence of
+        the field is treated as a contract violation.
+      - The ``per_actor`` field is present but is not a dict.
+
+    Acceptable absences (skipped without error):
       - The metric is not in METRICS_WITH_PER_ACTOR.
-      - Status is insufficient_signal.
-      - per_actor field is absent or not a dict.
+      - Status is insufficient_signal (the metric has no data to break down).
+      - ``per_actor`` is an empty dict ``{}`` (e.g., M10 with no admin
+        audit-log signal): the field is present and well-typed, but the
+        upstream data source yielded no per-actor attribution. Downstream
+        cell-by-cell consistency checks are skipped because there are no
+        cells to validate.
     """
     errors: list[str] = []
 
@@ -577,10 +588,35 @@ def validate_per_actor_sums(metrics: dict[str, dict[str, Any]]) -> list[str]:
             continue
         if record.get("status") == "insufficient_signal":
             continue
+        # Distinguish "field absent" from "field present but empty". A
+        # missing field is a structural defect; an empty dict is a valid
+        # outcome when the data source has no per-actor signal (e.g.,
+        # M10 falling back to label+force-push subset without admin audit).
+        if "per_actor" not in record:
+            errors.append(
+                f"{metric_id} is in METRICS_WITH_PER_ACTOR (AAP §0.1.1 "
+                f"Per-Engineer Views) but its record is missing the "
+                f"required 'per_actor' field"
+            )
+            continue
         per_actor = record.get("per_actor")
-        if not isinstance(per_actor, dict) or not per_actor:
-            # Missing per_actor is non-fatal — only the cross-section consistency
-            # check warrants an error here, not the absence itself.
+        if per_actor is None:
+            errors.append(
+                f"{metric_id} per_actor field is null; expected dict per "
+                f"AAP §0.1.1 (use {{}} when no actor signal is available)"
+            )
+            continue
+        if not isinstance(per_actor, dict):
+            errors.append(
+                f"{metric_id} per_actor must be a dict, got "
+                f"{type(per_actor).__name__}"
+            )
+            continue
+        if not per_actor:
+            # Empty per_actor — field present and well-typed, but no
+            # actor-level data to validate. This is acceptable (see
+            # docstring) so downstream cell checks are skipped without
+            # raising an error.
             continue
 
         if metric_id in DISTRIBUTION_METRICS:

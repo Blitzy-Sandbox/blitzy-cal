@@ -33,6 +33,13 @@ Checks performed (each emits a list[str] of human-readable errors):
      are non-negative integers; M3-specific check that confidence ==
      "Insufficient signal" when any window count < 4; M11-specific check
      that ``sub_counts`` contains both ``regressions`` and ``newly_skipped``.
+  8. Duration formatting parity — for every metric whose ``unit`` field
+     is ``"seconds"`` (M4, M7), the phase scalars and per-actor sub-records
+     store finite non-negative numerics so the canonical
+     ``format_duration_seconds()`` helper produces identical
+     human-readable strings across every report surface. This is the
+     activation of decision-log Row 22's deferred
+     ``check_duration_formatting_parity()`` assertion.
 
 Insufficient-signal metrics are NOT errors — per AAP §0.7.3 Boundary 2,
 "Insufficient signal — [reason]" is the correct response when data is
@@ -80,7 +87,9 @@ if str(SCRIPT_DIR) not in sys.path:
 from _shared import (  # noqa: E402 — sys.path mutation must precede import
     DATA_DIR,
     command_log_append,
+    format_duration_seconds,
     get_or_create_run_id,
+    is_duration_seconds_metric,
     iso_now_utc,
     load_all_metrics,
     load_json,
@@ -1123,6 +1132,174 @@ def validate_sample_sizes(metrics: dict[str, dict[str, Any]]) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Section 9b — Duration Formatting Parity (Decision-log Row 22)
+# ---------------------------------------------------------------------------
+
+
+def validate_duration_formatting_parity(
+    metrics: dict[str, dict[str, Any]],
+) -> list[str]:
+    """Verify cross-surface duration-formatting parity for unit=seconds metrics.
+
+    Review Finding 2 (MAJOR — Rule 4 / Cross-Surface Consistency): the
+    Per-Engineer Acceleration table in ``acceleration-report.md``
+    previously rendered M4 Flow Active values as raw seconds
+    (e.g., ``54790``) while the Executive Summary and the executive
+    presentation deck rendered the same values as the human-readable
+    string (``15.2h``). Decision-log Row 22 documents the canonical
+    ``format_duration_seconds()`` helper in ``scripts/_shared.py::Section
+    17b`` that resolves the drift, and explicitly deferred a
+    ``check_duration_formatting_parity()`` consistency assertion as
+    redundant with the shared-helper invariant. The Checkpoint A
+    finding established that the per-engineer renderer bypassed the
+    helper, so this validator implements the deferred parity check to
+    prevent regression.
+
+    For every metric whose ``unit`` field equals ``"seconds"`` (the
+    selector used by ``is_duration_seconds_metric()`` and the renderer
+    routing decision), this function asserts that:
+
+    1. The numeric scalar field ``baseline``, ``ramp_up``,
+       ``steady_state``, ``post_intro``, and ``after`` are non-negative
+       finite numbers when present, since negative seconds and NaN are
+       invalid durations and would render as ``"-Ns"`` / ``"N/A"``
+       respectively, both of which leak the storage format into the
+       reader-facing surface.
+    2. The ``per_actor`` sub-records carry the same numeric type as the
+       parent metric for those fields, ensuring that a future renderer
+       that calls ``format_duration_seconds()`` will produce identical
+       output across all phases and all actors.
+    3. The shared ``format_duration_seconds()`` helper itself produces
+       a non-empty, non-raw-integer string for the canonical value of
+       each phase (probe assertion — guards against accidental policy
+       drift in ``_shared.py``).
+
+    Returns a list[str] of human-readable error messages; the empty
+    list means parity holds.
+
+    Args:
+        metrics: The loaded metric dictionary from ``load_all_metrics``.
+    """
+    errors: list[str] = []
+    duration_phase_fields = ("baseline", "ramp_up", "steady_state",
+                              "post_intro", "after")
+
+    for metric_id, record in metrics.items():
+        if not isinstance(record, dict):
+            continue
+        if not is_duration_seconds_metric(record):
+            continue
+        # Skip insufficient-signal metrics — their value fields are
+        # None by convention and the renderer surfaces the literal
+        # "Insufficient signal — <reason>" string instead.
+        if record.get("status") == "insufficient_signal":
+            continue
+
+        # Check 1 — phase scalars are non-negative finite numbers
+        for field in duration_phase_fields:
+            value = record.get(field)
+            if value is None:
+                continue
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                errors.append(
+                    f"{metric_id}.{field}: duration metrics (unit=seconds) "
+                    f"must store numeric values; got {type(value).__name__}: "
+                    f"{value!r}"
+                )
+                continue
+            if isinstance(value, float) and not math.isfinite(value):
+                errors.append(
+                    f"{metric_id}.{field}: duration metrics (unit=seconds) "
+                    f"must store finite values; got {value!r}"
+                )
+                continue
+            if value < 0:
+                errors.append(
+                    f"{metric_id}.{field}: duration metrics (unit=seconds) "
+                    f"must be non-negative; got {value!r}"
+                )
+
+        # Check 2 — per_actor numeric type parity with the parent record
+        per_actor = record.get("per_actor")
+        if isinstance(per_actor, dict):
+            for actor, payload in per_actor.items():
+                if not isinstance(payload, dict):
+                    continue
+                for field in duration_phase_fields:
+                    if field not in payload:
+                        continue
+                    actor_value = payload[field]
+                    if actor_value is None:
+                        continue
+                    if (
+                        not isinstance(actor_value, (int, float))
+                        or isinstance(actor_value, bool)
+                    ):
+                        errors.append(
+                            f"{metric_id}.per_actor[{actor!r}].{field}: "
+                            f"duration metrics (unit=seconds) must store "
+                            f"numeric values; got "
+                            f"{type(actor_value).__name__}: {actor_value!r}"
+                        )
+                        continue
+                    if (
+                        isinstance(actor_value, float)
+                        and not math.isfinite(actor_value)
+                    ):
+                        errors.append(
+                            f"{metric_id}.per_actor[{actor!r}].{field}: "
+                            f"duration metrics (unit=seconds) must store "
+                            f"finite values; got {actor_value!r}"
+                        )
+                        continue
+                    if actor_value < 0:
+                        errors.append(
+                            f"{metric_id}.per_actor[{actor!r}].{field}: "
+                            f"duration metrics (unit=seconds) must be "
+                            f"non-negative; got {actor_value!r}"
+                        )
+
+        # Check 3 — format_duration_seconds produces a non-raw-integer
+        # string for the canonical phase value (defensive probe against
+        # accidental drift in scripts/_shared.py::Section 17b).
+        probe_fields: list[str] = []
+        for field in duration_phase_fields:
+            value = record.get(field)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                if math.isfinite(value) and value >= 0:
+                    probe_fields.append(field)
+                    break
+        if probe_fields:
+            field = probe_fields[0]
+            value = record[field]
+            rendered = format_duration_seconds(value)
+            # Reject empty strings and pure-numeric strings (the raw
+            # storage form leaking through). Accept the canonical
+            # human-readable suffixes ``s``, ``m``, ``h``, ``d``.
+            if not isinstance(rendered, str) or not rendered:
+                errors.append(
+                    f"{metric_id}: format_duration_seconds({value!r}) "
+                    f"returned non-string or empty: {rendered!r}"
+                )
+            elif rendered.replace(".", "").replace("-", "").isdigit():
+                errors.append(
+                    f"{metric_id}: format_duration_seconds({value!r}) "
+                    f"returned a raw numeric string {rendered!r}; expected "
+                    f"a human-readable duration suffix (s/m/h/d). This "
+                    f"indicates the canonical helper has drifted and "
+                    f"cross-surface parity (Rule 4) is at risk."
+                )
+            elif not rendered[-1] in ("s", "m", "h", "d"):
+                errors.append(
+                    f"{metric_id}: format_duration_seconds({value!r}) "
+                    f"returned {rendered!r}; expected a string ending "
+                    f"in 's', 'm', 'h', or 'd'."
+                )
+
+    return errors
+
+
+# ---------------------------------------------------------------------------
 # Section 10 — Insufficient-Signal Reporting (Informational)
 # ---------------------------------------------------------------------------
 
@@ -1278,6 +1455,7 @@ def validate(args: argparse.Namespace) -> int:
                 "schema", "multiplier_derivation", "per_actor_sums",
                 "per_module_weights", "window_counts",
                 "confidence_tiers", "sample_sizes",
+                "duration_formatting_parity",
             ],
         }},
     )
@@ -1308,6 +1486,12 @@ def validate(args: argparse.Namespace) -> int:
     )
 
     # Run every check; collect their error lists into a single dict.
+    # The ``duration_formatting_parity`` check (added in response to
+    # Final Checkpoint A Major Finding 2) implements the deferred
+    # ``check_duration_formatting_parity()`` decision-log Row 22 noted
+    # as redundant with the shared-helper invariant; in practice the
+    # per-engineer renderer bypassed the helper, so the assertion is
+    # promoted from deferred to active.
     check_results: dict[str, list[str]] = {
         "schema": validate_schema(metrics),
         "multiplier_derivation": validate_multiplier_derivation(metrics),
@@ -1316,6 +1500,7 @@ def validate(args: argparse.Namespace) -> int:
         "window_counts": validate_window_counts(metrics, data_dir=data_dir),
         "confidence_tiers": validate_confidence_tiers(metrics),
         "sample_sizes": validate_sample_sizes(metrics),
+        "duration_formatting_parity": validate_duration_formatting_parity(metrics),
     }
 
     # Detect missing required inputs flagged by individual validators.

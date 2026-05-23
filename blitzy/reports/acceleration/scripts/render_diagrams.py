@@ -57,6 +57,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -68,6 +69,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from _shared import (  # noqa: E402  — sys.path mutation must precede import
     ACCELERATION_REPORT_PATH,
+    DATA_DIR,
     EXECUTIVE_PRESENTATION_PATH,
     command_log_append,
     get_or_create_run_id,
@@ -574,13 +576,22 @@ def validate_file(
     kind: str,
     run_id: str,
     use_cli: bool,
-) -> tuple[int, int]:
+) -> tuple[int, int, list[dict]]:
     """Validate every Mermaid block in ``path`` and log results.
 
     When ``use_cli`` is True, :func:`cli_syntax_check` is attempted first.
     If it raises :class:`CLIUnavailable` mid-run, this function falls back
     to :func:`regex_syntax_check` for the remainder of the file's blocks.
     When ``use_cli`` is False, the regex validator is used exclusively.
+
+    Review Finding 6 (MINOR — Documentation / Hallucination): the
+    README's Script Responsibilities table documents this script as
+    writing ``data/diagram_validation.json``. The previous return
+    contract surfaced only counts, so the renderer could not assemble
+    the documented per-block summary. The new return tuple includes
+    a ``per_block`` list of ``{block_index, line_number, status,
+    errors, validator}`` dictionaries which the CLI entry point
+    aggregates into the persisted validation summary.
 
     Args:
         path: Filesystem path to the source file to validate.
@@ -590,8 +601,10 @@ def validate_file(
         use_cli: When True, prefer the CLI validator; when False, regex only.
 
     Returns:
-        ``(error_count, block_count)`` — error_count is the number of blocks
-        with at least one syntax error; block_count is the total discovered.
+        ``(error_count, block_count, per_block)`` — error_count is the
+        number of blocks with at least one syntax error; block_count is
+        the total discovered; per_block is a list of per-block records
+        suitable for serialization to ``data/diagram_validation.json``.
 
     Raises:
         ValueError: when ``kind`` is not ``"markdown"`` or ``"html"``.
@@ -613,7 +626,7 @@ def validate_file(
                                "error_type": type(exc).__name__,
                                "error": str(exc)}},
         )
-        return (1, 0)
+        return (1, 0, [])
 
     if kind == "markdown":
         blocks = extract_mermaid_blocks_from_markdown(text)
@@ -627,6 +640,7 @@ def validate_file(
 
     block_count = len(blocks)
     error_count = 0
+    per_block: list[dict] = []
 
     logger.info(
         f"Validating {block_count} Mermaid blocks in {path.name}",
@@ -657,6 +671,20 @@ def validate_file(
                 errors = regex_syntax_check(source)
         else:
             errors = regex_syntax_check(source)
+
+        block_record = {
+            "block_index": index,
+            "line_number": line_number,
+            "block_label": block_label,
+            "validator": "cli" if cli_active else "regex",
+            "status": "ok" if not errors else "error",
+            "errors": list(errors),
+            "char_length": len(source),
+            "first_directive": _first_meaningful_line(
+                _strip_init_directives(source)
+            ),
+        }
+        per_block.append(block_record)
 
         if errors:
             error_count += 1
@@ -694,7 +722,7 @@ def validate_file(
         f"{path.name}: {block_count} blocks, {error_count} with errors",
         extra={"context": {"summary": json.loads(json.dumps(summary))}},
     )
-    return (error_count, block_count)
+    return (error_count, block_count, per_block)
 
 
 # === CLI entry point =======================================================
@@ -853,6 +881,7 @@ def main(argv: list[str] | None = None) -> int:
             "blocks": 0,
             "errors": 0,
             "status": "skipped",
+            "per_block": [],
         },
         "deck": {
             "requested": not args.skip_deck,
@@ -863,6 +892,7 @@ def main(argv: list[str] | None = None) -> int:
             "blocks": 0,
             "errors": 0,
             "status": "skipped",
+            "per_block": [],
         },
     }
 
@@ -886,9 +916,10 @@ def main(argv: list[str] | None = None) -> int:
             )
             continue
         surface["present"] = True
-        errors, blocks = validate_file(path, kind, run_id, use_cli)
+        errors, blocks, per_block = validate_file(path, kind, run_id, use_cli)
         surface["blocks"] = blocks
         surface["errors"] = errors
+        surface["per_block"] = per_block
         if blocks < surface["min"] and not args.allow_zero_blocks:
             surface["status"] = "below_min_blocks"
             logger.error(
@@ -929,6 +960,67 @@ def main(argv: list[str] | None = None) -> int:
                            },
                            "validator": "cli" if use_cli else "regex"}},
     )
+
+    # ----------------------------------------------------------------
+    # Persist the validation summary to data/diagram_validation.json.
+    #
+    # Review Finding 6 (MINOR — Documentation / Hallucination): the
+    # README's Script Responsibilities table documents this script as
+    # writing ``data/diagram_validation.json``. The previous
+    # implementation never produced the file. The renderer now writes
+    # the structured per-block summary to that path so a future
+    # maintainer reading the README finds what the documentation
+    # promises.
+    # ----------------------------------------------------------------
+    output_path = DATA_DIR / "diagram_validation.json"
+    validation_summary = {
+        "run_id": run_id,
+        "rendered_at": datetime.now(timezone.utc).isoformat(),
+        "validator": "cli" if use_cli else "regex",
+        "total_blocks": total_blocks,
+        "total_errors": total_errors,
+        "requested_surfaces": requested_surfaces,
+        "missing_surfaces": missing_surfaces,
+        "below_min_surfaces": below_min_surfaces,
+        "per_surface": {
+            name: {
+                "requested": s["requested"],
+                "path": str(s["path"]),
+                "kind": s["kind"],
+                "min_blocks": s["min"],
+                "present": s["present"],
+                "blocks": s["blocks"],
+                "errors": s["errors"],
+                "status": s["status"],
+                "per_block": s["per_block"],
+            }
+            for name, s in per_surface.items()
+        },
+    }
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(
+            json.dumps(validation_summary, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        command_log_append("write", str(output_path))
+        logger.info(
+            f"diagram_validation.json written: {output_path}",
+            extra={"context": {"output_path": str(output_path),
+                               "total_blocks": total_blocks,
+                               "total_errors": total_errors}},
+        )
+    except OSError as exc:
+        # Treat persistence failure as a non-fatal warning so the
+        # primary validation verdict still determines the exit code.
+        # The README claim is fulfilled best-effort; an unwritable
+        # data directory is rare in practice and surfaced via the log.
+        logger.warning(
+            f"Failed to write diagram_validation.json: {exc}",
+            extra={"context": {"output_path": str(output_path),
+                               "error_type": type(exc).__name__,
+                               "error": str(exc)}},
+        )
 
     # Exit code semantics (Review Finding 1 / Finding 2):
     #

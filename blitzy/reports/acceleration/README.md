@@ -219,7 +219,7 @@ The `scripts/` directory contains nine Python files: `_shared.py` (the `engineer
 | `validate_consistency.py` | `data/metric_*.json` | `data/consistency_report.json` | Cross-checks values referenced across report sections; exits non-zero on mismatch |
 | `build_report.py` | `data/*.json`, `logs/<run_id>/commands.log` | `acceleration-report.md` | Renders the main Markdown report; runs the subjective-qualifier grep pass |
 | `build_presentation.py` | `data/*.json` | `executive-presentation.html` | Renders the reveal.js 5.1.0 deck with pinned CDN URLs |
-| `render_diagrams.py` | `acceleration-report.md`, `executive-presentation.html` | `data/diagram_validation.json` | Validates embedded Mermaid block syntax |
+| `render_diagrams.py` | `acceleration-report.md`, `executive-presentation.html` | `data/diagram_validation.json`, `logs/<run_id>/render_diagrams.log` | Validates embedded Mermaid block syntax (CLI primary, regex fallback); writes a per-surface validation summary with the per-block status to `data/diagram_validation.json` |
 
 All scripts use only Python standard library modules — `urllib.request`, `json`, `subprocess`, `logging`, `uuid`, `statistics`, `datetime`, `csv`, `re`, `argparse`, `pathlib`. The deliberate omission of third-party packages eliminates any `pip install` step from the Quickstart and removes the dependency surface that would otherwise need to be tracked in a `requirements.txt`.
 
@@ -299,6 +299,6 @@ The following external references are consulted by the harness or cited by the r
 - reveal.js documentation: <https://revealjs.com>
 - Mermaid diagram syntax: <https://mermaid.js.org>
 - Lucide icon library: <https://lucide.dev>
-- Linear API reference: <https://linear.app/docs/api>
+- Linear API reference: <https://linear.app/developers>
 
 None of the URLs above are fetched at report-render time; they are reference targets for human readers and audit reviewers only.

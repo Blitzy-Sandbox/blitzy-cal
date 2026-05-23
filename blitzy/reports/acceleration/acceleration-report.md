@@ -4,7 +4,7 @@ This report quantifies the change in twelve flow and operational metrics for the
 
 The same extraction logic is applied to both periods with only the date filter and engineering-actor identity branching. Temporal phases are: Baseline (before inflection), Ramp-Up (first 90 days post-introduction), and Steady State (90+ days post-introduction). If fewer than 90 days of post-introduction data exist at run time, the report reverts to "Baseline vs Post-Introduction only." Windows are 2 weeks aligned to Monday starts.
 
-This file was rendered at `2026-05-23T09:19:56.749449+00:00` (UTC) by `scripts/build_report.py` from `data/metric_*.json`. The correlation ID for this run is `test_no_commands`; logs are co-located under `logs/test_no_commands/`. Every numeric value in this report carries a confidence tag (High / Medium / Low) derived from the actual data source used; every numeric value also has a corresponding entry in the Reproducibility Appendix and a row in the Requirements Traceability Matrix.
+This file was rendered at `2026-05-23T10:38:58.654581+00:00` (UTC) by `scripts/build_report.py` from `data/metric_*.json`. The correlation ID for this run is `qa-finalA-fixes-verify-1779532737`; logs are co-located under `logs/qa-finalA-fixes-verify-1779532737/`. Every numeric value in this report carries a confidence tag (High / Medium / Low) derived from the actual data source used; every numeric value also has a corresponding entry in the Reproducibility Appendix and a row in the Requirements Traceability Matrix.
 
 ---
 
@@ -49,18 +49,18 @@ This section appears before every Metric Deep-Dive per Rule 6 (Environment First
 |-----------|-------|
 | Repository URL | `https://github.com/Blitzy-Sandbox/blitzy-cal.git` |
 | Git version | `git version 2.51.0` |
-| Total commit count | `16975` |
+| Total commit count | `16982` |
 | Active branch count | `24` |
 | Submodule state | `none` |
 | Commit date range | `2021-03-10 → 2026-05-23` |
-| Extraction timestamp | `2026-05-23T04:46:00.504162+00:00` (UTC) |
+| Extraction timestamp | `2026-05-23T10:38:57.474863+00:00` (UTC) |
 | Python version | `3.13.7 (main, Mar  3 2026, 12:19:54) [GCC 15.2.0]` |
 | OS | `Linux-6.6.122+-x86_64-with-glibc2.42` |
-| Run ID (correlation) | `test_no_commands` |
-| Git HEAD SHA | `83efb405508440630e7549a04166989b3a385f89` |
+| Run ID (correlation) | `qa-finalA-fixes-verify-1779532737` |
+| Git HEAD SHA | `b773d21e66913418abc278f577dc28edd091bc5f` |
 | Default branch | `main` |
 
-The values above identify the exact commit, branch, and runtime under which the metric figures in this report were derived. The same `test_no_commands` value is the directory name used for per-run logs at `logs/test_no_commands/` and is referenced from the Reproducibility Appendix.
+The values above identify the exact commit, branch, and runtime under which the metric figures in this report were derived. The same `qa-finalA-fixes-verify-1779532737` value is the directory name used for per-run logs at `logs/qa-finalA-fixes-verify-1779532737/` and is referenced from the Reproducibility Appendix.
 
 ---
 
@@ -222,10 +222,13 @@ The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all` and filte
 | Baseline | `0` | `129` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `1.43` | `7` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `lower-is-better`).
+`N/A` (direction: `lower-is-better`). After value: `1.43`.
 
 ### Trend Diagram
 
@@ -266,10 +269,13 @@ The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=closed` and fi
 | Baseline | `0` | `129` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `1` | `7` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `higher-is-better`).
+`N/A` (direction: `higher-is-better`). After value: `1`.
 
 ### Trend Diagram
 
@@ -310,10 +316,13 @@ The harness reuses `data/metric_2.json` and computes mean and stdev across the w
 | Baseline | `N/A` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `1` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `higher-is-better`).
+`N/A` (direction: `higher-is-better`). After value: `1`.
 
 ### Trend Diagram
 
@@ -354,10 +363,13 @@ For each merged PR, the harness walks the timeline events sorted by `created_at`
 | Baseline | `N/A` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `15.2h` | `7` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). M4 is a duration metric (unit: seconds); values are rendered via the canonical `format_duration_seconds()` helper so the Markdown report and the deck display identical strings (e.g., `15.2h`).
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `lower-is-better`).
+`N/A` (direction: `lower-is-better`). After value: `15.2h`.
 
 ### Trend Diagram
 
@@ -398,10 +410,13 @@ The harness consumes the per-PR values from `data/metric_4.json` (Flow Active) a
 | Baseline | `N/A` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `0.09` | `7` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `higher-is-better`).
+`N/A` (direction: `higher-is-better`). After value: `0.09`.
 
 ### Trend Diagram
 
@@ -442,10 +457,13 @@ A three-tier waterfall is applied to each merged PR. Tier 1 checks for a linked 
 | Baseline | `N/A` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `defect=0.86, risk-compliance=0.14` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). For M6 the cell shows the feature-share component of the distribution dictionary; the full categorical breakdown appears in the Category Distribution by Phase table below.
 
 ### Multiplier (feature share After / Before)
 
-`distribution_shift` (direction: `distribution`).
+`distribution_shift` (direction: `distribution`). After distribution: `N/A`.
 
 ### Trend Diagram
 
@@ -496,10 +514,13 @@ For each merged PR, the harness runs `git log --format=%aI --reverse {MERGE_BASE
 | Baseline | `N/A` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `4.5d` | `7` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). M7 is a duration metric (unit: seconds); values are rendered via the canonical `format_duration_seconds()` helper so the Markdown report and the deck display identical strings (e.g., `4.5d`).
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `lower-is-better`).
+`N/A` (direction: `lower-is-better`). After value: `4.5d`.
 
 ### Trend Diagram
 
@@ -542,10 +563,13 @@ The harness identifies revert commits on the default branch via `git log --grep=
 | Baseline | `0` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `0` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `lower-is-better`).
+`N/A` (direction: `lower-is-better`). After value: `0`.
 
 ### Trend Diagram
 
@@ -597,10 +621,13 @@ The harness tries the three sources in user-specified precedence. The first sour
 | Baseline | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `0` |
 | Ramp-Up | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `0` |
 | Steady State | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `0` |
+| Post-Introduction (fallback) | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). When the metric reports Insufficient signal, every row renders the literal Insufficient-signal reason.
 
 ### Multiplier (After / Before)
 
-`Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` (direction: `N/A`).
+`Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` (direction: `N/A`). After value: `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)`.
 
 ### Trend Diagram
 
@@ -643,10 +670,13 @@ The harness queries the GitHub Audit Log API for the four bypass event types if 
 | Baseline | `0` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
+| Post-Introduction (fallback) | `0` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). M10 confidence is Low by default unless the GitHub token grants `audit_log:read` scope.
 
 ### Multiplier (After / Before)
 
-`N/A` (direction: `lower-is-better`).
+`N/A` (direction: `lower-is-better`). After value: `0`.
 
 ### Trend Diagram
 
@@ -689,10 +719,13 @@ The harness queries `/repos/.../actions/runs` for the workflows that produce JUn
 | Baseline | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
 | Ramp-Up | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
 | Steady State | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
+| Post-Introduction (fallback) | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). When the metric reports Insufficient signal, every row renders the literal Insufficient-signal reason.
 
 ### Multiplier (After / Before)
 
-`Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` (direction: `N/A`).
+`Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` (direction: `N/A`). After value: `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found`.
 
 ### Trend Diagram
 
@@ -743,10 +776,13 @@ The harness first checks for a Linear API key. If present, the harness queries `
 | Baseline | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `0` |
 | Ramp-Up | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `0` |
 | Steady State | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `0` |
+| Post-Introduction (fallback) | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `0` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). When the metric reports Insufficient signal, every row renders the literal Insufficient-signal reason.
 
 ### Multiplier (After / Before)
 
-`Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` (direction: `N/A`).
+`Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` (direction: `N/A`). After value: `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook`.
 
 ### Trend Diagram
 
@@ -773,16 +809,16 @@ This table is the Rule 1 (Data Provenance) verification surface. Every numeric v
 
 | Metric | Requirement (AAP § ref) | Extraction Command | Raw Output Path | Derived Value | Reported Number | Confidence |
 |--------|-------------------------|--------------------|-----------------|----------------|------------------|------------|
-| M1 Flow Load | §0.1.1 row 1 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all&sort=created&direction=asc (paginated)` | `data/metric_1.json` | `metrics_results["M1"]["multiplier"]` | N/A | High |
-| M2 Flow Velocity | §0.1.1 row 2 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all (filter merged_at != null)` | `data/metric_2.json` | `metrics_results["M2"]["multiplier"]` | N/A | High |
-| M3 Flow Predictability | §0.1.1 row 3 | `derived from M2 per-window counts (mean/stdev)` | `data/metric_3.json` | `metrics_results["M3"]["multiplier"]` | N/A | High |
-| M4 Flow Active | §0.1.1 row 4 | `compute_flow_active_spans per PR using GET /repos/.../pulls/{n}/reviews + commits + issues/{n}/events` | `data/metric_4.json` | `metrics_results["M4"]["multiplier"]` | N/A | High |
-| M5 Flow Efficiency | §0.1.1 row 5 | `join(M4.per_pr_observations, M7.per_pr_observations) by pr_number; ratio_per_pr = M4_seconds / M7_seconds; median(ratios) per phase` | `data/metric_5.json` | `metrics_results["M5"]["multiplier"]` | N/A | High |
+| M1 Flow Load | §0.1.1 row 1 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all&sort=created&direction=asc (paginated)` | `data/metric_1.json` | `metrics_results["M1"]["after"]` | 1.43 | High |
+| M2 Flow Velocity | §0.1.1 row 2 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all (filter merged_at != null)` | `data/metric_2.json` | `metrics_results["M2"]["after"]` | 1 | High |
+| M3 Flow Predictability | §0.1.1 row 3 | `derived from M2 per-window counts (mean/stdev)` | `data/metric_3.json` | `metrics_results["M3"]["after"]` | 1 | High |
+| M4 Flow Active | §0.1.1 row 4 | `compute_flow_active_spans per PR using GET /repos/.../pulls/{n}/reviews + commits + issues/{n}/events` | `data/metric_4.json` | `metrics_results["M4"]["after"]` | 15.2h | High |
+| M5 Flow Efficiency | §0.1.1 row 5 | `join(M4.per_pr_observations, M7.per_pr_observations) by pr_number; ratio_per_pr = M4_seconds / M7_seconds; median(ratios) per phase` | `data/metric_5.json` | `metrics_results["M5"]["after"]` | 0.09 | High |
 | M6 Flow Distribution | §0.1.1 row 6 | `classify_flow_distribution per PR via label → conventional-commit prefix → keyword waterfall` | `data/metric_6.json` | `metrics_results["M6"]["multiplier"]` | distribution_shift | Medium |
-| M7 Flow Time | §0.1.1 row 7 | `GET /repos/.../pulls/{n}/commits \| head -1 by author.date; fallback: git log --format=%aI --reverse {MERGE_BASE}..{HEAD} \| head -1` | `data/metric_7.json` | `metrics_results["M7"]["multiplier"]` | N/A | High |
-| M8 Problem Records in Release | §0.1.1 row 8 | `git log --grep='^Revert' --pretty=format:%H\|%aI\|%s\|%P \| parse_reverts_commit_line \| git_is_ancestor(tag, original)` | `data/metric_8.json` | `metrics_results["M8"]["multiplier"]` | N/A | Low |
+| M7 Flow Time | §0.1.1 row 7 | `GET /repos/.../pulls/{n}/commits \| head -1 by author.date; fallback: git log --format=%aI --reverse {MERGE_BASE}..{HEAD} \| head -1` | `data/metric_7.json` | `metrics_results["M7"]["after"]` | 4.5d | High |
+| M8 Problem Records in Release | §0.1.1 row 8 | `git log --grep='^Revert' --pretty=format:%H\|%aI\|%s\|%P \| parse_reverts_commit_line \| git_is_ancestor(tag, original)` | `data/metric_8.json` | `metrics_results["M8"]["after"]` | 0 | Low |
 | M9 Releases | §0.1.1 row 9 | `GET /repos/.../releases (or fallback)` | `data/metric_9.json` | `metrics_results["M9"]["multiplier"]` | Insufficient signal — no release source available (API empty, no semver tags, no CI deploys) | Insufficient signal |
-| M10 Approved Exceptions | §0.1.1 row 10 | `GET /orgs/{owner}/audit-log (when audit_log:read scope present) + GET /repos/{owner}/{repo}/events (force-push detection) + exception/waiver/override-labeled PR filter + GET /repos/.../commits/{merge_sha}/check-runs for failing required CI` | `data/metric_10.json` | `metrics_results["M10"]["multiplier"]` | N/A | Low |
+| M10 Approved Exceptions | §0.1.1 row 10 | `GET /orgs/{owner}/audit-log (when audit_log:read scope present) + GET /repos/{owner}/{repo}/events (force-push detection) + exception/waiver/override-labeled PR filter + GET /repos/.../commits/{merge_sha}/check-runs for failing required CI` | `data/metric_10.json` | `metrics_results["M10"]["after"]` | 0 | Low |
 | M11 Escaped Defects | §0.1.1 row 11 | `GET /repos/.../actions/runs + git log -p -- '*.test.*'` | `data/metric_11.json` | `metrics_results["M11"]["multiplier"]` | Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found | Insufficient signal |
 | M12 Defects Out of SLA | §0.1.1 row 12 | `GET /teams/{id}/slaPolicies (Linear) + GET /issues?labels=bug` | `data/metric_12.json` | `metrics_results["M12"]["multiplier"]` | Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook | Insufficient signal |
 
@@ -796,7 +832,7 @@ The table below lists per-engineer values for the metrics that aggregate by acto
 
 | Engineer | M2 Velocity (Before) | M2 Velocity (After) | M4 Active (Before) | M4 Active (After) | M5 Efficiency (Before) | M5 Efficiency (After) | M6 Feature Share (After) | M10 Exceptions (After) |
 |----------|----------------------|----------------------|---------------------|--------------------|------------------------|------------------------|---------------------------|--------------------------|
-| + blitzy-agent | 0 | 1 | N/A | 54790 | N/A | 0.09 | N/A | N/A |
+| + blitzy-agent | 0 | 1 | N/A | 15.2h | N/A | 0.09 | N/A | N/A |
 
 The Blitzy row is the engineering actor for the after period only. Human rows are normalized per active engineer by dividing the per-actor count by the number of windows in which the actor was active.
 
@@ -808,20 +844,22 @@ This section presents the across-phase trajectory for each of the twelve metrics
 
 ### Phase Table
 
-| Metric | Baseline | Ramp-Up | Steady State | Multiplier (Steady / Baseline) | Confidence |
-|--------|----------|---------|--------------|-------------------------------|------------|
-| M1 Flow Load | `0` | `N/A` | `N/A` | `N/A` | `High` |
-| M2 Flow Velocity | `0` | `N/A` | `N/A` | `N/A` | `High` |
-| M3 Flow Predictability | `N/A` | `N/A` | `N/A` | `N/A` | `High` |
-| M4 Flow Active | `N/A` | `N/A` | `N/A` | `N/A` | `High` |
-| M5 Flow Efficiency | `N/A` | `N/A` | `N/A` | `N/A` | `High` |
-| M6 Flow Distribution (feature) | `N/A` | `N/A` | `N/A` | `distribution_shift` | `Medium` |
-| M7 Flow Time | `N/A` | `N/A` | `N/A` | `N/A` | `High` |
-| M8 Problem Records | `0` | `N/A` | `N/A` | `N/A` | `Low` |
-| M9 Releases | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal` |
-| M10 Approved Exceptions | `0` | `N/A` | `N/A` | `N/A` | `Low` |
-| M11 Escaped Defects | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal` |
-| M12 Defects Out of SLA | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal` |
+The table below shows every phase value used by the harness, including the AAP §0.1.3 fallback Post-Introduction column that is populated when fewer than 90 days of post-introduction data exist. The Post-Introduction column equals the After value reported in the Executive Summary in fallback mode; the Ramp-Up and Steady State columns render `N/A` in that case.
+
+| Metric | Baseline | Ramp-Up | Steady State | Post-Introduction (fallback) | After | Multiplier (Steady / Baseline) | Confidence |
+|--------|----------|---------|--------------|------------------------------|-------|-------------------------------|------------|
+| M1 Flow Load | `0` | `N/A` | `N/A` | `1.43` | `1.43` | `N/A` | `High` |
+| M2 Flow Velocity | `0` | `N/A` | `N/A` | `1` | `1` | `N/A` | `High` |
+| M3 Flow Predictability | `N/A` | `N/A` | `N/A` | `1` | `1` | `N/A` | `High` |
+| M4 Flow Active | `N/A` | `N/A` | `N/A` | `15.2h` | `15.2h` | `N/A` | `High` |
+| M5 Flow Efficiency | `N/A` | `N/A` | `N/A` | `0.09` | `0.09` | `N/A` | `High` |
+| M6 Flow Distribution (feature) | `N/A` | `N/A` | `N/A` | `defect=0.86, risk-compliance=0.14` | `N/A` | `distribution_shift` | `Medium` |
+| M7 Flow Time | `N/A` | `N/A` | `N/A` | `4.5d` | `4.5d` | `N/A` | `High` |
+| M8 Problem Records | `0` | `N/A` | `N/A` | `0` | `0` | `N/A` | `Low` |
+| M9 Releases | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal` |
+| M10 Approved Exceptions | `0` | `N/A` | `N/A` | `0` | `0` | `N/A` | `Low` |
+| M11 Escaped Defects | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal` |
+| M12 Defects Out of SLA | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal` |
 
 ### Curve Diagram
 
@@ -893,25 +931,63 @@ The bullets below are mandatory limitations documented in the AAP. Additional li
 
 ## Reproducibility Appendix
 
-This section contains the complete, ordered set of commands and API calls executed during the harness run identified by `test_no_commands`. The renderer reads `logs/test_no_commands/commands.log` and embeds its contents verbatim below; each line is in execution order and is a syntactically valid git invocation, HTTP URL, or Python subprocess execution.
+This section contains the complete, ordered set of commands and API calls executed during the harness run identified by `qa-finalA-fixes-verify-1779532737`. The renderer reads `logs/qa-finalA-fixes-verify-1779532737/commands.log` and embeds its contents verbatim below; each line is in execution order and is a syntactically valid git invocation, HTTP URL, or Python subprocess execution.
 
 ```text
-2026-05-23T09:19:56.747573+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_1.json
-2026-05-23T09:19:56.747824+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_2.json
-2026-05-23T09:19:56.747989+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_3.json
-2026-05-23T09:19:56.748095+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_4.json
-2026-05-23T09:19:56.748206+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_5.json
-2026-05-23T09:19:56.748305+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_6.json
-2026-05-23T09:19:56.748416+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_7.json
-2026-05-23T09:19:56.748525+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_8.json
-2026-05-23T09:19:56.748627+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_9.json
-2026-05-23T09:19:56.748733+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_10.json
-2026-05-23T09:19:56.748876+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_11.json
-2026-05-23T09:19:56.748974+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_12.json
-2026-05-23T09:19:56.749067+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
-2026-05-23T09:19:56.749155+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
-2026-05-23T09:19:56.749243+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
-2026-05-23T09:19:56.751359+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/logs/test_no_commands/commands.log
+2026-05-23T10:38:57.090562+00:00 git git rev-parse --git-dir
+2026-05-23T10:38:57.092326+00:00 git git remote get-url origin
+2026-05-23T10:38:57.094019+00:00 git git --version
+2026-05-23T10:38:57.095414+00:00 git git rev-list --all --count
+2026-05-23T10:38:57.242061+00:00 git git branch -a --format=%(refname:short)
+2026-05-23T10:38:57.244645+00:00 git git submodule status
+2026-05-23T10:38:57.271473+00:00 git git log --all --reverse --format=%aI
+2026-05-23T10:38:57.467252+00:00 git git log --all --format=%aI --max-count=1
+2026-05-23T10:38:57.474994+00:00 git git rev-parse HEAD
+2026-05-23T10:38:57.476570+00:00 git git rev-parse --abbrev-ref origin/HEAD
+2026-05-23T10:38:57.500342+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
+2026-05-23T10:38:57.500427+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
+2026-05-23T10:38:57.572103+00:00 git git log --all --author=agent@blitzy.com --reverse --format=%H|%aI|%ae|%s
+2026-05-23T10:38:57.767927+00:00 git git log --all --reverse --format=%H|%aI%n%B%n---END---
+2026-05-23T10:38:58.041732+00:00 git git log --all --format=%aI
+2026-05-23T10:38:58.316785+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
+2026-05-23T10:38:58.316879+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
+2026-05-23T10:38:58.386157+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
+2026-05-23T10:38:58.386304+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
+2026-05-23T10:38:58.408905+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
+2026-05-23T10:38:58.408998+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
+2026-05-23T10:38:58.480580+00:00 validate_consistency start run_id=qa-finalA-fixes-verify-1779532737 data_dir=/tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data
+2026-05-23T10:38:58.480687+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_1.json
+2026-05-23T10:38:58.480910+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_2.json
+2026-05-23T10:38:58.481070+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_3.json
+2026-05-23T10:38:58.481184+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_4.json
+2026-05-23T10:38:58.481298+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_5.json
+2026-05-23T10:38:58.481412+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_6.json
+2026-05-23T10:38:58.481527+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_7.json
+2026-05-23T10:38:58.481634+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_8.json
+2026-05-23T10:38:58.481749+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_9.json
+2026-05-23T10:38:58.481851+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_10.json
+2026-05-23T10:38:58.481984+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_11.json
+2026-05-23T10:38:58.482086+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_12.json
+2026-05-23T10:38:58.482349+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
+2026-05-23T10:38:58.504760+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/consistency_report.json
+2026-05-23T10:38:58.504844+00:00 validate_consistency emitted consistency_report.json (passed=True, total_errors=0)
+2026-05-23T10:38:58.577882+00:00 write /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/diagram_validation.json
+2026-05-23T10:38:58.652762+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_1.json
+2026-05-23T10:38:58.652989+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_2.json
+2026-05-23T10:38:58.653142+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_3.json
+2026-05-23T10:38:58.653247+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_4.json
+2026-05-23T10:38:58.653354+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_5.json
+2026-05-23T10:38:58.653452+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_6.json
+2026-05-23T10:38:58.653561+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_7.json
+2026-05-23T10:38:58.653667+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_8.json
+2026-05-23T10:38:58.653786+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_9.json
+2026-05-23T10:38:58.653877+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_10.json
+2026-05-23T10:38:58.654014+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_11.json
+2026-05-23T10:38:58.654107+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_12.json
+2026-05-23T10:38:58.654199+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
+2026-05-23T10:38:58.654286+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
+2026-05-23T10:38:58.654370+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
+2026-05-23T10:38:58.656628+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/logs/qa-finalA-fixes-verify-1779532737/commands.log
 
 ```
 
@@ -947,7 +1023,7 @@ The harness exits with code 0 if every metric either succeeded or correctly repo
 - GitHub REST API — Issues: <https://docs.github.com/en/rest/issues>
 - GitHub REST API — Releases: <https://docs.github.com/en/rest/releases>
 - GitHub REST API — Workflow Runs: <https://docs.github.com/en/rest/actions/workflow-runs>
-- Linear API: <https://linear.app/docs/api>
+- Linear API: <https://linear.app/developers>
 - Mermaid diagram syntax: <https://mermaid.js.org>
 - reveal.js presentation framework: <https://revealjs.com>
 

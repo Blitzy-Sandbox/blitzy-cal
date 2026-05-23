@@ -466,10 +466,13 @@ The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all` and filte
 | Baseline | `<M1.baseline>` | `<M1.baseline_n>` |
 | Ramp-Up | `<M1.ramp_up>` | `<M1.ramp_up_n>` |
 | Steady State | `<M1.steady_state>` | `<M1.steady_state_n>` |
+| Post-Introduction (fallback) | `<M1.post_intro>` | `<M1.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`<M1.multiplier>` (direction: `<M1.direction>`).
+`<M1.multiplier>` (direction: `<M1.direction>`). After value: `<M1.after>`.
 
 ### Trend Diagram
 
@@ -510,10 +513,13 @@ The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=closed` and fi
 | Baseline | `<M2.baseline>` | `<M2.baseline_n>` |
 | Ramp-Up | `<M2.ramp_up>` | `<M2.ramp_up_n>` |
 | Steady State | `<M2.steady_state>` | `<M2.steady_state_n>` |
+| Post-Introduction (fallback) | `<M2.post_intro>` | `<M2.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`<M2.multiplier>` (direction: `<M2.direction>`).
+`<M2.multiplier>` (direction: `<M2.direction>`). After value: `<M2.after>`.
 
 ### Trend Diagram
 
@@ -554,10 +560,13 @@ The harness reuses `data/metric_2.json` and computes mean and stdev across the w
 | Baseline | `<M3.baseline>` | `<M3.baseline_n>` |
 | Ramp-Up | `<M3.ramp_up>` | `<M3.ramp_up_n>` |
 | Steady State | `<M3.steady_state>` | `<M3.steady_state_n>` |
+| Post-Introduction (fallback) | `<M3.post_intro>` | `<M3.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`<M3.multiplier>` (direction: `<M3.direction>`).
+`<M3.multiplier>` (direction: `<M3.direction>`). After value: `<M3.after>`.
 
 ### Trend Diagram
 
@@ -598,10 +607,13 @@ For each merged PR, the harness walks the timeline events sorted by `created_at`
 | Baseline | `<M4.baseline>` | `<M4.baseline_n>` |
 | Ramp-Up | `<M4.ramp_up>` | `<M4.ramp_up_n>` |
 | Steady State | `<M4.steady_state>` | `<M4.steady_state_n>` |
+| Post-Introduction (fallback) | `<M4.post_intro>` | `<M4.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). M4 is a duration metric (unit: seconds); values are rendered via the canonical `format_duration_seconds()` helper so the Markdown report and the deck display identical strings (e.g., `15.2h`).
 
 ### Multiplier (After / Before)
 
-`<M4.multiplier>` (direction: `<M4.direction>`).
+`<M4.multiplier>` (direction: `<M4.direction>`). After value: `<M4.after>`.
 
 ### Trend Diagram
 
@@ -642,10 +654,13 @@ The harness consumes the per-PR values from `data/metric_4.json` (Flow Active) a
 | Baseline | `<M5.baseline>` | `<M5.baseline_n>` |
 | Ramp-Up | `<M5.ramp_up>` | `<M5.ramp_up_n>` |
 | Steady State | `<M5.steady_state>` | `<M5.steady_state_n>` |
+| Post-Introduction (fallback) | `<M5.post_intro>` | `<M5.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`<M5.multiplier>` (direction: `<M5.direction>`).
+`<M5.multiplier>` (direction: `<M5.direction>`). After value: `<M5.after>`.
 
 ### Trend Diagram
 
@@ -686,10 +701,13 @@ A three-tier waterfall is applied to each merged PR. Tier 1 checks for a linked 
 | Baseline | `<M6.baseline>` | `<M6.baseline_n>` |
 | Ramp-Up | `<M6.ramp_up>` | `<M6.ramp_up_n>` |
 | Steady State | `<M6.steady_state>` | `<M6.steady_state_n>` |
+| Post-Introduction (fallback) | `<M6.post_intro>` | `<M6.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). For M6 the cell shows the feature-share component of the distribution dictionary; the full categorical breakdown appears in the Category Distribution by Phase table below.
 
 ### Multiplier (feature share After / Before)
 
-`<M6.multiplier>` (direction: `<M6.direction>`).
+`<M6.multiplier>` (direction: `<M6.direction>`). After distribution: `<M6.after>`.
 
 ### Trend Diagram
 
@@ -734,10 +752,13 @@ For each merged PR, the harness runs `git log --format=%aI --reverse {MERGE_BASE
 | Baseline | `<M7.baseline>` | `<M7.baseline_n>` |
 | Ramp-Up | `<M7.ramp_up>` | `<M7.ramp_up_n>` |
 | Steady State | `<M7.steady_state>` | `<M7.steady_state_n>` |
+| Post-Introduction (fallback) | `<M7.post_intro>` | `<M7.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). M7 is a duration metric (unit: seconds); values are rendered via the canonical `format_duration_seconds()` helper so the Markdown report and the deck display identical strings (e.g., `4.5d`).
 
 ### Multiplier (After / Before)
 
-`<M7.multiplier>` (direction: `<M7.direction>`).
+`<M7.multiplier>` (direction: `<M7.direction>`). After value: `<M7.after>`.
 
 ### Trend Diagram
 
@@ -778,10 +799,13 @@ The harness identifies revert commits on the default branch via `git log --grep=
 | Baseline | `<M8.baseline>` | `<M8.baseline_n>` |
 | Ramp-Up | `<M8.ramp_up>` | `<M8.ramp_up_n>` |
 | Steady State | `<M8.steady_state>` | `<M8.steady_state_n>` |
+| Post-Introduction (fallback) | `<M8.post_intro>` | `<M8.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). In that case, the Ramp-Up and Steady State rows render `N/A` and the After value reported in the Executive Summary equals the Post-Introduction value.
 
 ### Multiplier (After / Before)
 
-`<M8.multiplier>` (direction: `<M8.direction>`).
+`<M8.multiplier>` (direction: `<M8.direction>`). After value: `<M8.after>`.
 
 ### Trend Diagram
 
@@ -826,10 +850,13 @@ The harness tries the three sources in user-specified precedence. The first sour
 | Baseline | `<M9.baseline>` | `<M9.baseline_n>` |
 | Ramp-Up | `<M9.ramp_up>` | `<M9.ramp_up_n>` |
 | Steady State | `<M9.steady_state>` | `<M9.steady_state_n>` |
+| Post-Introduction (fallback) | `<M9.post_intro>` | `<M9.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). When the metric reports Insufficient signal, every row renders the literal Insufficient-signal reason.
 
 ### Multiplier (After / Before)
 
-`<M9.multiplier>` (direction: `<M9.direction>`).
+`<M9.multiplier>` (direction: `<M9.direction>`). After value: `<M9.after>`.
 
 ### Trend Diagram
 
@@ -870,10 +897,13 @@ The harness queries the GitHub Audit Log API for the four bypass event types if 
 | Baseline | `<M10.baseline>` | `<M10.baseline_n>` |
 | Ramp-Up | `<M10.ramp_up>` | `<M10.ramp_up_n>` |
 | Steady State | `<M10.steady_state>` | `<M10.steady_state_n>` |
+| Post-Introduction (fallback) | `<M10.post_intro>` | `<M10.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). M10 confidence is Low by default unless the GitHub token grants `audit_log:read` scope.
 
 ### Multiplier (After / Before)
 
-`<M10.multiplier>` (direction: `<M10.direction>`).
+`<M10.multiplier>` (direction: `<M10.direction>`). After value: `<M10.after>`.
 
 ### Trend Diagram
 
@@ -914,10 +944,13 @@ The harness queries `/repos/.../actions/runs` for the workflows that produce JUn
 | Baseline | `<M11.baseline>` | `<M11.baseline_n>` |
 | Ramp-Up | `<M11.ramp_up>` | `<M11.ramp_up_n>` |
 | Steady State | `<M11.steady_state>` | `<M11.steady_state_n>` |
+| Post-Introduction (fallback) | `<M11.post_intro>` | `<M11.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). When the metric reports Insufficient signal, every row renders the literal Insufficient-signal reason.
 
 ### Multiplier (After / Before)
 
-`<M11.multiplier>` (direction: `<M11.direction>`).
+`<M11.multiplier>` (direction: `<M11.direction>`). After value: `<M11.after>`.
 
 ### Trend Diagram
 
@@ -962,10 +995,13 @@ The harness first checks for a Linear API key. If present, the harness queries `
 | Baseline | `<M12.baseline>` | `<M12.baseline_n>` |
 | Ramp-Up | `<M12.ramp_up>` | `<M12.ramp_up_n>` |
 | Steady State | `<M12.steady_state>` | `<M12.steady_state_n>` |
+| Post-Introduction (fallback) | `<M12.post_intro>` | `<M12.post_intro_n>` |
+
+The Post-Introduction row is populated when fewer than 90 days of post-introduction data exist at run time (the AAP §0.1.3 fallback). When the metric reports Insufficient signal, every row renders the literal Insufficient-signal reason.
 
 ### Multiplier (After / Before)
 
-`<M12.multiplier>` (direction: `<M12.direction>`).
+`<M12.multiplier>` (direction: `<M12.direction>`). After value: `<M12.after>`.
 
 ### Trend Diagram
 
@@ -1016,20 +1052,22 @@ This section presents the across-phase trajectory for each of the twelve metrics
 
 ### Phase Table
 
-| Metric | Baseline | Ramp-Up | Steady State | Multiplier (Steady / Baseline) | Confidence |
-|--------|----------|---------|--------------|-------------------------------|------------|
-| M1 Flow Load | `<M1.baseline>` | `<M1.ramp_up>` | `<M1.steady_state>` | `<M1.multiplier>` | `<M1.confidence>` |
-| M2 Flow Velocity | `<M2.baseline>` | `<M2.ramp_up>` | `<M2.steady_state>` | `<M2.multiplier>` | `<M2.confidence>` |
-| M3 Flow Predictability | `<M3.baseline>` | `<M3.ramp_up>` | `<M3.steady_state>` | `<M3.multiplier>` | `<M3.confidence>` |
-| M4 Flow Active | `<M4.baseline>` | `<M4.ramp_up>` | `<M4.steady_state>` | `<M4.multiplier>` | `<M4.confidence>` |
-| M5 Flow Efficiency | `<M5.baseline>` | `<M5.ramp_up>` | `<M5.steady_state>` | `<M5.multiplier>` | `<M5.confidence>` |
-| M6 Flow Distribution (feature) | `<M6.baseline>` | `<M6.ramp_up>` | `<M6.steady_state>` | `<M6.multiplier>` | `<M6.confidence>` |
-| M7 Flow Time | `<M7.baseline>` | `<M7.ramp_up>` | `<M7.steady_state>` | `<M7.multiplier>` | `<M7.confidence>` |
-| M8 Problem Records | `<M8.baseline>` | `<M8.ramp_up>` | `<M8.steady_state>` | `<M8.multiplier>` | `<M8.confidence>` |
-| M9 Releases | `<M9.baseline>` | `<M9.ramp_up>` | `<M9.steady_state>` | `<M9.multiplier>` | `<M9.confidence>` |
-| M10 Approved Exceptions | `<M10.baseline>` | `<M10.ramp_up>` | `<M10.steady_state>` | `<M10.multiplier>` | `<M10.confidence>` |
-| M11 Escaped Defects | `<M11.baseline>` | `<M11.ramp_up>` | `<M11.steady_state>` | `<M11.multiplier>` | `<M11.confidence>` |
-| M12 Defects Out of SLA | `<M12.baseline>` | `<M12.ramp_up>` | `<M12.steady_state>` | `<M12.multiplier>` | `<M12.confidence>` |
+The table below shows every phase value used by the harness, including the AAP §0.1.3 fallback Post-Introduction column that is populated when fewer than 90 days of post-introduction data exist. The Post-Introduction column equals the After value reported in the Executive Summary in fallback mode; the Ramp-Up and Steady State columns render `N/A` in that case.
+
+| Metric | Baseline | Ramp-Up | Steady State | Post-Introduction (fallback) | After | Multiplier (Steady / Baseline) | Confidence |
+|--------|----------|---------|--------------|------------------------------|-------|-------------------------------|------------|
+| M1 Flow Load | `<M1.baseline>` | `<M1.ramp_up>` | `<M1.steady_state>` | `<M1.post_intro>` | `<M1.after>` | `<M1.multiplier>` | `<M1.confidence>` |
+| M2 Flow Velocity | `<M2.baseline>` | `<M2.ramp_up>` | `<M2.steady_state>` | `<M2.post_intro>` | `<M2.after>` | `<M2.multiplier>` | `<M2.confidence>` |
+| M3 Flow Predictability | `<M3.baseline>` | `<M3.ramp_up>` | `<M3.steady_state>` | `<M3.post_intro>` | `<M3.after>` | `<M3.multiplier>` | `<M3.confidence>` |
+| M4 Flow Active | `<M4.baseline>` | `<M4.ramp_up>` | `<M4.steady_state>` | `<M4.post_intro>` | `<M4.after>` | `<M4.multiplier>` | `<M4.confidence>` |
+| M5 Flow Efficiency | `<M5.baseline>` | `<M5.ramp_up>` | `<M5.steady_state>` | `<M5.post_intro>` | `<M5.after>` | `<M5.multiplier>` | `<M5.confidence>` |
+| M6 Flow Distribution (feature) | `<M6.baseline>` | `<M6.ramp_up>` | `<M6.steady_state>` | `<M6.post_intro>` | `<M6.after>` | `<M6.multiplier>` | `<M6.confidence>` |
+| M7 Flow Time | `<M7.baseline>` | `<M7.ramp_up>` | `<M7.steady_state>` | `<M7.post_intro>` | `<M7.after>` | `<M7.multiplier>` | `<M7.confidence>` |
+| M8 Problem Records | `<M8.baseline>` | `<M8.ramp_up>` | `<M8.steady_state>` | `<M8.post_intro>` | `<M8.after>` | `<M8.multiplier>` | `<M8.confidence>` |
+| M9 Releases | `<M9.baseline>` | `<M9.ramp_up>` | `<M9.steady_state>` | `<M9.post_intro>` | `<M9.after>` | `<M9.multiplier>` | `<M9.confidence>` |
+| M10 Approved Exceptions | `<M10.baseline>` | `<M10.ramp_up>` | `<M10.steady_state>` | `<M10.post_intro>` | `<M10.after>` | `<M10.multiplier>` | `<M10.confidence>` |
+| M11 Escaped Defects | `<M11.baseline>` | `<M11.ramp_up>` | `<M11.steady_state>` | `<M11.post_intro>` | `<M11.after>` | `<M11.multiplier>` | `<M11.confidence>` |
+| M12 Defects Out of SLA | `<M12.baseline>` | `<M12.ramp_up>` | `<M12.steady_state>` | `<M12.post_intro>` | `<M12.after>` | `<M12.multiplier>` | `<M12.confidence>` |
 
 ### Curve Diagram
 
@@ -1122,7 +1160,7 @@ The harness exits with code 0 if every metric either succeeded or correctly repo
 - GitHub REST API — Issues: <https://docs.github.com/en/rest/issues>
 - GitHub REST API — Releases: <https://docs.github.com/en/rest/releases>
 - GitHub REST API — Workflow Runs: <https://docs.github.com/en/rest/actions/workflow-runs>
-- Linear API: <https://linear.app/docs/api>
+- Linear API: <https://linear.app/developers>
 - Mermaid diagram syntax: <https://mermaid.js.org>
 - reveal.js presentation framework: <https://revealjs.com>
 
@@ -1159,26 +1197,30 @@ This is the Observability dashboard for the 12-metric Development Acceleration M
 
 ## KPI Summary
 
-The table below lists each of the twelve metrics with its phase values, the After/Before multiplier, and the confidence tag derived from the actual data source used. Every cell is rendered from the single `metrics_results` dictionary maintained by the extraction harness, so values are consistent with every other section of the report (Rule 4).
+The table below lists each of the twelve metrics with its phase values, the After/Before multiplier, the confidence tag derived from the actual data source used, and a Threshold cell drawn from DORA performance bands (where applicable). Every cell is rendered from the single `metrics_results` dictionary maintained by the extraction harness, so values are consistent with every other section of the report (Rule 4).
 
-| # | Metric | Baseline | Ramp-Up | Steady State | Multiplier | Confidence | Trend |
-|---|--------|----------|---------|--------------|------------|------------|-------|
-| 1 | Flow Load | `<M1.baseline>` | `<M1.ramp_up>` | `<M1.steady_state>` | `<M1.multiplier>` | `<M1.confidence>` | [M1](./acceleration-report.md#m1-flow-load) |
-| 2 | Flow Velocity | `<M2.baseline>` | `<M2.ramp_up>` | `<M2.steady_state>` | `<M2.multiplier>` | `<M2.confidence>` | [M2](./acceleration-report.md#m2-flow-velocity) |
-| 3 | Flow Predictability | `<M3.baseline>` | `<M3.ramp_up>` | `<M3.steady_state>` | `<M3.multiplier>` | `<M3.confidence>` | [M3](./acceleration-report.md#m3-flow-predictability) |
-| 4 | Flow Active | `<M4.baseline>` | `<M4.ramp_up>` | `<M4.steady_state>` | `<M4.multiplier>` | `<M4.confidence>` | [M4](./acceleration-report.md#m4-flow-active) |
-| 5 | Flow Efficiency | `<M5.baseline>` | `<M5.ramp_up>` | `<M5.steady_state>` | `<M5.multiplier>` | `<M5.confidence>` | [M5](./acceleration-report.md#m5-flow-efficiency) |
-| 6 | Flow Distribution | `<M6.baseline>` | `<M6.ramp_up>` | `<M6.steady_state>` | `<M6.multiplier>` | `<M6.confidence>` | [M6](./acceleration-report.md#m6-flow-distribution) |
-| 7 | Flow Time | `<M7.baseline>` | `<M7.ramp_up>` | `<M7.steady_state>` | `<M7.multiplier>` | `<M7.confidence>` | [M7](./acceleration-report.md#m7-flow-time) |
-| 8 | Problem Records in Release | `<M8.baseline>` | `<M8.ramp_up>` | `<M8.steady_state>` | `<M8.multiplier>` | `<M8.confidence>` | [M8](./acceleration-report.md#m8-problem-records-in-release) |
-| 9 | Releases | `<M9.baseline>` | `<M9.ramp_up>` | `<M9.steady_state>` | `<M9.multiplier>` | `<M9.confidence>` | [M9](./acceleration-report.md#m9-releases) |
-| 10 | Approved Exceptions | `<M10.baseline>` | `<M10.ramp_up>` | `<M10.steady_state>` | `<M10.multiplier>` | `<M10.confidence>` | [M10](./acceleration-report.md#m10-approved-exceptions) |
-| 11 | Escaped Defects | `<M11.baseline>` | `<M11.ramp_up>` | `<M11.steady_state>` | `<M11.multiplier>` | `<M11.confidence>` | [M11](./acceleration-report.md#m11-escaped-defects) |
-| 12 | Defects Out of SLA | `<M12.baseline>` | `<M12.ramp_up>` | `<M12.steady_state>` | `<M12.multiplier>` | `<M12.confidence>` | [M12](./acceleration-report.md#m12-defects-out-of-sla) |
+The KPI table is the wide-form summary required by AAP §0.6.1: it includes the AAP §0.1.3 fallback Post-Introduction column (populated when fewer than 90 days of post-introduction data exist) and the corresponding After value (which equals the Post-Introduction value in fallback mode and the steady-state value otherwise). Surfacing both columns satisfies the Rule 1 (Data Provenance) requirement that every Executive Summary After value also appears on the dashboard.
+
+| # | Metric | Baseline | Ramp-Up | Steady State | Post-Introduction (fallback) | After | Multiplier | Confidence | Threshold (per DORA performance bands) | Trend |
+|---|--------|----------|---------|--------------|------------------------------|-------|------------|------------|----------------------------------------|-------|
+| 1 | Flow Load | `<M1.baseline>` | `<M1.ramp_up>` | `<M1.steady_state>` | `<M1.post_intro>` | `<M1.after>` | `<M1.multiplier>` | `<M1.confidence>` | N/A (no DORA band — repository-policy target only) | [M1](./acceleration-report.md#m1-flow-load) |
+| 2 | Flow Velocity | `<M2.baseline>` | `<M2.ramp_up>` | `<M2.steady_state>` | `<M2.post_intro>` | `<M2.after>` | `<M2.multiplier>` | `<M2.confidence>` | N/A (no DORA band — repository-policy target only) | [M2](./acceleration-report.md#m2-flow-velocity) |
+| 3 | Flow Predictability | `<M3.baseline>` | `<M3.ramp_up>` | `<M3.steady_state>` | `<M3.post_intro>` | `<M3.after>` | `<M3.multiplier>` | `<M3.confidence>` | N/A (no DORA band — repository-policy target only) | [M3](./acceleration-report.md#m3-flow-predictability) |
+| 4 | Flow Active | `<M4.baseline>` | `<M4.ramp_up>` | `<M4.steady_state>` | `<M4.post_intro>` | `<M4.after>` | `<M4.multiplier>` | `<M4.confidence>` | N/A (no DORA band — repository-policy target only) | [M4](./acceleration-report.md#m4-flow-active) |
+| 5 | Flow Efficiency | `<M5.baseline>` | `<M5.ramp_up>` | `<M5.steady_state>` | `<M5.post_intro>` | `<M5.after>` | `<M5.multiplier>` | `<M5.confidence>` | N/A (no DORA band — repository-policy target only) | [M5](./acceleration-report.md#m5-flow-efficiency) |
+| 6 | Flow Distribution | `<M6.baseline>` | `<M6.ramp_up>` | `<M6.steady_state>` | `<M6.post_intro>` | `<M6.after>` | `<M6.multiplier>` | `<M6.confidence>` | N/A (no DORA band — categorical distribution) | [M6](./acceleration-report.md#m6-flow-distribution) |
+| 7 | Flow Time | `<M7.baseline>` | `<M7.ramp_up>` | `<M7.steady_state>` | `<M7.post_intro>` | `<M7.after>` | `<M7.multiplier>` | `<M7.confidence>` | DORA Lead Time for Changes: Elite < 1 day; High 1 day–1 week; Medium 1 week–1 month; Low > 1 month | [M7](./acceleration-report.md#m7-flow-time) |
+| 8 | Problem Records in Release | `<M8.baseline>` | `<M8.ramp_up>` | `<M8.steady_state>` | `<M8.post_intro>` | `<M8.after>` | `<M8.multiplier>` | `<M8.confidence>` | DORA Change Failure Rate: Elite 0%–5%; High 6%–10%; Medium 11%–15%; Low 16%+ | [M8](./acceleration-report.md#m8-problem-records-in-release) |
+| 9 | Releases | `<M9.baseline>` | `<M9.ramp_up>` | `<M9.steady_state>` | `<M9.post_intro>` | `<M9.after>` | `<M9.multiplier>` | `<M9.confidence>` | DORA Deployment Frequency: Elite on-demand (multiple per day); High weekly to daily; Medium monthly to weekly; Low fewer than monthly | [M9](./acceleration-report.md#m9-releases) |
+| 10 | Approved Exceptions | `<M10.baseline>` | `<M10.ramp_up>` | `<M10.steady_state>` | `<M10.post_intro>` | `<M10.after>` | `<M10.multiplier>` | `<M10.confidence>` | N/A (no DORA band — repository-policy target only) | [M10](./acceleration-report.md#m10-approved-exceptions) |
+| 11 | Escaped Defects | `<M11.baseline>` | `<M11.ramp_up>` | `<M11.steady_state>` | `<M11.post_intro>` | `<M11.after>` | `<M11.multiplier>` | `<M11.confidence>` | N/A (no DORA band — repository-policy target only) | [M11](./acceleration-report.md#m11-escaped-defects) |
+| 12 | Defects Out of SLA | `<M12.baseline>` | `<M12.ramp_up>` | `<M12.steady_state>` | `<M12.post_intro>` | `<M12.after>` | `<M12.multiplier>` | `<M12.confidence>` | N/A (no DORA band — repository-policy SLA target only) | [M12](./acceleration-report.md#m12-defects-out-of-sla) |
 
 "Multiplier" is computed as After divided by Before where After is the mean of (Ramp-Up plus Steady State) values weighted by window count. For metrics where higher is better (M2, M3, M5, M9), greater than one indicates acceleration. For metrics where lower is better (M1, M4, M7, M8, M10, M11, M12), less than one indicates acceleration. Metric 6 is reported as a distribution shift rather than a multiplier.
 
-When a metric reports Insufficient signal, the Baseline, Ramp-Up, Steady State, and Multiplier cells render the string `Insufficient signal — {reason}`; the Confidence cell renders the same string. (The `{reason}` text in the previous sentence is a documentation placeholder describing the rendered cell content; it is NOT a template substitution token.)
+The "Threshold (per DORA performance bands)" column lists the standard DORA Elite / High / Medium / Low performance bands for the three metrics that map directly to DORA framework definitions (M7 Lead Time for Changes, M8 Change Failure Rate, M9 Deployment Frequency). The other nine metrics do not map to DORA bands; those rows render `N/A (no DORA band — repository-policy target only)` and any concrete target should be set by repository policy in a follow-up runbook.
+
+When a metric reports Insufficient signal, the Baseline, Ramp-Up, Steady State, Post-Introduction, After, and Multiplier cells render the string `Insufficient signal — {reason}`; the Confidence cell renders the same string. (The `{reason}` text in the previous sentence is a documentation placeholder describing the rendered cell content; it is NOT a template substitution token.)
 
 ## Confidence Distribution
 
@@ -1263,6 +1305,40 @@ Each invocation of the extraction harness produces a fixed set of log files unde
 - `commands.log` — ordered catalog of every git invocation, API call, and subprocess execution
 
 `commands.log` is the single source of truth for the Reproducibility Appendix in the main report; `scripts/build_report.py` reads it verbatim and emits it in execution order.
+
+### commands.log Single-Line Schema
+
+Each `commands.log` entry is exactly one line in the following whitespace-separated format. Operators integrating an ELK or Loki pipeline can parse each line as three positional fields:
+
+```text
+ISO_TIMESTAMP  KIND  ARGS
+```
+
+(The three uppercase placeholders above are meta-syntactic field names; the actual log line contains the literal values written by the harness with single ASCII spaces as field separators.)
+
+Field semantics:
+
+- `ISO_TIMESTAMP` — RFC 3339 / ISO 8601 timestamp with timezone offset (microsecond precision); written via `datetime.now(timezone.utc).isoformat()`. Example: `2026-05-23T09:37:30.383538+00:00`.
+- `KIND` — One of the following literal tokens identifying the command category. The enumeration is closed; future categories require a new decision-log row.
+    - `git` — direct `git` subprocess invocation (e.g., `git log`, `git rev-parse`, `git merge-base`)
+    - `http` — outbound HTTP/HTTPS request (typically a `GET` to the GitHub or Linear API)
+    - `read` — local-filesystem read of a JSON / log / commands artifact under `data/` or `logs/`
+    - `write` — local-filesystem write of a JSON / log / Markdown / HTML artifact
+    - `validate_consistency` — consistency-validation step (start / per-check / end record)
+    - `subprocess` — generic subprocess invocation that is not `git` (e.g., `which`, `npx --version`, `mmdc`)
+- `ARGS` — Whitespace-joined command arguments or URL/path. Spaces inside arguments are preserved literally; consumers should treat everything after the second whitespace token as a single payload.
+
+Example lines (drawn from a representative run):
+
+```text
+2026-05-23T09:37:30.383538+00:00 git git rev-parse --git-dir
+2026-05-23T09:37:30.401214+00:00 http GET https://api.github.com/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all&per_page=100
+2026-05-23T09:37:30.512987+00:00 read data/metric_4.json
+2026-05-23T09:37:30.612415+00:00 write data/metric_4.json
+2026-05-23T09:37:31.117002+00:00 validate_consistency start run_id=550e8400-e29b-41d4-a716-446655440000 data_dir=blitzy/reports/acceleration/data
+```
+
+Secrets (`GITHUB_TOKEN`, `LINEAR_API_KEY`) are read from environment variables and never appear in any `commands.log` entry.
 
 ## Refreshing the Dashboard
 
@@ -2141,16 +2217,50 @@ def generate_traceability_matrix(metrics: dict[str, dict[str, Any]]) -> str:
         # Escape pipe chars inside cells so they don't break the Markdown table.
         primary_cmd_escaped = str(primary_cmd).replace("|", "\\|")
         raw_path = f"data/metric_{n}.json"
-        derived_key = f'metrics_results["{mid}"]["multiplier"]'
         multiplier_value = _metric_field_for_token(mdata, "multiplier")
+        # Review Finding 1 (MAJOR — Rule 1 + Rule 4): when the After/Before
+        # multiplier is `None` (the AAP §0.1.3 "Baseline vs Post-Introduction
+        # only" fallback path, which fires when fewer than 90 days of
+        # post-introduction data exist), the previous renderer emitted
+        # ``N/A`` in the ``Reported Number`` column. That left the
+        # Executive Summary After values (M1=1.43, M4=15.2h, etc.) without
+        # a corresponding traceability row, violating Rule 1 (Data
+        # Provenance). The fix is to fall back to the After value (which
+        # equals ``post_intro`` in fallback mode) so every Executive
+        # Summary numeric appears in the matrix. The Derived Value
+        # ``metrics_results["MN"]["..."]`` key is updated to reference
+        # whichever field actually populated the cell so the lineage is
+        # self-describing.
+        derived_field = "multiplier"
         if status == "insufficient_signal":
             reported_number = f"Insufficient signal — {reason}" if reason else "Insufficient signal"
-        elif multiplier_value is None:
-            reported_number = "N/A"
-        elif isinstance(multiplier_value, str):
-            reported_number = multiplier_value
+        elif multiplier_value is not None:
+            if isinstance(multiplier_value, str):
+                reported_number = multiplier_value
+            else:
+                reported_number = format_value(multiplier_value, status="ok", unit="x")
         else:
-            reported_number = format_value(multiplier_value, status="ok", unit="x")
+            # Multiplier unavailable — fall back to the After value so the
+            # Executive Summary entry has a matching matrix row. Duration
+            # metrics (M4 unit=seconds, M7 unit=seconds) route through the
+            # shared format_duration_seconds helper to maintain Rule 4
+            # cross-surface parity with the Executive Summary's
+            # human-readable rendering (e.g., "15.2h", "4.5d").
+            after_value = _metric_field_for_token(mdata, "after")
+            derived_field = "after"
+            if after_value is None:
+                reported_number = "N/A"
+            elif isinstance(after_value, str):
+                reported_number = after_value
+            elif is_duration_seconds_metric(mdata):
+                reported_number = format_duration_seconds(after_value)
+            elif isinstance(after_value, dict):
+                # Distribution payload (e.g., M6 after = {"feature": 0.5, ...}).
+                # Surface JSON form so the reader can inspect categories.
+                reported_number = json.dumps(after_value, sort_keys=True)
+            else:
+                reported_number = format_value(after_value, status="ok")
+        derived_key = f'metrics_results["{mid}"]["{derived_field}"]'
         # Build the row; preserve a single space pad inside cells for readability.
         rows.append(
             f"| {mid} {meta['name']} | {meta['requirement']} | "
@@ -2267,13 +2377,30 @@ def generate_per_engineer_table(metrics: dict[str, dict[str, Any]]) -> str:
     for actor in actors:
         display = f"+ {actor}" if actor.lower() == "blitzy-agent" else actor
         cells: list[str] = [display]
+        # Review Finding 2 (MAJOR — Rule 4 / Cross-Surface Consistency):
+        # the previous renderer called ``format_value(before/after)`` for
+        # every metric, which left M4 (Flow Active, unit=seconds) rendered
+        # as the raw integer ``54790`` while the Executive Summary and the
+        # deck displayed the same value as the human-readable string
+        # ``15.2h``. The fix is to route duration metrics through the
+        # canonical ``format_duration_seconds`` helper imported from
+        # ``_shared.py`` so every surface renders identically. The
+        # ``is_duration_seconds_metric`` selector keys off the metric's
+        # ``unit`` field (``"seconds"``); only M4 and M7 currently match.
+        # Decision-log Row 22 documents this policy.
         for mid in ("M2", "M4", "M5"):
             mdata = metrics.get(mid) or {}
             before = _aggregate_actor_value(mdata, actor, "baseline")
             after = _aggregate_actor_value(mdata, actor, "after")
-            cells.append(format_value(before, status="ok"))
-            cells.append(format_value(after, status="ok"))
-        # M6 distribution: render feature share only when present
+            if is_duration_seconds_metric(mdata):
+                cells.append(format_duration_seconds(before))
+                cells.append(format_duration_seconds(after))
+            else:
+                cells.append(format_value(before, status="ok"))
+                cells.append(format_value(after, status="ok"))
+        # M6 distribution: render feature share only when present.
+        # The feature share is a unitless ratio (0..1) and therefore uses
+        # ``format_value`` regardless of the parent metric's unit field.
         m6 = metrics.get("M6") or {}
         m6_after = _aggregate_actor_value(m6, actor, "after")
         if isinstance(m6_after, dict):
@@ -2281,7 +2408,7 @@ def generate_per_engineer_table(metrics: dict[str, dict[str, Any]]) -> str:
             cells.append(format_value(feature, status="ok"))
         else:
             cells.append(format_value(m6_after, status="ok"))
-        # M10 exceptions: scalar count
+        # M10 exceptions: scalar count (unitless).
         m10 = metrics.get("M10") or {}
         m10_after = _aggregate_actor_value(m10, actor, "after")
         cells.append(format_value(m10_after, status="ok"))

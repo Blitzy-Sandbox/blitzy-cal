@@ -1,0 +1,209 @@
+{
+  "below_min_surfaces": [],
+  "missing_surfaces": [],
+  "per_surface": {
+    "deck": {
+      "blocks": 1,
+      "errors": 0,
+      "kind": "html",
+      "min_blocks": 1,
+      "path": "/tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/executive-presentation.html",
+      "per_block": [
+        {
+          "block_index": 1,
+          "block_label": "executive-presentation.html:L978",
+          "char_length": 306,
+          "errors": [],
+          "first_directive": "graph LR",
+          "line_number": 978,
+          "status": "ok",
+          "validator": "regex"
+        }
+      ],
+      "present": true,
+      "requested": true,
+      "status": "ok"
+    },
+    "report": {
+      "blocks": 16,
+      "errors": 0,
+      "kind": "markdown",
+      "min_blocks": 1,
+      "path": "/tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/acceleration-report.md",
+      "per_block": [
+        {
+          "block_index": 1,
+          "block_label": "acceleration-report.md:L115",
+          "char_length": 1186,
+          "errors": [],
+          "first_directive": "graph TB",
+          "line_number": 115,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 2,
+          "block_label": "acceleration-report.md:L165",
+          "char_length": 863,
+          "errors": [],
+          "first_directive": "timeline",
+          "line_number": 165,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 3,
+          "block_label": "acceleration-report.md:L186",
+          "char_length": 876,
+          "errors": [],
+          "first_directive": "flowchart TD",
+          "line_number": 186,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 4,
+          "block_label": "acceleration-report.md:L237",
+          "char_length": 649,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 237,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 5,
+          "block_label": "acceleration-report.md:L284",
+          "char_length": 648,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 284,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 6,
+          "block_label": "acceleration-report.md:L331",
+          "char_length": 310,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 331,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 7,
+          "block_label": "acceleration-report.md:L378",
+          "char_length": 302,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 378,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 8,
+          "block_label": "acceleration-report.md:L425",
+          "char_length": 274,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 425,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 9,
+          "block_label": "acceleration-report.md:L472",
+          "char_length": 252,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 472,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 10,
+          "block_label": "acceleration-report.md:L529",
+          "char_length": 312,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 529,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 11,
+          "block_label": "acceleration-report.md:L578",
+          "char_length": 329,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 578,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 12,
+          "block_label": "acceleration-report.md:L636",
+          "char_length": 282,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 636,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 13,
+          "block_label": "acceleration-report.md:L685",
+          "char_length": 654,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 685,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 14,
+          "block_label": "acceleration-report.md:L734",
+          "char_length": 340,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 734,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 15,
+          "block_label": "acceleration-report.md:L791",
+          "char_length": 298,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 791,
+          "status": "ok",
+          "validator": "regex"
+        },
+        {
+          "block_index": 16,
+          "block_label": "acceleration-report.md:L868",
+          "char_length": 831,
+          "errors": [],
+          "first_directive": "xychart-beta",
+          "line_number": 868,
+          "status": "ok",
+          "validator": "regex"
+        }
+      ],
+      "present": true,
+      "requested": true,
+      "status": "ok"
+    }
+  },
+  "rendered_at": "2026-05-23T10:38:58.577585+00:00",
+  "requested_surfaces": [
+    "report",
+    "deck"
+  ],
+  "run_id": "qa-finalA-fixes-verify-1779532737",
+  "total_blocks": 17,
+  "total_errors": 0,
+  "validator": "regex"
+}

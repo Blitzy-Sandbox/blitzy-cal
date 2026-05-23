@@ -1,9 +1,9 @@
 {
-  "run_id": "phase10_missing_windows",
-  "validated_at": "2026-05-23T09:17:03.917025+00:00",
-  "passed": false,
-  "total_errors": 1,
-  "checks_run": 7,
+  "run_id": "qa-finalA-fixes-verify-1779532737",
+  "validated_at": "2026-05-23T10:38:58.482885+00:00",
+  "passed": true,
+  "total_errors": 0,
+  "checks_run": 8,
   "checks": {
     "schema": {
       "pass": true,
@@ -26,11 +26,9 @@
       "errors": []
     },
     "window_counts": {
-      "pass": false,
-      "error_count": 1,
-      "errors": [
-        "MISSING_REQUIRED_INPUT: windows.json not found at /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json; run generate_windows.py before validate_consistency.py (exit code 2 — missing required input)"
-      ]
+      "pass": true,
+      "error_count": 0,
+      "errors": []
     },
     "confidence_tiers": {
       "pass": true,
@@ -38,6 +36,11 @@
       "errors": []
     },
     "sample_sizes": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "duration_formatting_parity": {
       "pass": true,
       "error_count": 0,
       "errors": []

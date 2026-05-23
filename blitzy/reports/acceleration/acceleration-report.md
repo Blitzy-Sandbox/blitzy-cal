@@ -236,7 +236,7 @@ Mean count of in-progress PRs (open OR draft with at least one commit) at the en
 
 ### Extraction Strategy
 
-The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all` and filters to PRs where the state is open OR (state is closed AND draft is true AND commit count >= 1) at the window-end timestamp. Bot exclusion is applied by joining the PR author login against the `.kodiak.toml` `auto_approve_usernames` list plus the explicit Blitzy carve-out. See Decision Row 3 in `decision-log.md` for the open-vs-draft inclusion logic and Decision Row 4 for the bot exclusion list.
+The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all` and filters to PRs where the state is open OR (state is closed AND draft is true AND commit count >= 1) at the window-end timestamp. Bot exclusion is applied by joining the PR author login against the `.kodiak.toml` `auto_approve_usernames` list plus the explicit Blitzy carve-out. See Decision Row 10 in `decision-log.md` for the bot exclusion list (the open-vs-draft inclusion logic is an implementation detail derived from the user's Metric 1 definition in AAP §0.1.1).
 
 ### Phase Values
 
@@ -300,7 +300,7 @@ Count of PRs merged to the default branch per 2-week window. Mean per phase; per
 
 ### Extraction Strategy
 
-The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=closed` and filters to PRs where `merged_at` is not null and the merge commit lands on the default branch `main`. PRs are bucketed into windows by `merged_at`. Per-actor counts use the `engineering_actor(pr, phase)` selector from §5.3 with Blitzy as one row in the after period. See Decision Row 5 in `decision-log.md` for the merged-to-default filter and Decision Row 6 for the per-actor aggregation.
+The harness queries `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=closed` and filters to PRs where `merged_at` is not null and the merge commit lands on the default branch `main`. PRs are bucketed into windows by `merged_at`. Per-actor counts use the `engineering_actor(pr, phase)` selector from §5.3 with Blitzy as one row in the after period. See Decision Row 11 in `decision-log.md` for the inclusion of Blitzy Agent in per-actor aggregations and Decision Row 12 for the engineering-actor selector (the merged-to-default filter is an implementation detail derived from the user's Metric 2 definition in AAP §0.1.1).
 
 ### Phase Values
 
@@ -368,7 +368,7 @@ Reciprocal of the coefficient of variation (mean divided by stdev) of Flow Veloc
 
 ### Extraction Strategy
 
-The harness reuses `data/metric_2.json` (Flow Velocity per window) and computes mean and stdev across the windows in each phase using `statistics.fmean` and `statistics.stdev` from the Python standard library. The reciprocal of the coefficient of variation is `mean / stdev`. Phases with fewer than four windows or zero stdev emit `{"status": "insufficient_signal", "reason": "fewer than 4 windows"}` or `{"status": "insufficient_signal", "reason": "zero variance"}` respectively. See Decision Row 7 in `decision-log.md` for the zero-variance handling.
+The harness reuses `data/metric_2.json` (Flow Velocity per window) and computes mean and stdev across the windows in each phase using `statistics.fmean` and `statistics.stdev` from the Python standard library. The reciprocal of the coefficient of variation is `mean / stdev`. Phases with fewer than four windows or zero stdev emit `{"status": "insufficient_signal", "reason": "fewer than 4 windows"}` or `{"status": "insufficient_signal", "reason": "zero variance"}` respectively. Zero-variance handling follows directly from the user's Metric 3 definition in AAP §0.1.1, which explicitly enumerates this branch; no separate decision-log entry is required.
 
 ### Phase Values
 
@@ -422,7 +422,7 @@ Engineering-actor coding span sum across working phases on a PR. Working phases 
 
 ### Extraction Strategy
 
-For each merged PR, the harness walks the timeline events sorted by `created_at` and identifies the initial coding span and any refine spans. The initial span begins at the actor's first commit on the PR branch and ends at the earliest of (a) PR leaving draft state, (b) first review requested, (c) first commit by another author, (d) PR opened. Each subsequent refine span begins at the actor's first commit after a review event and ends at the actor's last commit before the next review event or merge. Within a span, all elapsed time is counted; gaps are not subtracted. See Decision Row 8 in `decision-log.md` for the span-boundary handling.
+For each merged PR, the harness walks the timeline events sorted by `created_at` and identifies the initial coding span and any refine spans. The initial span begins at the actor's first commit on the PR branch and ends at the earliest of (a) PR leaving draft state, (b) first review requested, (c) first commit by another author, (d) PR opened. Each subsequent refine span begins at the actor's first commit after a review event and ends at the actor's last commit before the next review event or merge. Within a span, all elapsed time is counted; gaps are not subtracted. Span-boundary handling follows directly from the user's working-phase definition in AAP §0.1.4; no separate decision-log entry is required because the working-phase boundaries are enumerated verbatim in that section.
 
 ### Phase Values
 
@@ -487,7 +487,7 @@ Flow Active divided by Flow Time per PR, median across PRs per phase. Review tim
 
 ### Extraction Strategy
 
-The harness consumes the per-PR values from `data/metric_4.json` (Flow Active) and `data/metric_7.json` (Flow Time) and computes the per-PR ratio `flow_active / flow_time`. The median ratio across PRs in each phase is the metric value. The denominator excludes PRs flagged by M7 for history-rewrite exclusion. See Decision Row 9 in `decision-log.md` for the dependency on M4 and M7 confidence tiers.
+The harness consumes the per-PR values from `data/metric_4.json` (Flow Active) and `data/metric_7.json` (Flow Time) and computes the per-PR ratio `flow_active / flow_time`. The median ratio across PRs in each phase is the metric value. The denominator excludes PRs flagged by M7 for history-rewrite exclusion. The M5 confidence tier is set to `min(confidence(M4), confidence(M7))` per the user's confidence-assignment policy in AAP §0.8.3; this derivation is documented in the Methodological Notes subsection of `decision-log.md`.
 
 ### Phase Values
 
@@ -544,7 +544,7 @@ Proportion of merged PRs classified as feature / defect / risk-compliance / tech
 
 ### Extraction Strategy
 
-A three-tier waterfall is applied to each merged PR. Tier 1 checks for a linked issue (via `Fixes #N`, `Closes #N`, or `Closes CAL-XXXX` in title or body) and maps issue labels to the four categories via a documented label-to-category map. Tier 2 parses the PR title against `^(feat|fix|chore|refactor|perf|docs|test|ci|build|style|security|compliance)(\([^)]+\))?!?:` and maps the prefix. Tier 3 keyword matches against documented token sets. PRs matching none are categorized as `unknown`. See Decision Row 10 in `decision-log.md` for the waterfall ordering rationale and the label-to-category map.
+A three-tier waterfall is applied to each merged PR. Tier 1 checks for a linked issue (via `Fixes #N`, `Closes #N`, or `Closes CAL-XXXX` in title or body) and maps issue labels to the four categories via a documented label-to-category map. Tier 2 parses the PR title against `^(feat|fix|chore|refactor|perf|docs|test|ci|build|style|security|compliance)(\([^)]+\))?!?:` and maps the prefix. Tier 3 keyword matches against documented token sets. PRs matching none are categorized as `unknown`. See Decision Row 3 in `decision-log.md` for the waterfall ordering rationale and the label-to-category map.
 
 ### Phase Values (Category Shares)
 
@@ -586,7 +586,7 @@ xychart-beta
 
 ### Notes
 
-The unknown rate is reported per phase. Per the user definition, an unknown rate above twenty percent downgrades the phase confidence to Low. Mixed-purpose PRs (for example a fix that also adds a feature) are classified by the highest-priority tier that returns a result; this is a documented tradeoff captured in Decision Row 10.
+The unknown rate is reported per phase. Per the user definition, an unknown rate above twenty percent downgrades the phase confidence to Low. Mixed-purpose PRs (for example a fix that also adds a feature) are classified by the highest-priority tier that returns a result; this is a documented tradeoff captured in Decision Row 3.
 
 
 ---
@@ -604,7 +604,7 @@ Median wall-clock from first commit on PR branch to merge commit on default bran
 
 ### Extraction Strategy
 
-For each merged PR, the harness runs `git log --format=%aI --reverse <merge_base>..<head>` on the PR branch and reads the earliest authored timestamp; the merge commit timestamp is taken from the PR's `merged_at` field. PRs whose earliest commit predates a known force-push event on the branch are flagged for exclusion. The exclusion rate (`excluded_prs / total_prs`) is reported per phase. See Decision Row 11 in `decision-log.md` for the history-rewrite handling.
+For each merged PR, the harness runs `git log --format=%aI --reverse <merge_base>..<head>` on the PR branch and reads the earliest authored timestamp; the merge commit timestamp is taken from the PR's `merged_at` field. PRs whose earliest commit predates a known force-push event on the branch are flagged for exclusion. The exclusion rate (`excluded_prs / total_prs`) is reported per phase. History-rewrite handling is implementation-derived from the user's Metric 7 exclusion clause in AAP §0.1.1; flagged PRs and the exclusion rate are reported in `data/metric_7.json#sub_counts.history_rewrite_exclusions`.
 
 ### Phase Values
 
@@ -669,7 +669,7 @@ Mean attributable reverts per release. For each revert on default, identify orig
 
 ### Extraction Strategy
 
-The harness identifies revert commits on the default branch via `git log --grep='^Revert' --pretty=format:%H` and parses each revert body for `This reverts commit <SHA>`. If the line is absent, a tree-hash lookup is performed against the revert's parent. Original commits are matched to the most recent release tag T such that `git merge-base --is-ancestor T <original>` returns success. Reverts whose target is itself a revert are excluded. Initial reconnaissance identified 204 revert commits on the default branch. See Decision Row 13 in `decision-log.md` for the revert-of-revert exclusion rationale.
+The harness identifies revert commits on the default branch via `git log --grep='^Revert' --pretty=format:%H` and parses each revert body for `This reverts commit <SHA>`. If the line is absent, a tree-hash lookup is performed against the revert's parent. Original commits are matched to the most recent release tag T such that `git merge-base --is-ancestor T <original>` returns success. Reverts whose target is itself a revert are excluded. Initial reconnaissance identified 204 revert commits on the default branch. See Decision Row 4 in `decision-log.md` for the revert attribution algorithm and Decision Row 5 for the revert-of-revert exclusion rationale.
 
 ### Phase Values
 
@@ -724,7 +724,7 @@ Mean releases per 2-week window. Source precedence: GitHub Releases API then ann
 
 ### Extraction Strategy
 
-The harness tries the three sources in user-specified precedence. The first source returning a non-empty result is the authoritative source; the chosen source is recorded in `data/metric_9.json#source`. Initial reconnaissance of the repository found zero git tags, so the harness expects to fall back to either the GitHub Releases API or CI deployment events. See Decision Row 14 in `decision-log.md` for the source-precedence fallback rationale.
+The harness tries the three sources in user-specified precedence. The first source returning a non-empty result is the authoritative source; the chosen source is recorded in `data/metric_9.json#source`. Initial reconnaissance of the repository found zero git tags, so the harness expects to fall back to either the GitHub Releases API or CI deployment events. See Decision Row 6 in `decision-log.md` for the source-precedence fallback rationale and Decision Row 7 for the prerelease exclusion.
 
 ### Phase Values
 
@@ -778,7 +778,7 @@ Count per 2-week window of policy bypasses: admin-overridden required reviews, f
 
 ### Extraction Strategy
 
-The harness queries the GitHub Audit Log API (`/orgs/Blitzy-Sandbox/audit-log`) for the four bypass event types if the token has `audit_log:read` scope. If the scope is absent, the harness falls back to two partial signals: force-pushes via `/repos/.../events` and PRs labeled with exception/waiver/override tags via `/repos/.../issues?labels=exception`. The fallback path triggers a confidence downgrade to Low per the user definition. See Decision Row 15 in `decision-log.md` for the fallback signal selection.
+The harness queries the GitHub Audit Log API (`/orgs/Blitzy-Sandbox/audit-log`) for the four bypass event types if the token has `audit_log:read` scope. If the scope is absent, the harness falls back to two partial signals: force-pushes via `/repos/.../events` and PRs labeled with exception/waiver/override tags via `/repos/.../issues?labels=exception`. The fallback path triggers a confidence downgrade to Low per the user definition. See Decision Row 8 in `decision-log.md` for the fallback signal selection.
 
 ### Phase Values
 
@@ -844,7 +844,7 @@ Per 2-week window: (a) tests transitioning pass-to-fail on default (regressions)
 
 ### Extraction Strategy
 
-The harness queries `/repos/.../actions/runs` for the workflows that produce JUnit XML artifacts (`unit-tests.yml`, `integration-tests.yml`, `e2e.yml`, `e2e-api-v2.yml`, `e2e-app-store.yml`, `e2e-atoms.yml`, `e2e-embed.yml`, `e2e-embed-react.yml`, `performance-tests.yml`, `check-types.yml`, `check-prisma-migrations.yml`). For each consecutive pair of runs on the default branch, the harness compares test outcomes and identifies pass-to-fail transitions. Skipped tests are inventoried via `git log -p -- '*.test.{ts,tsx,js,jsx}'` filtered for additions matching `\.skip\(|xit\(|xtest\(|\.todo\(|@xfail`. Initial reconnaissance found 146 skip annotations on the default branch. See Decision Row 16 in `decision-log.md` for the flaky-test threshold rationale.
+The harness queries `/repos/.../actions/runs` for the workflows that produce JUnit XML artifacts (`unit-tests.yml`, `integration-tests.yml`, `e2e.yml`, `e2e-api-v2.yml`, `e2e-app-store.yml`, `e2e-atoms.yml`, `e2e-embed.yml`, `e2e-embed-react.yml`, `performance-tests.yml`, `check-types.yml`, `check-prisma-migrations.yml`). For each consecutive pair of runs on the default branch, the harness compares test outcomes and identifies pass-to-fail transitions. Skipped tests are inventoried via `git log -p -- '*.test.{ts,tsx,js,jsx}'` filtered for additions matching `\.skip\(|xit\(|xtest\(|\.todo\(|@xfail`. Initial reconnaissance found 146 skip annotations on the default branch. The flaky-test threshold of three consecutive failures is per the user's Metric 11 definition in AAP §0.1.1; no separate decision-log entry is required because the threshold is enumerated verbatim in that section.
 
 ### Phase Values
 
@@ -900,7 +900,7 @@ Count and percentage per phase of defect-labeled issues whose resolution time ex
 
 ### Extraction Strategy
 
-The harness first checks for a Linear API key (`LINEAR_API_KEY`). If present, the harness queries `teams/{id}/slaPolicies` to fetch SLA targets per severity tier and `issues?filter[label][name][eq]=bug` to fetch resolution times per issue. If the Linear API key is absent, the harness searches `CONTRIBUTING.md`, `SECURITY.md`, and `README.md` for an SLA policy text. Initial reconnaissance confirmed no SLA policy text in any of those files. If neither source is available, M12 reports "Insufficient signal — no SLA source." See Decision Row 17 in `decision-log.md` for the SLA-source fallback.
+The harness first checks for a Linear API key (`LINEAR_API_KEY`). If present, the harness queries `teams/{id}/slaPolicies` to fetch SLA targets per severity tier and `issues?filter[label][name][eq]=bug` to fetch resolution times per issue. If the Linear API key is absent, the harness searches `CONTRIBUTING.md`, `SECURITY.md`, and `README.md` for an SLA policy text. Initial reconnaissance confirmed no SLA policy text in any of those files. If neither source is available, M12 reports "Insufficient signal — no SLA source." See Decision Row 9 in `decision-log.md` for the SLA-source fallback.
 
 ### Phase Values
 
@@ -938,7 +938,7 @@ xychart-beta
 
 ### Notes
 
-If the M12 status is "Insufficient signal — no SLA source," every cell in the phase-values table renders the literal string `insufficient_signal` and the trend diagram renders an empty chart. The renderer does not substitute zero values for missing data. Severity tier mapping is documented in Decision Row 17.
+If the M12 status is "Insufficient signal — no SLA source," every cell in the phase-values table renders the literal string `insufficient_signal` and the trend diagram renders an empty chart. The renderer does not substitute zero values for missing data. Severity tier mapping is documented in Decision Row 9 (M12 SLA-source fallback).
 
 
 ---
@@ -1068,7 +1068,7 @@ The bullets below are mandatory limitations documented in the AAP. Additional li
 - This deliverable measures **flow and operational** metrics only; runtime performance, customer satisfaction, and revenue impact are explicitly out of scope per user instruction.
 - Pre-history-rewrite PRs are excluded from M7 (exclusion rate: `<M7.exclusion_rate>%`).
 - M3 (Flow Predictability) requires four or more windows per phase; phases below this threshold report "Insufficient signal — fewer than 4 windows."
-- Zero-variance phases for M3 report "Insufficient signal — zero variance" rather than infinity (definitional choice; see Decision Row 7 in `decision-log.md`).
+- Zero-variance phases for M3 report "Insufficient signal — zero variance" rather than infinity (definitional choice per the user's Metric 3 definition in AAP §0.1.1).
 - M9 prereleases are excluded from the primary count and reported separately (`<M9.prerelease_count>` prereleases detected).
 - M10 is **Low confidence by default** unless the GitHub token has `audit_log:read` scope; the report flags this explicitly in §10.1 and in the M10 deep-dive caveat callout.
 - M12 is **insufficient signal** if no SLA source is configured; the report's M12 deep-dive states this in its caveat callout and the Risk Assessment §10.2 documents the resolution path.

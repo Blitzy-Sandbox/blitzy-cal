@@ -1,6 +1,5 @@
 # Placeholder so blitzy/reports/acceleration/logs/ persists in source control.
 # Runtime log files are written to logs/<run_id>/ subdirectories by harness scripts at execution time.
 # Per-run log schema and commands.log convention are documented in:
-#   - blitzy/reports/acceleration/README.md (Observability - Log Line Schema section)
-#   - blitzy/reports/acceleration/dashboard.md (Correlation ID Format)
+#   README.md (Observability - Log Line Schema section) and dashboard.md (Correlation ID Format).
 # This file MUST NOT be deleted. Runtime <run_id>/*.log files MUST NOT be committed.

@@ -35,9 +35,9 @@ Metric M1 (Flow Load) moved from `<M1.baseline>` in-progress PRs to `<M1.after>`
 
 ### Phase Context
 
-- Baseline: `<phase_baseline_range>` (`<phase_baseline_windows>` windows of 2 weeks each, Monday-aligned).
-- Ramp-Up: `<phase_ramp_up_range>` (`<phase_ramp_up_windows>` windows, first 90 days post-introduction).
-- Steady State: `<phase_steady_state_range>` (`<phase_steady_state_windows>` windows, 90+ days post-introduction).
+- Baseline: `<inflection.baseline_range>` (`<inflection.baseline_window_count>` windows of 2 weeks each, Monday-aligned).
+- Ramp-Up: `<inflection.ramp_up_range>` (`<inflection.ramp_up_window_count>` windows, first 90 days post-introduction).
+- Steady State: `<inflection.steady_state_range>` (`<inflection.steady_state_window_count>` windows, 90+ days post-introduction).
 
 If fewer than 90 days of post-introduction data exist at run time, the report reverts to "Baseline vs Post-Introduction only" and the Steady State row is replaced by a single Post-Introduction row in every table. The renderer applies this fallback automatically by reading `data/windows.json` and counting windows in each phase before populating placeholder tokens.
 
@@ -64,6 +64,10 @@ This section appears before any Metric Deep-Dive per Rule 6 (Environment First).
 
 The environment row values are recorded at the start of every harness invocation. They appear here so that any reader auditing the metric figures can identify the exact commit, branch, and runtime under which they were derived. The same `<env.run_id>` value is the directory name used for per-run logs at `logs/<env.run_id>/` and is referenced from the Reproducibility Appendix (§12) and from the `commands.log` reference embedded therein.
 
+### `env.*` Namespace Producer Contract
+
+The twelve fields enumerated in the Environment Verification table above are produced by `scripts/verify_environment.py` and emitted to `data/environment.json` as a single shared schema (`repo_url`, `git_version`, `commit_count`, `branch_count`, `submodules`, `date_range`, `extracted_at`, `python_version`, `os`, `run_id`, `head_sha`, `default_branch`). Additional `env.*` placeholders that appear elsewhere in this report — the per-source statuses (`env.api_*_status`, `env.linear_*_status`, `env.git_status`) in the Data Source Inventory (§3), the per-engineer name fields (`env.engineer_N_name`) in the Per-Engineer Acceleration table (§8), the per-finding fields in the Low-Confidence Callout block (`env.low_conf_metric_N_*`) and the Insufficient-Signal Callout block (`env.isig_metric_N_*`) in the Risk Assessment (§10), and the commands-log reference (`env.commands_log_verbatim`) in the Reproducibility Appendix (§12) — are populated by `scripts/extract_metrics.py` and the renderer `scripts/build_report.py` at extraction and render time respectively. The `env.*` namespace is therefore multi-producer; each token's producer is documented in the renderer contract in `scripts/build_report.py::populate_placeholders()`, and the consistency validator `scripts/validate_consistency.py` asserts that every `env.*` token referenced in the rendered report has a producing source that resolves to a non-null value or to a documented "Insufficient signal" status. This contract preserves the lockstep between the report template and producer schemas required by Code Review Finding R2 while keeping `verify_environment.py` focused on environment metadata rather than analysis-run data.
+
 ---
 
 ## Data Source Inventory
@@ -72,20 +76,20 @@ This section enumerates every system consulted to derive the twelve metrics and 
 
 | Source | Endpoint / Path | Used For | Status |
 |--------|-----------------|----------|--------|
-| Git history | `.git/` (local) | M1–M9, M11 | `<git_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all` | M1, M2, M4, M5, M7 | `<api_pulls_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls/{n}` | M4, M5, M7 | `<api_pull_detail_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls/{n}/reviews` | M4, M5 | `<api_reviews_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls/{n}/commits` | M4, M7 | `<api_pr_commits_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/issues/{n}/events` | M4, M5, M10 | `<api_events_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/issues?labels=bug&state=all` | M6, M12 | `<api_issues_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/releases` | M9 | `<api_releases_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/actions/runs` | M11 | `<api_actions_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/actions/runs/{id}/artifacts` | M11 | `<api_artifacts_status>` |
-| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/branches/main/protection` | M10 | `<api_protection_status>` |
-| GitHub Audit Log API | `/orgs/Blitzy-Sandbox/audit-log` | M10 | `<api_audit_status>` (Conditional on `audit_log:read`) |
-| Linear API | `issues?filter[label][name][eq]=bug` | M6, M12 | `<linear_issues_status>` (Conditional on `LINEAR_API_KEY`) |
-| Linear API | `teams/{id}/slaPolicies` | M12 | `<linear_sla_status>` (Conditional on `LINEAR_API_KEY`) |
+| Git history | `.git/` (local) | M1–M9, M11 | `<env.git_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all` | M1, M2, M4, M5, M7 | `<env.api_pulls_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls/{n}` | M4, M5, M7 | `<env.api_pull_detail_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls/{n}/reviews` | M4, M5 | `<env.api_reviews_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/pulls/{n}/commits` | M4, M7 | `<env.api_pr_commits_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/issues/{n}/events` | M4, M5, M10 | `<env.api_events_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/issues?labels=bug&state=all` | M6, M12 | `<env.api_issues_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/releases` | M9 | `<env.api_releases_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/actions/runs` | M11 | `<env.api_actions_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/actions/runs/{id}/artifacts` | M11 | `<env.api_artifacts_status>` |
+| GitHub REST API | `/repos/Blitzy-Sandbox/blitzy-cal/branches/main/protection` | M10 | `<env.api_protection_status>` |
+| GitHub Audit Log API | `/orgs/Blitzy-Sandbox/audit-log` | M10 | `<env.api_audit_status>` (Conditional on `audit_log:read`) |
+| Linear API | `issues?filter[label][name][eq]=bug` | M6, M12 | `<env.linear_issues_status>` (Conditional on `LINEAR_API_KEY`) |
+| Linear API | `teams/{id}/slaPolicies` | M12 | `<env.linear_sla_status>` (Conditional on `LINEAR_API_KEY`) |
 | Repository config | `.kodiak.toml` | M1, M2 (bot exclusion) | Read |
 | Repository config | `.github/CODEOWNERS` | M10 (required-review detection) | Read |
 | Repository config | `.github/PULL_REQUEST_TEMPLATE.md` | M6, M12 (issue linkage) | Read |
@@ -94,7 +98,7 @@ This section enumerates every system consulted to derive the twelve metrics and 
 | Test files | `packages/**/*.test.{ts,tsx,js,jsx}`, `apps/**/*.test.{ts,tsx,js,jsx}` | M11 (skipped-test inventory) | Read (146 skip annotations at HEAD) |
 | Repository policy | `CONTRIBUTING.md`, `SECURITY.md`, `README.md` | M12 (SLA source search) | Read (no SLA targets present) |
 
-Status values are one of: `Available`, `Unavailable — <reason>`, `Conditional — <condition>`. Any `Unavailable` row triggers a confidence downgrade and a Risk Assessment entry in §10. Conditional sources are upgraded to Available when the noted condition is satisfied at run time.
+Status values are one of: `Available`, `Unavailable — {REASON}`, `Conditional — {CONDITION}`. Any `Unavailable` row triggers a confidence downgrade and a Risk Assessment entry in §10. Conditional sources are upgraded to Available when the noted condition is satisfied at run time.
 
 ---
 
@@ -114,7 +118,7 @@ The chosen date appears only here as the authoritative source for every downstre
 
 Windows are 2 weeks long, aligned to Monday starts. The inflection date is snapped backward to the most recent Monday using `inflection_date - timedelta(days=inflection_date.weekday())`. Window boundaries are generated forward and backward from this anchor to span the repository's full commit date range (`<env.date_range>`). Each window is keyed by its start ISO date and represented as `[Mon 00:00:00 UTC, Mon+14d 00:00:00 UTC)`.
 
-Boundary windows that straddle the inflection date are assigned by majority of days: a window with seven or more days post-introduction is classified as After (Ramp-Up or Steady State); otherwise it is Baseline. Total window count: `<windows.count>`. Window counts per phase: Baseline `<phase_baseline_windows>`, Ramp-Up `<phase_ramp_up_windows>`, Steady State `<phase_steady_state_windows>`. See Decision Row 2 in `decision-log.md` for the majority-of-days assignment rationale.
+Boundary windows that straddle the inflection date are assigned by majority of days: a window with seven or more days post-introduction is classified as After (Ramp-Up or Steady State); otherwise it is Baseline. Total window count: `<inflection.window_count>`. Window counts per phase: Baseline `<inflection.baseline_window_count>`, Ramp-Up `<inflection.ramp_up_window_count>`, Steady State `<inflection.steady_state_window_count>`. See Decision Row 2 in `decision-log.md` for the majority-of-days assignment rationale.
 
 ### 5.3 Engineering Actor Substitution
 
@@ -604,7 +608,7 @@ Median wall-clock from first commit on PR branch to merge commit on default bran
 
 ### Extraction Strategy
 
-For each merged PR, the harness runs `git log --format=%aI --reverse <merge_base>..<head>` on the PR branch and reads the earliest authored timestamp; the merge commit timestamp is taken from the PR's `merged_at` field. PRs whose earliest commit predates a known force-push event on the branch are flagged for exclusion. The exclusion rate (`excluded_prs / total_prs`) is reported per phase. History-rewrite handling is implementation-derived from the user's Metric 7 exclusion clause in AAP §0.1.1; flagged PRs and the exclusion rate are reported in `data/metric_7.json#sub_counts.history_rewrite_exclusions`.
+For each merged PR, the harness runs `git log --format=%aI --reverse {MERGE_BASE}..{HEAD}` on the PR branch and reads the earliest authored timestamp; the merge commit timestamp is taken from the PR's `merged_at` field. PRs whose earliest commit predates a known force-push event on the branch are flagged for exclusion. The exclusion rate (`excluded_prs / total_prs`) is reported per phase. History-rewrite handling is implementation-derived from the user's Metric 7 exclusion clause in AAP §0.1.1; flagged PRs and the exclusion rate are reported in `data/metric_7.json#sub_counts.history_rewrite_exclusions`.
 
 ### Phase Values
 
@@ -669,7 +673,7 @@ Mean attributable reverts per release. For each revert on default, identify orig
 
 ### Extraction Strategy
 
-The harness identifies revert commits on the default branch via `git log --grep='^Revert' --pretty=format:%H` and parses each revert body for `This reverts commit <SHA>`. If the line is absent, a tree-hash lookup is performed against the revert's parent. Original commits are matched to the most recent release tag T such that `git merge-base --is-ancestor T <original>` returns success. Reverts whose target is itself a revert are excluded. Initial reconnaissance identified 204 revert commits on the default branch. See Decision Row 4 in `decision-log.md` for the revert attribution algorithm and Decision Row 5 for the revert-of-revert exclusion rationale.
+The harness identifies revert commits on the default branch via `git log --grep='^Revert' --pretty=format:%H` and parses each revert body for `This reverts commit {SHA}`. If the line is absent, a tree-hash lookup is performed against the revert's parent. Original commits are matched to the most recent release tag T such that `git merge-base --is-ancestor T {ORIGINAL}` returns success. Reverts whose target is itself a revert are excluded. Initial reconnaissance identified 204 revert commits on the default branch. See Decision Row 4 in `decision-log.md` for the revert attribution algorithm and Decision Row 5 for the revert-of-revert exclusion rationale.
 
 ### Phase Values
 
@@ -955,7 +959,7 @@ This table is the Rule 1 (Data Provenance) verification surface. Every numeric v
 | M4 Flow Active | §0.1.1 row 4 | `GET /pulls/{n}/reviews` + `GET /pulls/{n}/commits` | `data/metric_4.json` | `metrics_results["M4"]["after"]` | `<M4.multiplier>` | `<M4.confidence>` |
 | M5 Flow Efficiency | §0.1.1 row 5 | Derived from `data/metric_4.json` and `data/metric_7.json` | `data/metric_5.json` | `metrics_results["M5"]["after"]` | `<M5.multiplier>` | `<M5.confidence>` |
 | M6 Flow Distribution | §0.1.1 row 6 | `git log --format=%s` + `GET /issues/{n}` (label join) | `data/metric_6.json` | `metrics_results["M6"]["after"]` | `<M6.multiplier>` | `<M6.confidence>` |
-| M7 Flow Time | §0.1.1 row 7 | `git log --format=%aI --reverse <merge_base>..<head>` + `merged_at` | `data/metric_7.json` | `metrics_results["M7"]["after"]` | `<M7.multiplier>` | `<M7.confidence>` |
+| M7 Flow Time | §0.1.1 row 7 | `git log --format=%aI --reverse {MERGE_BASE}..{HEAD}` + `merged_at` | `data/metric_7.json` | `metrics_results["M7"]["after"]` | `<M7.multiplier>` | `<M7.confidence>` |
 | M8 Problem Records in Release | §0.1.1 row 8 | `git log --grep='^Revert'` + `git merge-base --is-ancestor` | `data/metric_8.json` | `metrics_results["M8"]["after"]` | `<M8.multiplier>` | `<M8.confidence>` |
 | M9 Releases | §0.1.1 row 9 | `GET /repos/.../releases` (or fallback) | `data/metric_9.json` | `metrics_results["M9"]["after"]` | `<M9.multiplier>` | `<M9.confidence>` |
 | M10 Approved Exceptions | §0.1.1 row 10 | `GET /orgs/.../audit-log` (or fallback) | `data/metric_10.json` | `metrics_results["M10"]["after"]` | `<M10.multiplier>` | `<M10.confidence>` |
@@ -972,12 +976,12 @@ The table below lists per-engineer values for the metrics that aggregate by acto
 
 | Engineer | M2 Velocity (Before) | M2 Velocity (After) | M4 Active (Before) | M4 Active (After) | M5 Efficiency (Before) | M5 Efficiency (After) | M6 Feature Share (After) | M10 Exceptions (After) |
 |----------|----------------------|----------------------|---------------------|--------------------|------------------------|------------------------|---------------------------|--------------------------|
-| `<engineer_1_name>` | `<engineer_1_m2_before>` | `<engineer_1_m2_after>` | `<engineer_1_m4_before>` | `<engineer_1_m4_after>` | `<engineer_1_m5_before>` | `<engineer_1_m5_after>` | `<engineer_1_m6_after>` | `<engineer_1_m10_after>` |
-| `<engineer_2_name>` | `<engineer_2_m2_before>` | `<engineer_2_m2_after>` | `<engineer_2_m4_before>` | `<engineer_2_m4_after>` | `<engineer_2_m5_before>` | `<engineer_2_m5_after>` | `<engineer_2_m6_after>` | `<engineer_2_m10_after>` |
-| `<engineer_3_name>` | `<engineer_3_m2_before>` | `<engineer_3_m2_after>` | `<engineer_3_m4_before>` | `<engineer_3_m4_after>` | `<engineer_3_m5_before>` | `<engineer_3_m5_after>` | `<engineer_3_m6_after>` | `<engineer_3_m10_after>` |
-| `<engineer_4_name>` | `<engineer_4_m2_before>` | `<engineer_4_m2_after>` | `<engineer_4_m4_before>` | `<engineer_4_m4_after>` | `<engineer_4_m5_before>` | `<engineer_4_m5_after>` | `<engineer_4_m6_after>` | `<engineer_4_m10_after>` |
-| `<engineer_5_name>` | `<engineer_5_m2_before>` | `<engineer_5_m2_after>` | `<engineer_5_m4_before>` | `<engineer_5_m4_after>` | `<engineer_5_m5_before>` | `<engineer_5_m5_after>` | `<engineer_5_m6_after>` | `<engineer_5_m10_after>` |
-| + blitzy-agent | N/A (pre-introduction) | `<blitzy_m2_after>` | N/A (pre-introduction) | `<blitzy_m4_after>` | N/A (pre-introduction) | `<blitzy_m5_after>` | `<blitzy_m6_after>` | `<blitzy_m10_after>` |
+| `<env.engineer_1_name>` | `<M2.engineer_1_baseline>` | `<M2.engineer_1_after>` | `<M4.engineer_1_baseline>` | `<M4.engineer_1_after>` | `<M5.engineer_1_baseline>` | `<M5.engineer_1_after>` | `<M6.engineer_1_after>` | `<M10.engineer_1_after>` |
+| `<env.engineer_2_name>` | `<M2.engineer_2_baseline>` | `<M2.engineer_2_after>` | `<M4.engineer_2_baseline>` | `<M4.engineer_2_after>` | `<M5.engineer_2_baseline>` | `<M5.engineer_2_after>` | `<M6.engineer_2_after>` | `<M10.engineer_2_after>` |
+| `<env.engineer_3_name>` | `<M2.engineer_3_baseline>` | `<M2.engineer_3_after>` | `<M4.engineer_3_baseline>` | `<M4.engineer_3_after>` | `<M5.engineer_3_baseline>` | `<M5.engineer_3_after>` | `<M6.engineer_3_after>` | `<M10.engineer_3_after>` |
+| `<env.engineer_4_name>` | `<M2.engineer_4_baseline>` | `<M2.engineer_4_after>` | `<M4.engineer_4_baseline>` | `<M4.engineer_4_after>` | `<M5.engineer_4_baseline>` | `<M5.engineer_4_after>` | `<M6.engineer_4_after>` | `<M10.engineer_4_after>` |
+| `<env.engineer_5_name>` | `<M2.engineer_5_baseline>` | `<M2.engineer_5_after>` | `<M4.engineer_5_baseline>` | `<M4.engineer_5_after>` | `<M5.engineer_5_baseline>` | `<M5.engineer_5_after>` | `<M6.engineer_5_after>` | `<M10.engineer_5_after>` |
+| + blitzy-agent | N/A (pre-introduction) | `<M2.blitzy_after>` | N/A (pre-introduction) | `<M4.blitzy_after>` | N/A (pre-introduction) | `<M5.blitzy_after>` | `<M6.blitzy_after>` | `<M10.blitzy_after>` |
 
 The Blitzy row is the engineering actor for the after period only per the user-supplied framing: *"In the after period, Blitzy is treated as the engineering actor — the entity producing code on the PR. Blitzy works alone on its PRs; humans review but do not co-author. Metrics that aggregate by actor (2, 4, 5, 6, 10) include Blitzy as one row in the after period alongside human contributors."* Human rows are normalized per active engineer by dividing the per-actor count by the number of windows in which the actor was active (defined as having authored at least one merged PR in the window). The Blitzy row is reported as raw counts because Blitzy is treated as a single engineering actor.
 
@@ -1031,9 +1035,9 @@ This section documents data-quality, methodology, and signal-availability risks 
 
 The list below is populated by the renderer from `data/metric_*.json` based on each metric's confidence tag. Each entry identifies the metric, the reason confidence is Low, the consequence for the reader, and the data source that would upgrade confidence.
 
-- **`<low_conf_metric_1.id>`: `<low_conf_metric_1.name>`** — Confidence Low because `<low_conf_metric_1.reason>`. Consequence: do not interpret the multiplier as evidence of magnitude change; only the direction is reliable. Upgrade path: `<low_conf_metric_1.upgrade_source>`.
-- **`<low_conf_metric_2.id>`: `<low_conf_metric_2.name>`** — Confidence Low because `<low_conf_metric_2.reason>`. Consequence: `<low_conf_metric_2.consequence>`. Upgrade path: `<low_conf_metric_2.upgrade_source>`.
-- **`<low_conf_metric_3.id>`: `<low_conf_metric_3.name>`** — Confidence Low because `<low_conf_metric_3.reason>`. Consequence: `<low_conf_metric_3.consequence>`. Upgrade path: `<low_conf_metric_3.upgrade_source>`.
+- **`<env.low_conf_metric_1_id>`: `<env.low_conf_metric_1_name>`** — Confidence Low because `<env.low_conf_metric_1_reason>`. Consequence: do not interpret the multiplier as evidence of magnitude change; only the direction is reliable. Upgrade path: `<env.low_conf_metric_1_upgrade_source>`.
+- **`<env.low_conf_metric_2_id>`: `<env.low_conf_metric_2_name>`** — Confidence Low because `<env.low_conf_metric_2_reason>`. Consequence: `<env.low_conf_metric_2_consequence>`. Upgrade path: `<env.low_conf_metric_2_upgrade_source>`.
+- **`<env.low_conf_metric_3_id>`: `<env.low_conf_metric_3_name>`** — Confidence Low because `<env.low_conf_metric_3_reason>`. Consequence: `<env.low_conf_metric_3_consequence>`. Upgrade path: `<env.low_conf_metric_3_upgrade_source>`.
 
 If no metrics carry Low confidence at run time, the renderer emits a single bullet stating "No metrics were assigned Low confidence in this run; see §10.2 for any insufficient-signal entries and §10.3 for methodology risks."
 
@@ -1041,8 +1045,8 @@ If no metrics carry Low confidence at run time, the renderer emits a single bull
 
 The list below is populated by the renderer from `data/metric_*.json` for any metric whose status field is set to `insufficient_signal`. Each entry identifies the metric, the reason data was insufficient, what the report omits as a result, and the data source that would resolve the gap.
 
-- **`<isig_metric_1.id>`: `<isig_metric_1.name>`** — Insufficient signal because `<isig_metric_1.reason>`. Report omits: `<isig_metric_1.omitted>`. Resolution path: `<isig_metric_1.resolution_source>`.
-- **`<isig_metric_2.id>`: `<isig_metric_2.name>`** — Insufficient signal because `<isig_metric_2.reason>`. Report omits: `<isig_metric_2.omitted>`. Resolution path: `<isig_metric_2.resolution_source>`.
+- **`<env.isig_metric_1_id>`: `<env.isig_metric_1_name>`** — Insufficient signal because `<env.isig_metric_1_reason>`. Report omits: `<env.isig_metric_1_omitted>`. Resolution path: `<env.isig_metric_1_resolution_source>`.
+- **`<env.isig_metric_2_id>`: `<env.isig_metric_2_name>`** — Insufficient signal because `<env.isig_metric_2_reason>`. Report omits: `<env.isig_metric_2_omitted>`. Resolution path: `<env.isig_metric_2_resolution_source>`.
 
 If no metrics report insufficient signal, the renderer emits "No metrics reported insufficient signal in this run."
 
@@ -1054,7 +1058,7 @@ The risks below are inherent to the methodology and apply regardless of the run'
 - **Force-push detection limits.** The GitHub Events API retains ref-update events for a bounded period (typically 90 days). Older force-pushes are not detectable via the API and may cause M7 to silently include rewritten branches with the current first-commit timestamp instead of the original. The decision log records this as a known limitation.
 - **Classification waterfall mismatches.** M6 mixed-purpose PRs (for example a fix that also adds a feature) are classified by the highest-priority tier that returns a result. This may under-represent the secondary category. The unknown rate is reported per phase as a transparency indicator; rates above twenty percent downgrade phase confidence to Low.
 - **Per-module attribution heuristics.** Per-module breakdowns use the primary path-prefix of changed files in each PR. PRs that touch multiple modules are attributed to the dominant module by file-count. Cross-cutting refactors may therefore be miscounted, particularly those that touch shared `packages/*` together with an `apps/*` consumer.
-- **Cache staleness.** API responses are cached under `data/cache/<endpoint_hash>.json` to allow reproducible re-runs without exhausting rate limits. Cached entries may be older than the analysis target date if the harness was run repeatedly during the analysis. The `--no-cache` flag forces a fresh fetch; see the Reproducibility Appendix (§12).
+- **Cache staleness.** API responses are cached under `data/cache/{endpoint_hash}.json` to allow reproducible re-runs without exhausting rate limits. Cached entries may be older than the analysis target date if the harness was run repeatedly during the analysis. The `--no-cache` flag forces a fresh fetch; see the Reproducibility Appendix (§12).
 - **Bot exclusion completeness.** The bot exclusion list is derived from `.kodiak.toml#auto_approve_usernames`. If new bot identities are added to the repository between runs, the harness will not detect them automatically; the operator must update the exclusion list before re-running.
 - **Linear API key absence.** If `LINEAR_API_KEY` is not set at run time, M6 classification loses the issue-tracker tier (Tier 1) and falls back to the conventional-commit prefix tier (Tier 2). M12 reports "Insufficient signal — no SLA source" unless a repository policy text is found. Both fallbacks are confidence-downgraded per §0.8.3 of the AAP.
 - **Audit log scope absence.** If the GitHub token lacks `audit_log:read` scope, M10 uses only the force-push and label-based partial signals and is tagged Low confidence. The full signal requires organization-admin token scopes.
@@ -1082,7 +1086,7 @@ The bullets below are mandatory limitations documented in the AAP. Additional li
 This section contains the complete, ordered set of commands and API calls executed during the harness run identified by `<env.run_id>`. The renderer reads `logs/<env.run_id>/commands.log` and embeds its contents verbatim below; each line is in execution order and is a syntactically valid git invocation, HTTP URL, or Python subprocess execution.
 
 ```
-<commands_log_verbatim>
+<env.commands_log_verbatim>
 ```
 
 Re-running these commands in order on the same git HEAD with the same API responses (cached under `data/cache/`) produces byte-identical `data/metric_*.json` outputs. The `--no-cache` flag forces fresh API fetches and may produce slightly different outputs if upstream data has changed since the cache was populated. Secrets (`GITHUB_TOKEN`, `LINEAR_API_KEY`) are read from environment variables and never appear in this log.

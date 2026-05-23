@@ -22,40 +22,28 @@ Every count in the Status callout above is a snapshot from the AAP reconnaissanc
 
 ## Quickstart
 
-The goal is to take a clean developer machine to a running harness using only Python 3.10+ and `git` (both typically pre-installed). No third-party Python packages are required; the harness uses standard library modules exclusively. Execute the following ten commands in order:
+The goal is to take a clean developer machine to a running harness using only Python 3.10+ and `git` (both typically pre-installed). No third-party Python packages are required; the harness uses standard library modules exclusively. Execute the following commands in order (≤10 lines):
 
 ```bash
-# 1. Clone the analyzed repository (read-only)
-git clone https://github.com/Blitzy-Sandbox/blitzy-cal.git
-cd blitzy-cal
+# 1. Clone the analyzed repository and enter it (read-only operations).
+git clone https://github.com/Blitzy-Sandbox/blitzy-cal.git && cd blitzy-cal
 
-# 2. Verify Python 3.10+ is installed
-python3 --version  # should be 3.10 or higher
+# 2. Verify Python 3.10+ is installed.
+python3 --version
 
-# 3. Export required GitHub token (fine-grained PAT with read scopes)
-export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+# 3. Export GITHUB_TOKEN (required) and LINEAR_API_KEY (optional, stronger M6/M12).
+#    BLITZY_RUN_ID is optional; if unset, the harness auto-generates a UUIDv4 at startup.
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxx
 
-# 4. (Optional) Export Linear API key for stronger M6/M12 signal
-export LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxx
+# 4. Run the three pre-extraction scripts in order
+#    (environment → inflection → windows).
+python3 blitzy/reports/acceleration/scripts/verify_environment.py && python3 blitzy/reports/acceleration/scripts/derive_inflection.py && python3 blitzy/reports/acceleration/scripts/generate_windows.py
 
-# 5. (Optional) Set a stable run ID; otherwise the harness generates a UUIDv4
-export BLITZY_RUN_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')
-
-# 6. Verify the environment
-python3 blitzy/reports/acceleration/scripts/verify_environment.py
-
-# 7. Detect the AI tool introduction date
-python3 blitzy/reports/acceleration/scripts/derive_inflection.py
-
-# 8. Generate the 2-week window table
-python3 blitzy/reports/acceleration/scripts/generate_windows.py
-
-# 9. Run the full extraction harness (all 12 metrics)
+# 5. Run the full extraction harness (all 12 metrics).
 python3 blitzy/reports/acceleration/scripts/extract_metrics.py --metric all
 
-# 10. Build the report and presentation
-python3 blitzy/reports/acceleration/scripts/build_report.py && \
-  python3 blitzy/reports/acceleration/scripts/build_presentation.py
+# 6. Build the analytical report and the executive presentation.
+python3 blitzy/reports/acceleration/scripts/build_report.py && python3 blitzy/reports/acceleration/scripts/build_presentation.py
 ```
 
 The harness caches every GitHub REST API response under `data/cache/<endpoint>+<query-hash>.json` so re-runs are reproducible without exhausting the 5,000-requests-per-hour rate limit on personal access tokens. Re-runs hit the cache by default. Pass `--no-cache` to any of the scripts above to force fresh fetches; this is required only when the upstream data has changed since the last run.

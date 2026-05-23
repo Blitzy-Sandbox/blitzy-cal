@@ -14,9 +14,9 @@ The Run Metadata block above is rebuilt on every render. `<run_id>` is the UUIDv
 
 ## KPI Summary
 
-The table below lists each of the twelve metrics with its phase values, the After/Before multiplier, the confidence tag derived from the actual data source used, the reference threshold from DORA or the Flow Framework, and a pointer to the metric's trend diagram in the main report. Every cell is rendered from the single `metrics_results` dictionary maintained by the extraction harness, so values are consistent with every other section of the report (Rule 4).
+The table below lists each of the twelve metrics with its phase values, the After/Before multiplier, the confidence tag derived from the actual data source used, the reference threshold from DORA or the Flow Framework, and a pointer to the metric's trend diagram in the main report. Every cell is rendered from the single `metrics_results` dictionary maintained by the extraction harness, so values are consistent with every other section of the report (Rule 4). The `Multiplier` column is the After/Before ratio for each metric; phase-specific multipliers and weighted aggregations are documented in `acceleration-report.md`.
 
-| # | Metric | Baseline | Ramp-Up | Steady State | Multiplier (After/Before) | Confidence | Threshold | Trend |
+| # | Metric | Baseline | Ramp-Up | Steady State | Multiplier | Confidence | Threshold | Trend |
 |---|--------|----------|---------|--------------|---------------------------|------------|-----------|-------|
 | 1 | Flow Load | `<M1.baseline>` | `<M1.ramp_up>` | `<M1.steady_state>` | `<M1.multiplier>` | `<M1.confidence>` | DORA: Low ≤ 5 / Med 5-10 / High > 10 in-progress PRs | `<M1.trend_mermaid_ref>` |
 | 2 | Flow Velocity | `<M2.baseline>` | `<M2.ramp_up>` | `<M2.steady_state>` | `<M2.multiplier>` | `<M2.confidence>` | DORA Elite: ≥ 1 deploy/day; High: weekly–daily; Medium: weekly–monthly; Low: < monthly | `<M2.trend_mermaid_ref>` |

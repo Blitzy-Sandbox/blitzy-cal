@@ -864,12 +864,12 @@ graph LR
           <h2>Engineering Actor Framing</h2>
         </div>
         <ul class="icon-bullets">
-          <li><i data-lucide="function-square" class="lucide-icon"></i>Single selector <code>engineering_actor(pr, phase)</code>: human in Baseline, Blitzy in After</li>
-          <li><i data-lucide="repeat" class="lucide-icon"></i>Identical extraction logic across phases; only the actor identity branches</li>
-          <li><i data-lucide="clock" class="lucide-icon"></i>Metrics 4 and 5 from actor's perspective; review time is wait time</li>
-          <li><i data-lucide="user-check" class="lucide-icon"></i>Metrics 2, 4, 5, 6, 10 include Blitzy as one row in After aggregations</li>
+          <li><i data-lucide="function-square" class="lucide-icon"></i><code>engineering_actor(pr, phase)</code>: human in Baseline, Blitzy in After</li>
+          <li><i data-lucide="repeat" class="lucide-icon"></i>Identical logic; only actor identity branches per phase</li>
+          <li><i data-lucide="clock" class="lucide-icon"></i>M4-5 from actor view; review is wait time</li>
+          <li><i data-lucide="user-check" class="lucide-icon"></i>M2/4/5/6/10 include Blitzy in After</li>
         </ul>
-        <p class="footnote">See <code>decision-log.md</code> Row 12 for the selector rationale.</p>
+        <p class="footnote">See <code>decision-log.md</code> Row 12 for rationale.</p>
       </section>
 
       <!-- ====================================================
@@ -1224,12 +1224,12 @@ graph LR
           <h2>Low-Confidence and Insufficient-Signal Items</h2>
         </div>
         <ul class="icon-bullets">
-          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M10: Low confidence if <code>audit_log:read</code> unavailable; force-push + label fallback</li>
-          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M12: Insufficient signal if Linear unreachable and no repo SLA source</li>
-          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M6: confidence drops to Low if unknown rate exceeds 20%</li>
-          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M9: confidence drops to Low if falling back to CI deployment events</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M10: Low without <code>audit_log:read</code>; force-push only</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M12: Insufficient signal if Linear unreachable, no SLA</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M6: Low if unknown rate exceeds 20%</li>
+          <li><i data-lucide="alert-circle" class="lucide-icon"></i>M9: Low if falling back to CI deploys</li>
         </ul>
-        <p class="footnote">Full risk register is in the Risk Assessment section of <code>acceleration-report.md</code>.</p>
+        <p class="footnote">Full risk register in Risk Assessment section.</p>
       </section>
 
       <!-- ====================================================
@@ -1242,7 +1242,7 @@ graph LR
         <h2>Reproducible, Confidence-Tagged, Read-Only</h2>
         <div class="accent-bar"></div>
         <ul class="icon-bullets">
-          <li><i data-lucide="git-commit" class="lucide-icon"></i>Blitzy authored 654 commits over 80+ days post-introduction</li>
+          <li><i data-lucide="git-commit" class="lucide-icon"></i>Inflection date: &lt;inflection.chosen_date&gt; via &lt;inflection.chosen_method&gt;</li>
           <li><i data-lucide="check-circle-2" class="lucide-icon"></i>All 12 metrics measured with documented confidence tags</li>
           <li><i data-lucide="book-open" class="lucide-icon"></i>Full reproducibility appendix included in <code>acceleration-report.md</code></li>
         </ul>

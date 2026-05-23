@@ -1,0 +1,6 @@
+{
+  "metric_id": "M11",
+  "status": "insufficient_signal",
+  "confidence": "Insufficient signal",
+  "reason": "CI test history unavailable — no JUnit XML or skip annotations found"
+}

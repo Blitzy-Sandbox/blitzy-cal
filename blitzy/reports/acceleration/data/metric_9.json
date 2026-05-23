@@ -1,0 +1,6 @@
+{
+  "metric_id": "M9",
+  "status": "insufficient_signal",
+  "confidence": "Insufficient signal",
+  "reason": "no release source available (API empty, no semver tags, no CI deploys)"
+}

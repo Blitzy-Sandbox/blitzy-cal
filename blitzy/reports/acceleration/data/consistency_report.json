@@ -1,0 +1,80 @@
+{
+  "run_id": "qa-finalA-fixes-verify-1779532737",
+  "validated_at": "2026-05-23T10:38:58.482885+00:00",
+  "passed": true,
+  "total_errors": 0,
+  "checks_run": 8,
+  "checks": {
+    "schema": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "multiplier_derivation": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "per_actor_sums": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "per_module_weights": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "window_counts": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "confidence_tiers": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "sample_sizes": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    },
+    "duration_formatting_parity": {
+      "pass": true,
+      "error_count": 0,
+      "errors": []
+    }
+  },
+  "insufficient_signal_metrics": [
+    {
+      "metric_id": "M9",
+      "status": "insufficient_signal",
+      "reason": "no release source available (API empty, no semver tags, no CI deploys)",
+      "confidence": "Insufficient signal"
+    },
+    {
+      "metric_id": "M11",
+      "status": "insufficient_signal",
+      "reason": "CI test history unavailable — no JUnit XML or skip annotations found",
+      "confidence": "Insufficient signal"
+    },
+    {
+      "metric_id": "M12",
+      "status": "insufficient_signal",
+      "reason": "no SLA source — neither Linear SLA field nor repository policy/runbook",
+      "confidence": "Insufficient signal"
+    }
+  ],
+  "policy": {
+    "float_tolerance_rel": 0.01,
+    "float_tolerance_abs": 0.001,
+    "actor_sum_tolerance": 0.05,
+    "valid_confidence_tiers": [
+      "High",
+      "Insufficient signal",
+      "Low",
+      "Medium"
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "metric_id": "M7",
+  "status": "ok",
+  "confidence": "High",
+  "source": "github_api_pulls + pr_commits_api + git_log_fallback",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 386675.0,
+  "after": 386675.0,
+  "multiplier": null,
+  "direction": "lower-is-better",
+  "exclusion_rate": 0.0,
+  "excluded_count": 0,
+  "total_count": 7,
+  "in_window_count": 7,
+  "unit": "seconds",
+  "per_actor": {
+    "blitzy-agent": {
+      "baseline": null,
+      "ramp_up": null,
+      "steady_state": null,
+      "post_intro": 386675.0,
+      "after": 386675.0
+    }
+  },
+  "per_pr_observations": {
+    "1": {
+      "pr_number": 1,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 65806.0
+    },
+    "2": {
+      "pr_number": 2,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 386675.0
+    },
+    "3": {
+      "pr_number": 3,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 1115553.0
+    },
+    "4": {
+      "pr_number": 4,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 1863805.0
+    },
+    "5": {
+      "pr_number": 5,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 353246.0
+    },
+    "6": {
+      "pr_number": 6,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 1145703.0
+    },
+    "7": {
+      "pr_number": 7,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 248286.0
+    }
+  },
+  "baseline_n": 0,
+  "ramp_up_n": 0,
+  "steady_state_n": 0,
+  "post_intro_n": 7,
+  "primary_command": "GET /repos/.../pulls/{n}/commits | head -1 by author.date; fallback: git log --format=%aI --reverse {MERGE_BASE}..{HEAD} | head -1"
+}

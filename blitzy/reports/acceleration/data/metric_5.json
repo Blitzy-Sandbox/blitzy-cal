@@ -1,0 +1,30 @@
+{
+  "metric_id": "M5",
+  "status": "ok",
+  "confidence": "High",
+  "source": "derived_from_M4_M7_per_pr_ratios",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 0.09131266414673209,
+  "after": 0.09131266414673209,
+  "multiplier": null,
+  "direction": "higher-is-better",
+  "per_actor": {
+    "blitzy-agent": {
+      "baseline": null,
+      "ramp_up": null,
+      "steady_state": null,
+      "post_intro": 0.09131266414673209,
+      "after": 0.09131266414673209
+    }
+  },
+  "joined_pr_count": 7,
+  "baseline_n": 0,
+  "ramp_up_n": 0,
+  "steady_state_n": 0,
+  "post_intro_n": 7,
+  "primary_command": "join(M4.per_pr_observations, M7.per_pr_observations) by pr_number; ratio_per_pr = M4_seconds / M7_seconds; median(ratios) per phase",
+  "m4_confidence": "High",
+  "m7_confidence": "High"
+}

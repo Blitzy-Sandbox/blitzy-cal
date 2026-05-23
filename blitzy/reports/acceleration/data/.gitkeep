@@ -1,0 +1,1 @@
+# Placeholder so the data/ directory persists in source control before the harness runs and populates it with environment.json, inflection.json, windows.json, metric_<N>.json, and consistency_report.json.

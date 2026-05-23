@@ -20,8 +20,8 @@
     Slide count: 16 (target). Valid range 12-18 enforced by the renderer.
 
     Placeholder tokens of the form <M<N>.<field>>, <env.*>, <inflection.*>,
-    <phase_*>, <actor_table_rows>, <run_id>, <rendered_at>, and
-    <analysis_window> are substituted by scripts/build_presentation.py with
+    <phase_*>, , 6544d423-2004-430d-9589-374520058434, 2026-05-23T06:47:58.721745+00:00, and
+    2021-03-08 → 2026-05-25 are substituted by scripts/build_presentation.py with
     values from data/*.json. The file remains valid HTML with tokens present;
     tokens sit inside text nodes / table cells / attribute-free positions.
   -->
@@ -68,7 +68,16 @@
        Reveal.js theme overrides (replace the white-theme defaults
        with Blitzy brand). Limited specificity; no !important used.
        ============================================================ */
-    html, body { background: var(--blitzy-text-on-dark); }
+    /* Explicit body font-family ensures any text rendered directly on body
+       (outside the .reveal container) uses the brand Inter font rather than
+       the browser default Times New Roman. The .reveal container below
+       continues to declare the same family for clarity and forward
+       compatibility with future reveal.js theme overrides. */
+    html, body {
+      background: var(--blitzy-text-on-dark);
+      font-family: var(--font-body);
+      color: var(--blitzy-text-on-light);
+    }
     .reveal { font-family: var(--font-body); color: var(--blitzy-text-on-light); }
     .reveal .slides { text-align: left; }
     .reveal .slides section { padding: 80px 120px; box-sizing: border-box; min-height: 1080px; width: 1920px; }
@@ -314,13 +323,38 @@
 
     /* KPI Card Grid (Slide 2 + reusable)
        Note: `minmax(0, 1fr)` prevents the grid from blowing out when child
-       content (e.g., unsubstituted template tokens like `<M2.multiplier>`)
+       content (e.g., unsubstituted template tokens like `N/A`)
        is wider than the column. The `min-width: 0` on `.kpi-card` allows
        individual cards to shrink and the `.value` overflow rules prevent
        horizontal overflow at the column edge. */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
+      /* grid-auto-rows forces uniform row height across cards in the
+         headline KPI grids. Without this, a single card containing
+         long insufficient-signal text (e.g., M9 reason) stretches its
+         row and leaves the second row visibly shorter. The chosen
+         height accommodates the worst-case combination of:
+           - 2-line label (longest labels like "M3 Flow Predictability"
+             wrap to 2 lines at the column width)
+           - 2-line value (insufficient signal text clamped to 2 lines
+             via value-insufficient class)
+           - 1-line confidence pill
+           - top + bottom padding (tightened to 0.55em via .kpi-card)
+         At the inherited card font-size (~42px on slide 2 H2 scale),
+         worst-case natural content height is ~205px:
+            padding 0.55em * 2 = 46px,
+            label 0.55em * 1.2 line-height * 2 lines = 55px,
+            value 1.1em * 1 line + 0.15em top margin = 50px,
+            confidence pill 0.55em * 1.3 + 0.18em padding * 2 +
+              0.3em top margin = 35px,
+            inter-element default rhythm = ~19px.
+         225px logical row height (~281px screen at reveal.js zoom
+         1.25x) gives a 20px safety buffer above the worst case so
+         every card's confidence pill remains fully visible. The
+         .mini variant overrides this back to ``auto`` so smaller
+         per-section KPI grids size to content. */
+      grid-auto-rows: 225px;
       gap: 1em;
       margin-top: 0.6em;
     }
@@ -328,7 +362,12 @@
     .kpi-card {
       background: white;
       border-left: 5px solid var(--blitzy-primary);
-      padding: 0.9em 1em;
+      /* Tightened vertical padding (was 0.9em) so worst-case content —
+         2-line label + value + confidence pill — fits within the
+         225px grid row at the inherited slide H2 font-size scale
+         (~42px). Horizontal padding kept at 1em for readable margins
+         from the brand left border. */
+      padding: 0.55em 1em;
       border-radius: 4px;
       box-shadow: 0 2px 10px rgba(45, 28, 119, 0.10);
       text-align: left;
@@ -340,9 +379,13 @@
       overflow: hidden;
     }
     .kpi-card .label {
-      font-size: 0.6em;
+      font-size: 0.55em;
+      /* Explicit line-height keeps 2-line label wrapping (e.g., "M3 Flow
+         Predictability") within a predictable vertical envelope so the
+         confidence pill below the value never overruns the card. */
+      line-height: 1.2;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       color: var(--blitzy-neutral-500);
       font-weight: 600;
     }
@@ -351,15 +394,47 @@
       font-family: var(--font-display);
       font-weight: 700;
       color: var(--blitzy-primary-dark);
-      line-height: 1.1;
-      margin-top: 0.2em;
+      line-height: 1.2;
+      margin-top: 0.15em;
       overflow-wrap: break-word;
       word-break: break-word;
+      /* Clamp long values (notably "Insufficient signal — <reason>") to
+         a maximum of 3 lines so the KPI card height stays consistent
+         with neighboring cards. The full text remains in the DOM for
+         accessibility tooling; only its visible rendering is clipped.
+         The display:-webkit-box family is widely supported in evergreen
+         browsers; older browsers degrade to natural wrapping which the
+         overflow:hidden + max-height fallback contains.
+         Confidence pill below the value continues to communicate the
+         insufficient-signal state. */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+              line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-height: calc(1.2em * 3);
+    }
+    /* Smaller font size for insufficient-signal values so the multi-line
+       reason fits more legibly within the fixed-height KPI card. Applied
+       via the value_class substitution token populated by the renderer.
+       Clamped to 2 lines (vs 3 for normal values) so the abbreviated
+       reason ("Insufficient signal — no release source available...")
+       fits alongside a 2-line label and confidence pill within the
+       225px row height. The complete reason remains in the value's
+       title attribute for tooltip access on hover. */
+    .kpi-card .value.value-insufficient {
+      font-size: 0.68em;
+      line-height: 1.25;
+      -webkit-line-clamp: 2;
+              line-clamp: 2;
+      max-height: calc(1.25em * 2);
     }
     .kpi-card .confidence {
       font-size: 0.55em;
-      margin-top: 0.4em;
-      padding: 0.2em 0.7em;
+      /* Tightened margin/padding so the pill remains fully visible
+         within the 225px row even when label wraps to 2 lines. */
+      margin-top: 0.3em;
+      padding: 0.18em 0.7em;
       border-radius: 12px;
       display: inline-block;
       font-weight: 600;
@@ -371,8 +446,17 @@
     .kpi-card .confidence.medium { background: rgba(255, 200, 100, 0.30); color: #8B5A00; }
     .kpi-card .confidence.low    { background: rgba(255, 120, 120, 0.30); color: #A02525; }
 
-    /* Mini KPI cards (Slide 8 etc.) — same minmax(0, 1fr) pattern */
-    .kpi-grid.mini { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4em; max-width: 80%; margin: 1em auto; }
+    /* Mini KPI cards (Slide 8 etc.) — same minmax(0, 1fr) pattern.
+       grid-auto-rows is reset to ``auto`` so mini cards size to their
+       (typically short) content; the headline grid uses the fixed
+       140px row defined above. */
+    .kpi-grid.mini {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 1.4em;
+      max-width: 80%;
+      margin: 1em auto;
+    }
     .kpi-grid.mini .kpi-card { min-height: 100px; padding: 1em 1.2em; }
     .kpi-grid.mini .kpi-card .value { font-size: 1.2em; }
     .kpi-grid.mini .kpi-card .label { font-size: 0.55em; }
@@ -616,6 +700,10 @@
       border-bottom: 2px solid var(--blitzy-neutral-300);
       width: 100%;
       justify-content: center;
+      /* position:relative so the N/A annotation pseudo-element on
+         .phase-col-bars-na can be positioned absolutely below the
+         chart baseline without disturbing the bar layout. */
+      position: relative;
     }
     .phase-col-bars.stacked {
       align-items: center;
@@ -672,6 +760,50 @@
     }
     .phase-bar-coral {
       background: linear-gradient(180deg, #FFB0B0 0%, #FF7A7A 100%);
+    }
+    /* N/A bar variant — used when a metric's phase value is null
+       (insufficient data, no PRs in window, etc.). Renders the bar at
+       zero height with no fill and overrides the default .phase-bar
+       min-height so the bar is not visually present. The data-label
+       (set to "N/A" by the renderer) remains visible above the chart
+       baseline so readers can see explicitly that no data exists for
+       that phase. Honors the AAP "no fabrication" rule by not
+       displaying any visual mass where data is absent. */
+    .phase-bar.phase-bar-na {
+      min-height: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    /* For non-stacked bars, the data-label is rotated above the bar via
+       ::after. When the bar is N/A (height 0), position the "N/A" text
+       at the chart baseline so it sits in line with neighboring bar
+       labels rather than detaching to an empty area. */
+    .phase-bar.phase-bar-na::after {
+      bottom: 0;
+      color: var(--blitzy-neutral-500);
+      font-style: italic;
+    }
+    /* All-N/A column treatment — when every bar in a phase column is
+       suppressed (e.g., slide 8 Ramp-Up where neither M2 nor M7 has
+       data, or slide 11 phases where both stacked sub-counts are
+       null) the column shows a small "N/A — no data" annotation just
+       below the chart baseline so readers see an explicit indicator
+       rather than mistaking an empty column for a zero-valued one.
+       The renderer sets the ``phase-col-bars-na`` class on the
+       parent ``.phase-col-bars`` when the condition is met. */
+    .phase-col-bars.phase-col-bars-na::after {
+      content: "N/A — no data";
+      position: absolute;
+      bottom: -1.4em;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.55em;
+      color: var(--blitzy-neutral-500);
+      font-style: italic;
+      white-space: nowrap;
     }
     .phase-bar-value {
       font-family: var(--font-mono);
@@ -730,7 +862,7 @@
         <i data-lucide="gauge" class="lucide-icon title-icon" style="width:120px;height:120px;"></i>
         <h1>Development Acceleration Measurement</h1>
         <p class="subtitle">blitzy-cal &middot; Before/After Blitzy Agent Introduction</p>
-        <p class="metadata">Analysis Window: &lt;analysis_window&gt; &middot; Inflection: &lt;inflection.chosen_date&gt;</p>
+        <p class="metadata">Analysis Window: 2021-03-08 → 2026-05-25 &middot; Inflection: 2026-02-25</p>
               </div>
       </section>
 
@@ -750,60 +882,60 @@
           <div class="kpi-card">
             <div>
               <div class="label">M2 Flow Velocity</div>
-              <div class="value">&lt;M2.multiplier&gt;</div>
+              <div class="value " title="N/A">N/A</div>
             </div>
-            <span class="confidence &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M7 Flow Time</div>
-              <div class="value">&lt;M7.multiplier&gt;</div>
+              <div class="value " title="N/A">N/A</div>
             </div>
-            <span class="confidence &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M9 Releases</div>
-              <div class="value">&lt;M9.multiplier&gt;</div>
+              <div class="value value-insufficient" title="Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)">Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)</div>
             </div>
-            <span class="confidence &lt;M9.confidence_class&gt;">&lt;M9.confidence&gt;</span>
+            <span class="confidence low">Insufficient</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M8 Problem Records</div>
-              <div class="value">&lt;M8.multiplier&gt;</div>
+              <div class="value " title="N/A">N/A</div>
             </div>
-            <span class="confidence &lt;M8.confidence_class&gt;">&lt;M8.confidence&gt;</span>
+            <span class="confidence low">Low</span>
           </div>
         </div>
         <div class="kpi-grid row2">
           <div class="kpi-card">
             <div>
               <div class="label">M1 Flow Load</div>
-              <div class="value">&lt;M1.multiplier&gt;</div>
+              <div class="value " title="N/A">N/A</div>
             </div>
-            <span class="confidence &lt;M1.confidence_class&gt;">&lt;M1.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M3 Flow Predictability</div>
-              <div class="value">&lt;M3.multiplier&gt;</div>
+              <div class="value " title="N/A">N/A</div>
             </div>
-            <span class="confidence &lt;M3.confidence_class&gt;">&lt;M3.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M5 Flow Efficiency</div>
-              <div class="value">&lt;M5.multiplier&gt;</div>
+              <div class="value " title="N/A">N/A</div>
             </div>
-            <span class="confidence &lt;M5.confidence_class&gt;">&lt;M5.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M11 Escaped Defects</div>
-              <div class="value">&lt;M11.multiplier&gt;</div>
+              <div class="value " title="0.01x">0.01x</div>
             </div>
-            <span class="confidence &lt;M11.confidence_class&gt;">&lt;M11.confidence&gt;</span>
+            <span class="confidence low">Low</span>
           </div>
         </div>
         <p class="note">Multipliers are After/Before ratios. Higher is faster for M2, M3, M5, M9; lower is better for M1, M7, M8, M11.</p>
@@ -908,45 +1040,45 @@ graph LR
           <tbody>
             <tr>
               <td>M2 Flow Velocity</td>
-              <td>&lt;M2.baseline&gt;</td>
-              <td>&lt;M2.after&gt;</td>
-              <td>&lt;M2.multiplier&gt;</td>
-              <td><span class="conf &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span></td>
+              <td>0</td>
+              <td>1</td>
+              <td>N/A</td>
+              <td><span class="conf high">High</span></td>
             </tr>
             <tr>
               <td>M3 Flow Predictability</td>
-              <td>&lt;M3.baseline&gt;</td>
-              <td>&lt;M3.after&gt;</td>
-              <td>&lt;M3.multiplier&gt;</td>
-              <td><span class="conf &lt;M3.confidence_class&gt;">&lt;M3.confidence&gt;</span></td>
+              <td>N/A</td>
+              <td>1</td>
+              <td>N/A</td>
+              <td><span class="conf high">High</span></td>
             </tr>
             <tr>
               <td>M4 Flow Active</td>
-              <td>&lt;M4.baseline&gt;</td>
-              <td>&lt;M4.after&gt;</td>
-              <td>&lt;M4.multiplier&gt;</td>
-              <td><span class="conf &lt;M4.confidence_class&gt;">&lt;M4.confidence&gt;</span></td>
+              <td>N/A</td>
+              <td>15.2h</td>
+              <td>N/A</td>
+              <td><span class="conf high">High</span></td>
             </tr>
             <tr>
               <td>M5 Flow Efficiency</td>
-              <td>&lt;M5.baseline&gt;</td>
-              <td>&lt;M5.after&gt;</td>
-              <td>&lt;M5.multiplier&gt;</td>
-              <td><span class="conf &lt;M5.confidence_class&gt;">&lt;M5.confidence&gt;</span></td>
+              <td>N/A</td>
+              <td>0.14</td>
+              <td>N/A</td>
+              <td><span class="conf high">High</span></td>
             </tr>
             <tr>
               <td>M6 Flow Distribution (feature share)</td>
-              <td>&lt;M6.baseline&gt;</td>
-              <td>&lt;M6.after&gt;</td>
-              <td>&lt;M6.multiplier&gt;</td>
-              <td><span class="conf &lt;M6.confidence_class&gt;">&lt;M6.confidence&gt;</span></td>
+              <td>N/A</td>
+              <td>defect=0.86, risk-compliance=0.14</td>
+              <td>distribution_shift</td>
+              <td><span class="conf medium">Medium</span></td>
             </tr>
             <tr>
               <td>M7 Flow Time</td>
-              <td>&lt;M7.baseline&gt;</td>
-              <td>&lt;M7.after&gt;</td>
-              <td>&lt;M7.multiplier&gt;</td>
-              <td><span class="conf &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span></td>
+              <td>N/A</td>
+              <td>4.5d</td>
+              <td>N/A</td>
+              <td><span class="conf high">High</span></td>
             </tr>
           </tbody>
         </table>
@@ -971,23 +1103,23 @@ graph LR
           </div>
           <div class="phase-chart-grid">
             <div class="phase-col">
-              <div class="phase-col-bars">
-                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 90%" data-label="&lt;M7.baseline&gt;"></div>
-                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 35%" data-label="&lt;M2.baseline&gt;"></div>
+              <div class="phase-col-bars ">
+                <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                <div class="phase-bar phase-bar-teal " style="--phase-bar-h: 0%" data-label="0"></div>
               </div>
               <div class="phase-col-label">Baseline</div>
             </div>
             <div class="phase-col">
-              <div class="phase-col-bars">
-                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 55%" data-label="&lt;M7.ramp_up&gt;"></div>
-                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 60%" data-label="&lt;M2.ramp_up&gt;"></div>
+              <div class="phase-col-bars phase-col-bars-na">
+                <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                <div class="phase-bar phase-bar-teal phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
               </div>
               <div class="phase-col-label">Ramp-Up</div>
             </div>
             <div class="phase-col">
-              <div class="phase-col-bars">
-                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 30%" data-label="&lt;M7.steady_state&gt;"></div>
-                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 85%" data-label="&lt;M2.steady_state&gt;"></div>
+              <div class="phase-col-bars phase-col-bars-na">
+                <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                <div class="phase-bar phase-bar-teal phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
               </div>
               <div class="phase-col-label">Steady State</div>
             </div>
@@ -997,16 +1129,16 @@ graph LR
           <div class="kpi-card">
             <div>
               <div class="label">M7 Flow Time Multiplier</div>
-              <div class="value">&lt;M7.multiplier&gt;</div>
+              <div class="value">N/A</div>
             </div>
-            <span class="confidence &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M2 Flow Velocity Multiplier</div>
-              <div class="value">&lt;M2.multiplier&gt;</div>
+              <div class="value">N/A</div>
             </div>
-            <span class="confidence &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span>
+            <span class="confidence high">High</span>
           </div>
         </div>
         <ul>
@@ -1052,32 +1184,32 @@ graph LR
           <tbody>
             <tr>
               <td>M9 Releases (per 2-week window)</td>
-              <td>&lt;M9.baseline&gt;</td>
-              <td>&lt;M9.after&gt;</td>
-              <td>&lt;M9.multiplier&gt;</td>
-              <td><span class="conf &lt;M9.confidence_class&gt;">&lt;M9.confidence&gt;</span></td>
-              <td>&lt;M9.source&gt;</td>
+              <td>Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)</td>
+              <td>Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)</td>
+              <td>Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)</td>
+              <td><span class="conf low">Insufficient</span></td>
+              <td>N/A</td>
             </tr>
             <tr>
               <td>M8 Problem Records (reverts per release)</td>
-              <td>&lt;M8.baseline&gt;</td>
-              <td>&lt;M8.after&gt;</td>
-              <td>&lt;M8.multiplier&gt;</td>
-              <td><span class="conf &lt;M8.confidence_class&gt;">&lt;M8.confidence&gt;</span></td>
-              <td>&lt;M8.source&gt;</td>
+              <td>N/A</td>
+              <td>N/A</td>
+              <td>N/A</td>
+              <td><span class="conf low">Low</span></td>
+              <td>git_log_reverts + releases_none</td>
             </tr>
             <tr>
               <td>M8 — attributed reverts</td>
-              <td>&lt;M8.baseline_attributed&gt;</td>
-              <td>&lt;M8.after_attributed&gt;</td>
+              <td>0</td>
+              <td>0</td>
               <td>&mdash;</td>
               <td>&mdash;</td>
               <td>Sub-count</td>
             </tr>
             <tr>
               <td>M8 — unattributable / unreleased</td>
-              <td>&lt;M8.baseline_unattributed&gt;</td>
-              <td>&lt;M8.after_unattributed&gt;</td>
+              <td>0</td>
+              <td>184</td>
               <td>&mdash;</td>
               <td>&mdash;</td>
               <td>Sub-count</td>
@@ -1108,23 +1240,23 @@ graph LR
               </div>
               <div class="phase-chart-grid">
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked">
-                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 55%" data-label="&lt;M11.baseline_regressions&gt;"></div>
-                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 35%" data-label="&lt;M11.baseline_skipped&gt;"></div>
+                  <div class="phase-col-bars stacked ">
+                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                    <div class="phase-bar phase-bar-primary " style="--phase-bar-h: 85%" data-label="88"></div>
                   </div>
                   <div class="phase-col-label">Baseline</div>
                 </div>
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked">
-                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 40%" data-label="&lt;M11.ramp_up_regressions&gt;"></div>
-                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 45%" data-label="&lt;M11.ramp_up_skipped&gt;"></div>
+                  <div class="phase-col-bars stacked phase-col-bars-na">
+                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
                   </div>
                   <div class="phase-col-label">Ramp-Up</div>
                 </div>
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked">
-                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 25%" data-label="&lt;M11.steady_state_regressions&gt;"></div>
-                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 50%" data-label="&lt;M11.steady_state_skipped&gt;"></div>
+                  <div class="phase-col-bars stacked phase-col-bars-na">
+                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
                   </div>
                   <div class="phase-col-label">Steady State</div>
                 </div>
@@ -1135,9 +1267,9 @@ graph LR
             <div class="kpi-card" style="margin-bottom:1em;">
               <div>
                 <div class="label">M10 Approved Exceptions</div>
-                <div class="value">&lt;M10.multiplier&gt;</div>
+                <div class="value">N/A</div>
               </div>
-              <span class="confidence &lt;M10.confidence_class&gt;">&lt;M10.confidence&gt;</span>
+              <span class="confidence low">Low</span>
             </div>
             <ul>
               <li>M10 confidence depends on <code>audit_log:read</code> scope; falls back to label and force-push subset</li>
@@ -1164,7 +1296,7 @@ graph LR
            SLIDE 13 — Per-Engineer Detail (Content)
            Table with top-5 humans + Blitzy row (tinted bg).
            Non-text visual: styled table.
-           <actor_table_rows> is the placeholder substituted by
+            is the placeholder substituted by
            build_presentation.py with one <tr> per actor.
            ==================================================== -->
       <section>
@@ -1184,15 +1316,15 @@ graph LR
             </tr>
           </thead>
           <tbody>
-            <!--actor_table_rows: build_presentation.py replaces this comment with one <tr> per top-5 human engineer.-->
-            <tr class="placeholder-row"><td colspan="6">Top-5 human engineer rows are inserted here by build_presentation.py.</td></tr>
+            
+            
             <tr class="blitzy-row">
               <td>blitzy-agent</td>
-              <td>&lt;blitzy.m2&gt;</td>
-              <td>&lt;blitzy.m4&gt;</td>
-              <td>&lt;blitzy.m5&gt;</td>
-              <td>&lt;blitzy.m6&gt;</td>
-              <td>&lt;blitzy.m10&gt;</td>
+              <td>1</td>
+              <td>15.2h</td>
+              <td>0.14</td>
+              <td>defect (85.71%)</td>
+              <td>N/A</td>
             </tr>
           </tbody>
         </table>
@@ -1242,12 +1374,12 @@ graph LR
         <h2>Reproducible, Confidence-Tagged, Read-Only</h2>
         <div class="accent-bar"></div>
         <ul class="icon-bullets">
-          <li><i data-lucide="git-commit" class="lucide-icon"></i>Inflection date: &lt;inflection.chosen_date&gt; via &lt;inflection.chosen_method&gt;</li>
+          <li><i data-lucide="git-commit" class="lucide-icon"></i>Inflection date: 2026-02-25 via co_author</li>
           <li><i data-lucide="check-circle-2" class="lucide-icon"></i>All 12 metrics measured with documented confidence tags</li>
           <li><i data-lucide="book-open" class="lucide-icon"></i>Full reproducibility appendix included in <code>acceleration-report.md</code></li>
         </ul>
         <i data-lucide="arrow-right" class="lucide-icon closing-arrow" style="width:64px;height:64px;"></i>
-        <p class="footer">blitzy-cal &middot; &lt;inflection.chosen_date&gt; inflection &middot; Run &lt;run_id&gt; &middot; Rendered &lt;rendered_at&gt;</p>
+        <p class="footer">blitzy-cal &middot; 2026-02-25 inflection &middot; Run 6544d423-2004-430d-9589-374520058434 &middot; Rendered 2026-05-23T06:47:58.721745+00:00</p>
               </div>
       </section>
 

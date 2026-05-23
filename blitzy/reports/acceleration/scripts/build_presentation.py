@@ -355,7 +355,16 @@ DEFAULT_HTML_TEMPLATE: str = """\
        Reveal.js theme overrides (replace the white-theme defaults
        with Blitzy brand). Limited specificity; no !important used.
        ============================================================ */
-    html, body { background: var(--blitzy-text-on-dark); }
+    /* Explicit body font-family ensures any text rendered directly on body
+       (outside the .reveal container) uses the brand Inter font rather than
+       the browser default Times New Roman. The .reveal container below
+       continues to declare the same family for clarity and forward
+       compatibility with future reveal.js theme overrides. */
+    html, body {
+      background: var(--blitzy-text-on-dark);
+      font-family: var(--font-body);
+      color: var(--blitzy-text-on-light);
+    }
     .reveal { font-family: var(--font-body); color: var(--blitzy-text-on-light); }
     .reveal .slides { text-align: left; }
     .reveal .slides section { padding: 80px 120px; box-sizing: border-box; min-height: 1080px; width: 1920px; }
@@ -608,6 +617,31 @@ DEFAULT_HTML_TEMPLATE: str = """\
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
+      /* grid-auto-rows forces uniform row height across cards in the
+         headline KPI grids. Without this, a single card containing
+         long insufficient-signal text (e.g., M9 reason) stretches its
+         row and leaves the second row visibly shorter. The chosen
+         height accommodates the worst-case combination of:
+           - 2-line label (longest labels like "M3 Flow Predictability"
+             wrap to 2 lines at the column width)
+           - 2-line value (insufficient signal text clamped to 2 lines
+             via value-insufficient class)
+           - 1-line confidence pill
+           - top + bottom padding (tightened to 0.55em via .kpi-card)
+         At the inherited card font-size (~42px on slide 2 H2 scale),
+         worst-case natural content height is ~205px:
+            padding 0.55em * 2 = 46px,
+            label 0.55em * 1.2 line-height * 2 lines = 55px,
+            value 1.1em * 1 line + 0.15em top margin = 50px,
+            confidence pill 0.55em * 1.3 + 0.18em padding * 2 +
+              0.3em top margin = 35px,
+            inter-element default rhythm = ~19px.
+         225px logical row height (~281px screen at reveal.js zoom
+         1.25x) gives a 20px safety buffer above the worst case so
+         every card's confidence pill remains fully visible. The
+         .mini variant overrides this back to ``auto`` so smaller
+         per-section KPI grids size to content. */
+      grid-auto-rows: 225px;
       gap: 1em;
       margin-top: 0.6em;
     }
@@ -615,7 +649,12 @@ DEFAULT_HTML_TEMPLATE: str = """\
     .kpi-card {
       background: white;
       border-left: 5px solid var(--blitzy-primary);
-      padding: 0.9em 1em;
+      /* Tightened vertical padding (was 0.9em) so worst-case content —
+         2-line label + value + confidence pill — fits within the
+         225px grid row at the inherited slide H2 font-size scale
+         (~42px). Horizontal padding kept at 1em for readable margins
+         from the brand left border. */
+      padding: 0.55em 1em;
       border-radius: 4px;
       box-shadow: 0 2px 10px rgba(45, 28, 119, 0.10);
       text-align: left;
@@ -627,9 +666,13 @@ DEFAULT_HTML_TEMPLATE: str = """\
       overflow: hidden;
     }
     .kpi-card .label {
-      font-size: 0.6em;
+      font-size: 0.55em;
+      /* Explicit line-height keeps 2-line label wrapping (e.g., "M3 Flow
+         Predictability") within a predictable vertical envelope so the
+         confidence pill below the value never overruns the card. */
+      line-height: 1.2;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       color: var(--blitzy-neutral-500);
       font-weight: 600;
     }
@@ -638,15 +681,47 @@ DEFAULT_HTML_TEMPLATE: str = """\
       font-family: var(--font-display);
       font-weight: 700;
       color: var(--blitzy-primary-dark);
-      line-height: 1.1;
-      margin-top: 0.2em;
+      line-height: 1.2;
+      margin-top: 0.15em;
       overflow-wrap: break-word;
       word-break: break-word;
+      /* Clamp long values (notably "Insufficient signal — <reason>") to
+         a maximum of 3 lines so the KPI card height stays consistent
+         with neighboring cards. The full text remains in the DOM for
+         accessibility tooling; only its visible rendering is clipped.
+         The display:-webkit-box family is widely supported in evergreen
+         browsers; older browsers degrade to natural wrapping which the
+         overflow:hidden + max-height fallback contains.
+         Confidence pill below the value continues to communicate the
+         insufficient-signal state. */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+              line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-height: calc(1.2em * 3);
+    }
+    /* Smaller font size for insufficient-signal values so the multi-line
+       reason fits more legibly within the fixed-height KPI card. Applied
+       via the value_class substitution token populated by the renderer.
+       Clamped to 2 lines (vs 3 for normal values) so the abbreviated
+       reason ("Insufficient signal — no release source available...")
+       fits alongside a 2-line label and confidence pill within the
+       225px row height. The complete reason remains in the value's
+       title attribute for tooltip access on hover. */
+    .kpi-card .value.value-insufficient {
+      font-size: 0.68em;
+      line-height: 1.25;
+      -webkit-line-clamp: 2;
+              line-clamp: 2;
+      max-height: calc(1.25em * 2);
     }
     .kpi-card .confidence {
       font-size: 0.55em;
-      margin-top: 0.4em;
-      padding: 0.2em 0.7em;
+      /* Tightened margin/padding so the pill remains fully visible
+         within the 225px row even when label wraps to 2 lines. */
+      margin-top: 0.3em;
+      padding: 0.18em 0.7em;
       border-radius: 12px;
       display: inline-block;
       font-weight: 600;
@@ -658,8 +733,17 @@ DEFAULT_HTML_TEMPLATE: str = """\
     .kpi-card .confidence.medium { background: rgba(255, 200, 100, 0.30); color: #8B5A00; }
     .kpi-card .confidence.low    { background: rgba(255, 120, 120, 0.30); color: #A02525; }
 
-    /* Mini KPI cards (Slide 8 etc.) — same minmax(0, 1fr) pattern */
-    .kpi-grid.mini { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4em; max-width: 80%; margin: 1em auto; }
+    /* Mini KPI cards (Slide 8 etc.) — same minmax(0, 1fr) pattern.
+       grid-auto-rows is reset to ``auto`` so mini cards size to their
+       (typically short) content; the headline grid uses the fixed
+       140px row defined above. */
+    .kpi-grid.mini {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 1.4em;
+      max-width: 80%;
+      margin: 1em auto;
+    }
     .kpi-grid.mini .kpi-card { min-height: 100px; padding: 1em 1.2em; }
     .kpi-grid.mini .kpi-card .value { font-size: 1.2em; }
     .kpi-grid.mini .kpi-card .label { font-size: 0.55em; }
@@ -903,6 +987,10 @@ DEFAULT_HTML_TEMPLATE: str = """\
       border-bottom: 2px solid var(--blitzy-neutral-300);
       width: 100%;
       justify-content: center;
+      /* position:relative so the N/A annotation pseudo-element on
+         .phase-col-bars-na can be positioned absolutely below the
+         chart baseline without disturbing the bar layout. */
+      position: relative;
     }
     .phase-col-bars.stacked {
       align-items: center;
@@ -959,6 +1047,50 @@ DEFAULT_HTML_TEMPLATE: str = """\
     }
     .phase-bar-coral {
       background: linear-gradient(180deg, #FFB0B0 0%, #FF7A7A 100%);
+    }
+    /* N/A bar variant — used when a metric's phase value is null
+       (insufficient data, no PRs in window, etc.). Renders the bar at
+       zero height with no fill and overrides the default .phase-bar
+       min-height so the bar is not visually present. The data-label
+       (set to "N/A" by the renderer) remains visible above the chart
+       baseline so readers can see explicitly that no data exists for
+       that phase. Honors the AAP "no fabrication" rule by not
+       displaying any visual mass where data is absent. */
+    .phase-bar.phase-bar-na {
+      min-height: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    /* For non-stacked bars, the data-label is rotated above the bar via
+       ::after. When the bar is N/A (height 0), position the "N/A" text
+       at the chart baseline so it sits in line with neighboring bar
+       labels rather than detaching to an empty area. */
+    .phase-bar.phase-bar-na::after {
+      bottom: 0;
+      color: var(--blitzy-neutral-500);
+      font-style: italic;
+    }
+    /* All-N/A column treatment — when every bar in a phase column is
+       suppressed (e.g., slide 8 Ramp-Up where neither M2 nor M7 has
+       data, or slide 11 phases where both stacked sub-counts are
+       null) the column shows a small "N/A — no data" annotation just
+       below the chart baseline so readers see an explicit indicator
+       rather than mistaking an empty column for a zero-valued one.
+       The renderer sets the ``phase-col-bars-na`` class on the
+       parent ``.phase-col-bars`` when the condition is met. */
+    .phase-col-bars.phase-col-bars-na::after {
+      content: "N/A — no data";
+      position: absolute;
+      bottom: -1.4em;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.55em;
+      color: var(--blitzy-neutral-500);
+      font-style: italic;
+      white-space: nowrap;
     }
     .phase-bar-value {
       font-family: var(--font-mono);
@@ -1037,28 +1169,28 @@ DEFAULT_HTML_TEMPLATE: str = """\
           <div class="kpi-card">
             <div>
               <div class="label">M2 Flow Velocity</div>
-              <div class="value">&lt;M2.multiplier&gt;</div>
+              <div class="value &lt;M2.value_class&gt;" title="&lt;M2.multiplier&gt;">&lt;M2.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M2.confidence_class&gt;">&lt;M2.confidence&gt;</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M7 Flow Time</div>
-              <div class="value">&lt;M7.multiplier&gt;</div>
+              <div class="value &lt;M7.value_class&gt;" title="&lt;M7.multiplier&gt;">&lt;M7.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M7.confidence_class&gt;">&lt;M7.confidence&gt;</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M9 Releases</div>
-              <div class="value">&lt;M9.multiplier&gt;</div>
+              <div class="value &lt;M9.value_class&gt;" title="&lt;M9.multiplier&gt;">&lt;M9.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M9.confidence_class&gt;">&lt;M9.confidence&gt;</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M8 Problem Records</div>
-              <div class="value">&lt;M8.multiplier&gt;</div>
+              <div class="value &lt;M8.value_class&gt;" title="&lt;M8.multiplier&gt;">&lt;M8.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M8.confidence_class&gt;">&lt;M8.confidence&gt;</span>
           </div>
@@ -1067,28 +1199,28 @@ DEFAULT_HTML_TEMPLATE: str = """\
           <div class="kpi-card">
             <div>
               <div class="label">M1 Flow Load</div>
-              <div class="value">&lt;M1.multiplier&gt;</div>
+              <div class="value &lt;M1.value_class&gt;" title="&lt;M1.multiplier&gt;">&lt;M1.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M1.confidence_class&gt;">&lt;M1.confidence&gt;</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M3 Flow Predictability</div>
-              <div class="value">&lt;M3.multiplier&gt;</div>
+              <div class="value &lt;M3.value_class&gt;" title="&lt;M3.multiplier&gt;">&lt;M3.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M3.confidence_class&gt;">&lt;M3.confidence&gt;</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M5 Flow Efficiency</div>
-              <div class="value">&lt;M5.multiplier&gt;</div>
+              <div class="value &lt;M5.value_class&gt;" title="&lt;M5.multiplier&gt;">&lt;M5.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M5.confidence_class&gt;">&lt;M5.confidence&gt;</span>
           </div>
           <div class="kpi-card">
             <div>
               <div class="label">M11 Escaped Defects</div>
-              <div class="value">&lt;M11.multiplier&gt;</div>
+              <div class="value &lt;M11.value_class&gt;" title="&lt;M11.multiplier&gt;">&lt;M11.multiplier&gt;</div>
             </div>
             <span class="confidence &lt;M11.confidence_class&gt;">&lt;M11.confidence&gt;</span>
           </div>
@@ -1258,23 +1390,23 @@ graph LR
           </div>
           <div class="phase-chart-grid">
             <div class="phase-col">
-              <div class="phase-col-bars">
-                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 90%" data-label="&lt;M7.baseline&gt;"></div>
-                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 35%" data-label="&lt;M2.baseline&gt;"></div>
+              <div class="phase-col-bars &lt;slide8.baseline_col_class&gt;">
+                <div class="phase-bar phase-bar-primary &lt;M7.baseline_bar_class&gt;" style="--phase-bar-h: &lt;M7.baseline_bar_h&gt;" data-label="&lt;M7.baseline&gt;"></div>
+                <div class="phase-bar phase-bar-teal &lt;M2.baseline_bar_class&gt;" style="--phase-bar-h: &lt;M2.baseline_bar_h&gt;" data-label="&lt;M2.baseline&gt;"></div>
               </div>
               <div class="phase-col-label">Baseline</div>
             </div>
             <div class="phase-col">
-              <div class="phase-col-bars">
-                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 55%" data-label="&lt;M7.ramp_up&gt;"></div>
-                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 60%" data-label="&lt;M2.ramp_up&gt;"></div>
+              <div class="phase-col-bars &lt;slide8.ramp_up_col_class&gt;">
+                <div class="phase-bar phase-bar-primary &lt;M7.ramp_up_bar_class&gt;" style="--phase-bar-h: &lt;M7.ramp_up_bar_h&gt;" data-label="&lt;M7.ramp_up&gt;"></div>
+                <div class="phase-bar phase-bar-teal &lt;M2.ramp_up_bar_class&gt;" style="--phase-bar-h: &lt;M2.ramp_up_bar_h&gt;" data-label="&lt;M2.ramp_up&gt;"></div>
               </div>
               <div class="phase-col-label">Ramp-Up</div>
             </div>
             <div class="phase-col">
-              <div class="phase-col-bars">
-                <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 30%" data-label="&lt;M7.steady_state&gt;"></div>
-                <div class="phase-bar phase-bar-teal" style="--phase-bar-h: 85%" data-label="&lt;M2.steady_state&gt;"></div>
+              <div class="phase-col-bars &lt;slide8.steady_state_col_class&gt;">
+                <div class="phase-bar phase-bar-primary &lt;M7.steady_state_bar_class&gt;" style="--phase-bar-h: &lt;M7.steady_state_bar_h&gt;" data-label="&lt;M7.steady_state&gt;"></div>
+                <div class="phase-bar phase-bar-teal &lt;M2.steady_state_bar_class&gt;" style="--phase-bar-h: &lt;M2.steady_state_bar_h&gt;" data-label="&lt;M2.steady_state&gt;"></div>
               </div>
               <div class="phase-col-label">Steady State</div>
             </div>
@@ -1395,23 +1527,23 @@ graph LR
               </div>
               <div class="phase-chart-grid">
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked">
-                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 55%" data-label="&lt;M11.baseline_regressions&gt;"></div>
-                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 35%" data-label="&lt;M11.baseline_skipped&gt;"></div>
+                  <div class="phase-col-bars stacked &lt;slide11.baseline_col_class&gt;">
+                    <div class="phase-bar phase-bar-coral &lt;M11.baseline_regressions_bar_class&gt;" style="--phase-bar-h: &lt;M11.baseline_regressions_bar_h&gt;" data-label="&lt;M11.baseline_regressions&gt;"></div>
+                    <div class="phase-bar phase-bar-primary &lt;M11.baseline_skipped_bar_class&gt;" style="--phase-bar-h: &lt;M11.baseline_skipped_bar_h&gt;" data-label="&lt;M11.baseline_skipped&gt;"></div>
                   </div>
                   <div class="phase-col-label">Baseline</div>
                 </div>
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked">
-                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 40%" data-label="&lt;M11.ramp_up_regressions&gt;"></div>
-                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 45%" data-label="&lt;M11.ramp_up_skipped&gt;"></div>
+                  <div class="phase-col-bars stacked &lt;slide11.ramp_up_col_class&gt;">
+                    <div class="phase-bar phase-bar-coral &lt;M11.ramp_up_regressions_bar_class&gt;" style="--phase-bar-h: &lt;M11.ramp_up_regressions_bar_h&gt;" data-label="&lt;M11.ramp_up_regressions&gt;"></div>
+                    <div class="phase-bar phase-bar-primary &lt;M11.ramp_up_skipped_bar_class&gt;" style="--phase-bar-h: &lt;M11.ramp_up_skipped_bar_h&gt;" data-label="&lt;M11.ramp_up_skipped&gt;"></div>
                   </div>
                   <div class="phase-col-label">Ramp-Up</div>
                 </div>
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked">
-                    <div class="phase-bar phase-bar-coral" style="--phase-bar-h: 25%" data-label="&lt;M11.steady_state_regressions&gt;"></div>
-                    <div class="phase-bar phase-bar-primary" style="--phase-bar-h: 50%" data-label="&lt;M11.steady_state_skipped&gt;"></div>
+                  <div class="phase-col-bars stacked &lt;slide11.steady_state_col_class&gt;">
+                    <div class="phase-bar phase-bar-coral &lt;M11.steady_state_regressions_bar_class&gt;" style="--phase-bar-h: &lt;M11.steady_state_regressions_bar_h&gt;" data-label="&lt;M11.steady_state_regressions&gt;"></div>
+                    <div class="phase-bar phase-bar-primary &lt;M11.steady_state_skipped_bar_class&gt;" style="--phase-bar-h: &lt;M11.steady_state_skipped_bar_h&gt;" data-label="&lt;M11.steady_state_skipped&gt;"></div>
                   </div>
                   <div class="phase-col-label">Steady State</div>
                 </div>
@@ -1708,6 +1840,175 @@ graph LR
 # the HTML deck so Rule 4 (Internal Consistency) holds across surfaces.
 
 
+def format_duration_seconds(value: Any) -> str:
+    """Convert a raw second count to a human-readable duration string.
+
+    Used for metrics whose ``unit`` field is ``"seconds"`` (M4 Flow
+    Active, M7 Flow Time). Executive audiences struggle to interpret
+    raw second counts like ``386675`` — converting to hours (``107.4h``)
+    or days (``4.5d``) substantially improves comprehension without
+    altering the underlying value. The chosen unit scales with the
+    value magnitude so short PRs render as minutes and multi-day PRs
+    render as days.
+
+    Insufficient signal handling is left to the caller because the
+    metric's ``status`` field is checked at the substitution layer; this
+    helper assumes ``value`` is either ``None`` or a numeric duration
+    in seconds.
+
+    Args:
+        value: A duration in seconds. May be ``None`` (returns "N/A"),
+            ``int``, ``float``, or ``NaN`` (returns "N/A").
+
+    Returns:
+        A short human-readable string. Examples:
+            ``None`` → "N/A"
+            ``45``  → "45s"
+            ``540`` → "9.0m"
+            ``9072`` → "2.5h"
+            ``54790`` → "15.2h"
+            ``386675`` → "4.5d"
+    """
+    if value is None:
+        return "N/A"
+    if isinstance(value, bool):
+        # bool subclasses int — guard against accidental True/False arithmetic
+        return "N/A"
+    if not isinstance(value, (int, float)):
+        # Strings or other types fall back to format_value handling
+        return html.escape(str(value))
+    if value != value:  # NaN
+        return "N/A"
+    seconds = float(value)
+    if seconds < 0:
+        # Negative durations are conceptually invalid; surface explicitly
+        return f"{seconds:.0f}s"
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    minutes = seconds / 60.0
+    if minutes < 60:
+        return f"{minutes:.1f}m"
+    hours = minutes / 60.0
+    if hours < 24:
+        return f"{hours:.1f}h"
+    days = hours / 24.0
+    return f"{days:.1f}d"
+
+
+def _bar_height_pct(value: Any, max_value: float, max_pct: int = 85) -> str:
+    """Compute the CSS percentage string for a single chart bar.
+
+    The chart's `.phase-bar` element pulls its height from a CSS custom
+    property ``--phase-bar-h`` defaulting to ``50%``. This helper
+    converts a numeric phase value into the proportional height string,
+    or returns ``"0%"`` for null/zero values so the bar is suppressed.
+    Capping at ``max_pct`` keeps the tallest bar from overlapping the
+    chart title positioned above the chart area.
+
+    Args:
+        value: The numeric phase value. May be ``None`` (returns "0%"),
+            zero (returns "0%"), or a positive number.
+        max_value: The series maximum used as the denominator. Must be
+            positive; non-positive values force a "0%" return regardless
+            of ``value``.
+        max_pct: The percentage assigned to the largest bar in the
+            series. Defaults to 85 to leave room for the rotated
+            data-label above the bar.
+
+    Returns:
+        A string suitable for inline CSS, e.g. ``"0%"``, ``"42%"``,
+        ``"85%"``. Never returns a percentage outside [0, max_pct].
+    """
+    if value is None:
+        return "0%"
+    if not isinstance(value, (int, float)):
+        return "0%"
+    if isinstance(value, bool):
+        return "0%"
+    if value != value:  # NaN
+        return "0%"
+    if value <= 0:
+        return "0%"
+    if max_value is None or max_value <= 0:
+        return "0%"
+    try:
+        pct = (float(value) / float(max_value)) * float(max_pct)
+    except (TypeError, ZeroDivisionError):
+        return "0%"
+    # Clamp to [0, max_pct] to avoid overflow when value > max_value
+    # (can happen if max_value derivation excluded a series).
+    pct = max(0.0, min(float(max_pct), pct))
+    return f"{pct:.0f}%"
+
+
+def _bar_class_for_value(value: Any) -> str:
+    """Return the CSS class for a chart bar based on its value.
+
+    Args:
+        value: The phase value. ``None``/``NaN`` returns the N/A class
+            so the renderer can suppress the bar visually; numeric
+            values (including zero) return an empty string so the bar
+            uses the default class set on its `.phase-bar` element.
+
+    Returns:
+        ``"phase-bar-na"`` when the bar represents no data, or ``""``
+        when the bar represents a numeric value (including zero).
+    """
+    if value is None:
+        return "phase-bar-na"
+    if isinstance(value, bool):
+        return "phase-bar-na"
+    if not isinstance(value, (int, float)):
+        return "phase-bar-na"
+    if value != value:  # NaN
+        return "phase-bar-na"
+    return ""
+
+
+def _series_max(values: list[Any]) -> float:
+    """Return the maximum numeric value in a series, treating null as 0.
+
+    Used as the denominator for proportional bar heights. Non-numeric
+    and ``NaN`` entries are skipped; an all-null series returns ``0.0``
+    so the caller can short-circuit to a flat chart.
+
+    Args:
+        values: A list of phase values; entries may be ``None``,
+            ``int``, ``float``, or ``NaN``.
+
+    Returns:
+        The largest finite numeric value in ``values``, or ``0.0`` if
+        no finite numeric value is present.
+    """
+    numeric: list[float] = []
+    for v in values:
+        if v is None:
+            continue
+        if isinstance(v, bool):
+            continue
+        if not isinstance(v, (int, float)):
+            continue
+        if v != v:  # NaN
+            continue
+        numeric.append(float(v))
+    return max(numeric) if numeric else 0.0
+
+
+def _all_na(values: list[Any]) -> bool:
+    """Return True when every value in the series is null (no signal)."""
+    for v in values:
+        if v is None:
+            continue
+        if isinstance(v, bool):
+            continue
+        if not isinstance(v, (int, float)):
+            return False
+        if v != v:
+            continue
+        return False
+    return True
+
+
 def format_value(value: Any, status: str | None = "ok",
                  reason: str | None = None, unit: str = "") -> str:
     """Format a metric value for inclusion in the rendered HTML.
@@ -1996,13 +2297,27 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
         confidence = mdata.get("confidence")
         source = mdata.get("source") or ""
         direction = mdata.get("direction") or ""
+        # Metric unit field — drives unit-aware formatting (e.g., M4 and
+        # M7 carry ``unit: "seconds"`` and benefit from human-readable
+        # duration formatting in the deck instead of raw second counts).
+        metric_unit = (mdata.get("unit") or "").strip().lower()
 
         # Phase-aggregate fields. ``after`` falls back to ``post_intro``.
+        # When the metric's unit is "seconds" and the value is numeric,
+        # use the duration formatter so executive audiences see
+        # "15.2h" / "4.5d" rather than "54790" / "386675". The
+        # insufficient-signal phrasing is still produced by the
+        # unit-aware branch so confidence transparency is preserved.
         for phase in ("baseline", "ramp_up", "steady_state",
                       "post_intro", "after"):
             value = _phase_field(mdata, phase)
             token = f"{mid}.{phase}"
-            mapping[token] = format_value(value, status=status, reason=reason)
+            if status == "insufficient_signal":
+                mapping[token] = format_value(None, status=status, reason=reason)
+            elif metric_unit == "seconds":
+                mapping[token] = format_duration_seconds(value)
+            else:
+                mapping[token] = format_value(value, status=status, reason=reason)
 
         # Multiplier: special handling for string sentinels (M6 returns
         # "distribution_shift") and insufficient-signal cases.
@@ -2023,6 +2338,17 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
         else:
             mapping[mtoken] = format_value(multiplier, status=status, reason=reason)
 
+        # KPI-card value_class — applied to slide 2 headline KPI cards
+        # so long insufficient-signal text uses a smaller font and the
+        # card height stays consistent across siblings. Non-insufficient
+        # metrics leave this empty so they render at the default size.
+        # See ``.kpi-card .value.value-insufficient`` rule in the
+        # embedded stylesheet for the visual treatment.
+        if status == "insufficient_signal":
+            mapping[f"{mid}.value_class"] = "value-insufficient"
+        else:
+            mapping[f"{mid}.value_class"] = ""
+
         # Confidence pill: ``M<N>.confidence`` renders the LABEL only
         # (the surrounding ``<span class="confidence …">`` lives in the
         # template). ``M<N>.confidence_class`` renders the CSS class
@@ -2040,6 +2366,56 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
         mapping[f"{mid}.confidence_reason"] = html.escape(str(
             mdata.get("confidence_reason") or ""))
 
+    # --- Slide 8 chart bar height + class tokens ----------------------
+    # Compute proportional heights for the Flow Time (M7) and Flow
+    # Velocity (M2) bars rendered across Baseline / Ramp-Up / Steady
+    # State phases. Each series is scaled independently to its own
+    # max so the two series remain comparable across phases even when
+    # their unit scales differ (seconds vs PR count). Null values
+    # produce ``"0%"`` height + ``phase-bar-na`` class so the bar is
+    # suppressed and the rotated data-label shows "N/A" at the chart
+    # baseline. This implements the AAP no-fabrication rule for chart
+    # visuals — bars never render proportional mass for absent data.
+    _slide8_phases = ("baseline", "ramp_up", "steady_state")
+    for slide8_mid in ("M2", "M7"):
+        s_mdata = metrics.get(slide8_mid) or {}
+        s_status = s_mdata.get("status", "ok") if isinstance(s_mdata, dict) else "ok"
+        s_values_by_phase: dict[str, Any] = {}
+        for phase in _slide8_phases:
+            s_values_by_phase[phase] = _phase_field(s_mdata, phase) if isinstance(s_mdata, dict) else None
+        # When the metric is insufficient_signal we force all bars to
+        # N/A even if the underlying numeric fields exist — the
+        # confidence story dominates the visualization choice.
+        if s_status == "insufficient_signal":
+            for phase in _slide8_phases:
+                mapping[f"{slide8_mid}.{phase}_bar_h"] = "0%"
+                mapping[f"{slide8_mid}.{phase}_bar_class"] = "phase-bar-na"
+        else:
+            series_max = _series_max(list(s_values_by_phase.values()))
+            for phase in _slide8_phases:
+                v = s_values_by_phase[phase]
+                mapping[f"{slide8_mid}.{phase}_bar_h"] = _bar_height_pct(v, series_max)
+                mapping[f"{slide8_mid}.{phase}_bar_class"] = _bar_class_for_value(v)
+
+    # Per-column annotation class for slide 8 — when BOTH series in a
+    # phase column are null/N-A we annotate the column with the
+    # ``phase-col-bars-na`` modifier so the chart shows a small "N/A —
+    # no data" caption beneath the column label. When at least one
+    # series has a numeric value (even zero) the column is treated as
+    # having data and renders without the caption.
+    m2_data = metrics.get("M2") or {}
+    m7_data = metrics.get("M7") or {}
+    m2_status = m2_data.get("status", "ok") if isinstance(m2_data, dict) else "ok"
+    m7_status = m7_data.get("status", "ok") if isinstance(m7_data, dict) else "ok"
+    for phase in _slide8_phases:
+        m2_v = _phase_field(m2_data, phase) if isinstance(m2_data, dict) else None
+        m7_v = _phase_field(m7_data, phase) if isinstance(m7_data, dict) else None
+        m2_na = m2_status == "insufficient_signal" or _all_na([m2_v])
+        m7_na = m7_status == "insufficient_signal" or _all_na([m7_v])
+        mapping[f"slide8.{phase}_col_class"] = (
+            "phase-col-bars-na" if (m2_na and m7_na) else ""
+        )
+
     # --- M11 sub-count phase tokens -----------------------------------
     # M11.<sub>_<phase> tokens — the deck stacks regressions and
     # newly-skipped tests per phase.
@@ -2047,6 +2423,11 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
     if isinstance(m11, dict):
         m11_status = m11.get("status", "ok")
         m11_reason = m11.get("reason") or m11.get("confidence_reason") or ""
+        # Stash sub-count values for the bar-height computation below.
+        m11_sub_values: dict[str, dict[str, Any]] = {
+            "regressions": {},
+            "skipped": {},
+        }
         for sub in ("regressions", "newly_skipped"):
             sub_alias = "skipped" if sub == "newly_skipped" else sub
             for phase in ("baseline", "ramp_up", "steady_state",
@@ -2058,6 +2439,53 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
                 token = f"M11.{phase}_{sub_alias}"
                 mapping[token] = format_value(value, status=m11_status,
                                               reason=m11_reason)
+                m11_sub_values[sub_alias][phase] = value
+
+        # --- M11 stacked bar height + class tokens --------------------
+        # The slide 11 chart stacks regressions (coral) and newly-
+        # skipped (purple) segments per phase. To keep the
+        # visualization honest under the AAP no-fabrication rule, null
+        # sub-counts render as zero-height segments (with the
+        # phase-bar-na class suppressing min-height). Proportionality
+        # is computed against the largest segment value across all
+        # three phases and both sub-counts so the relative scale of a
+        # heavy phase remains visible. Insufficient signal forces all
+        # bars to N/A.
+        _m11_phases = ("baseline", "ramp_up", "steady_state")
+        # Gather all numeric sub-count values across phases for global
+        # max derivation. If insufficient_signal, max=0 forces all
+        # bars to 0%.
+        all_sub_values: list[Any] = []
+        if m11_status != "insufficient_signal":
+            for sub_alias in ("regressions", "skipped"):
+                for phase in _m11_phases:
+                    all_sub_values.append(m11_sub_values[sub_alias].get(phase))
+        m11_max = _series_max(all_sub_values)
+
+        for sub_alias in ("regressions", "skipped"):
+            for phase in _m11_phases:
+                v = m11_sub_values[sub_alias].get(phase)
+                if m11_status == "insufficient_signal":
+                    mapping[f"M11.{phase}_{sub_alias}_bar_h"] = "0%"
+                    mapping[f"M11.{phase}_{sub_alias}_bar_class"] = "phase-bar-na"
+                else:
+                    mapping[f"M11.{phase}_{sub_alias}_bar_h"] = _bar_height_pct(v, m11_max)
+                    mapping[f"M11.{phase}_{sub_alias}_bar_class"] = _bar_class_for_value(v)
+
+        # Per-column class for slide 11 — when both stacked segments
+        # are N/A the column is annotated with phase-col-bars-na so
+        # the chart shows a small "N/A — no data" caption beneath the
+        # column label. Insufficient_signal forces N/A across all
+        # columns.
+        for phase in _m11_phases:
+            reg_v = m11_sub_values["regressions"].get(phase)
+            skip_v = m11_sub_values["skipped"].get(phase)
+            if m11_status == "insufficient_signal":
+                mapping[f"slide11.{phase}_col_class"] = "phase-col-bars-na"
+            elif _all_na([reg_v, skip_v]):
+                mapping[f"slide11.{phase}_col_class"] = "phase-col-bars-na"
+            else:
+                mapping[f"slide11.{phase}_col_class"] = ""
 
     # --- M8 attribution phase tokens ----------------------------------
     m8 = metrics.get("M8") or {}
@@ -2144,17 +2572,24 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
     # m6, m10. Each maps to the After-period value from
     # metric.per_actor['blitzy-agent']. Missing entries render as
     # "N/A". For M6 (a distribution), we surface the most-frequent
-    # category and its share.
+    # category and its share. Metrics that carry ``unit: "seconds"``
+    # (M4, M7) use the duration formatter for human-readable display.
     for n in (2, 4, 5, 6, 10):
         mid = f"M{n}"
         mdata = metrics.get(mid) or {}
         per_actor = mdata.get("per_actor") or {}
         blitzy = per_actor.get("blitzy-agent") if isinstance(per_actor, dict) else None
+        # Detect unit upfront so the appropriate formatter is used
+        # uniformly across numeric and dict-shaped per_actor entries.
+        actor_metric_unit = (mdata.get("unit") or "").strip().lower() if isinstance(mdata, dict) else ""
         if blitzy is None:
             mapping[f"blitzy.m{n}"] = "N/A"
             continue
         if not isinstance(blitzy, dict):
-            mapping[f"blitzy.m{n}"] = format_value(blitzy, status="ok")
+            if actor_metric_unit == "seconds":
+                mapping[f"blitzy.m{n}"] = format_duration_seconds(blitzy)
+            else:
+                mapping[f"blitzy.m{n}"] = format_value(blitzy, status="ok")
             continue
         after = blitzy.get("after")
         if after is None:
@@ -2169,6 +2604,8 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
                 )
             else:
                 mapping[f"blitzy.m{n}"] = "N/A"
+        elif actor_metric_unit == "seconds":
+            mapping[f"blitzy.m{n}"] = format_duration_seconds(after)
         else:
             mapping[f"blitzy.m{n}"] = format_value(after, status="ok")
 
@@ -2248,6 +2685,17 @@ def _generate_actor_table_rows(metrics: dict[str, dict[str, Any]]) -> str:
 
     sorted_actors = sorted(actor_data.items(), key=_sort_key)[:5]
 
+    # Determine per-metric unit so M4 (seconds) renders as
+    # human-readable durations (e.g., "15.2h") in the per-engineer
+    # table. Other metrics use the default numeric formatter.
+    metric_units: dict[str, str] = {}
+    for mid in relevant_metrics:
+        mdata = metrics.get(mid) or {}
+        if isinstance(mdata, dict):
+            metric_units[mid] = (mdata.get("unit") or "").strip().lower()
+        else:
+            metric_units[mid] = ""
+
     rows: list[str] = []
     for actor, vals in sorted_actors:
         cells: list[str] = [html.escape(actor)]
@@ -2266,6 +2714,8 @@ def _generate_actor_table_rows(metrics: dict[str, dict[str, Any]]) -> str:
                     )
                 else:
                     rendered = "N/A"
+            elif metric_units.get(mid) == "seconds":
+                rendered = format_duration_seconds(value)
             else:
                 rendered = format_value(value, status="ok")
             cells.append(rendered)

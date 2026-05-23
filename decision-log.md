@@ -46,7 +46,7 @@ that produced `results-hybrid.sarif` and `findings-config-c.json`; no value is a
 
 ## Section 2 — Decision Table
 
-All 23 enumerated decisions (D1–D23) are recorded in a single Markdown table with exactly four columns:
+All 24 enumerated decisions (D1–D24) are recorded in a single Markdown table with exactly four columns:
 **Decision**, **Alternatives**, **Rationale**, **Risks**. Each row is self-contained and cites the AAP directive or
 rule clause authorising the choice. Verbatim AAP text is quoted in `"double quotes"` with backticks for code-level
 constructs.
@@ -212,6 +212,41 @@ standard user navigation path.
 Authority: AAP §0.7 Rule 2 (Executive Presentation), Checkpoint 4 QA finding "Slide 6 Mermaid diagram renders as
 16×16 pixel invisible SVG on initial page load and across normal navigation". No file outside `executive-summary.html`
 and `decision-log.md` is changed; the deliverable count and brand specification remain conformant.
+
+**Deviation 11 — Slide 5 scope counts corrected from AAP-stated values to actual repository state, and Section 2
+intro decision count updated from D1–D23 to D1–D24.**
+
+Literal reading: AAP §0.2.1 enumerates the scope as `"21 workspaces"` under `packages/` and `"58 files"` under
+`.github/workflows/`. AAP §0.2.3 reinforces these counts (`"21 packages workspaces"`, `"58 GitHub Actions workflows"`).
+The Checkpoint 2 build of `executive-summary.html` Slide 5 ("Scope of Work") reflected the AAP text faithfully with
+the phrasings `"Two apps and twenty-one packages traced for sources, sinks, crypto, secrets."` and `"Configuration,
+Dockerfile, and fifty-eight GitHub Actions workflows."`. The Checkpoint 2 build of `decision-log.md` Section 2 also
+introduced the table with `"All 23 enumerated decisions (D1–D23)"`, accurate at the time but stale after Checkpoint 4
+added the D24 row (Deviation 10).
+
+Why we deviated: the Checkpoint 6 QA report identified three MINOR documentation-accuracy findings: (a) Slide 5
+"twenty-one packages" — `ls -1 packages/` returns **20** immediate subdirectories (`app-store, app-store-cli, config,
+coss-ui, dayjs, debugging, ee, emails, embeds, features, kysely, lib, platform, prisma, sms, testing, trpc, tsconfig,
+types, ui`); the AAP §0.2.1 table also enumerates only 20 names while claiming 21, indicating an internal AAP
+inconsistency now resolved in favour of the on-disk truth; (b) Slide 5 "fifty-eight GitHub Actions workflows" —
+`ls -1 .github/workflows/` returns **59** files; (c) Section 2 intro paragraph said `"23 enumerated decisions
+(D1–D23)"` even though the table beneath contains 24 rows (D1–D24). The Checkpoint 6 QA report explicitly offered two
+remediation paths (`"Either (a) update Slide 5 text to 'twenty packages' to match ls -1 packages/, or (b) add a
+Deviation 11 in decision-log Section 4 documenting that the AAP's '21 packages' claim and the deck's literal
+reflection of it differ from ls -1 by one"`). The Checkpoint 6 fixer selected path (a) for the deck so the
+executive-facing artifact reflects on-disk reality without footnote-style caveats, and applied the corresponding
+copy-edit to Section 2 so the prose matches the table. This deviation row documents the AAP-vs-reality drift and
+records the corrective action, preserving Rule 1's "explain deviations" guarantee. No measurement artefact
+(`findings-config-c.json` 45 records, `results-hybrid.sarif` 32 results / 709 rules / `tool.semanticVersion 1.163.0`)
+is touched; the core hybrid-evaluation measurement integrity is preserved.
+
+Authority: Checkpoint 6 QA report findings #1, #2, #3 (severity MINOR, category "Documentation accuracy /
+Hallucination" and "Documentation accuracy / Internal inconsistency"). AAP §0.7 Rule 1 ("Any deviation from a
+literal or obvious interpretation of the requirements MUST have an explicit entry in the decision log."). The AAP's
+on-disk reference (`ls -1 packages/`, `ls -1 .github/workflows/`) supersedes the prose count in AAP §0.2.1/§0.2.3
+when the two disagree. Touch surface: two single-line edits in `executive-summary.html` (lines 803, 804) and one
+single-line edit in `decision-log.md` (line 49); the table content in Section 2, all KPI / severity / CWE values in
+the deck, and every byte of the data artefacts (`findings-config-c.json`, `results-hybrid.sarif`) are unchanged.
 
 ## Section 5 — Bidirectional Traceability Note
 

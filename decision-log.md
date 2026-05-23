@@ -176,10 +176,11 @@ actual location. Authority: branch enforcement rule (assigned branch `blitzy-c95
 
 **Deviation 7 — SARIF `region.snippet.text` redacted for a Google OAuth token literal in `apps/web/calendso.yaml:349`.**
 
-At Checkpoint 1 the SARIF artifact contained an unredacted `ya29.a0ARrdaM...` access token literal in the snippet
-text. Retaining a live OAuth token in a committed artifact would itself be a secret-leakage defect. Per the
-Checkpoint 1 fix (commit `94be5893`) the literal was replaced with `ya29.[REDACTED]`; a sweep confirmed no
-additional token-shaped values (ya29, AIza, AKIA, ghp_, JWT, PEM) remained. SARIF structure preserved (version
+At Checkpoint 1 the SARIF artifact contained an unredacted Google OAuth access token literal (with the canonical
+`ya29` prefix and an alphanumeric token body) in the snippet text. Retaining a live OAuth token in a committed
+artifact would itself be a secret-leakage defect. Per the Checkpoint 1 fix (commit `94be5893`) the literal was
+replaced with `ya29.[REDACTED]`; a sweep confirmed no additional token-shaped prefixes (Google OAuth, AIza, AKIA,
+ghp_, JWT, PEM) remained. SARIF structure preserved (version
 2.1.0, schema present, 1 run, 32 results, 709 rules). Authority: AAP §0.3.5 (`"... does not contain code snippets,
 secrets values, or PII."`) extended to the companion SARIF artifact.
 

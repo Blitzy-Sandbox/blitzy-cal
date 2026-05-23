@@ -1,8 +1,8 @@
 {
-  "run_id": "8e62f4fe-5b0f-41e6-afae-719ed95f19aa",
-  "validated_at": "2026-05-23T06:47:58.618252+00:00",
-  "passed": true,
-  "total_errors": 0,
+  "run_id": "phase10_missing_windows",
+  "validated_at": "2026-05-23T09:17:03.917025+00:00",
+  "passed": false,
+  "total_errors": 1,
   "checks_run": 7,
   "checks": {
     "schema": {
@@ -26,9 +26,11 @@
       "errors": []
     },
     "window_counts": {
-      "pass": true,
-      "error_count": 0,
-      "errors": []
+      "pass": false,
+      "error_count": 1,
+      "errors": [
+        "MISSING_REQUIRED_INPUT: windows.json not found at /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json; run generate_windows.py before validate_consistency.py (exit code 2 — missing required input)"
+      ]
     },
     "confidence_tiers": {
       "pass": true,
@@ -46,6 +48,12 @@
       "metric_id": "M9",
       "status": "insufficient_signal",
       "reason": "no release source available (API empty, no semver tags, no CI deploys)",
+      "confidence": "Insufficient signal"
+    },
+    {
+      "metric_id": "M11",
+      "status": "insufficient_signal",
+      "reason": "CI test history unavailable — no JUnit XML or skip annotations found",
       "confidence": "Insufficient signal"
     },
     {

@@ -4,7 +4,7 @@ This report quantifies the change in twelve flow and operational metrics for the
 
 The same extraction logic is applied to both periods with only the date filter and engineering-actor identity branching. Temporal phases are: Baseline (before inflection), Ramp-Up (first 90 days post-introduction), and Steady State (90+ days post-introduction). If fewer than 90 days of post-introduction data exist at run time, the report reverts to "Baseline vs Post-Introduction only." Windows are 2 weeks aligned to Monday starts.
 
-This file was rendered at `2026-05-23T06:48:11.611263+00:00` (UTC) by `scripts/build_report.py` from `data/metric_*.json`. The correlation ID for this run is `c9a76d9d-ccb5-40e1-b597-e3203042d867`; logs are co-located under `logs/c9a76d9d-ccb5-40e1-b597-e3203042d867/`. Every numeric value in this report carries a confidence tag (High / Medium / Low) derived from the actual data source used; every numeric value also has a corresponding entry in the Reproducibility Appendix and a row in the Requirements Traceability Matrix.
+This file was rendered at `2026-05-23T09:19:56.749449+00:00` (UTC) by `scripts/build_report.py` from `data/metric_*.json`. The correlation ID for this run is `test_no_commands`; logs are co-located under `logs/test_no_commands/`. Every numeric value in this report carries a confidence tag (High / Medium / Low) derived from the actual data source used; every numeric value also has a corresponding entry in the Reproducibility Appendix and a row in the Requirements Traceability Matrix.
 
 ---
 
@@ -17,19 +17,19 @@ This file was rendered at `2026-05-23T06:48:11.611263+00:00` (UTC) by `scripts/b
 | M1 | Flow Load | `0` | `1.43` | `N/A` | `lower-is-better` | `High` |
 | M2 | Flow Velocity | `0` | `1` | `N/A` | `higher-is-better` | `High` |
 | M3 | Flow Predictability | `N/A` | `1` | `N/A` | `higher-is-better` | `High` |
-| M4 | Flow Active | `N/A` | `54790` | `N/A` | `lower-is-better` | `High` |
-| M5 | Flow Efficiency | `N/A` | `0.14` | `N/A` | `higher-is-better` | `High` |
-| M6 | Flow Distribution | `N/A` | `defect=0.86, risk-compliance=0.14` | `distribution_shift` | `distribution` | `Medium` |
-| M7 | Flow Time | `N/A` | `386675` | `N/A` | `lower-is-better` | `High` |
-| M8 | Problem Records in Release | `N/A` | `N/A` | `N/A` | `lower-is-better` | `Low` |
+| M4 | Flow Active | `N/A` | `15.2h` | `N/A` | `lower-is-better` | `High` |
+| M5 | Flow Efficiency | `N/A` | `0.09` | `N/A` | `higher-is-better` | `High` |
+| M6 | Flow Distribution | `N/A` | `N/A` | `distribution_shift` | `distribution` | `Medium` |
+| M7 | Flow Time | `N/A` | `4.5d` | `N/A` | `lower-is-better` | `High` |
+| M8 | Problem Records in Release | `0` | `0` | `N/A` | `lower-is-better` | `Low` |
 | M9 | Releases | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `N/A` | `Insufficient signal` |
 | M10 | Approved Exceptions | `0` | `0` | `N/A` | `lower-is-better` | `Low` |
-| M11 | Escaped Defects | `88` | `1` | `0.01x` | `lower-is-better` | `Low` |
+| M11 | Escaped Defects | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `N/A` | `Insufficient signal` |
 | M12 | Defects Out of SLA | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `N/A` | `Insufficient signal` |
 
 ### Plain-Language Summary
 
-Metric M1 (Flow Load) moved from `0` in-progress PRs to `1.43` in-progress PRs (multiplier `N/A`, confidence `High`). Metric M2 (Flow Velocity) moved from `0` to `1` merged PRs per 2-week window (multiplier `N/A`, confidence `High`). Metric M7 (Flow Time) moved from `N/A` to `386675` (units: hours, median; multiplier `N/A`, confidence `High`). Readers should consult each metric's deep-dive for the source provenance and per-actor breakdown.
+Metric M1 (Flow Load) moved from `0` in-progress PRs to `1.43` in-progress PRs (multiplier `N/A`, confidence `High`). Metric M2 (Flow Velocity) moved from `0` to `1` merged PRs per 2-week window (multiplier `N/A`, confidence `High`). Metric M7 (Flow Time) moved from `N/A` to `4.5d` (units: hours, median; multiplier `N/A`, confidence `High`). Readers should consult each metric's deep-dive for the source provenance and per-actor breakdown.
 
 ### Phase Context
 
@@ -56,11 +56,11 @@ This section appears before every Metric Deep-Dive per Rule 6 (Environment First
 | Extraction timestamp | `2026-05-23T04:46:00.504162+00:00` (UTC) |
 | Python version | `3.13.7 (main, Mar  3 2026, 12:19:54) [GCC 15.2.0]` |
 | OS | `Linux-6.6.122+-x86_64-with-glibc2.42` |
-| Run ID (correlation) | `c9a76d9d-ccb5-40e1-b597-e3203042d867` |
+| Run ID (correlation) | `test_no_commands` |
 | Git HEAD SHA | `83efb405508440630e7549a04166989b3a385f89` |
 | Default branch | `main` |
 
-The values above identify the exact commit, branch, and runtime under which the metric figures in this report were derived. The same `c9a76d9d-ccb5-40e1-b597-e3203042d867` value is the directory name used for per-run logs at `logs/c9a76d9d-ccb5-40e1-b597-e3203042d867/` and is referenced from the Reproducibility Appendix.
+The values above identify the exact commit, branch, and runtime under which the metric figures in this report were derived. The same `test_no_commands` value is the directory name used for per-run logs at `logs/test_no_commands/` and is referenced from the Reproducibility Appendix.
 
 ---
 
@@ -381,7 +381,7 @@ The actor's coding span is computed from commit-author timestamps on the PR bran
 ## M5 Flow Efficiency
 
 > **Confidence:** `High`
-> **Source:** `derived_from_M4_M7`
+> **Source:** `derived_from_M4_M7_per_pr_ratios`
 
 ### Definition
 
@@ -460,6 +460,16 @@ xychart-beta
 %% Legend: x-axis is the window index; y-axis is the feature share among merged PRs in that window.
 ```
 
+### Category Distribution by Phase
+
+| Category | Baseline | Ramp-Up | Steady State |
+|----------|----------|----------|----------|
+| Feature | N/A | N/A | N/A |
+| Defect | N/A | N/A | N/A |
+| Risk / Compliance | N/A | N/A | N/A |
+| Tech Debt | N/A | N/A | N/A |
+| Unknown | N/A | N/A | N/A |
+
 ### Notes
 
 The unknown rate is reported per phase. An unknown rate above twenty percent downgrades the phase confidence to Low.
@@ -529,7 +539,7 @@ The harness identifies revert commits on the default branch via `git log --grep=
 
 | Phase | Value (mean reverts per release) | Sample Size (releases) |
 |-------|------------------------------------|--------------------------|
-| Baseline | `N/A` | `0` |
+| Baseline | `0` | `0` |
 | Ramp-Up | `N/A` | `0` |
 | Steady State | `N/A` | `0` |
 
@@ -549,6 +559,15 @@ xychart-beta
   line [0]
 %% Legend: x-axis is the window index; y-axis is the count of reverts in that window whose target original commit could be attributed to a specific release tag.
 ```
+
+### Sub-count Breakdown by Phase
+
+| Sub-count | Baseline | Ramp-Up | Steady State |
+|-----------|-----------|-----------|-----------|
+| Attributable reverts | N/A | N/A | N/A |
+| Unattributable reverts | 184 | N/A | N/A |
+| Reverts of reverts (excluded) | 11 | N/A | N/A |
+| Unreleased reverts (originals predate any release; cross-phase total) | colspan=3 137 |
 
 ### Notes
 
@@ -650,10 +669,10 @@ This metric is Low confidence by default. The harness records the actual scopes 
 
 ## M11 Escaped Defects
 
-> **CAVEAT — Low Confidence:** M11 was computed using ci_workflow_runs + git_log_skip_annotations rather than its definitional default. Do not interpret the multiplier as equivalent to a High-confidence figure. See Risk Assessment for details.
+> **CAVEAT — Insufficient Signal:** M11 reports insufficient signal and no numeric value is presented. See Risk Assessment for details. Reason: CI test history unavailable — no JUnit XML or skip annotations found
 
-> **Confidence:** `Low`
-> **Source:** `ci_workflow_runs + git_log_skip_annotations`
+> **Confidence:** `Insufficient signal`
+> **Source:** `N/A`
 
 ### Definition
 
@@ -667,13 +686,13 @@ The harness queries `/repos/.../actions/runs` for the workflows that produce JUn
 
 | Phase | Value (mean defects per window) | Sample Size (windows) |
 |-------|-----------------------------------|--------------------------|
-| Baseline | `88` | `0` |
-| Ramp-Up | `N/A` | `0` |
-| Steady State | `N/A` | `0` |
+| Baseline | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
+| Ramp-Up | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
+| Steady State | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `0` |
 
 ### Multiplier (After / Before)
 
-`0.01x` (direction: `lower-is-better`).
+`Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` (direction: `N/A`).
 
 ### Trend Diagram
 
@@ -687,6 +706,14 @@ xychart-beta
   line [0]
 %% Legend: x-axis is the window index; y-axis is the sum of regressions and newly-skipped tests in that window. Flaky tests are counted only if failing in three or more consecutive runs.
 ```
+
+### Sub-count Breakdown by Phase
+
+| Sub-count | Baseline | Ramp-Up | Steady State |
+|-----------|-----------|-----------|-----------|
+| Regressions (pass-to-fail, sustained ≥3 runs) | N/A | N/A | N/A |
+| Newly skipped (.skip / xit / xtest / xfail) | N/A | N/A | N/A |
+| Skipped rate (skipped / total tests) | N/A | N/A | N/A |
 
 ### Notes
 
@@ -746,18 +773,18 @@ This table is the Rule 1 (Data Provenance) verification surface. Every numeric v
 
 | Metric | Requirement (AAP § ref) | Extraction Command | Raw Output Path | Derived Value | Reported Number | Confidence |
 |--------|-------------------------|--------------------|-----------------|----------------|------------------|------------|
-| M1 Flow Load | §0.1.1 row 1 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all&sort=created&direction=asc (paginated)` | `data/metric_1.json` | `metrics_results["M1"]["after"]` | N/A | High |
-| M2 Flow Velocity | §0.1.1 row 2 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all (filter merged_at != null)` | `data/metric_2.json` | `metrics_results["M2"]["after"]` | N/A | High |
-| M3 Flow Predictability | §0.1.1 row 3 | `derived from M2 per-window counts (mean/stdev)` | `data/metric_3.json` | `metrics_results["M3"]["after"]` | N/A | High |
-| M4 Flow Active | §0.1.1 row 4 | `compute_flow_active_spans per PR using GET /repos/.../pulls/{n}/reviews + commits + issues/{n}/events` | `data/metric_4.json` | `metrics_results["M4"]["after"]` | N/A | High |
-| M5 Flow Efficiency | §0.1.1 row 5 | `derived from M4 (Flow Active) / M7 (Flow Time)` | `data/metric_5.json` | `metrics_results["M5"]["after"]` | N/A | High |
-| M6 Flow Distribution | §0.1.1 row 6 | `classify_flow_distribution per PR via label → conventional-commit prefix → keyword waterfall` | `data/metric_6.json` | `metrics_results["M6"]["after"]` | distribution_shift | Medium |
-| M7 Flow Time | §0.1.1 row 7 | `GET /repos/.../pulls/{n}/commits \| head -1 by author.date; fallback: git log --format=%aI --reverse <base>..<head> \| head -1` | `data/metric_7.json` | `metrics_results["M7"]["after"]` | N/A | High |
-| M8 Problem Records in Release | §0.1.1 row 8 | `git log --grep='^Revert' --pretty=format:%H\|%aI\|%s\|%P \| parse_reverts_commit_line \| git merge-base --is-ancestor` | `data/metric_8.json` | `metrics_results["M8"]["after"]` | N/A | Low |
-| M9 Releases | §0.1.1 row 9 | `GET /repos/.../releases (or fallback)` | `data/metric_9.json` | `metrics_results["M9"]["after"]` | Insufficient signal — no release source available (API empty, no semver tags, no CI deploys) | Insufficient signal |
-| M10 Approved Exceptions | §0.1.1 row 10 | `GET /orgs/{owner}/audit-log (when audit_log:read scope present) + GET /repos/{owner}/{repo}/events (force-push detection) + exception/waiver/override-labeled PR filter` | `data/metric_10.json` | `metrics_results["M10"]["after"]` | N/A | Low |
-| M11 Escaped Defects | §0.1.1 row 11 | `GET /repos/.../actions/runs (test workflows) + git log -p -- '**/*.test.{ts,tsx,js,jsx}' '**/*.spec.*' \| regex SKIP_ANNOTATION_RE` | `data/metric_11.json` | `metrics_results["M11"]["after"]` | 0.01x | Low |
-| M12 Defects Out of SLA | §0.1.1 row 12 | `GET /teams/{id}/slaPolicies (Linear) + GET /issues?labels=bug` | `data/metric_12.json` | `metrics_results["M12"]["after"]` | Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook | Insufficient signal |
+| M1 Flow Load | §0.1.1 row 1 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all&sort=created&direction=asc (paginated)` | `data/metric_1.json` | `metrics_results["M1"]["multiplier"]` | N/A | High |
+| M2 Flow Velocity | §0.1.1 row 2 | `GET /repos/Blitzy-Sandbox/blitzy-cal/pulls?state=all (filter merged_at != null)` | `data/metric_2.json` | `metrics_results["M2"]["multiplier"]` | N/A | High |
+| M3 Flow Predictability | §0.1.1 row 3 | `derived from M2 per-window counts (mean/stdev)` | `data/metric_3.json` | `metrics_results["M3"]["multiplier"]` | N/A | High |
+| M4 Flow Active | §0.1.1 row 4 | `compute_flow_active_spans per PR using GET /repos/.../pulls/{n}/reviews + commits + issues/{n}/events` | `data/metric_4.json` | `metrics_results["M4"]["multiplier"]` | N/A | High |
+| M5 Flow Efficiency | §0.1.1 row 5 | `join(M4.per_pr_observations, M7.per_pr_observations) by pr_number; ratio_per_pr = M4_seconds / M7_seconds; median(ratios) per phase` | `data/metric_5.json` | `metrics_results["M5"]["multiplier"]` | N/A | High |
+| M6 Flow Distribution | §0.1.1 row 6 | `classify_flow_distribution per PR via label → conventional-commit prefix → keyword waterfall` | `data/metric_6.json` | `metrics_results["M6"]["multiplier"]` | distribution_shift | Medium |
+| M7 Flow Time | §0.1.1 row 7 | `GET /repos/.../pulls/{n}/commits \| head -1 by author.date; fallback: git log --format=%aI --reverse {MERGE_BASE}..{HEAD} \| head -1` | `data/metric_7.json` | `metrics_results["M7"]["multiplier"]` | N/A | High |
+| M8 Problem Records in Release | §0.1.1 row 8 | `git log --grep='^Revert' --pretty=format:%H\|%aI\|%s\|%P \| parse_reverts_commit_line \| git_is_ancestor(tag, original)` | `data/metric_8.json` | `metrics_results["M8"]["multiplier"]` | N/A | Low |
+| M9 Releases | §0.1.1 row 9 | `GET /repos/.../releases (or fallback)` | `data/metric_9.json` | `metrics_results["M9"]["multiplier"]` | Insufficient signal — no release source available (API empty, no semver tags, no CI deploys) | Insufficient signal |
+| M10 Approved Exceptions | §0.1.1 row 10 | `GET /orgs/{owner}/audit-log (when audit_log:read scope present) + GET /repos/{owner}/{repo}/events (force-push detection) + exception/waiver/override-labeled PR filter + GET /repos/.../commits/{merge_sha}/check-runs for failing required CI` | `data/metric_10.json` | `metrics_results["M10"]["multiplier"]` | N/A | Low |
+| M11 Escaped Defects | §0.1.1 row 11 | `GET /repos/.../actions/runs + git log -p -- '*.test.*'` | `data/metric_11.json` | `metrics_results["M11"]["multiplier"]` | Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found | Insufficient signal |
+| M12 Defects Out of SLA | §0.1.1 row 12 | `GET /teams/{id}/slaPolicies (Linear) + GET /issues?labels=bug` | `data/metric_12.json` | `metrics_results["M12"]["multiplier"]` | Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook | Insufficient signal |
 
 The values in the "Reported Number" column are identical to those in the Executive Summary and the Acceleration Curve phase table. `scripts/validate_consistency.py` enforces this equality at build time by loading `data/metric_*.json` and comparing the values rendered in each section against the source dictionary.
 
@@ -769,7 +796,7 @@ The table below lists per-engineer values for the metrics that aggregate by acto
 
 | Engineer | M2 Velocity (Before) | M2 Velocity (After) | M4 Active (Before) | M4 Active (After) | M5 Efficiency (Before) | M5 Efficiency (After) | M6 Feature Share (After) | M10 Exceptions (After) |
 |----------|----------------------|----------------------|---------------------|--------------------|------------------------|------------------------|---------------------------|--------------------------|
-| + blitzy-agent | 0 | 1 | N/A | 54790 | N/A | 0.14 | N/A | N/A |
+| + blitzy-agent | 0 | 1 | N/A | 54790 | N/A | 0.09 | N/A | N/A |
 
 The Blitzy row is the engineering actor for the after period only. Human rows are normalized per active engineer by dividing the per-actor count by the number of windows in which the actor was active.
 
@@ -790,23 +817,26 @@ This section presents the across-phase trajectory for each of the twelve metrics
 | M5 Flow Efficiency | `N/A` | `N/A` | `N/A` | `N/A` | `High` |
 | M6 Flow Distribution (feature) | `N/A` | `N/A` | `N/A` | `distribution_shift` | `Medium` |
 | M7 Flow Time | `N/A` | `N/A` | `N/A` | `N/A` | `High` |
-| M8 Problem Records | `N/A` | `N/A` | `N/A` | `N/A` | `Low` |
+| M8 Problem Records | `0` | `N/A` | `N/A` | `N/A` | `Low` |
 | M9 Releases | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal` |
 | M10 Approved Exceptions | `0` | `N/A` | `N/A` | `N/A` | `Low` |
-| M11 Escaped Defects | `88` | `N/A` | `N/A` | `0.01x` | `Low` |
+| M11 Escaped Defects | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal` |
 | M12 Defects Out of SLA | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal` |
 
 ### Curve Diagram
 
-**Diagram 4: Acceleration Curve — Phase Values for Headline Metrics.** The chart below plots phase values for four headline metrics across the three phases. Values are read from the same `metrics_results` dictionary that populates the Executive Summary and the Requirements Traceability Matrix.
+**Diagram 4: Acceleration Curve — Phase Values for Headline Metrics.** The chart below plots normalized phase values (each phase divided by baseline) for four headline metrics across the three phases. Values are computed by `build_report.py` from the same `metrics_results` dictionary that populates the Executive Summary and the Requirements Traceability Matrix.
 
 ```mermaid
 xychart-beta
-  title "Acceleration Curve — Phase Trajectory for Headline Metrics"
+  title "Acceleration Curve — Normalized Phase Trajectory (baseline = 1.0)"
   x-axis "Phase" ["Baseline","Ramp-Up","Steady State"]
   y-axis "Normalized value (baseline = 1.0)"
-  line [1.0, 1.0, 1.0]
-%% Legend: y-axis is normalized to baseline = 1.0 for cross-metric comparability. Concrete values are computed by build_report.py from data/metric_*.json and rendered into the placeholder values in the source template; phases with insufficient signal contribute a constant baseline value of 1.0.
+  line [0, 0, 0]
+  line [0, 0, 0]
+  line [0, 0, 0]
+  line [0, 0, 0]
+%% Legend: each line is one headline metric normalized to its baseline (baseline=1.0). Series order: M2 Flow Velocity, M7 Flow Time, M9 Releases, M11 Escaped Defects. Generated by build_report.py from data/metric_*.json. M2 Flow Velocity series renders as zeros: baseline missing or zero (insufficient signal). M7 Flow Time series renders as zeros: baseline missing or zero (insufficient signal). M9 Releases series renders as zeros: baseline missing or zero (insufficient signal). M11 Escaped Defects series renders as zeros: baseline missing or zero (insufficient signal).
 ```
 
 ---
@@ -821,13 +851,13 @@ The list below is populated by the renderer from `data/metric_*.json` based on e
 
 - **M8: Problem Records in Release** — Confidence Low because definitional default source unavailable. Source actually consulted: git_log_reverts + releases_none. Consequence: do not interpret the multiplier as evidence of magnitude change; only the direction is reliable. Upgrade path: enable the definitional default source identified in `decision-log.md`.
 - **M10: Approved Exceptions** — Confidence Low because audit log unavailable; using force-push + label signals only. Source actually consulted: github_events_and_pr_labels. Consequence: do not interpret the multiplier as evidence of magnitude change; only the direction is reliable. Upgrade path: enable the definitional default source identified in `decision-log.md`.
-- **M11: Escaped Defects** — Confidence Low because definitional default source unavailable. Source actually consulted: ci_workflow_runs + git_log_skip_annotations. Consequence: do not interpret the multiplier as evidence of magnitude change; only the direction is reliable. Upgrade path: enable the definitional default source identified in `decision-log.md`.
 
 ### Insufficient-Signal Metrics
 
 The list below is populated by the renderer from `data/metric_*.json` for any metric whose status field is set to `insufficient_signal`. Each entry identifies the metric, the reason data was insufficient, and the data source that would resolve the gap.
 
 - **M9: Releases** — Insufficient signal because no release source available (API empty, no semver tags, no CI deploys). Report omits per-phase numeric values and trend chart values. Resolution path: see `decision-log.md` for the source-precedence fallback chain.
+- **M11: Escaped Defects** — Insufficient signal because CI test history unavailable — no JUnit XML or skip annotations found. Report omits per-phase numeric values and trend chart values. Resolution path: see `decision-log.md` for the source-precedence fallback chain.
 - **M12: Defects Out of SLA** — Insufficient signal because no SLA source — neither Linear SLA field nor repository policy/runbook. Report omits per-phase numeric values and trend chart values. Resolution path: see `decision-log.md` for the source-precedence fallback chain.
 
 ### Methodology Risks
@@ -863,25 +893,25 @@ The bullets below are mandatory limitations documented in the AAP. Additional li
 
 ## Reproducibility Appendix
 
-This section contains the complete, ordered set of commands and API calls executed during the harness run identified by `c9a76d9d-ccb5-40e1-b597-e3203042d867`. The renderer reads `logs/c9a76d9d-ccb5-40e1-b597-e3203042d867/commands.log` and embeds its contents verbatim below; each line is in execution order and is a syntactically valid git invocation, HTTP URL, or Python subprocess execution.
+This section contains the complete, ordered set of commands and API calls executed during the harness run identified by `test_no_commands`. The renderer reads `logs/test_no_commands/commands.log` and embeds its contents verbatim below; each line is in execution order and is a syntactically valid git invocation, HTTP URL, or Python subprocess execution.
 
 ```text
-2026-05-23T06:48:11.609387+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_1.json
-2026-05-23T06:48:11.609607+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_2.json
-2026-05-23T06:48:11.609778+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_3.json
-2026-05-23T06:48:11.609905+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_4.json
-2026-05-23T06:48:11.610013+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_5.json
-2026-05-23T06:48:11.610112+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_6.json
-2026-05-23T06:48:11.610224+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_7.json
-2026-05-23T06:48:11.610323+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_8.json
-2026-05-23T06:48:11.610429+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_9.json
-2026-05-23T06:48:11.610523+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_10.json
-2026-05-23T06:48:11.610645+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_11.json
-2026-05-23T06:48:11.610768+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_12.json
-2026-05-23T06:48:11.610872+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
-2026-05-23T06:48:11.610967+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
-2026-05-23T06:48:11.611055+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
-2026-05-23T06:48:11.612918+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/logs/c9a76d9d-ccb5-40e1-b597-e3203042d867/commands.log
+2026-05-23T09:19:56.747573+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_1.json
+2026-05-23T09:19:56.747824+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_2.json
+2026-05-23T09:19:56.747989+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_3.json
+2026-05-23T09:19:56.748095+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_4.json
+2026-05-23T09:19:56.748206+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_5.json
+2026-05-23T09:19:56.748305+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_6.json
+2026-05-23T09:19:56.748416+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_7.json
+2026-05-23T09:19:56.748525+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_8.json
+2026-05-23T09:19:56.748627+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_9.json
+2026-05-23T09:19:56.748733+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_10.json
+2026-05-23T09:19:56.748876+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_11.json
+2026-05-23T09:19:56.748974+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/metric_12.json
+2026-05-23T09:19:56.749067+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/environment.json
+2026-05-23T09:19:56.749155+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/inflection.json
+2026-05-23T09:19:56.749243+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/data/windows.json
+2026-05-23T09:19:56.751359+00:00 read /tmp/blitzy/blitzy-cal/blitzy-1b0a0fe1-7eb2-4be6-94ce-e044e93ea359_f7dff1/blitzy/reports/acceleration/logs/test_no_commands/commands.log
 
 ```
 

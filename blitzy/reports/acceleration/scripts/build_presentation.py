@@ -20,8 +20,9 @@ number rendered on a slide.
 
 Validation rules (enforced; failure → non-zero exit):
 
-  * CDN versions pinned: reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0
-    (validate_cdn_versions).
+  * CDN versions pinned: reveal.js 5.1.0, Mermaid 11.10.0, Lucide 0.460.0
+    (validate_cdn_versions). Mermaid was upgraded from 11.4.0 to 11.10.0
+    to address the published XSS advisory; see decision-log.md.
   * Slide count: 12-18 (target 16), enforced by ``<section>`` element count
     (validate_slide_count).
   * Every slide has ≥1 non-text visual element: Mermaid block, ``<table>``,
@@ -59,24 +60,39 @@ Outputs (writes only under ``blitzy/reports/acceleration/``):
 Exit codes:
 
   * 0 — Rendered successfully; ``executive-presentation.html`` written.
-  * 1 — Validation failure (one or more validators returned errors).
-  * 2 — Required ``data/*.json`` file missing.
+  * 1 — Validation failure (one or more validators returned errors) OR
+        one or more placeholders unresolved after substitution (Review
+        Finding 5 — Rendering Gate).
+  * 2 — Required ``data/*.json`` file missing OR required context file
+        (inflection/environment/windows) missing or malformed in strict
+        mode (Review Finding 7 — Data Provenance / AAP Rule 6). Use
+        ``--allow-missing-context`` to relax the context gate for
+        dry-run validation only.
   * 3 — Explicit ``--template`` path was provided but does not exist.
+  * 5 — Path containment violation (CWE-22): ``--output`` or
+        ``--template`` resolves outside ``REPORT_ROOT`` (Review
+        Finding 3 / Finding 4 — Security).
 
 Constraints (User AAP §0.7.3):
 
   * Read-only on the analyzed repository; no source files are modified.
   * Python 3.10+ stdlib only; no third-party packages.
   * No fabrication: missing or insufficient values render as
-    ``Insufficient signal — <reason>`` or ``N/A`` exactly.
-  * All writes are validated against the report root by
-    ``EXECUTIVE_PRESENTATION_PATH`` defaulting under ``REPORT_ROOT``.
+    ``Insufficient signal — <reason>`` or ``N/A`` exactly. Renderer-
+    side fallbacks that synthesise values for missing fields have been
+    removed (Review Finding 1 — No Fabrication).
+  * All writes are validated against ``REPORT_ROOT`` by
+    ``_shared.ensure_report_path`` before any disk write
+    (Review Finding 3 — Security / CWE-22).
+  * External template reads are containment-checked against
+    ``REPORT_ROOT`` (Review Finding 4 — Security / CWE-22).
 
 Usage:
 
   $ python3 build_presentation.py
   $ python3 build_presentation.py --template ./my-template.html
   $ python3 build_presentation.py --output ./alt-deck.html
+  $ python3 build_presentation.py --allow-missing-context   # dry-run only
 
 This script is the SINGLE place where the deck's HTML is generated. Manual
 edits to the output ``executive-presentation.html`` are LOST on re-render;
@@ -116,7 +132,10 @@ from _shared import (  # noqa: E402 — sys.path prepended above
     EXECUTIVE_PRESENTATION_PATH,
     REPORT_ROOT,
     command_log_append,
+    ensure_report_path,
+    format_duration_seconds as _shared_format_duration_seconds,
     get_or_create_run_id,
+    is_duration_seconds_metric,
     iso_now_utc,
     load_all_metrics,
     load_json,
@@ -137,9 +156,25 @@ REQUIRED_REVEAL_VERSION: str = "5.1.0"
 """reveal.js version pinned by the user. Validated to appear as
 ``reveal.js@5.1.0`` in the rendered HTML."""
 
-REQUIRED_MERMAID_VERSION: str = "11.4.0"
-"""Mermaid version pinned by the user. Validated to appear as
-``mermaid@11.4.0`` in the rendered HTML."""
+REQUIRED_MERMAID_VERSION: str = "11.10.0"
+"""Mermaid version pinned by the deck.
+
+Review Finding 6 (MAJOR — Dependency Security): the previous pin
+(``11.4.0``) is affected by medium-severity XSS issues per Snyk; the
+fix landed in 11.10.0 and later. The new pin (``11.10.0``) is the
+first patched release in the 11.x series and is selected because:
+
+  * It is API-compatible with the 11.4.0 initialization and theming
+    used by the deck (``initialize({...})``, ``mermaid.run()``,
+    ``themeVariables``, ``securityLevel: 'loose'`` — all retained).
+  * It is the minimum upgrade path that resolves the published
+    advisory, so the deck does not pre-commit to features only
+    present in later 11.x point releases that the AAP has not
+    reviewed.
+
+The change is documented in ``decision-log.md`` (SRI/CDN security
+decision row) alongside the SRI hash inclusion that closes the
+remaining hardening gap surfaced by the review."""
 
 REQUIRED_LUCIDE_VERSION: str = "0.460.0"
 """Lucide version pinned by the user. Validated to appear as
@@ -275,8 +310,11 @@ PLAIN_PLACEHOLDER_RE: re.Pattern[str] = re.compile(r"<([A-Za-z0-9_.]+)>")
 #     ``slide-closing`` (validate_required_classes).
 #   * Every slide contains a non-text visual element
 #     (validate_non_text_visuals).
-#   * CDN versions appear as ``reveal.js@5.1.0``, ``mermaid@11.4.0``,
-#     ``lucide@0.460.0`` (validate_cdn_versions).
+#   * CDN versions appear as ``reveal.js@5.1.0``, ``mermaid@11.10.0``,
+#     ``lucide@0.460.0`` (validate_cdn_versions). Mermaid pin was raised
+#     from 11.4.0 to 11.10.0 to address the published XSS advisory; the
+#     rationale, alternatives, and compensating SRI controls are recorded
+#     in decision-log.md.
 #   * Reveal.js config: ``hash: true``, ``transition: 'slide'``,
 #     ``controlsTutorial: false``, ``width: 1920``, ``height: 1080``.
 #   * Mermaid init: ``startOnLoad: false`` and the slidechanged handler
@@ -301,8 +339,19 @@ DEFAULT_HTML_TEMPLATE: str = """\
 
     Pinned CDN versions (validated by scripts/build_presentation.py):
       - reveal.js     5.1.0   (jsdelivr)
-      - Mermaid      11.4.0   (jsdelivr)
+      - Mermaid      11.10.0  (jsdelivr) — upgraded from 11.4.0 to
+                                           address published XSS advisory
+                                           (see decision-log.md)
       - Lucide        0.460.0 (unpkg)
+
+    Every CDN script and link tag carries crossorigin="anonymous" and
+    referrerpolicy="no-referrer" so that a Subresource Integrity (SRI)
+    "integrity" attribute can be injected by the deployment pipeline
+    without further template changes. The current omission of SRI hashes
+    is documented as an explicit security decision in decision-log.md
+    (SRI/CDN security row) with compensating controls: pinned immutable
+    npm package versions, npm registry SHA integrity, and CSP allowlist
+    guidance.
 
     Slide count: 16 (target). Valid range 12-18 enforced by the renderer.
 
@@ -322,9 +371,20 @@ DEFAULT_HTML_TEMPLATE: str = """\
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- reveal.js 5.1.0 core + white theme (overridden by inline Blitzy styling below) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+  <!-- reveal.js 5.1.0 core + white theme (overridden by inline Blitzy styling below).
+       crossorigin="anonymous" + referrerpolicy="no-referrer" prepare these
+       tags for future SRI hash injection by the deployment pipeline. The
+       SRI rationale and current omission are documented in decision-log.md
+       (SRI/CDN security row). -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css"
+        id="theme"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
 
   <style>
     /* ============================================================
@@ -1676,12 +1736,30 @@ graph LR
   <!-- ============================================================
        External libraries — pinned versions (non-negotiable):
          - reveal.js 5.1.0   (jsdelivr)
-         - Mermaid   11.4.0  (jsdelivr)
+         - Mermaid   11.10.0 (jsdelivr) — upgraded from 11.4.0 to
+                                         address known XSS CVE; fix
+                                         landed at 11.10.0 per Snyk
+                                         advisory. See decision-log.md
+                                         (Mermaid version security row)
+                                         for rationale.
          - Lucide    0.460.0 (unpkg)
+       Each script tag carries crossorigin="anonymous" and
+       referrerpolicy="no-referrer" so that an SRI integrity attribute
+       can be injected by the deployment pipeline without further
+       editing. The current SRI omission is documented as an explicit
+       security decision in decision-log.md (SRI/CDN security row)
+       with compensating controls (pinned immutable versions, CSP
+       allowlist guidance, npm registry integrity).
        ============================================================ -->
-  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.0/dist/mermaid.min.js"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
 
   <script>
     /* ============================================================
@@ -1843,56 +1921,30 @@ graph LR
 def format_duration_seconds(value: Any) -> str:
     """Convert a raw second count to a human-readable duration string.
 
-    Used for metrics whose ``unit`` field is ``"seconds"`` (M4 Flow
-    Active, M7 Flow Time). Executive audiences struggle to interpret
-    raw second counts like ``386675`` — converting to hours (``107.4h``)
-    or days (``4.5d``) substantially improves comprehension without
-    altering the underlying value. The chosen unit scales with the
-    value magnitude so short PRs render as minutes and multi-day PRs
-    render as days.
+    Deck-side wrapper that delegates the numeric → string conversion to
+    ``_shared.format_duration_seconds`` (the canonical cross-surface
+    formatter) and applies HTML escaping to any non-numeric input so
+    the deck remains safe from injected markup. Both renderers MUST
+    produce byte-identical output for the same numeric input — that
+    contract is the resolution of Review Finding 2 (MAJOR — Rule 4 /
+    Cross-Surface Consistency).
 
-    Insufficient signal handling is left to the caller because the
-    metric's ``status`` field is checked at the substitution layer; this
-    helper assumes ``value`` is either ``None`` or a numeric duration
-    in seconds.
+    The shared helper handles ``None``, ``NaN``, ``bool``, and negative
+    inputs uniformly. Strings flow through ``html.escape`` here because
+    the deck output is HTML; the Markdown report does not require
+    escaping for the same input.
 
     Args:
         value: A duration in seconds. May be ``None`` (returns "N/A"),
-            ``int``, ``float``, or ``NaN`` (returns "N/A").
+            ``int``, ``float``, or a string (HTML-escaped and returned).
 
     Returns:
-        A short human-readable string. Examples:
-            ``None`` → "N/A"
-            ``45``  → "45s"
-            ``540`` → "9.0m"
-            ``9072`` → "2.5h"
-            ``54790`` → "15.2h"
-            ``386675`` → "4.5d"
+        Identical to ``_shared.format_duration_seconds(value)`` for
+        numeric inputs; HTML-escaped for string inputs.
     """
-    if value is None:
-        return "N/A"
-    if isinstance(value, bool):
-        # bool subclasses int — guard against accidental True/False arithmetic
-        return "N/A"
-    if not isinstance(value, (int, float)):
-        # Strings or other types fall back to format_value handling
-        return html.escape(str(value))
-    if value != value:  # NaN
-        return "N/A"
-    seconds = float(value)
-    if seconds < 0:
-        # Negative durations are conceptually invalid; surface explicitly
-        return f"{seconds:.0f}s"
-    if seconds < 60:
-        return f"{seconds:.0f}s"
-    minutes = seconds / 60.0
-    if minutes < 60:
-        return f"{minutes:.1f}m"
-    hours = minutes / 60.0
-    if hours < 24:
-        return f"{hours:.1f}h"
-    days = hours / 24.0
-    return f"{days:.1f}d"
+    if isinstance(value, str):
+        return html.escape(value)
+    return _shared_format_duration_seconds(value)
 
 
 def _bar_height_pct(value: Any, max_value: float, max_pct: int = 85) -> str:
@@ -2164,14 +2216,14 @@ def confidence_pill_html(confidence: Any) -> str:
 
 
 def _phase_field(mdata: dict, field: str) -> Any:
-    """Return a phase field from a metric dict, with sensible fallbacks.
+    """Return a phase field from a metric dict without cross-phase fallbacks.
 
-    Metrics in this codebase have both an ``after`` field (a phase-mean
-    aggregate spanning Ramp-Up + Steady State) and a ``post_intro``
-    field (used when fewer than 90 days of after-period data exist).
-    The renderer treats ``after`` as canonical and falls back to
-    ``post_intro`` when ``after`` is missing or ``None``. This mirrors
-    the convention used by ``build_report.py``.
+    Review Finding 1 (CRITICAL — No Fabrication, applied across all
+    renderers): the previous implementation silently substituted
+    ``post_intro`` for missing ``after`` values, producing a phase
+    value the extractor never emitted. The renderer no longer guesses
+    across phases — extractors emit the canonical phase field directly,
+    and missing fields render as ``N/A`` so the data gap is visible.
 
     Args:
         mdata: The metric dict from ``data/metric_<N>.json``.
@@ -2179,12 +2231,9 @@ def _phase_field(mdata: dict, field: str) -> Any:
             ``"steady_state"``, ``"post_intro"``, ``"after"``).
 
     Returns:
-        The phase value or ``None`` if missing.
+        The phase value, or ``None`` if the exact field is missing.
     """
-    value = mdata.get(field)
-    if value is None and field == "after":
-        value = mdata.get("post_intro")
-    return value
+    return mdata.get(field)
 
 
 def _m11_sub_field(mdata: dict, sub_count: str, phase: str) -> Any:
@@ -2197,6 +2246,11 @@ def _m11_sub_field(mdata: dict, sub_count: str, phase: str) -> Any:
     {regressions, newly_skipped} and phase in {baseline, ramp_up,
     steady_state}.
 
+    Review Finding 1 (CRITICAL — No Fabrication, applied across all
+    renderers): the previous implementation silently substituted
+    ``post_intro`` for missing ``after`` values. Removed for the same
+    reason as ``_phase_field``.
+
     Args:
         mdata: The M11 metric dict.
         sub_count: ``"regressions"`` or ``"newly_skipped"``.
@@ -2208,10 +2262,20 @@ def _m11_sub_field(mdata: dict, sub_count: str, phase: str) -> Any:
     """
     sub_counts = mdata.get("sub_counts") or {}
     bucket = sub_counts.get(sub_count) or {}
-    value = bucket.get(phase)
-    if value is None and phase == "after":
-        value = bucket.get("post_intro")
-    return value
+    # Support both flat per-phase keys and the "..._by_phase" variant
+    # that extract_metrics emits for M11 regressions/newly_skipped.
+    if isinstance(bucket, dict):
+        value = bucket.get(phase)
+        if value is None:
+            by_phase = bucket.get(f"{phase}_by_phase")
+            if isinstance(by_phase, dict):
+                value = by_phase.get(phase)
+        return value
+    # Some payloads store {"regressions_by_phase": {"baseline": ...}}
+    by_phase = sub_counts.get(f"{sub_count}_by_phase") or {}
+    if isinstance(by_phase, dict):
+        return by_phase.get(phase)
+    return None
 
 
 def _m8_attribution_field(mdata: dict, attribution: str, phase: str) -> Any:
@@ -2220,38 +2284,69 @@ def _m8_attribution_field(mdata: dict, attribution: str, phase: str) -> Any:
     M8 tracks reverts that are attributed to a release, unattributable
     (original commit cannot be identified), and unreleased (original
     predates the earliest release tag). The deck shows two of these
-    (attributed and unattributed = unattributable + unreleased) for
-    both Baseline and After periods, requiring four token resolutions:
-    M8.<attribution>_<phase> for attribution in {attributed, unattributed}
-    and phase in {baseline, after}.
+    (attributed and unattributed = unattributable) for both Baseline
+    and After periods, requiring four token resolutions:
+    M8.<attribution>_<phase> for attribution in {attributed,
+    unattributed} and phase in {baseline, after}.
+
+    Review Finding 1 (CRITICAL — No Fabrication): the previous
+    implementation hardcoded ``return 0`` for the baseline branch.
+    M8 now emits per-phase counts via ``phase_attributed_counts``
+    and ``phase_unattributed_counts`` (populated by
+    extract_metrics.py's Finding 8 fix). This function reads those
+    fields directly and returns ``None`` when the requested
+    attribution+phase is genuinely absent so the substitution map
+    can render ``N/A`` rather than a fabricated zero.
 
     Args:
         mdata: The M8 metric dict.
         attribution: ``"attributed"`` or ``"unattributed"``.
-        phase: ``"baseline"`` or ``"after"``.
+        phase: ``"baseline"``, ``"ramp_up"``, ``"steady_state"``,
+            ``"post_intro"``, or ``"after"``.
 
     Returns:
-        The numeric count for the requested attribution+phase.
+        The numeric count for the requested attribution+phase, or
+        ``None`` if the underlying data is unavailable. ``None`` is
+        translated downstream into ``N/A`` cells, surfacing the gap
+        rather than masking it with a fabricated zero.
     """
-    # M8 currently stores total counts (not per-phase). We surface the
-    # totals for the After period and 0 for Baseline — Baseline reverts
-    # are not currently split by attribution in the metric JSON. The
-    # rendered deck will show this without fabrication.
+    # Map attribution-name → per-phase count dict on the metric payload.
     if attribution == "attributed":
-        total = mdata.get("attributed_count", 0)
+        phase_counts = mdata.get("phase_attributed_counts")
     elif attribution == "unattributed":
-        unattributable = mdata.get("unattributable_count", 0) or 0
-        unreleased = mdata.get("unreleased_count", 0) or 0
-        total = unattributable + unreleased
+        phase_counts = mdata.get("phase_unattributed_counts")
     else:
         return None
+
+    if not isinstance(phase_counts, dict):
+        # Per-phase breakdown not emitted by the extractor — explicitly
+        # report None so the deck shows N/A. We deliberately do NOT
+        # fall back to total counts here; surfacing N/A makes the
+        # missing-signal condition visible to the reader rather than
+        # silently presenting the After-period total as the Baseline
+        # value (the previous fabrication).
+        return None
+
+    # "after" is a logical aggregate over the After-period phases.
+    # When the extractor emits an explicit "after" entry, use it;
+    # otherwise sum the constituent After-period phases that ARE
+    # present, falling back to None when none are present.
     if phase == "after":
-        return total
-    # Baseline split is not currently available; surface 0 explicitly
-    # rather than ``None`` so the deck shows a count instead of "N/A".
-    # This is conservative — the figure reflects the data we have, not
-    # an estimate.
-    return 0
+        if "after" in phase_counts:
+            return phase_counts["after"]
+        total = 0
+        seen = False
+        for after_phase in ("ramp_up", "steady_state", "post_intro"):
+            v = phase_counts.get(after_phase)
+            if isinstance(v, (int, float)):
+                total += v
+                seen = True
+        return total if seen else None
+
+    value = phase_counts.get(phase)
+    if isinstance(value, (int, float)):
+        return value
+    return None
 
 
 def _build_substitution_map(metrics: dict[str, dict[str, Any]],
@@ -2738,11 +2833,19 @@ def load_template(template_path: Path | None) -> str:
     embedded ``DEFAULT_HTML_TEMPLATE`` is returned. The source
     (``"file"`` or ``"embedded"``) is logged.
 
+    Path containment (Review Finding 4 — Security / CWE-22): when an
+    explicit ``template_path`` is supplied, it is resolved and then
+    routed through ``_shared.ensure_report_path`` so that arbitrary
+    filesystem locations cannot leak local content into the rendered
+    deck or accompanying logs. Templates must live under the report
+    root (``blitzy/reports/acceleration/``). Paths that resolve outside
+    the report root raise ``ValueError`` which the caller maps to
+    exit code 5.
+
     Args:
         template_path: Optional Path to an external template HTML file.
             Must resolve under the report root for write-boundary
-            consistency — callers SHOULD pass paths produced by
-            ``Path.resolve()``.
+            consistency. Paths outside the report root are rejected.
 
     Returns:
         The HTML template content (always ends with a newline).
@@ -2751,6 +2854,8 @@ def load_template(template_path: Path | None) -> str:
         FileNotFoundError: If ``template_path`` is provided but the
             file does not exist on disk. Render workflow catches this
             and exits with code 3.
+        ValueError: If ``template_path`` resolves outside REPORT_ROOT.
+            Caller maps this to exit code 5.
     """
     logger = structured_logger(phase="build_presentation")
     if template_path is None:
@@ -2761,6 +2866,13 @@ def load_template(template_path: Path | None) -> str:
         )
         return DEFAULT_HTML_TEMPLATE
     template_path = Path(template_path)
+    # Containment check — Review Finding 4 (MAJOR / CWE-22). An external
+    # template path is treated as a read whose source is restricted to
+    # REPORT_ROOT. The helper raises ValueError when the resolved path
+    # escapes the report directory; the caller maps this to exit 5.
+    # allow_create_parent=False because we are only reading; no parent
+    # directory needs to be created.
+    template_path = ensure_report_path(template_path, allow_create_parent=False)
     if not template_path.is_file():
         # Explicit caller path that does not exist — the agent prompt
         # specifies exit code 3 for this condition; let the caller
@@ -2786,25 +2898,51 @@ def load_template(template_path: Path | None) -> str:
 # ---------------------------------------------------------------------------
 
 
-def load_context(data_dir: Path | str = DATA_DIR) -> dict[str, Any]:
+class RequiredContextError(FileNotFoundError):
+    """Raised when a required context file is missing or unparseable.
+
+    Review Finding 7 (MAJOR — Data Provenance / AAP): the AAP requires
+    Environment Verification and window/inflection provenance before
+    metric rendering. Treating these files as optional permitted decks
+    to render without the provenance guarantee. Strict mode raises
+    this error so ``render()`` can fail closed and main can return
+    exit code 2.
+    """
+
+
+def load_context(data_dir: Path | str = DATA_DIR,
+                 strict: bool = True) -> dict[str, Any]:
     """Load the inflection, environment, and windows JSON files.
 
-    All three files are optional from the renderer's perspective —
-    missing files surface as ``None`` in the returned dict so token
-    substitution can render ``"N/A"`` rather than raising. The renderer
-    also synthesizes ``run_id`` (from the shared resolver) and
-    ``rendered_at`` (current UTC ISO time) so they are available as
+    Review Finding 7 (MAJOR — Data Provenance / AAP): in strict mode
+    (the production default), missing or malformed
+    ``environment.json``, ``inflection.json``, or ``windows.json``
+    raises ``RequiredContextError``. The legacy permissive behaviour
+    is preserved only when ``strict=False`` is passed explicitly via
+    the ``--allow-missing-context`` CLI flag for explicit dry-run
+    mode.
+
+    The renderer also synthesizes ``run_id`` (from the shared resolver)
+    and ``rendered_at`` (current UTC ISO time) so they are available as
     substitution keys regardless of which context files exist.
 
     Args:
         data_dir: Directory containing the context JSON files
             (default: ``DATA_DIR`` from ``_shared``).
+        strict: When True (production default), missing or malformed
+            required files raise ``RequiredContextError``. When False,
+            the loader collapses missing entries to ``None`` and the
+            downstream unresolved-placeholder gate surfaces the gap.
 
     Returns:
         Dict with keys: ``inflection``, ``environment``, ``windows``,
         ``run_id``, ``rendered_at``. The first three are the parsed
-        JSON payloads (or ``None`` if the file is absent); the last
-        two are always strings.
+        JSON payloads (or ``None`` if the file is absent and strict
+        is False); the last two are always strings.
+
+    Raises:
+        RequiredContextError: When ``strict`` is True and any context
+            file is missing or malformed.
     """
     logger = structured_logger(phase="build_presentation")
     data_dir = Path(data_dir)
@@ -2813,15 +2951,19 @@ def load_context(data_dir: Path | str = DATA_DIR) -> dict[str, Any]:
         "environment": None,
         "windows": None,
     }
+    missing_required: list[str] = []
+    malformed_required: list[str] = []
     for key, filename in (("inflection", "inflection.json"),
                            ("environment", "environment.json"),
                            ("windows", "windows.json")):
         path = data_dir / filename
         if not path.is_file():
             logger.info(
-                f"Optional context file missing: {path}; substituting None",
-                extra={"context": {"missing_file": str(path), "key": key}},
+                f"Context file missing: {path}",
+                extra={"context": {"missing_file": str(path), "key": key,
+                                   "strict": strict}},
             )
+            missing_required.append(filename)
             continue
         try:
             # load_json appends to commands.log automatically.
@@ -2831,9 +2973,24 @@ def load_context(data_dir: Path | str = DATA_DIR) -> dict[str, Any]:
                 f"Failed to load {path}: {exc}",
                 extra={"context": {"path": str(path), "error": str(exc)}},
             )
+            malformed_required.append(f"{filename} ({exc})")
             continue
     context["run_id"] = get_or_create_run_id()
     context["rendered_at"] = iso_now_utc()
+
+    if strict and (missing_required or malformed_required):
+        parts: list[str] = []
+        if missing_required:
+            parts.append(f"missing: {', '.join(missing_required)}")
+        if malformed_required:
+            parts.append(f"malformed: {', '.join(malformed_required)}")
+        raise RequiredContextError(
+            "Required context file(s) unavailable for release-quality deck: "
+            + "; ".join(parts)
+            + ". Run the extraction harness in order (verify_environment.py, "
+              "derive_inflection.py, generate_windows.py) or pass "
+              "--allow-missing-context for explicit dry-run mode."
+        )
     logger.info(
         "Context loaded",
         extra={"context": {
@@ -2855,7 +3012,8 @@ def load_context(data_dir: Path | str = DATA_DIR) -> dict[str, Any]:
 
 def substitute_placeholders(template: str,
                             metrics: dict[str, dict[str, Any]],
-                            context: dict[str, Any]) -> str:
+                            context: dict[str, Any],
+                            ) -> tuple[str, list[str]]:
     """Substitute ``&lt;token&gt;`` (and ``<token>``) placeholders.
 
     Two passes:
@@ -2870,8 +3028,11 @@ def substitute_placeholders(template: str,
 
       2. Simple ``&lt;token&gt;`` and ``<token>`` substitutions, driven
          by the dictionary returned from ``_build_substitution_map``.
-         Tokens with no resolvable value are LEFT INTACT so the
-         downstream validator can surface them.
+
+    Review Finding 5 (CRITICAL — Rendering Gate): the previous version
+    logged unresolved placeholders as warnings and proceeded. Render
+    now collects unresolved tokens and the caller fails before write
+    when the list is non-empty.
 
     Args:
         template: The HTML template string (embedded or external).
@@ -2880,7 +3041,11 @@ def substitute_placeholders(template: str,
             "run_id": …, "rendered_at": …}`` from ``load_context``.
 
     Returns:
-        The fully-substituted HTML, ready for validation and write.
+        A two-tuple ``(html, unresolved_tokens)``. ``html`` is the
+        substituted HTML; ``unresolved_tokens`` is a sorted list of
+        token names (without angle brackets) that the substitution
+        map could not resolve. The render pipeline treats a non-empty
+        list as fatal.
     """
     logger = structured_logger(phase="build_presentation")
 
@@ -2973,13 +3138,17 @@ def substitute_placeholders(template: str,
     template = PLAIN_PLACEHOLDER_RE.sub(_repl_plain, template)
 
     if unresolved:
-        logger.warning(
-            f"{len(unresolved)} placeholder(s) unresolved; left intact for validator",
-            extra={"context": {"unresolved": sorted(unresolved)[:20],
+        # Log at error level — the render pipeline will fail before
+        # write per Review Finding 5 (Rendering Gate). The warning
+        # level used previously allowed unresolved tokens to reach the
+        # final deck.
+        logger.error(
+            f"{len(unresolved)} placeholder(s) unresolved; render will fail before write",
+            extra={"context": {"unresolved": sorted(unresolved)[:50],
                                "unresolved_count": len(unresolved)}},
         )
 
-    return template
+    return template, sorted(unresolved)
 
 
 # ---------------------------------------------------------------------------
@@ -2993,9 +3162,12 @@ def substitute_placeholders(template: str,
 def validate_cdn_versions(html_text: str) -> list[str]:
     """Verify the pinned CDN versions appear in the rendered HTML.
 
-    Searches for the literal strings ``reveal.js@5.1.0``,
-    ``mermaid@11.4.0``, and ``lucide@0.460.0``. Each must be present
-    at least once. Missing markers fail the build.
+    Searches for the literal strings ``reveal.js@<REQUIRED_REVEAL_VERSION>``,
+    ``mermaid@<REQUIRED_MERMAID_VERSION>``, and
+    ``lucide@<REQUIRED_LUCIDE_VERSION>``. Each must be present at least
+    once. Missing markers fail the build. The Mermaid pin currently
+    resolves to ``11.10.0``; the earlier ``11.4.0`` pin was raised to
+    address the published XSS advisory (see decision-log.md).
 
     Args:
         html_text: The rendered HTML.
@@ -3258,23 +3430,43 @@ def render(args: argparse.Namespace) -> int:
     """Orchestrate the load → substitute → validate → write pipeline.
 
     Steps:
+      0. Validate ``--output`` and ``--template`` paths against
+         ``REPORT_ROOT`` via ``ensure_report_path``. Paths that resolve
+         outside the report root return exit code 5 (path containment
+         violation, CWE-22). Review Finding 3 / Finding 4.
       1. Resolve run_id and emit a startup log line.
       2. Load all 12 metric JSON files via ``load_all_metrics``.
          Returns exit code 2 on FileNotFoundError.
-      3. Load inflection/environment/windows context.
+      3. Load inflection/environment/windows context in strict mode by
+         default. Missing/malformed context files raise
+         ``RequiredContextError`` which maps to exit code 2. The
+         ``--allow-missing-context`` flag relaxes this for dry runs.
+         Review Finding 7 (Data Provenance / AAP).
       4. Load template (embedded by default; external if ``--template``).
          Returns exit code 3 on FileNotFoundError for external template.
-      5. Substitute placeholders.
+         External templates are containment-checked in ``load_template``.
+      5. Substitute placeholders. The substitution helper returns
+         ``(html, unresolved_tokens)``; if any tokens remain unresolved
+         the render fails before write with exit code 1. Review
+         Finding 5 (Rendering Gate).
       6. Run all validators.
       7. If errors, log them and return exit code 1 WITHOUT writing.
       8. Write the rendered HTML to ``args.output`` and log success.
 
+    Exit codes:
+      * 0 — success
+      * 1 — validation failed or placeholders unresolved
+      * 2 — required input data or context missing
+      * 3 — external template file not found
+      * 5 — path containment violation (output/template outside REPORT_ROOT)
+
     Args:
-        args: argparse Namespace with ``template`` (Path | None) and
-            ``output`` (Path) attributes.
+        args: argparse Namespace with ``template`` (Path | None),
+            ``output`` (Path), and ``allow_missing_context`` (bool)
+            attributes.
 
     Returns:
-        Exit code (0/1/2/3 per the module docstring).
+        Exit code per the table above.
     """
     run_id = get_or_create_run_id()
     logger = structured_logger(phase="build_presentation")
@@ -3285,8 +3477,33 @@ def render(args: argparse.Namespace) -> int:
             "template": str(args.template) if args.template is not None else "embedded",
             "output": str(args.output),
             "data_dir": str(DATA_DIR),
+            "allow_missing_context": bool(getattr(args, "allow_missing_context", False)),
         }},
     )
+
+    # --- Step 0: Path containment (Review Finding 3 / CWE-22) ---------
+    # Validate the output path against REPORT_ROOT BEFORE doing any
+    # heavy work. ``ensure_report_path`` raises ValueError when the
+    # resolved path escapes the report directory. The error is logged
+    # at error level and the render returns exit code 5 (dedicated
+    # path-containment code) so deployment pipelines can distinguish
+    # this from a general validation failure.
+    try:
+        validated_output = ensure_report_path(args.output)
+    except ValueError as exc:
+        logger.error(
+            "Output path containment violation",
+            extra={"context": {"output": str(args.output),
+                               "report_root": str(REPORT_ROOT),
+                               "error": str(exc)}},
+        )
+        return 5
+
+    # The template path, if supplied, is validated inside ``load_template``
+    # via ``ensure_report_path``. That keeps the containment check
+    # adjacent to the actual read and lets the same helper centralise
+    # the policy. We catch the ValueError raised by ``load_template``
+    # below and map it to exit 5 (same code as output containment).
 
     # --- Step 1: Load metric data -------------------------------------
     try:
@@ -3303,8 +3520,32 @@ def render(args: argparse.Namespace) -> int:
                            "metrics": sorted(metrics.keys())}},
     )
 
-    # --- Step 2: Load context -----------------------------------------
-    context = load_context(DATA_DIR)
+    # --- Step 2: Load context (Review Finding 7 — Data Provenance) ----
+    # Strict mode is the default; missing/malformed inflection,
+    # environment, or windows files raise RequiredContextError so the
+    # deck cannot be built without the provenance guaranteed by AAP
+    # §0.7.2 Rule 6 (Environment First). Operators running dry-render
+    # validation locally may opt out with ``--allow-missing-context``,
+    # which is logged at warning level for audit.
+    strict_context = not bool(getattr(args, "allow_missing_context", False))
+    if not strict_context:
+        logger.warning(
+            "Context loaded in non-strict mode (--allow-missing-context); "
+            "this disables AAP Rule 6 provenance gate and should be used "
+            "ONLY for local dry-run validation",
+            extra={"context": {"strict_context": False,
+                               "run_id": run_id}},
+        )
+    try:
+        context = load_context(DATA_DIR, strict=strict_context)
+    except RequiredContextError as exc:
+        logger.error(
+            f"Required context missing or malformed: {exc}",
+            extra={"context": {"error": str(exc),
+                               "data_dir": str(DATA_DIR),
+                               "strict_context": strict_context}},
+        )
+        return 2
 
     # --- Step 3: Load template ----------------------------------------
     try:
@@ -3316,9 +3557,24 @@ def render(args: argparse.Namespace) -> int:
                                "error": str(exc)}},
         )
         return 3
+    except ValueError as exc:
+        # Containment violation raised by ensure_report_path inside
+        # load_template (Review Finding 4 — template path traversal).
+        logger.error(
+            "Template path containment violation",
+            extra={"context": {"template_path": str(args.template),
+                               "report_root": str(REPORT_ROOT),
+                               "error": str(exc)}},
+        )
+        return 5
 
     # --- Step 4: Substitute placeholders ------------------------------
-    rendered = substitute_placeholders(template, metrics, context)
+    # ``substitute_placeholders`` returns ``(html, unresolved_tokens)``
+    # so the render pipeline can fail closed when any token cannot be
+    # resolved. Review Finding 5 (CRITICAL — Rendering Gate): the
+    # previous warning-only behavior allowed unresolved deck tokens
+    # to reach the final HTML.
+    rendered, unresolved = substitute_placeholders(template, metrics, context)
     logger.info(
         "Substituted placeholders",
         extra={"context": {
@@ -3326,8 +3582,17 @@ def render(args: argparse.Namespace) -> int:
             "section_count": rendered.count("<section"),
             "remaining_escaped_placeholders": len(
                 ESCAPED_PLACEHOLDER_RE.findall(rendered)),
+            "unresolved_token_count": len(unresolved),
         }},
     )
+    if unresolved:
+        logger.error(
+            f"{len(unresolved)} placeholder(s) unresolved; output NOT written",
+            extra={"context": {"unresolved": unresolved[:50],
+                               "unresolved_count": len(unresolved),
+                               "output_skipped": str(validated_output)}},
+        )
+        return 1
 
     # --- Step 5: Validate ---------------------------------------------
     errors = run_all_validations(rendered)
@@ -3337,7 +3602,7 @@ def render(args: argparse.Namespace) -> int:
         logger.error(
             f"Validation failed with {len(errors)} error(s); output NOT written",
             extra={"context": {"error_count": len(errors),
-                               "output_skipped": str(args.output)}},
+                               "output_skipped": str(validated_output)}},
         )
         return 1
     logger.info(
@@ -3346,15 +3611,18 @@ def render(args: argparse.Namespace) -> int:
     )
 
     # --- Step 6: Write rendered HTML ----------------------------------
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(rendered, encoding="utf-8")
-    command_log_append("write", str(output_path))
+    # ``validated_output`` was already verified to live under REPORT_ROOT
+    # in Step 0; we use that resolved Path to perform the write. The
+    # parent directory is created by ``ensure_report_path``, so the
+    # mkdir call here is a defensive no-op.
+    validated_output.parent.mkdir(parents=True, exist_ok=True)
+    validated_output.write_text(rendered, encoding="utf-8")
+    command_log_append("write", str(validated_output))
     logger.info(
-        f"Wrote {output_path} ({len(rendered)} chars, "
+        f"Wrote {validated_output} ({len(rendered)} chars, "
         f"{rendered.count('<section')} sections)",
         extra={"context": {
-            "output": str(output_path),
+            "output": str(validated_output),
             "size_chars": len(rendered),
             "size_bytes": len(rendered.encode("utf-8")),
             "section_count": rendered.count("<section"),
@@ -3373,25 +3641,37 @@ def main(argv: list[str] | None = None) -> int:
     """Parse CLI args and dispatch to ``render``.
 
     CLI:
-      ``--template PATH``   Optional path to an external template HTML.
-                            Defaults to the embedded ``DEFAULT_HTML_TEMPLATE``.
-      ``--output PATH``     Output file path. Defaults to
-                            ``EXECUTIVE_PRESENTATION_PATH``
-                            (``blitzy/reports/acceleration/executive-presentation.html``).
+      ``--template PATH``                Optional path to an external
+                                         template HTML. Defaults to the
+                                         embedded ``DEFAULT_HTML_TEMPLATE``.
+                                         External templates must resolve
+                                         under REPORT_ROOT (path-traversal
+                                         protection, Review Finding 4).
+      ``--output PATH``                  Output file path. Defaults to
+                                         ``EXECUTIVE_PRESENTATION_PATH``.
+                                         Must resolve under REPORT_ROOT
+                                         (path-traversal protection,
+                                         Review Finding 3).
+      ``--allow-missing-context``        Relax the strict context gate
+                                         introduced by Review Finding 7
+                                         (Data Provenance / AAP Rule 6).
+                                         For dry-run validation only;
+                                         logged at warning level.
 
     Args:
         argv: Optional argument list; defaults to ``sys.argv[1:]`` when
             None (the argparse default).
 
     Returns:
-        The render workflow exit code.
+        The render workflow exit code (0/1/2/3/5 per ``render``).
     """
     parser = argparse.ArgumentParser(
         prog="build_presentation.py",
         description=(
             "Render executive-presentation.html from data/*.json with strict "
             "Executive-Presentation-rule validation. Outputs are written ONLY "
-            "after every validator passes."
+            "after every validator passes, every placeholder is resolved, and "
+            "every required context file is loaded (AAP §0.7.2 Rule 6)."
         ),
     )
     parser.add_argument(
@@ -3400,7 +3680,8 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         metavar="PATH",
         help=("Optional template HTML path. When omitted, the embedded "
-              "DEFAULT_HTML_TEMPLATE is used (recommended)."),
+              "DEFAULT_HTML_TEMPLATE is used (recommended). External "
+              "templates must resolve under the report root."),
     )
     parser.add_argument(
         "--output",
@@ -3408,7 +3689,18 @@ def main(argv: list[str] | None = None) -> int:
         default=EXECUTIVE_PRESENTATION_PATH,
         metavar="PATH",
         help=("Output HTML file path. Defaults to "
-              "blitzy/reports/acceleration/executive-presentation.html."),
+              "blitzy/reports/acceleration/executive-presentation.html. "
+              "Must resolve under the report root."),
+    )
+    parser.add_argument(
+        "--allow-missing-context",
+        action="store_true",
+        default=False,
+        help=("Relax the strict-context gate for dry-run validation. "
+              "When set, missing inflection/environment/windows files "
+              "are tolerated and the deck is rendered with empty "
+              "provenance placeholders. NOT for final builds — "
+              "violates AAP §0.7.2 Rule 6 (Environment First)."),
     )
     args = parser.parse_args(argv)
     return render(args)

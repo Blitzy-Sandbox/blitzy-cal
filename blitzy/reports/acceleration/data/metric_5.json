@@ -2,12 +2,12 @@
   "metric_id": "M5",
   "status": "ok",
   "confidence": "High",
-  "source": "derived_from_M4_M7",
+  "source": "derived_from_M4_M7_per_pr_ratios",
   "baseline": null,
   "ramp_up": null,
   "steady_state": null,
-  "post_intro": 0.1416952220857309,
-  "after": 0.1416952220857309,
+  "post_intro": 0.09131266414673209,
+  "after": 0.09131266414673209,
   "multiplier": null,
   "direction": "higher-is-better",
   "per_actor": {
@@ -15,11 +15,16 @@
       "baseline": null,
       "ramp_up": null,
       "steady_state": null,
-      "post_intro": 0.1416952220857309,
-      "after": 0.1416952220857309
+      "post_intro": 0.09131266414673209,
+      "after": 0.09131266414673209
     }
   },
-  "primary_command": "derived from M4 (Flow Active) / M7 (Flow Time)",
+  "joined_pr_count": 7,
+  "baseline_n": 0,
+  "ramp_up_n": 0,
+  "steady_state_n": 0,
+  "post_intro_n": 7,
+  "primary_command": "join(M4.per_pr_observations, M7.per_pr_observations) by pr_number; ratio_per_pr = M4_seconds / M7_seconds; median(ratios) per phase",
   "m4_confidence": "High",
   "m7_confidence": "High"
 }

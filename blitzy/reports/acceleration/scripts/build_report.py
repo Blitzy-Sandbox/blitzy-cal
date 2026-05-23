@@ -58,12 +58,19 @@ Outputs (writes only under ``blitzy/reports/acceleration/``):
 
 Exit codes:
   * 0 — Rendered successfully; both outputs written.
-  * 1 — Rule 2 (Factual-Neutral Tone) or Rule 6 (Environment First) violation.
-  * 2 — Required ``data/*.json`` file missing.
+  * 1 — Rule 2 (Factual-Neutral Tone) or Rule 6 (Environment First)
+        violation, OR unresolved placeholders detected after substitution
+        (Review Finding 4 — Rule 4 Internal Consistency).
+  * 2 — Required ``data/*.json`` file missing OR required context
+        (``environment.json``, ``inflection.json``, ``windows.json``,
+        ``logs/<run_id>/commands.log``) missing in strict mode (Review
+        Findings 2 and 3).
   * 3 — Explicit ``--report-template`` or ``--dashboard-template`` path was
         provided but the file does not exist.
   * 4 — Mermaid diagram count below ``MIN_MERMAID_DIAGRAMS`` (16) after
         substitution.
+  * 5 — ``--output`` or ``--dashboard-output`` path resolves outside
+        ``REPORT_ROOT`` (Review Finding 1 — CWE-22 path traversal guard).
 
 Constraints (User AAP §0.7.3):
   * Read-only on the analyzed repository; no source files are modified.
@@ -100,7 +107,10 @@ from _shared import (  # noqa: E402
     REPORT_ROOT,
     SUBJECTIVE_TOKENS,
     command_log_append,
+    ensure_report_path,
+    format_duration_seconds,
     get_or_create_run_id,
+    is_duration_seconds_metric,
     load_all_metrics,
     structured_logger,
 )
@@ -694,6 +704,10 @@ xychart-beta
 %% Legend: x-axis is the window index; y-axis is the feature share among merged PRs in that window.
 ```
 
+### Category Distribution by Phase
+
+<m6_distribution_table>
+
 ### Notes
 
 The unknown rate is reported per phase. An unknown rate above twenty percent downgrades the phase confidence to Low.
@@ -781,6 +795,10 @@ xychart-beta
   line [<M8.trend_values>]
 %% Legend: x-axis is the window index; y-axis is the count of reverts in that window whose target original commit could be attributed to a specific release tag.
 ```
+
+### Sub-count Breakdown by Phase
+
+<m8_breakdown_table>
 
 ### Notes
 
@@ -914,6 +932,10 @@ xychart-beta
 %% Legend: x-axis is the window index; y-axis is the sum of regressions and newly-skipped tests in that window. Flaky tests are counted only if failing in three or more consecutive runs.
 ```
 
+### Sub-count Breakdown by Phase
+
+<m11_subcounts_table>
+
 ### Notes
 
 If CI test history is unavailable, only the newly-skipped sub-count is computable and the regressions sub-count reports Insufficient signal.
@@ -1011,16 +1033,7 @@ This section presents the across-phase trajectory for each of the twelve metrics
 
 ### Curve Diagram
 
-**Diagram 4: Acceleration Curve — Phase Values for Headline Metrics.** The chart below plots phase values for four headline metrics across the three phases. Values are read from the same `metrics_results` dictionary that populates the Executive Summary and the Requirements Traceability Matrix.
-
-```mermaid
-xychart-beta
-  title "Acceleration Curve — Phase Trajectory for Headline Metrics"
-  x-axis "Phase" ["Baseline","Ramp-Up","Steady State"]
-  y-axis "Normalized value (baseline = 1.0)"
-  line [1.0, 1.0, 1.0]
-%% Legend: y-axis is normalized to baseline = 1.0 for cross-metric comparability. Concrete values are computed by build_report.py from data/metric_*.json and rendered into the placeholder values in the source template; phases with insufficient signal contribute a constant baseline value of 1.0.
-```
+<acceleration_curve_chart>
 
 ---
 
@@ -1165,7 +1178,7 @@ The table below lists each of the twelve metrics with its phase values, the Afte
 
 "Multiplier" is computed as After divided by Before where After is the mean of (Ramp-Up plus Steady State) values weighted by window count. For metrics where higher is better (M2, M3, M5, M9), greater than one indicates acceleration. For metrics where lower is better (M1, M4, M7, M8, M10, M11, M12), less than one indicates acceleration. Metric 6 is reported as a distribution shift rather than a multiplier.
 
-When a metric reports Insufficient signal, the Baseline, Ramp-Up, Steady State, and Multiplier cells render the string `Insufficient signal — <reason>`; the Confidence cell renders the same string.
+When a metric reports Insufficient signal, the Baseline, Ramp-Up, Steady State, and Multiplier cells render the string `Insufficient signal — {reason}`; the Confidence cell renders the same string. (The `{reason}` text in the previous sentence is a documentation placeholder describing the rendered cell content; it is NOT a template substitution token.)
 
 ## Confidence Distribution
 
@@ -1403,28 +1416,51 @@ def load_template(template_path: Path | None, default: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def load_context(data_dir: Path | str = DATA_DIR) -> dict[str, Any]:
+class RequiredContextError(FileNotFoundError):
+    """Raised when a required context file is missing or unparseable.
+
+    Review Finding 3 (MAJOR — Data Provenance): the previous loader
+    silently collapsed missing or malformed ``environment.json``,
+    ``inflection.json``, or ``windows.json`` to empty values, allowing
+    the report to render without environment/inflection/window
+    provenance. Rule 1 (Data Provenance) and Rule 6 (Environment First)
+    both require these files for a release-quality render.
+    """
+
+
+def load_context(data_dir: Path | str = DATA_DIR,
+                 strict: bool = True) -> dict[str, Any]:
     """Load the non-metric context dictionary used by ``substitute_placeholders``.
 
     The context bundles environment metadata, inflection candidates,
-    window table aggregates, and the rendered_at timestamp. Each
-    component is loaded independently; a missing file collapses to an
-    empty dict so the renderer can still produce a best-effort report
-    that flags the gap rather than crashing. The renderer's section-order
-    validator and Rule 2 grep pass run regardless of context
-    completeness, so an incomplete context never silently passes
-    validation.
+    window table aggregates, and the rendered_at timestamp.
+
+    Review Finding 3 (MAJOR — Data Provenance): in strict mode the
+    loader raises ``RequiredContextError`` when any of the three
+    required files is missing or unparseable. Strict mode is the
+    production default; the legacy permissive behaviour is preserved
+    only when ``strict=False`` is passed explicitly (used by
+    ``--allow-missing-context`` dry-run mode in main()).
 
     Args:
         data_dir: Directory containing ``environment.json``,
             ``inflection.json``, and ``windows.json``. Defaults to the
             shared ``DATA_DIR`` constant.
+        strict: When True (default), missing or malformed required
+            files raise ``RequiredContextError``. When False, the
+            loader collapses missing entries to empty values and the
+            section-order validator and unresolved-placeholder gate
+            surface the gap downstream.
 
     Returns:
         A flat dictionary of context fragments keyed by the names used
         downstream by ``substitute_placeholders``:
         ``environment``, ``inflection``, ``windows``,
         ``rendered_at``, ``run_id``, ``date_range``.
+
+    Raises:
+        RequiredContextError: When ``strict`` is True and any of the
+            three context files is missing or malformed.
     """
     data_path = Path(data_dir)
     context: dict[str, Any] = {
@@ -1432,29 +1468,58 @@ def load_context(data_dir: Path | str = DATA_DIR) -> dict[str, Any]:
         "inflection": {},
         "windows": [],
     }
+    missing_required: list[str] = []
+    malformed_required: list[str] = []
+
     env_path = data_path / "environment.json"
     if env_path.is_file():
         command_log_append("read", str(env_path))
         try:
             context["environment"] = json.loads(env_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError) as exc:
+            malformed_required.append(f"environment.json ({exc})")
             context["environment"] = {}
+    else:
+        missing_required.append("environment.json")
+
     inflection_path = data_path / "inflection.json"
     if inflection_path.is_file():
         command_log_append("read", str(inflection_path))
         try:
             context["inflection"] = json.loads(inflection_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError) as exc:
+            malformed_required.append(f"inflection.json ({exc})")
             context["inflection"] = {}
+    else:
+        missing_required.append("inflection.json")
+
     windows_path = data_path / "windows.json"
     if windows_path.is_file():
         command_log_append("read", str(windows_path))
         try:
             context["windows"] = json.loads(windows_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError) as exc:
+            malformed_required.append(f"windows.json ({exc})")
             context["windows"] = []
+    else:
+        missing_required.append("windows.json")
+
     context["rendered_at"] = datetime.now(timezone.utc).isoformat()
     context["run_id"] = get_or_create_run_id()
+
+    if strict and (missing_required or malformed_required):
+        parts: list[str] = []
+        if missing_required:
+            parts.append(f"missing: {', '.join(missing_required)}")
+        if malformed_required:
+            parts.append(f"malformed: {', '.join(malformed_required)}")
+        raise RequiredContextError(
+            "Required context file(s) unavailable for release-quality render: "
+            + "; ".join(parts)
+            + ". Run the extraction harness in order (verify_environment.py, "
+              "derive_inflection.py, generate_windows.py) or pass "
+              "--allow-missing-context for explicit dry-run mode."
+        )
     return context
 
 
@@ -1529,17 +1594,25 @@ def _metric_field_for_token(metric_data: dict[str, Any], field: str) -> Any:
 
     The function consolidates the per-metric lookup conventions:
 
-      * Direct top-level keys (``baseline``, ``after``, ``multiplier``,
-        ``confidence``, ``source``, ``direction``, ``status``,
-        ``confidence_reason``).
+      * Direct top-level keys only (``baseline``, ``after``,
+        ``multiplier``, ``confidence``, ``source``, ``direction``,
+        ``status``, ``confidence_reason``, ``ramp_up``, ``steady_state``,
+        ``post_intro``).
       * Sample-size suffixes (``baseline_n``, ``ramp_up_n``, ...) routed
         to top-level keys named identically.
-      * Phase-specific aliases (``after`` falls through to ``post_intro``
-        when ``after`` is absent — extract_metrics emits
-        ``post_intro`` for the Baseline-vs-Post-Introduction-only
-        fallback documented in AAP §0.1.3).
-      * Sub-count and trend-value tokens fall through to ``sub_counts``
-        and ``per_window`` respectively when no top-level match exists.
+      * Trend-value tokens fall through to ``per_window`` aggregation.
+      * Sub-count tokens fall through to ``sub_counts`` when no
+        top-level match exists.
+
+    Review Finding 5 (CRITICAL — No Fabrication): the previous version
+    silently substituted ``post_intro`` for missing ``after``,
+    ``ramp_up``, or ``steady_state`` values. That cross-phase fallback
+    fabricated phase values in report surfaces when the metric did not
+    produce one (e.g., reporting ``post_intro`` as ``after`` even when
+    the extractor explicitly emitted no after-period figure). The
+    fallback is removed: extractors must emit the intended phase field
+    explicitly, or report ``status: insufficient_signal`` so the
+    renderer's Confidence Transparency callout surfaces the gap.
 
     Args:
         metric_data: A single metric's JSON dict (one of the values in
@@ -1549,18 +1622,13 @@ def _metric_field_for_token(metric_data: dict[str, Any], field: str) -> Any:
 
     Returns:
         The resolved value or ``None`` when no source can be located.
+        Returning ``None`` causes ``_build_substitution_map`` to omit
+        the token; the unresolved-placeholder gate (Finding 4) then
+        flags the missing value before write.
     """
     if field in metric_data:
         return metric_data[field]
-    # Phase fallbacks: when the After period uses Post-Introduction-only
-    if field == "after":
-        if metric_data.get("after") is not None:
-            return metric_data["after"]
-        return metric_data.get("post_intro")
-    if field == "ramp_up":
-        return metric_data.get("ramp_up") or metric_data.get("post_intro")
-    if field == "steady_state":
-        return metric_data.get("steady_state") or metric_data.get("post_intro")
+    # Trend values are an aggregation of per_window, not a phase fallback:
     if field == "trend_values":
         per_window = metric_data.get("per_window") or {}
         if isinstance(per_window, dict) and per_window:
@@ -1574,7 +1642,7 @@ def _metric_field_for_token(metric_data: dict[str, Any], field: str) -> Any:
                     values.append("0")
             return ", ".join(values)
         return "0"
-    # Sub-count lookups
+    # Sub-count lookups (final, lowest-precedence fallback)
     sub = metric_data.get("sub_counts") or {}
     if isinstance(sub, dict) and field in sub:
         return sub[field]
@@ -1663,9 +1731,22 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
         "baseline_n", "ramp_up_n", "steady_state_n", "post_intro_n",
         "trend_values",
     )
+    # ``duration_phase_fields`` lists the per-metric tokens whose values
+    # are durations in seconds when the parent metric's ``unit`` field is
+    # ``"seconds"``. Routing these through the shared
+    # ``format_duration_seconds`` helper guarantees that the rendered
+    # cell value matches the deck's executive-presentation surface for
+    # the same metric — the resolution of Review Finding 2 (MAJOR —
+    # Rule 4 / Cross-Surface Consistency). Multipliers and counts are
+    # NOT in this set because they are dimensionless / cardinal.
+    duration_phase_fields: frozenset[str] = frozenset((
+        "baseline", "ramp_up", "steady_state", "post_intro", "after",
+    ))
+
     for mid, mdata in metrics.items():
         status = mdata.get("status", "ok")
         reason = mdata.get("reason") or mdata.get("confidence_reason") or ""
+        metric_is_duration = is_duration_seconds_metric(mdata)
         for field in per_metric_fields:
             value = _metric_field_for_token(mdata, field)
             token = f"{mid}.{field}"
@@ -1693,6 +1774,18 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
                     mapping[token] = value
                 else:
                     mapping[token] = format_value(value, status="ok", unit="x")
+            elif metric_is_duration and field in duration_phase_fields:
+                # Phase scalar for a duration-in-seconds metric (M4, M7).
+                # Route through the shared formatter so the Markdown
+                # report displays the same human-readable string as the
+                # deck (e.g., "4.5d" rather than the raw "386675").
+                if status == "insufficient_signal":
+                    mapping[token] = (
+                        f"Insufficient signal — {reason}"
+                        if reason else "Insufficient signal"
+                    )
+                else:
+                    mapping[token] = format_duration_seconds(value)
             else:
                 mapping[token] = format_value(value, status=status, reason=reason)
 
@@ -1713,49 +1806,94 @@ def _build_substitution_map(metrics: dict[str, dict[str, Any]],
 
 
 def substitute_placeholders(template: str, metrics: dict[str, dict[str, Any]],
-                            context: dict[str, Any]) -> str:
+                            context: dict[str, Any],
+                            windows: list[dict[str, Any]] | None = None,
+                            ) -> tuple[str, list[str]]:
     """Substitute ``<placeholder>`` tokens in the template with concrete values.
 
-    The substitution proceeds in two passes:
+    The substitution proceeds in three passes:
       1. Multi-line block placeholders (``<traceability_rows>``,
          ``<per_engineer_rows>``, ``<low_confidence_list>``,
-         ``<insufficient_signal_list>``) are expanded to multi-line
+         ``<insufficient_signal_list>``, ``<m6_distribution_table>``,
+         ``<m8_breakdown_table>``, ``<m11_subcounts_table>``,
+         ``<acceleration_curve_chart>``) are expanded to multi-line
          Markdown content using the helper generators.
       2. The compiled ``PLACEHOLDER_RE`` walks the template, looks up
          each match against the substitution map, and replaces the
-         token in-place. Tokens that do not resolve to a value are left
-         unchanged so the validator can surface them.
+         token in-place.
+      3. Tokens that do not resolve to a value are collected into the
+         ``unresolved`` list returned alongside the substituted text.
+         The render pipeline treats any unresolved placeholder as a
+         fatal error (Review Finding 4) — partial rendering must not
+         silently leak placeholders into the published report.
+
+    Review Finding 4 (CRITICAL — Rendering Gate): the previous version
+    returned the unsubstituted ``match.group(0)`` for unresolved tokens
+    and produced no aggregate signal back to the caller. That allowed
+    placeholders to reach the final output. The function now accumulates
+    every unresolved token, returns the full list, and ``render()``
+    fails before write when the list is non-empty.
 
     Args:
         template: The Markdown template (either the embedded default or
             an external file's content) containing ``<...>`` placeholders.
         metrics: The metric dictionary from ``load_all_metrics``.
         context: The context dictionary from ``load_context``.
+        windows: Optional list of window dicts from ``windows.json``;
+            passed to the new sub-count and Acceleration Curve generators
+            so they can drive per-window aggregations. When omitted,
+            ``context['windows']`` is consulted.
 
     Returns:
-        The fully-substituted Markdown text.
+        A two-tuple ``(text, unresolved_tokens)``. ``text`` is the
+        Markdown after substitution. ``unresolved_tokens`` is a sorted
+        list of token names (without angle brackets) that the
+        substitution map could not resolve; an empty list means every
+        placeholder was satisfied.
     """
+    if windows is None:
+        windows_ctx = context.get("windows") if isinstance(context, dict) else None
+        windows = windows_ctx if isinstance(windows_ctx, list) else []
+
     # --- Pass 1: multi-line block expansions --------------------------
     traceability_rows = generate_traceability_matrix(metrics)
     per_engineer_rows = generate_per_engineer_table(metrics)
     low_conf_list = _generate_low_confidence_list(metrics)
     isig_list = _generate_insufficient_signal_list(metrics)
+    m6_table = generate_m6_distribution_table(metrics)
+    m8_table = generate_m8_breakdown_table(metrics)
+    m11_table = generate_m11_subcounts_table(metrics)
+    acc_curve = generate_acceleration_curve_chart(metrics)
 
     template = template.replace("<traceability_rows>", traceability_rows)
     template = template.replace("<per_engineer_rows>", per_engineer_rows)
     template = template.replace("<low_confidence_list>", low_conf_list)
     template = template.replace("<insufficient_signal_list>", isig_list)
+    template = template.replace("<m6_distribution_table>", m6_table)
+    template = template.replace("<m8_breakdown_table>", m8_table)
+    template = template.replace("<m11_subcounts_table>", m11_table)
+    template = template.replace("<acceleration_curve_chart>", acc_curve)
 
     # --- Pass 2: simple key→value substitution ------------------------
     mapping = _build_substitution_map(metrics, context)
+    unresolved: set[str] = set()
+
+    # Tokens that are documented architectural sentinels — they are
+    # written by post-substitution passes (e.g., embed_commands_log)
+    # and must NOT be flagged as unresolved at this stage.
+    deferred_tokens: set[str] = {"commands_log_verbatim"}
 
     def _repl(match: re.Match[str]) -> str:
         token = match.group(1)
         if token in mapping:
             return mapping[token]
-        return match.group(0)  # leave unresolved tokens intact for auditing
+        if token in deferred_tokens:
+            return match.group(0)
+        unresolved.add(token)
+        return match.group(0)  # leave intact so caller can locate it
 
-    return PLACEHOLDER_RE.sub(_repl, template)
+    text = PLACEHOLDER_RE.sub(_repl, template)
+    return text, sorted(unresolved)
 
 
 # ---------------------------------------------------------------------------
@@ -1990,13 +2128,21 @@ def generate_traceability_matrix(metrics: dict[str, dict[str, Any]]) -> str:
             or mdata.get("confidence_reason")
             or ""
         )
-        confidence = format_confidence(mdata.get("confidence"))
+        # Review Finding 6 (MAJOR — Rule 1/Rule 4): the "Reported Number"
+        # cell MUST be the exact same field value rendered for the
+        # <MN.multiplier> token elsewhere in the report. Both surfaces
+        # call _metric_field_for_token(mdata, "multiplier") and format
+        # via the same shared format_value() path so Rule 4 (Internal
+        # Consistency) is enforced structurally rather than by a
+        # downstream comparison step.
+        confidence_value = _metric_field_for_token(mdata, "confidence")
+        confidence = format_confidence(confidence_value)
         primary_cmd = mdata.get("primary_command") or meta["default_command"]
         # Escape pipe chars inside cells so they don't break the Markdown table.
         primary_cmd_escaped = str(primary_cmd).replace("|", "\\|")
         raw_path = f"data/metric_{n}.json"
-        derived_key = f'metrics_results["{mid}"]["after"]'
-        multiplier_value = mdata.get("multiplier")
+        derived_key = f'metrics_results["{mid}"]["multiplier"]'
+        multiplier_value = _metric_field_for_token(mdata, "multiplier")
         if status == "insufficient_signal":
             reported_number = f"Insufficient signal — {reason}" if reason else "Insufficient signal"
         elif multiplier_value is None:
@@ -2021,6 +2167,12 @@ def _aggregate_actor_value(metric_data: dict[str, Any], actor: str,
     The per_actor schema in ``data/metric_*.json`` is:
       ``{"<actor>": {"baseline": .., "ramp_up": .., "steady_state": .., ...}}``
 
+    Review Finding 5 (CRITICAL — No Fabrication): the previous version
+    silently substituted ``post_intro`` for missing ``after`` values.
+    Like ``_metric_field_for_token``, this cross-phase fallback is
+    removed; missing fields render as ``N/A`` (via ``format_value``)
+    so the consumer sees the actual gap.
+
     Args:
         metric_data: A single metric's JSON dict.
         actor: The actor identifier (login or ``blitzy-agent``).
@@ -2028,7 +2180,8 @@ def _aggregate_actor_value(metric_data: dict[str, Any], actor: str,
             ``steady_state``, ``post_intro``, ``after``).
 
     Returns:
-        The aggregated value, or ``None`` when no entry exists.
+        The aggregated value, or ``None`` when no entry exists for the
+        exact phase requested.
     """
     per_actor = metric_data.get("per_actor") or {}
     if not isinstance(per_actor, dict):
@@ -2038,8 +2191,6 @@ def _aggregate_actor_value(metric_data: dict[str, Any], actor: str,
         return None
     if phase in block:
         return block[phase]
-    if phase == "after":
-        return block.get("after") or block.get("post_intro")
     return None
 
 
@@ -2067,12 +2218,20 @@ def _collect_per_engineer_actors(metrics: dict[str, dict[str, Any]]) -> list[str
             if actor.lower() == "blitzy-agent":
                 blitzy_present = True
                 continue
-            # Sum any numeric "after" / "post_intro" values across the
-            # five per-actor metrics to derive a ranking weight.
-            for key in ("after", "post_intro"):
-                val = payload.get(key)
-                if isinstance(val, (int, float)):
-                    actor_totals[actor] = actor_totals.get(actor, 0.0) + float(val)
+            # Ranking weight: prefer "after" explicitly (the canonical
+            # consolidated post-introduction phase). Only fall through
+            # to "post_intro" when "after" is genuinely absent — this
+            # is a per-actor ranking input, not a per-cell rendering
+            # value, so the no-fabrication fallback is constrained to
+            # this internal scoring computation and is documented
+            # rather than propagated downstream into report cells.
+            after_val = payload.get("after")
+            if isinstance(after_val, (int, float)):
+                actor_totals[actor] = actor_totals.get(actor, 0.0) + float(after_val)
+            else:
+                post_intro_val = payload.get("post_intro")
+                if isinstance(post_intro_val, (int, float)):
+                    actor_totals[actor] = actor_totals.get(actor, 0.0) + float(post_intro_val)
     ranked = sorted(actor_totals.items(), key=lambda kv: kv[1], reverse=True)
     actors = [a for a, _ in ranked[:5]]
     if blitzy_present:
@@ -2131,67 +2290,322 @@ def generate_per_engineer_table(metrics: dict[str, dict[str, Any]]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Section 10 — Per-Metric Trend Diagram Builder
+# Section 9b — Sub-count Tables (Findings 6 & 9: required generators)
 # ---------------------------------------------------------------------------
 
 
-def generate_metric_trend_diagram(metric_id: str,
-                                  metric_data: dict[str, Any],
-                                  windows: list[dict[str, Any]]) -> str:
-    """Build a Mermaid trend diagram block for a single metric.
+def _format_distribution_cell(value: Any) -> str:
+    """Format a single distribution value for a Markdown table cell.
 
-    The diagram is an ``xychart-beta`` block plotting the metric's
-    ``per_window`` values across the indexed 2-week windows. When
-    ``per_window`` data is absent (the metric reported insufficient
-    signal at extraction time), the function emits a minimal Mermaid
-    block with a placeholder zero series so the diagram-count assertion
-    in ``count_mermaid_diagrams`` still passes.
+    Distribution payloads in M6 are either a dict mapping category →
+    proportion (e.g., ``{"feature": 0.6, "defect": 0.2, ...}``) or a
+    scalar share. The helper formats numerics as fixed-point
+    percentages and falls back to ``N/A`` for missing values.
+    """
+    if value is None:
+        return "N/A"
+    if isinstance(value, (int, float)):
+        return f"{value:.2f}"
+    return html.escape(str(value))
+
+
+def generate_m6_distribution_table(metrics: dict[str, dict[str, Any]]) -> str:
+    """Render the M6 Flow Distribution category-by-phase breakdown.
+
+    The table surfaces each of the five distribution categories
+    (``feature``, ``defect``, ``risk_compliance``, ``tech_debt``,
+    ``unknown``) across the three temporal phases plus the unknown
+    rate per phase. Values are read from ``metric_6.json``'s
+    ``distribution_by_phase`` field (a phase→category→proportion map)
+    when present; missing categories render as ``N/A``.
+
+    Review Finding 9 (MAJOR — AAP / Rule 1): the previous renderer had
+    no implementation for the ``<m6_distribution_table>`` placeholder
+    despite it appearing in the report template. This generator fills
+    that gap and ensures every cell traces to ``metric_6.json``.
 
     Args:
-        metric_id: ``"M1"`` through ``"M12"``.
-        metric_data: A single metric's JSON dict.
-        windows: The window-table list from ``data/windows.json``. The
-            list defines the x-axis; trend values are looked up by
-            window_id.
+        metrics: The metric dictionary from ``load_all_metrics``.
 
     Returns:
-        A multi-line Markdown string beginning with the ``Diagram N:``
-        prose title and containing a single fenced ``mermaid`` block
-        with an inline ``%%`` legend.
+        A multi-line Markdown table string. The caller embeds it where
+        the ``<m6_distribution_table>`` placeholder appears in the
+        template.
     """
-    diagram_index = int(metric_id[1:]) + 4
-    per_window = metric_data.get("per_window") or {}
-    series_values: list[str] = []
-    if isinstance(per_window, dict) and per_window and windows:
-        for w in windows:
-            wid = w.get("window_id")
-            v = per_window.get(wid, 0)
-            if isinstance(v, (int, float)) and v == v:
-                if isinstance(v, int) or v == int(v):
-                    series_values.append(str(int(v)))
-                else:
-                    series_values.append(f"{v:.2f}")
+    m6 = metrics.get("M6") or {}
+    distribution_by_phase = m6.get("distribution_by_phase") or {}
+    # Fall back to per-phase top-level keys if distribution_by_phase is absent
+    if not isinstance(distribution_by_phase, dict) or not distribution_by_phase:
+        distribution_by_phase = {}
+        for phase in ("baseline", "ramp_up", "steady_state", "post_intro", "after"):
+            block = m6.get(phase)
+            if isinstance(block, dict):
+                distribution_by_phase[phase] = block
+
+    categories = ["feature", "defect", "risk_compliance", "tech_debt", "unknown"]
+    category_display = {
+        "feature": "Feature",
+        "defect": "Defect",
+        "risk_compliance": "Risk / Compliance",
+        "tech_debt": "Tech Debt",
+        "unknown": "Unknown",
+    }
+    phases = [
+        ("baseline", "Baseline"),
+        ("ramp_up", "Ramp-Up"),
+        ("steady_state", "Steady State"),
+    ]
+    header = "| Category | " + " | ".join(label for _, label in phases) + " |"
+    sep = "|" + "|".join(["----------"] * (len(phases) + 1)) + "|"
+    rows = [header, sep]
+    for category in categories:
+        cells = [category_display[category]]
+        for phase_key, _ in phases:
+            phase_block = distribution_by_phase.get(phase_key) or {}
+            if isinstance(phase_block, dict):
+                cells.append(_format_distribution_cell(phase_block.get(category)))
             else:
-                series_values.append("0")
-    if not series_values:
-        series_values = ["0"]
-    series_str = ", ".join(series_values)
-    title = (
-        f"**Diagram {diagram_index}: {metric_id} Trend Across 2-Week Windows.** "
-        f"Per-window value of {metric_id} plotted across the full date range."
+                cells.append("N/A")
+        rows.append("| " + " | ".join(cells) + " |")
+
+    # Unknown-rate confidence row (per AAP §0.1.1: >20% unknown
+    # downgrades phase confidence to Low). When unknown_rate is
+    # present in the metric payload, surface it explicitly.
+    unknown_rate_by_phase = m6.get("unknown_rate_by_phase") or {}
+    if isinstance(unknown_rate_by_phase, dict) and unknown_rate_by_phase:
+        unknown_cells = ["Unknown rate (confidence indicator)"]
+        for phase_key, _ in phases:
+            rate = unknown_rate_by_phase.get(phase_key)
+            if isinstance(rate, (int, float)):
+                unknown_cells.append(f"{rate:.2f}")
+            else:
+                unknown_cells.append("N/A")
+        rows.append("| " + " | ".join(unknown_cells) + " |")
+    return "\n".join(rows)
+
+
+def generate_m8_breakdown_table(metrics: dict[str, dict[str, Any]]) -> str:
+    """Render the M8 Problem Records sub-count breakdown table.
+
+    The table surfaces attributable, unattributable, unreleased, and
+    revert-of-revert counts by phase. Values are read from
+    ``metric_8.json``'s ``phase_attributed_counts``,
+    ``phase_unattributed_counts``, and ``phase_revert_of_revert_counts``
+    fields populated by ``extract_metrics.py`` (Review Finding 8 fix).
+
+    Review Finding 9 (MAJOR — AAP / Rule 1): the previous renderer had
+    no implementation for the ``<m8_breakdown_table>`` placeholder.
+
+    Args:
+        metrics: The metric dictionary from ``load_all_metrics``.
+
+    Returns:
+        A multi-line Markdown table string.
+    """
+    m8 = metrics.get("M8") or {}
+    attributed = m8.get("phase_attributed_counts") or {}
+    unattributed = m8.get("phase_unattributed_counts") or {}
+    revert_of_revert = m8.get("phase_revert_of_revert_counts") or {}
+    # Total reverts per phase is the sum of all three categories
+    phases = [
+        ("baseline", "Baseline"),
+        ("ramp_up", "Ramp-Up"),
+        ("steady_state", "Steady State"),
+    ]
+    rows = [
+        "| Sub-count | " + " | ".join(label for _, label in phases) + " |",
+        "|" + "|".join(["-----------"] * (len(phases) + 1)) + "|",
+    ]
+
+    def _cell(value: Any) -> str:
+        if value is None:
+            return "N/A"
+        if isinstance(value, (int, float)):
+            return str(int(value)) if value == int(value) else f"{value:.2f}"
+        return html.escape(str(value))
+
+    for label, source in (
+        ("Attributable reverts", attributed),
+        ("Unattributable reverts", unattributed),
+        ("Reverts of reverts (excluded)", revert_of_revert),
+    ):
+        cells = [label]
+        for phase_key, _ in phases:
+            if isinstance(source, dict):
+                cells.append(_cell(source.get(phase_key)))
+            else:
+                cells.append("N/A")
+        rows.append("| " + " | ".join(cells) + " |")
+    # Unreleased reverts: stored as scalar (originals predating any release)
+    unreleased_total = m8.get("unreleased_count")
+    if unreleased_total is not None:
+        rows.append(
+            f"| Unreleased reverts (originals predate any release; cross-phase total) "
+            f"| colspan=3 {_cell(unreleased_total)} |"
+        )
+    return "\n".join(rows)
+
+
+def generate_m11_subcounts_table(metrics: dict[str, dict[str, Any]]) -> str:
+    """Render the M11 Escaped Defects sub-count breakdown table.
+
+    The table surfaces regression and newly-skipped counts per phase
+    plus the per-phase skipped-rate (when the metric exposes one).
+    Values are read from ``metric_11.json``'s ``regressions`` and
+    ``newly_skipped`` sub_count blocks.
+
+    Review Finding 9 (MAJOR — AAP / Rule 1): the previous renderer had
+    no implementation for the ``<m11_subcounts_table>`` placeholder.
+
+    Args:
+        metrics: The metric dictionary from ``load_all_metrics``.
+
+    Returns:
+        A multi-line Markdown table string.
+    """
+    m11 = metrics.get("M11") or {}
+    sub = m11.get("sub_counts") or {}
+    regressions_by_phase = sub.get("regressions_by_phase") if isinstance(sub, dict) else None
+    newly_skipped_by_phase = sub.get("newly_skipped_by_phase") if isinstance(sub, dict) else None
+    skipped_rate_by_phase = m11.get("skipped_rate_by_phase") or {}
+
+    phases = [
+        ("baseline", "Baseline"),
+        ("ramp_up", "Ramp-Up"),
+        ("steady_state", "Steady State"),
+    ]
+    rows = [
+        "| Sub-count | " + " | ".join(label for _, label in phases) + " |",
+        "|" + "|".join(["-----------"] * (len(phases) + 1)) + "|",
+    ]
+
+    def _cell(value: Any) -> str:
+        if value is None:
+            return "N/A"
+        if isinstance(value, (int, float)):
+            return str(int(value)) if value == int(value) else f"{value:.2f}"
+        return html.escape(str(value))
+
+    for label, source in (
+        ("Regressions (pass-to-fail, sustained ≥3 runs)", regressions_by_phase),
+        ("Newly skipped (.skip / xit / xtest / xfail)", newly_skipped_by_phase),
+        ("Skipped rate (skipped / total tests)", skipped_rate_by_phase),
+    ):
+        cells = [label]
+        for phase_key, _ in phases:
+            if isinstance(source, dict):
+                cells.append(_cell(source.get(phase_key)))
+            else:
+                cells.append("N/A")
+        rows.append("| " + " | ".join(cells) + " |")
+    return "\n".join(rows)
+
+
+def generate_acceleration_curve_chart(metrics: dict[str, dict[str, Any]]) -> str:
+    """Render the Acceleration Curve Mermaid xychart from metric values.
+
+    Review Finding 7 (MAJOR — Visual Documentation / Internal Consistency):
+    the previous template hardcoded ``line [1.0, 1.0, 1.0]`` regardless
+    of the metric values. This generator computes the headline series
+    from ``metrics_results`` and renders the correct chart.
+
+    The curve plots the normalized phase values (each phase ÷ baseline)
+    for four headline metrics (M2 Flow Velocity, M7 Flow Time,
+    M9 Releases, M11 Escaped Defects). When a phase or baseline value
+    is missing or zero, the corresponding y-value renders as ``0``
+    (xychart-beta cannot represent gaps) and a legend line documents
+    which series included insufficient signal.
+
+    Args:
+        metrics: The metric dictionary from ``load_all_metrics``.
+
+    Returns:
+        A full Markdown block beginning with the prose title and
+        containing a single fenced ``mermaid`` block. The caller
+        substitutes this for ``<acceleration_curve_chart>``.
+    """
+    headline = [
+        ("M2", "Flow Velocity"),
+        ("M7", "Flow Time"),
+        ("M9", "Releases"),
+        ("M11", "Escaped Defects"),
+    ]
+    phase_order = [("baseline", "Baseline"), ("ramp_up", "Ramp-Up"),
+                   ("steady_state", "Steady State")]
+
+    def _to_float(v: Any) -> float | None:
+        if isinstance(v, (int, float)) and v == v:
+            return float(v)
+        return None
+
+    series_lines: list[str] = []
+    legend_notes: list[str] = []
+    for mid, name in headline:
+        mdata = metrics.get(mid) or {}
+        baseline = _to_float(mdata.get("baseline"))
+        values: list[str] = []
+        normalized_ok = baseline is not None and baseline != 0.0
+        for phase_key, _ in phase_order:
+            v = _to_float(mdata.get(phase_key))
+            if not normalized_ok or v is None:
+                values.append("0")
+            else:
+                ratio = v / baseline
+                values.append(f"{ratio:.3f}")
+        series_lines.append(f"  line [{', '.join(values)}]")
+        if not normalized_ok:
+            legend_notes.append(
+                f"{mid} {name} series renders as zeros: baseline missing or zero "
+                f"(insufficient signal)."
+            )
+
+    series_block = "\n".join(series_lines)
+    if not series_block:
+        series_block = "  line [0, 0, 0]"
+
+    if legend_notes:
+        legend_extra = " " + " ".join(legend_notes)
+    else:
+        legend_extra = ""
+
+    return (
+        "**Diagram 4: Acceleration Curve — Phase Values for Headline Metrics.** "
+        "The chart below plots normalized phase values (each phase divided by "
+        "baseline) for four headline metrics across the three phases. "
+        "Values are computed by `build_report.py` from the same "
+        "`metrics_results` dictionary that populates the Executive Summary "
+        "and the Requirements Traceability Matrix.\n\n"
+        "```mermaid\n"
+        "xychart-beta\n"
+        "  title \"Acceleration Curve — Normalized Phase Trajectory (baseline = 1.0)\"\n"
+        "  x-axis \"Phase\" [\"Baseline\",\"Ramp-Up\",\"Steady State\"]\n"
+        "  y-axis \"Normalized value (baseline = 1.0)\"\n"
+        f"{series_block}\n"
+        "%% Legend: each line is one headline metric normalized to its baseline "
+        "(baseline=1.0). Series order: M2 Flow Velocity, M7 Flow Time, M9 Releases, "
+        f"M11 Escaped Defects. Generated by build_report.py from data/metric_*.json.{legend_extra}\n"
+        "```"
     )
-    block = (
-        f"```mermaid\n"
-        f"xychart-beta\n"
-        f"  title \"{metric_id} Trend — Per-Window Value\"\n"
-        f"  x-axis \"Window index (0 = earliest)\"\n"
-        f"  y-axis \"Value\"\n"
-        f"  line [{series_str}]\n"
-        f"%% Legend: x-axis is the window index; y-axis is the per-window value of {metric_id}. "
-        f"Generated by build_report.py from data/metric_{metric_id[1:]}.json#per_window.\n"
-        f"```"
-    )
-    return f"{title}\n\n{block}"
+
+
+# ---------------------------------------------------------------------------
+# Section 10 — Per-Metric Trend Diagram Builder
+# ---------------------------------------------------------------------------
+#
+# Review Finding 8 (MINOR — Dead Code): the previous implementation
+# carried a ``generate_metric_trend_diagram()`` helper that built a
+# full Mermaid block for one metric. The function was not invoked by
+# the render pipeline because the embedded template already contains
+# 12 ``xychart-beta`` blocks (one per metric M1..M12), each driven by
+# the ``<MN.trend_values>`` placeholder. Maintaining a parallel
+# generator created a divergence risk: a change to one source could
+# silently drift from the other. The function has been removed; the
+# canonical trend lineage flows through ``_metric_field_for_token``
+# for the ``trend_values`` field, which the template embeds inside its
+# static ``mermaid`` fenced blocks. Per-metric titles, axis labels,
+# and legends live in the template alongside the chart syntax so the
+# diagram structure and the trend values are inspectable in a single
+# location.
 
 
 # ---------------------------------------------------------------------------
@@ -2256,17 +2670,33 @@ def _generate_insufficient_signal_list(metrics: dict[str, dict[str, Any]]) -> st
 # ---------------------------------------------------------------------------
 
 
-def embed_commands_log(report_text: str, run_id: str) -> str:
+class CommandsLogMissingError(FileNotFoundError):
+    """Raised when ``logs/<run_id>/commands.log`` is required but absent.
+
+    Review Finding 2 (MAJOR — Rule 5 Reproducibility): the previous
+    behaviour downgraded a missing ``commands.log`` to a warning and
+    embedded an empty appendix. Rule 5 requires the complete ordered
+    set of commands/API calls in the Reproducibility Appendix; an
+    empty appendix is not a Rule 5 satisfaction. The render pipeline
+    now raises this error and main returns exit code 2 unless an
+    explicit dry-run mode is active.
+    """
+
+
+def embed_commands_log(report_text: str, run_id: str,
+                       allow_missing: bool = False) -> str:
     """Substitute the ``<commands_log_verbatim>`` token with the on-disk log.
 
     The function locates ``logs/<run_id>/commands.log`` under
     ``LOGS_DIR`` and embeds its content inside a fenced ``text`` code
-    block. When the log file is missing, the function still substitutes
-    the token but emits an explanatory placeholder string indicating
-    that the appendix was rendered without a commands.log. Missing-log
-    rendering is intentional: a partial run that called
-    ``build_report.py`` directly (without first running the extraction
-    harness) should still produce a usable report rather than crash.
+    block.
+
+    Review Finding 2 (MAJOR — Rule 5 Reproducibility): a missing
+    ``commands.log`` is now a fatal render error. The ``allow_missing``
+    flag exists exclusively for the dry-run CLI mode that explicitly
+    opts out of Rule 5 enforcement; production renders MUST run with
+    ``allow_missing=False`` (the default) so the appendix is never
+    empty.
 
     Args:
         report_text: The Markdown text (post-substitution) that contains
@@ -2274,9 +2704,16 @@ def embed_commands_log(report_text: str, run_id: str) -> str:
             absent, the function returns ``report_text`` unchanged.
         run_id: The correlation ID for the current harness invocation.
             Used to construct ``LOGS_DIR / run_id / "commands.log"``.
+        allow_missing: When True, missing log files render an explicit
+            placeholder block. When False (production default), missing
+            log files raise ``CommandsLogMissingError``.
 
     Returns:
         The Markdown text with the commands log substitution applied.
+
+    Raises:
+        CommandsLogMissingError: When ``allow_missing`` is False and
+            the on-disk log file is absent.
     """
     logger = structured_logger(phase="build_report")
     log_path = LOGS_DIR / run_id / "commands.log"
@@ -2284,14 +2721,34 @@ def embed_commands_log(report_text: str, run_id: str) -> str:
     if placeholder_token not in report_text:
         return report_text
     if not log_path.is_file():
+        if not allow_missing:
+            logger.error(
+                f"commands.log missing at {log_path}; Rule 5 (Reproducibility) "
+                f"requires the complete command/API-call set in the appendix. "
+                f"Re-run the extraction harness with the same BLITZY_RUN_ID, "
+                f"or pass --allow-missing-commands-log to render a dry-run "
+                f"document that is NOT release-quality.",
+                extra={"context": {
+                    "log_path": str(log_path),
+                    "run_id": run_id,
+                    "rule": "Rule 5 (Reproducibility)",
+                }},
+            )
+            raise CommandsLogMissingError(
+                f"commands.log missing at {log_path} — Rule 5 violation"
+            )
         logger.warning(
-            f"commands.log missing at {log_path}; embedding empty appendix",
+            f"commands.log missing at {log_path}; embedding explicit dry-run "
+            f"placeholder (--allow-missing-commands-log enabled)",
             extra={"context": {"log_path": str(log_path), "run_id": run_id}},
         )
         replacement = (
             "```text\n"
-            "(commands.log was not present at render time; the appendix is empty. "
-            "Re-run the extraction harness with the same BLITZY_RUN_ID to populate it.)\n"
+            "(commands.log was not present at render time; the appendix is "
+            "EMPTY because the renderer was invoked in explicit "
+            "--allow-missing-commands-log dry-run mode. This document is NOT "
+            "release-quality. Re-run the extraction harness with the same "
+            "BLITZY_RUN_ID to populate the appendix.)\n"
             "```"
         )
         return report_text.replace(placeholder_token, replacement)
@@ -2303,10 +2760,9 @@ def embed_commands_log(report_text: str, run_id: str) -> str:
             f"Failed to read commands.log at {log_path}: {exc}",
             extra={"context": {"log_path": str(log_path), "error": str(exc)}},
         )
-        return report_text.replace(
-            placeholder_token,
-            "```text\n(commands.log could not be read; see build_report log for details.)\n```",
-        )
+        raise CommandsLogMissingError(
+            f"commands.log at {log_path} could not be read: {exc}"
+        ) from exc
     # Defensively neutralize any embedded triple-backtick fences that would
     # close our code block prematurely. The placeholder content is rendered
     # inside a single ```text...``` block; we substitute any internal
@@ -2459,7 +2915,7 @@ def validate_section_order(report_text: str) -> list[str]:
 
 def render_dashboard(metrics: dict[str, dict[str, Any]],
                      context: dict[str, Any],
-                     dashboard_template: str) -> str:
+                     dashboard_template: str) -> tuple[str, list[str]]:
     """Render the dashboard.md content from the given template.
 
     The function applies the same substitution mapping as the main
@@ -2476,7 +2932,9 @@ def render_dashboard(metrics: dict[str, dict[str, Any]],
             embedded default or an external file's content).
 
     Returns:
-        The fully-substituted dashboard Markdown.
+        A two-tuple ``(text, unresolved_tokens)`` matching
+        ``substitute_placeholders``. Unresolved tokens propagate to the
+        render pipeline's pre-write gate.
     """
     return substitute_placeholders(dashboard_template, metrics, context)
 
@@ -2490,28 +2948,38 @@ def render(args: argparse.Namespace) -> int:
     """Execute the end-to-end render pipeline.
 
     Pipeline:
+      0. Validate output paths fall under REPORT_ROOT (Finding 1).
       1. Resolve the run_id and structured logger.
       2. Load all 12 metric JSON files (exit 2 on missing data).
-      3. Load environment, inflection, window context.
+      3. Load environment, inflection, window context strictly
+         (Finding 3) — missing or malformed required files exit 2
+         unless ``--allow-missing-context`` was passed.
       4. Load report and dashboard templates (exit 3 on explicit-path miss).
-      5. Substitute placeholders in both templates.
+      5. Substitute placeholders in both templates; fail on any
+         unresolved placeholder (Finding 4).
       6. Insert Low-confidence CAVEAT callouts in the report.
-      7. Embed commands.log in the report's Reproducibility Appendix.
+      7. Embed commands.log in the report's Reproducibility Appendix;
+         exit 2 on missing log unless ``--allow-missing-commands-log``
+         was passed (Finding 2).
       8. Validate section order in the report (exit 1 on violation).
       9. Count Mermaid diagrams in the report (exit 4 on shortfall).
       10. Run Rule 2 grep pass on the report body (exit 1 on violation).
       11. Run Rule 2 grep pass on the dashboard body (exit 1 on violation).
-      12. Write both files atomically.
+      12. Write both files via ``ensure_report_path`` containment.
 
     Args:
         args: Parsed CLI arguments containing ``output``,
             ``dashboard_output``, ``report_template``,
-            ``dashboard_template``.
+            ``dashboard_template``, ``allow_missing_commands_log``,
+            ``allow_missing_context``.
 
     Returns:
         The exit code per the module docstring (0 success;
-        1 Rule 2/6 violation; 2 missing data; 3 missing template;
-        4 insufficient Mermaid diagrams).
+        1 Rule 2/6 violation OR unresolved placeholders;
+        2 missing required input;
+        3 missing template;
+        4 insufficient Mermaid diagrams;
+        5 output path containment violation).
     """
     run_id = get_or_create_run_id()
     logger = structured_logger(metric_id=None, phase="build_report")
@@ -2525,6 +2993,25 @@ def render(args: argparse.Namespace) -> int:
         }},
     )
 
+    # --- Step 0: validate output paths (Review Finding 1, CWE-22) ----
+    # ensure_report_path() rejects absolute paths outside REPORT_ROOT
+    # and `..` traversal escapes. The check runs BEFORE any work to
+    # fail fast if the caller targets a forbidden destination. The
+    # parent directory is created as a side-effect.
+    try:
+        validated_report_output = ensure_report_path(args.output)
+        validated_dashboard_output = ensure_report_path(args.dashboard_output)
+    except ValueError as exc:
+        logger.error(
+            f"Output path containment violation (CWE-22): {exc}",
+            extra={"context": {
+                "report_output": str(args.output),
+                "dashboard_output": str(args.dashboard_output),
+                "report_root": str(REPORT_ROOT),
+            }},
+        )
+        return 5
+
     # --- Step 2: load metric JSON files ------------------------------
     try:
         metrics = load_all_metrics(DATA_DIR)
@@ -2535,8 +3022,16 @@ def render(args: argparse.Namespace) -> int:
         )
         return 2
 
-    # --- Step 3: load context ----------------------------------------
-    context = load_context(DATA_DIR)
+    # --- Step 3: load context strictly (Finding 3) --------------------
+    allow_missing_ctx = bool(getattr(args, "allow_missing_context", False))
+    try:
+        context = load_context(DATA_DIR, strict=not allow_missing_ctx)
+    except RequiredContextError as exc:
+        logger.error(
+            f"Required context unavailable: {exc}",
+            extra={"context": {"strict_mode": not allow_missing_ctx}},
+        )
+        return 2
 
     # --- Step 4: load templates --------------------------------------
     try:
@@ -2557,14 +3052,42 @@ def render(args: argparse.Namespace) -> int:
         return 3
 
     # --- Step 5: substitute placeholders -----------------------------
-    report = substitute_placeholders(report_template, metrics, context)
-    dashboard = render_dashboard(metrics, context, dashboard_template)
+    report, report_unresolved = substitute_placeholders(
+        report_template, metrics, context,
+    )
+    dashboard, dashboard_unresolved = render_dashboard(
+        metrics, context, dashboard_template,
+    )
+
+    # --- Step 5b: unresolved placeholder gate (Finding 4) ------------
+    # The Reproducibility Appendix's commands_log_verbatim is a
+    # documented post-substitution sentinel that embed_commands_log()
+    # fills in step 7; the substitute_placeholders() helper already
+    # excludes it from the unresolved set so it does NOT trigger this
+    # gate.
+    combined_unresolved = sorted(set(report_unresolved) | set(dashboard_unresolved))
+    if combined_unresolved:
+        logger.error(
+            f"Unresolved placeholders detected ({len(combined_unresolved)}); "
+            f"output NOT written: {', '.join(combined_unresolved)}",
+            extra={"context": {
+                "unresolved_count": len(combined_unresolved),
+                "unresolved_tokens": combined_unresolved,
+                "report_unresolved": report_unresolved,
+                "dashboard_unresolved": dashboard_unresolved,
+            }},
+        )
+        return 1
 
     # --- Step 6: insert CAVEAT callouts ------------------------------
     report = insert_low_confidence_callouts(report, metrics)
 
-    # --- Step 7: embed commands.log ----------------------------------
-    report = embed_commands_log(report, run_id)
+    # --- Step 7: embed commands.log (Finding 2) -----------------------
+    allow_missing_cmds = bool(getattr(args, "allow_missing_commands_log", False))
+    try:
+        report = embed_commands_log(report, run_id, allow_missing=allow_missing_cmds)
+    except CommandsLogMissingError:
+        return 2
 
     # --- Step 8: validate section order (Rule 6) ---------------------
     order_errors = validate_section_order(report)
@@ -2628,24 +3151,25 @@ def render(args: argparse.Namespace) -> int:
         )
         return 1
 
-    # --- Step 12: write outputs --------------------------------------
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report, encoding="utf-8")
-    command_log_append("write", str(args.output))
+    # --- Step 12: write outputs via validated paths ------------------
+    # ensure_report_path() was already called in Step 0; the validated
+    # paths are reused here for the actual write. Parent directories
+    # were created by ensure_report_path() at validation time.
+    validated_report_output.write_text(report, encoding="utf-8")
+    command_log_append("write", str(validated_report_output))
     logger.info(
-        f"Wrote report: {args.output} ({len(report)} chars, "
+        f"Wrote report: {validated_report_output} ({len(report)} chars, "
         f"{report.count(chr(10))} lines)",
-        extra={"context": {"output": str(args.output),
+        extra={"context": {"output": str(validated_report_output),
                            "size_chars": len(report),
                            "line_count": report.count(chr(10))}},
     )
 
-    args.dashboard_output.parent.mkdir(parents=True, exist_ok=True)
-    args.dashboard_output.write_text(dashboard, encoding="utf-8")
-    command_log_append("write", str(args.dashboard_output))
+    validated_dashboard_output.write_text(dashboard, encoding="utf-8")
+    command_log_append("write", str(validated_dashboard_output))
     logger.info(
-        f"Wrote dashboard: {args.dashboard_output} ({len(dashboard)} chars)",
-        extra={"context": {"output": str(args.dashboard_output),
+        f"Wrote dashboard: {validated_dashboard_output} ({len(dashboard)} chars)",
+        extra={"context": {"output": str(validated_dashboard_output),
                            "size_chars": len(dashboard)}},
     )
 
@@ -2700,13 +3224,31 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--output", type=Path, default=ACCELERATION_REPORT_PATH,
-        help=(f"Destination path for the rendered report. "
+        help=(f"Destination path for the rendered report. Must resolve "
+              f"under {REPORT_ROOT} (CWE-22 containment). "
               f"Defaults to {ACCELERATION_REPORT_PATH}."),
     )
     parser.add_argument(
         "--dashboard-output", type=Path, default=DASHBOARD_PATH,
-        help=(f"Destination path for the rendered dashboard. "
+        help=(f"Destination path for the rendered dashboard. Must resolve "
+              f"under {REPORT_ROOT} (CWE-22 containment). "
               f"Defaults to {DASHBOARD_PATH}."),
+    )
+    parser.add_argument(
+        "--allow-missing-commands-log", action="store_true",
+        help=("Permit rendering when logs/<run_id>/commands.log is absent. "
+              "The resulting document is explicitly marked as a dry-run "
+              "preview because Rule 5 (Reproducibility) is not satisfied "
+              "without a populated commands log. Production renders MUST "
+              "leave this flag unset."),
+    )
+    parser.add_argument(
+        "--allow-missing-context", action="store_true",
+        help=("Permit rendering when environment.json, inflection.json, or "
+              "windows.json is absent or malformed. The resulting document "
+              "loses the provenance guarantees of Rule 1 (Data Provenance) "
+              "and Rule 6 (Environment First). Production renders MUST "
+              "leave this flag unset."),
     )
     args = parser.parse_args(argv)
     return render(args)

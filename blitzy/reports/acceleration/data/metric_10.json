@@ -12,12 +12,25 @@
   "multiplier": null,
   "direction": "lower-is-better",
   "per_actor": {},
+  "per_actor_attributable": {},
   "sub_counts": {
     "force_pushes": 0,
     "label_exceptions": 0,
     "admin_overrides": 0,
-    "protection_mods": 0
+    "protection_mods": 0,
+    "failing_required_ci": 0
   },
+  "attributable_sub_counts": [
+    "failing_required_ci",
+    "force_pushes",
+    "label_exceptions"
+  ],
+  "non_attributable_sub_counts": [
+    "admin_overrides",
+    "protection_mods"
+  ],
+  "failing_required_ci_attempted": 7,
+  "failing_required_ci_errors": 0,
   "per_window": {
     "W0000": 0,
     "W0001": 0,
@@ -157,5 +170,5 @@
     "W0135": 0
   },
   "audit_log_available": false,
-  "primary_command": "GET /orgs/{owner}/audit-log (when audit_log:read scope present) + GET /repos/{owner}/{repo}/events (force-push detection) + exception/waiver/override-labeled PR filter"
+  "primary_command": "GET /orgs/{owner}/audit-log (when audit_log:read scope present) + GET /repos/{owner}/{repo}/events (force-push detection) + exception/waiver/override-labeled PR filter + GET /repos/.../commits/{merge_sha}/check-runs for failing required CI"
 }

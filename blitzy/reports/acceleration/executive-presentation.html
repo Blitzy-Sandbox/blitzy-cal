@@ -14,13 +14,24 @@
 
     Pinned CDN versions (validated by scripts/build_presentation.py):
       - reveal.js     5.1.0   (jsdelivr)
-      - Mermaid      11.4.0   (jsdelivr)
+      - Mermaid      11.10.0  (jsdelivr) — upgraded from 11.4.0 to
+                                           address published XSS advisory
+                                           (see decision-log.md)
       - Lucide        0.460.0 (unpkg)
+
+    Every CDN script and link tag carries crossorigin="anonymous" and
+    referrerpolicy="no-referrer" so that a Subresource Integrity (SRI)
+    "integrity" attribute can be injected by the deployment pipeline
+    without further template changes. The current omission of SRI hashes
+    is documented as an explicit security decision in decision-log.md
+    (SRI/CDN security row) with compensating controls: pinned immutable
+    npm package versions, npm registry SHA integrity, and CSP allowlist
+    guidance.
 
     Slide count: 16 (target). Valid range 12-18 enforced by the renderer.
 
     Placeholder tokens of the form <M<N>.<field>>, <env.*>, <inflection.*>,
-    <phase_*>, , 6544d423-2004-430d-9589-374520058434, 2026-05-23T06:47:58.721745+00:00, and
+    <phase_*>, , phase10_build_pres, 2026-05-23T09:17:29.623611+00:00, and
     2021-03-08 → 2026-05-25 are substituted by scripts/build_presentation.py with
     values from data/*.json. The file remains valid HTML with tokens present;
     tokens sit inside text nodes / table cells / attribute-free positions.
@@ -35,9 +46,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- reveal.js 5.1.0 core + white theme (overridden by inline Blitzy styling below) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+  <!-- reveal.js 5.1.0 core + white theme (overridden by inline Blitzy styling below).
+       crossorigin="anonymous" + referrerpolicy="no-referrer" prepare these
+       tags for future SRI hash injection by the deployment pipeline. The
+       SRI rationale and current omission are documented in decision-log.md
+       (SRI/CDN security row). -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css"
+        id="theme"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
 
   <style>
     /* ============================================================
@@ -933,9 +955,9 @@
           <div class="kpi-card">
             <div>
               <div class="label">M11 Escaped Defects</div>
-              <div class="value " title="0.01x">0.01x</div>
+              <div class="value value-insufficient" title="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found">Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found</div>
             </div>
-            <span class="confidence low">Low</span>
+            <span class="confidence low">Insufficient</span>
           </div>
         </div>
         <p class="note">Multipliers are After/Before ratios. Higher is faster for M2, M3, M5, M9; lower is better for M1, M7, M8, M11.</p>
@@ -1062,14 +1084,14 @@ graph LR
             <tr>
               <td>M5 Flow Efficiency</td>
               <td>N/A</td>
-              <td>0.14</td>
+              <td>0.09</td>
               <td>N/A</td>
               <td><span class="conf high">High</span></td>
             </tr>
             <tr>
               <td>M6 Flow Distribution (feature share)</td>
               <td>N/A</td>
-              <td>defect=0.86, risk-compliance=0.14</td>
+              <td>N/A</td>
               <td>distribution_shift</td>
               <td><span class="conf medium">Medium</span></td>
             </tr>
@@ -1192,24 +1214,24 @@ graph LR
             </tr>
             <tr>
               <td>M8 Problem Records (reverts per release)</td>
-              <td>N/A</td>
-              <td>N/A</td>
+              <td>0</td>
+              <td>0</td>
               <td>N/A</td>
               <td><span class="conf low">Low</span></td>
               <td>git_log_reverts + releases_none</td>
             </tr>
             <tr>
               <td>M8 — attributed reverts</td>
-              <td>0</td>
-              <td>0</td>
+              <td>N/A</td>
+              <td>N/A</td>
               <td>&mdash;</td>
               <td>&mdash;</td>
               <td>Sub-count</td>
             </tr>
             <tr>
               <td>M8 — unattributable / unreleased</td>
-              <td>0</td>
               <td>184</td>
+              <td>N/A</td>
               <td>&mdash;</td>
               <td>&mdash;</td>
               <td>Sub-count</td>
@@ -1240,23 +1262,23 @@ graph LR
               </div>
               <div class="phase-chart-grid">
                 <div class="phase-col">
-                  <div class="phase-col-bars stacked ">
-                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
-                    <div class="phase-bar phase-bar-primary " style="--phase-bar-h: 85%" data-label="88"></div>
+                  <div class="phase-col-bars stacked phase-col-bars-na">
+                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found"></div>
+                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found"></div>
                   </div>
                   <div class="phase-col-label">Baseline</div>
                 </div>
                 <div class="phase-col">
                   <div class="phase-col-bars stacked phase-col-bars-na">
-                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
-                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found"></div>
+                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found"></div>
                   </div>
                   <div class="phase-col-label">Ramp-Up</div>
                 </div>
                 <div class="phase-col">
                   <div class="phase-col-bars stacked phase-col-bars-na">
-                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
-                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="N/A"></div>
+                    <div class="phase-bar phase-bar-coral phase-bar-na" style="--phase-bar-h: 0%" data-label="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found"></div>
+                    <div class="phase-bar phase-bar-primary phase-bar-na" style="--phase-bar-h: 0%" data-label="Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found"></div>
                   </div>
                   <div class="phase-col-label">Steady State</div>
                 </div>
@@ -1322,7 +1344,7 @@ graph LR
               <td>blitzy-agent</td>
               <td>1</td>
               <td>15.2h</td>
-              <td>0.14</td>
+              <td>0.09</td>
               <td>defect (85.71%)</td>
               <td>N/A</td>
             </tr>
@@ -1379,7 +1401,7 @@ graph LR
           <li><i data-lucide="book-open" class="lucide-icon"></i>Full reproducibility appendix included in <code>acceleration-report.md</code></li>
         </ul>
         <i data-lucide="arrow-right" class="lucide-icon closing-arrow" style="width:64px;height:64px;"></i>
-        <p class="footer">blitzy-cal &middot; 2026-02-25 inflection &middot; Run 6544d423-2004-430d-9589-374520058434 &middot; Rendered 2026-05-23T06:47:58.721745+00:00</p>
+        <p class="footer">blitzy-cal &middot; 2026-02-25 inflection &middot; Run phase10_build_pres &middot; Rendered 2026-05-23T09:17:29.623611+00:00</p>
               </div>
       </section>
 
@@ -1389,12 +1411,30 @@ graph LR
   <!-- ============================================================
        External libraries — pinned versions (non-negotiable):
          - reveal.js 5.1.0   (jsdelivr)
-         - Mermaid   11.4.0  (jsdelivr)
+         - Mermaid   11.10.0 (jsdelivr) — upgraded from 11.4.0 to
+                                         address known XSS CVE; fix
+                                         landed at 11.10.0 per Snyk
+                                         advisory. See decision-log.md
+                                         (Mermaid version security row)
+                                         for rationale.
          - Lucide    0.460.0 (unpkg)
+       Each script tag carries crossorigin="anonymous" and
+       referrerpolicy="no-referrer" so that an SRI integrity attribute
+       can be injected by the deployment pipeline without further
+       editing. The current SRI omission is documented as an explicit
+       security decision in decision-log.md (SRI/CDN security row)
+       with compensating controls (pinned immutable versions, CSP
+       allowlist guidance, npm registry integrity).
        ============================================================ -->
-  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.0/dist/mermaid.min.js"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
 
   <script>
     /* ============================================================

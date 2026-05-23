@@ -90,6 +90,7 @@ from _shared import (  # noqa: E402  (must follow sys.path manipulation)
     command_log_append,
     engineering_actor,
     get_or_create_run_id,
+    git_is_ancestor,
     git_log,
     git_run,
     github_api_get,
@@ -317,26 +318,79 @@ class InsufficientSignalError(Exception):
     """Raised by an extraction function when its data source is unavailable.
 
     The :class:`safe_extract` decorator catches this exception and converts
-    it into a structured ``{"status": "insufficient_signal", "reason": ...}``
-    return value, preserving the AAP §0.7.3 Boundary 2 rule: "MUST NOT
-    fabricate, estimate, or extrapolate. Report 'Insufficient signal —
-    [reason]' when data is lacking."
+    it into a structured ``{"status": "insufficient_signal", "metric_id":
+    ..., "reason": ...}`` return value, preserving the AAP §0.7.3 Boundary 2
+    rule: "MUST NOT fabricate, estimate, or extrapolate. Report
+    'Insufficient signal — [reason]' when data is lacking."
 
-    Any other exception type propagates through :class:`safe_extract` and
-    is treated as a crash, causing the harness to return exit code 1.
+    The optional :attr:`metric_id` attribute lets callers and the orchestrator
+    emit metric-specific insufficient-signal reporting even when the
+    exception is raised from a helper that does not know which metric is
+    currently being extracted. When the attribute is absent or unset, the
+    :class:`safe_extract` decorator injects the metric_id from its
+    decorator argument so the structured envelope always carries it.
+
+    Any other exception type is converted by :class:`safe_extract` into a
+    structured ``{"status": "error", "traceback": ...}`` envelope (with
+    secrets redacted) and the harness exit code is set to 1; the harness
+    does NOT raise to the orchestrator, so a crash in one metric does not
+    prevent the other eleven from running.
     """
 
-    def __init__(self, reason: str = "data unavailable") -> None:
+    def __init__(self, reason: str = "data unavailable",
+                 metric_id: str | None = None) -> None:
         super().__init__(reason)
+        self.metric_id: str | None = metric_id
+        self.reason: str = reason
+
+
+# Patterns whose match groups must be scrubbed from any traceback or
+# logged context before it is written to disk. The redaction is
+# defense-in-depth: tokens should already only appear in environment
+# variables, but a malformed extractor that catches a token via
+# os.environ.get() and embeds it in an exception message would otherwise
+# surface the secret in commands.log or the metric JSON envelope.
+_SECRET_REDACTION_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(ghp_|github_pat_|gho_|ghs_|ghu_|ghr_)[A-Za-z0-9_]{20,}"),
+    re.compile(r"lin_api_[A-Za-z0-9_]{20,}"),
+    re.compile(r"blitzy_[A-Za-z0-9_-]{20,}"),
+    re.compile(r"(?i)(authorization|x-api-key|api[_-]?key|token|bearer)\s*[:=]\s*['\"]?[A-Za-z0-9._-]{16,}['\"]?"),
+)
+
+
+def _redact_secrets(text: str) -> str:
+    """Scrub potential secret tokens from a traceback or log message.
+
+    Conservative redaction: matches well-known token prefixes
+    (GitHub PAT, fine-grained PAT, Linear API key, Blitzy tokens) plus
+    "Authorization: <value>" style headers. Returns ``text`` with
+    matches replaced by ``"[REDACTED]"``.
+    """
+    if not text:
+        return text
+    redacted = text
+    for pattern in _SECRET_REDACTION_PATTERNS:
+        redacted = pattern.sub("[REDACTED]", redacted)
+    return redacted
 
 
 def safe_extract(metric_id: str) -> Callable[[Callable[..., dict]], Callable[..., dict]]:
     """Decorator that wraps a metric extractor with insufficient-signal handling.
 
-    The wrapped function emits a structured ``{"status":
-    "insufficient_signal", ...}`` dict on :class:`InsufficientSignalError`
-    rather than crashing. All other exceptions are logged and re-raised so
-    the main loop can decide the overall exit code per AAP §0.5.5.
+    Behavior contract:
+      * On :class:`InsufficientSignalError` — emit a structured
+        ``{"status": "insufficient_signal", "metric_id": ..., "reason":
+        ...}`` dict. The ``metric_id`` from the decorator argument is
+        always set even if the exception did not carry one, so every
+        envelope in ``data/metric_<N>.json`` carries the metric_id.
+      * On any other exception — emit a structured ``{"status": "error",
+        "metric_id": ..., "error_type": ..., "reason": ..., "traceback":
+        ...}`` dict with the traceback redacted of known secret tokens,
+        and set the module-level ``CRASH_MARKERS`` set so the orchestrator
+        ``main()`` can exit with code 1 when one or more metrics crashed.
+        The decorator does NOT re-raise the exception; the run continues
+        through the remaining metrics so the AAP all-twelve-metrics
+        quality gate is honored even when one metric crashes.
 
     Args:
         metric_id: Stable identifier (``"M1"`` .. ``"M12"``) injected into
@@ -369,32 +423,59 @@ def safe_extract(metric_id: str) -> Callable[[Callable[..., dict]], Callable[...
                 )
                 return result
             except InsufficientSignalError as exc:
-                reason = str(exc) or "data unavailable"
+                # Prefer the exception's own metric_id when set so a
+                # helper that knows its caller's metric can report it;
+                # otherwise fall back to the decorator's metric_id.
+                effective_metric_id = (
+                    getattr(exc, "metric_id", None) or metric_id
+                )
+                reason = exc.reason if hasattr(exc, "reason") else (str(exc) or "data unavailable")
                 logger.warning(
-                    f"{metric_id}: insufficient signal — {reason}",
-                    extra={"context": {"metric_id": metric_id, "reason": reason}},
+                    f"{effective_metric_id}: insufficient signal — {reason}",
+                    extra={"context": {"metric_id": effective_metric_id, "reason": reason}},
                 )
                 return {
-                    "metric_id": metric_id,
+                    "metric_id": effective_metric_id,
                     "status": "insufficient_signal",
                     "confidence": "Insufficient signal",
                     "reason": reason,
                 }
             except Exception as exc:
+                tb_text = _redact_secrets(traceback.format_exc())
+                reason_text = _redact_secrets(str(exc) or type(exc).__name__)
                 logger.error(
-                    f"{metric_id}: unhandled extraction error: {exc}",
+                    f"{metric_id}: unhandled extraction error: {reason_text}",
                     extra={"context": {
                         "metric_id": metric_id,
                         "error_type": type(exc).__name__,
-                        "traceback": traceback.format_exc(),
+                        "traceback": tb_text,
                     }},
                 )
-                raise
+                # Record the crash in a module-level set so main() can
+                # decide the overall exit code without losing the per-
+                # metric envelope. The run continues through subsequent
+                # metrics so the all-twelve-metrics quality gate holds.
+                CRASH_MARKERS.add(metric_id)
+                return {
+                    "metric_id": metric_id,
+                    "status": "error",
+                    "confidence": "Insufficient signal",
+                    "reason": reason_text,
+                    "error_type": type(exc).__name__,
+                    "traceback": tb_text,
+                }
         wrapper.__name__ = func.__name__
         wrapper.__doc__ = func.__doc__
         wrapper.__wrapped__ = func  # type: ignore[attr-defined]
         return wrapper
     return decorator
+
+
+# Module-level crash-marker set populated by @safe_extract when a generic
+# exception is caught. main() reads this set to decide between exit code 0
+# (all metrics succeeded or correctly reported insufficient signal) and
+# exit code 1 (one or more metrics crashed unexpectedly).
+CRASH_MARKERS: set[str] = set()
 
 
 # ===========================================================================
@@ -1145,12 +1226,23 @@ def extract_flow_load(windows: list[dict], use_cache: bool) -> dict:
     bot_excluded = [pr for pr in prs if not is_bot_author(_pr_user_login(pr))]
 
     per_window: dict[str, int] = {w["window_id"]: 0 for w in windows}
+    # Per-actor in-progress counts per window — needed for the after-period
+    # per_actor breakdown required by AAP §0.1.1 (Flow Load per-actor in the
+    # after period, with Blitzy included).
+    per_window_per_actor: dict[str, dict[str, int]] = {
+        w["window_id"]: {} for w in windows
+    }
+    window_phase: dict[str, str] = {
+        w["window_id"]: (w.get("phase") or "baseline") for w in windows
+    }
     for window in windows:
         end_iso = window["end_iso"]
         end_dt = _parse_iso(end_iso)
         if end_dt is None:
             continue
+        phase = window_phase[window["window_id"]]
         count = 0
+        actor_counts = per_window_per_actor[window["window_id"]]
         for pr in bot_excluded:
             created_dt = _parse_iso(pr.get("created_at"))
             if created_dt is None or created_dt > end_dt:
@@ -1159,11 +1251,66 @@ def extract_flow_load(windows: list[dict], use_cache: bool) -> dict:
             if closed_dt is not None and closed_dt <= end_dt:
                 continue
             count += 1
+            # Attribute the in-progress PR to the engineering actor for
+            # this window's phase; identical methodology guarantee holds
+            # because the same selector is consulted in both periods.
+            actor = engineering_actor(pr, phase)
+            if actor:
+                actor_counts[actor] = actor_counts.get(actor, 0) + 1
         per_window[window["window_id"]] = count
 
     phase_means = aggregate_by_phase(per_window, windows, "mean")
     multiplier = compute_multiplier(phase_means, lower_is_better=True)
     confidence = determine_confidence_for_pr_metric(prs)
+
+    # Build the per_actor mean-per-window breakdown for each phase. For
+    # each actor, sum their per-window counts within a phase and divide
+    # by the count of windows in that phase. The after-period block
+    # explicitly aggregates ramp_up + steady_state + post_intro windows.
+    actor_phase_window_counts: dict[str, dict[str, list[int]]] = {}
+    for wid, actor_counts in per_window_per_actor.items():
+        phase = window_phase.get(wid) or "baseline"
+        for actor, cnt in actor_counts.items():
+            if actor not in actor_phase_window_counts:
+                actor_phase_window_counts[actor] = {}
+            actor_phase_window_counts[actor].setdefault(phase, []).append(cnt)
+
+    def _phase_mean(values: list[int]) -> float | None:
+        return statistics.mean(values) if values else None
+
+    per_actor: dict[str, dict[str, float | None]] = {}
+    for actor, phase_lists in actor_phase_window_counts.items():
+        baseline_values = phase_lists.get("baseline", [])
+        ramp_values = phase_lists.get("ramp_up", [])
+        steady_values = phase_lists.get("steady_state", [])
+        post_values = phase_lists.get("post_intro", [])
+        after_values = ramp_values + steady_values + post_values
+        # An actor's per-window contribution is 0 for windows where they
+        # had no in-progress PRs. Use the count of windows in each phase
+        # to compute the true mean (otherwise actors who skip windows
+        # would be over-represented).
+        baseline_n = count_windows_in_phase(windows, "baseline")
+        ramp_n = count_windows_in_phase(windows, "ramp_up")
+        steady_n = count_windows_in_phase(windows, "steady_state")
+        post_n = count_windows_in_phase(windows, "post_intro")
+        after_n = ramp_n + steady_n + post_n
+        per_actor[actor] = {
+            "baseline": (
+                sum(baseline_values) / baseline_n if baseline_n > 0 else None
+            ),
+            "ramp_up": (
+                sum(ramp_values) / ramp_n if ramp_n > 0 else None
+            ),
+            "steady_state": (
+                sum(steady_values) / steady_n if steady_n > 0 else None
+            ),
+            "post_intro": (
+                sum(post_values) / post_n if post_n > 0 else None
+            ),
+            "after": (
+                sum(after_values) / after_n if after_n > 0 else None
+            ),
+        }
 
     return {
         "metric_id": "M1",
@@ -1178,6 +1325,8 @@ def extract_flow_load(windows: list[dict], use_cache: bool) -> dict:
         "multiplier": multiplier,
         "direction": "lower-is-better",
         "per_window": per_window,
+        "per_actor": per_actor,
+        "per_window_per_actor": per_window_per_actor,
         "bot_excluded_count": len(prs) - len(bot_excluded),
         "total_prs_considered": len(bot_excluded),
         "baseline_n": count_windows_in_phase(windows, "baseline"),
@@ -1298,7 +1447,10 @@ def extract_flow_velocity(windows: list[dict], use_cache: bool) -> dict:
 @safe_extract("M3")
 def extract_flow_predictability(windows: list[dict],
                                 m2_per_window: dict[str, int],
-                                use_cache: bool) -> dict:
+                                use_cache: bool,
+                                m2_confidence: str | None = None,
+                                m2_status: str | None = None,
+                                m2_reason: str | None = None) -> dict:
     """Extract Flow Predictability (M3).
 
     For each phase, gather the per-window M2 counts and compute the
@@ -1311,8 +1463,27 @@ def extract_flow_predictability(windows: list[dict],
         windows: canonical window table.
         m2_per_window: ``{window_id: merged_pr_count}`` from M2.
         use_cache: kept for API symmetry with the other extractors.
+        m2_confidence: M2's actual data-source confidence tag. M3 is a
+            derived metric and MUST inherit M2's confidence — a low-
+            confidence M2 cannot produce a high-confidence M3.
+        m2_status: M2's status field (``"ok"``, ``"insufficient_signal"``,
+            or ``"error"``). If M2 is insufficient signal, M3 is too.
+        m2_reason: M2's insufficient-signal reason, passed through so the
+            M3 envelope explains why M3 also lacks signal.
     """
     _ = use_cache  # kept for API symmetry
+
+    # If M2 itself is insufficient signal, propagate immediately. M3 is
+    # derived from M2 per-window counts; M2's absence is a definitional
+    # gap for M3, not a separate one.
+    if m2_status == "insufficient_signal":
+        raise InsufficientSignalError(
+            f"M3 derives from M2; M2 reported insufficient signal "
+            f"({m2_reason or 'unknown'})")
+    if m2_status == "error":
+        raise InsufficientSignalError(
+            f"M3 derives from M2; M2 reported an extraction error "
+            f"({m2_reason or 'unknown'})")
 
     if not isinstance(m2_per_window, dict):
         raise InsufficientSignalError(
@@ -1374,10 +1545,22 @@ def extract_flow_predictability(windows: list[dict],
     multiplier = compute_multiplier(phase_scalars, higher_is_better=True)
     after_val = derive_after_value(phase_scalars)
 
+    # M3 confidence inherits from M2 per AAP §0.8.3 (Confidence Assignment
+    # Policy: "M3 Flow Predictability — Same as M2"). M3 is derived from
+    # M2; M2's data-source confidence is the upper bound for M3's
+    # confidence. The default of "Low" is the conservative choice when
+    # M2's confidence was not supplied.
+    inherited_confidence = (m2_confidence or "Low").strip() or "Low"
+    if inherited_confidence not in ("High", "Medium", "Low"):
+        # Defensive normalization — confidence tags must be one of the
+        # three canonical values per Rule 3 (Confidence Transparency).
+        inherited_confidence = "Low"
+
     return {
         "metric_id": "M3",
         "status": "ok",
-        "confidence": "High",
+        "confidence": inherited_confidence,
+        "confidence_inherited_from": "M2",
         "source": "derived_from_M2_per_window",
         "baseline": baseline_val,
         "ramp_up": ramp_val,
@@ -1613,6 +1796,10 @@ def extract_flow_active(windows: list[dict], use_cache: bool) -> dict:
     per_phase_spans: dict[str, list[float]] = defaultdict(list)
     per_actor_phase_spans: dict[str, dict[str, list[float]]] = defaultdict(
         lambda: defaultdict(list))
+    # Per-PR observation table: {pr_number: {phase, actor, seconds}}
+    # M5 (Flow Efficiency) joins this with M7's per-PR table to compute
+    # the AAP-mandated median of per-PR ratios, not the ratio of medians.
+    per_pr_observations: dict[str, dict[str, Any]] = {}
 
     logger = structured_logger(metric_id="M4", phase="extract_metrics")
     for idx, pr in enumerate(merged):
@@ -1647,6 +1834,17 @@ def extract_flow_active(windows: list[dict], use_cache: bool) -> dict:
             continue
         per_phase_spans[phase].append(active_seconds)
         per_actor_phase_spans[actor][phase].append(active_seconds)
+        # Persist per-PR observation keyed by string PR number so the
+        # JSON envelope is portable across consumers. M5 keys join by
+        # this same string.
+        pr_num = pr.get("number")
+        if pr_num is not None:
+            per_pr_observations[str(pr_num)] = {
+                "pr_number": pr_num,
+                "phase": phase,
+                "actor": actor,
+                "seconds": float(active_seconds),
+            }
 
     if not any(per_phase_spans.values()):
         raise InsufficientSignalError(
@@ -1703,6 +1901,7 @@ def extract_flow_active(windows: list[dict], use_cache: bool) -> dict:
         "multiplier": multiplier,
         "direction": "lower-is-better",
         "per_actor": per_actor_results,
+        "per_pr_observations": per_pr_observations,
         "baseline_n": len(per_phase_spans.get("baseline", [])),
         "ramp_up_n": len(per_phase_spans.get("ramp_up", [])),
         "steady_state_n": len(per_phase_spans.get("steady_state", [])),
@@ -1734,20 +1933,21 @@ def extract_flow_efficiency(windows: list[dict],
                             use_cache: bool) -> dict:
     """Extract Flow Efficiency (M5).
 
-    Implementation uses the per-phase medians of M4 (Flow Active) and M7
-    (Flow Time) — i.e., median Flow Active divided by median Flow Time
-    per phase. This matches the user's specification that Flow Efficiency
-    is "Flow Active / Flow Time per PR, median across PRs per phase."
+    Implements the AAP §0.1.1 definition verbatim: "Flow Active / Flow Time
+    per PR, median across PRs per phase." For each PR present in BOTH
+    M4.per_pr_observations and M7.per_pr_observations, compute the ratio
+    ``M4_seconds / M7_seconds``; take the median of these ratios per
+    phase. This is materially different from the previously-emitted
+    ``median(M4)/median(M7)`` (the ratio of phase medians), which can
+    produce significantly wrong efficiency values when M4 and M7 have
+    different per-PR shapes.
 
     Per-actor breakdown (AAP §0.1.1 Per-Engineer Views):
         The returned envelope includes a ``per_actor`` field with one entry
-        per engineering actor present in both ``m4.per_actor`` and
-        ``m7.per_actor``. Each cell is computed as
-        ``M4.per_actor[actor][phase] / M7.per_actor[actor][phase]`` — the
-        same identity that produces the overall phase values, applied
-        cell-by-cell. The overall confidence (``min(M4, M7)``) is inherited
-        by all per-actor cells (no per-cell confidence tagging — only the
-        upstream M4/M7 confidence flags determine reliability).
+        per engineering actor that appears in the joined per-PR table.
+        Each cell is the median of per-PR ratios attributed to that actor
+        in that phase. The overall confidence (``min(M4, M7)``) is
+        inherited by all per-actor cells (no per-cell confidence tagging).
 
     Confidence inherits ``min(M4.confidence, M7.confidence)`` so a downgrade
     in either upstream metric is reflected here.
@@ -1760,82 +1960,100 @@ def extract_flow_efficiency(windows: list[dict],
     if m7.get("status") == "insufficient_signal":
         raise InsufficientSignalError(
             f"M7 insufficient signal: {m7.get('reason', 'unknown')}")
+    if m4.get("status") == "error":
+        raise InsufficientSignalError(
+            f"M4 extraction error: {m4.get('reason', 'unknown')}")
+    if m7.get("status") == "error":
+        raise InsufficientSignalError(
+            f"M7 extraction error: {m7.get('reason', 'unknown')}")
+
+    m4_obs = m4.get("per_pr_observations") or {}
+    m7_obs = m7.get("per_pr_observations") or {}
+    if not isinstance(m4_obs, dict) or not isinstance(m7_obs, dict):
+        raise InsufficientSignalError(
+            "M4/M7 per-PR observations missing (re-run M4 and M7 with the "
+            "new schema)")
+
+    # Join by PR number; compute one ratio per shared PR. The shared key
+    # set is the intersection of M4 and M7 per-PR tables, so PRs that
+    # were excluded by either metric (e.g., M7 exclusion for history
+    # rewrites) do not contribute fabricated ratios.
+    joined: list[dict[str, Any]] = []
+    shared_pr_keys = sorted(set(m4_obs.keys()) & set(m7_obs.keys()))
+    for pr_key in shared_pr_keys:
+        m4_pr = m4_obs.get(pr_key) or {}
+        m7_pr = m7_obs.get(pr_key) or {}
+        try:
+            active_seconds = float(m4_pr.get("seconds"))
+            flow_seconds = float(m7_pr.get("seconds"))
+        except (TypeError, ValueError):
+            continue
+        if flow_seconds <= 0:
+            # Avoid division-by-zero and negative ratios; AAP §0.7.3
+            # forbids fabrication, so the per-PR observation is simply
+            # dropped from the median input set.
+            continue
+        ratio = active_seconds / flow_seconds
+        # Phase and actor — prefer M7's labels because M7 is the canonical
+        # window assignment site (PR is grouped by merged_at). M4 and M7
+        # always agree because both call engineering_actor(pr, phase) with
+        # the same phase, but we anchor on M7 to be explicit.
+        phase = m7_pr.get("phase") or m4_pr.get("phase") or "baseline"
+        actor = m7_pr.get("actor") or m4_pr.get("actor") or "unknown"
+        joined.append({
+            "pr_number": m7_pr.get("pr_number") or m4_pr.get("pr_number"),
+            "phase": phase,
+            "actor": actor,
+            "active_seconds": active_seconds,
+            "flow_seconds": flow_seconds,
+            "ratio": ratio,
+        })
+
+    if not joined:
+        raise InsufficientSignalError(
+            "no PRs are present in both M4 and M7 per_pr_observations")
+
+    # Per-phase medians (median of per-PR ratios)
+    per_phase_ratios: dict[str, list[float]] = defaultdict(list)
+    for obs in joined:
+        per_phase_ratios[obs["phase"]].append(obs["ratio"])
 
     phase_efficiencies: dict[str, float | None] = {}
     for phase in ("baseline", "ramp_up", "steady_state", "post_intro"):
-        active = m4.get(phase)
-        time_ = m7.get(phase)
-        if active is None or time_ is None:
-            phase_efficiencies[phase] = None
-            continue
-        try:
-            time_f = float(time_)
-        except (TypeError, ValueError):
-            phase_efficiencies[phase] = None
-            continue
-        if time_f == 0:
-            phase_efficiencies[phase] = None
-            continue
-        phase_efficiencies[phase] = float(active) / time_f
+        vals = per_phase_ratios.get(phase, [])
+        phase_efficiencies[phase] = statistics.median(vals) if vals else None
 
-    # After-period efficiency
-    m4_after = m4.get("after")
-    m7_after = m7.get("after")
-    if m4_after is not None and m7_after is not None:
-        try:
-            m7_after_f = float(m7_after)
-            phase_efficiencies["after"] = (
-                float(m4_after) / m7_after_f if m7_after_f != 0 else None
-            )
-        except (TypeError, ValueError):
-            phase_efficiencies["after"] = None
-    else:
-        phase_efficiencies["after"] = derive_after_value(phase_efficiencies)
+    after_vals: list[float] = []
+    for phase in AFTER_PHASES:
+        if phase == "after":
+            continue
+        after_vals.extend(per_phase_ratios.get(phase, []))
+    phase_efficiencies["after"] = (
+        statistics.median(after_vals) if after_vals else None
+    )
 
-    # Per-actor efficiency — derived cell-by-cell from M4/M7 per-actor
-    # medians for every actor present in both upstream metrics.
-    # Actors present in only one upstream are skipped to avoid fabricating
-    # numerator/denominator from thin air.
-    m4_per_actor = m4.get("per_actor") or {}
-    m7_per_actor = m7.get("per_actor") or {}
+    # Per-actor medians of per-PR ratios — joined by actor x phase
+    per_actor_phase_ratios: dict[str, dict[str, list[float]]] = defaultdict(
+        lambda: defaultdict(list))
+    for obs in joined:
+        per_actor_phase_ratios[obs["actor"]][obs["phase"]].append(obs["ratio"])
+
     per_actor_efficiencies: dict[str, dict[str, float | None]] = {}
-    shared_actors = sorted(set(m4_per_actor.keys()) & set(m7_per_actor.keys()))
-    for actor in shared_actors:
-        m4_cells = m4_per_actor.get(actor) or {}
-        m7_cells = m7_per_actor.get(actor) or {}
-        if not isinstance(m4_cells, dict) or not isinstance(m7_cells, dict):
-            continue
+    for actor, phase_ratios in per_actor_phase_ratios.items():
         actor_phase_efficiencies: dict[str, float | None] = {}
         for phase in ("baseline", "ramp_up", "steady_state", "post_intro"):
-            active_v = m4_cells.get(phase)
-            time_v = m7_cells.get(phase)
-            if active_v is None or time_v is None:
-                actor_phase_efficiencies[phase] = None
+            vals = phase_ratios.get(phase, [])
+            actor_phase_efficiencies[phase] = (
+                statistics.median(vals) if vals else None
+            )
+        actor_after_vals: list[float] = []
+        for phase in AFTER_PHASES:
+            if phase == "after":
                 continue
-            try:
-                time_f = float(time_v)
-            except (TypeError, ValueError):
-                actor_phase_efficiencies[phase] = None
-                continue
-            if time_f == 0:
-                actor_phase_efficiencies[phase] = None
-                continue
-            actor_phase_efficiencies[phase] = float(active_v) / time_f
-        # After cell for the actor — prefer explicit cells from both
-        # upstream metrics; otherwise derive from non-baseline phases.
-        actor_m4_after = m4_cells.get("after")
-        actor_m7_after = m7_cells.get("after")
-        if actor_m4_after is not None and actor_m7_after is not None:
-            try:
-                m7_after_f = float(actor_m7_after)
-                actor_phase_efficiencies["after"] = (
-                    float(actor_m4_after) / m7_after_f if m7_after_f != 0 else None
-                )
-            except (TypeError, ValueError):
-                actor_phase_efficiencies["after"] = None
-        else:
-            actor_phase_efficiencies["after"] = derive_after_value(
-                actor_phase_efficiencies)
+            actor_after_vals.extend(phase_ratios.get(phase, []))
+        actor_phase_efficiencies["after"] = (
+            statistics.median(actor_after_vals) if actor_after_vals else None
+        )
         per_actor_efficiencies[actor] = actor_phase_efficiencies
 
     multiplier = compute_multiplier(phase_efficiencies, higher_is_better=True)
@@ -1848,7 +2066,7 @@ def extract_flow_efficiency(windows: list[dict],
         "metric_id": "M5",
         "status": "ok",
         "confidence": confidence,
-        "source": "derived_from_M4_M7",
+        "source": "derived_from_M4_M7_per_pr_ratios",
         "baseline": phase_efficiencies.get("baseline"),
         "ramp_up": phase_efficiencies.get("ramp_up"),
         "steady_state": phase_efficiencies.get("steady_state"),
@@ -1857,7 +2075,16 @@ def extract_flow_efficiency(windows: list[dict],
         "multiplier": multiplier,
         "direction": "higher-is-better",
         "per_actor": per_actor_efficiencies,
-        "primary_command": "derived from M4 (Flow Active) / M7 (Flow Time)",
+        "joined_pr_count": len(joined),
+        "baseline_n": len(per_phase_ratios.get("baseline", [])),
+        "ramp_up_n": len(per_phase_ratios.get("ramp_up", [])),
+        "steady_state_n": len(per_phase_ratios.get("steady_state", [])),
+        "post_intro_n": len(per_phase_ratios.get("post_intro", [])),
+        "primary_command": (
+            "join(M4.per_pr_observations, M7.per_pr_observations) by pr_number; "
+            "ratio_per_pr = M4_seconds / M7_seconds; "
+            "median(ratios) per phase"
+        ),
         "m4_confidence": m4.get("confidence"),
         "m7_confidence": m7.get("confidence"),
     }
@@ -2049,14 +2276,33 @@ def compute_first_commit_on_pr_branch(pr: dict,
     if earliest is not None:
         return earliest.isoformat().replace("+00:00", "Z")
 
-    # Fallback: local git log
+    # Fallback: local git log via explicit merge-base resolution.
+    # AAP §0.5.5: M7 must use `git log --format=%aI --reverse
+    # <merge_base>..<head>` to identify the first commit ON the PR branch
+    # (not on its base). Using `<base>..<head>` directly can include the
+    # wrong commits when the base branch has advanced beyond the PR's
+    # divergence point, so we resolve the merge-base explicitly first.
     head = (pr.get("head") or {}).get("sha")
     base = (pr.get("base") or {}).get("sha")
     if not head or not base:
         return None
     try:
+        merge_base = git_run(
+            ["merge-base", base, head], allow_failure=True,
+        ).strip()
+    except (subprocess.SubprocessError, ValueError):
+        return None
+    if not merge_base:
+        # merge-base failed: branches may have no common ancestor in the
+        # local clone (shallow fetch). Surface as no-data rather than
+        # falling back to the base..head range that the AAP forbids.
+        return None
+    merge_base_line = merge_base.splitlines()[0].strip()
+    if not merge_base_line:
+        return None
+    try:
         out = git_log(
-            ["--format=%aI", "--reverse", f"{base}..{head}"],
+            ["--format=%aI", "--reverse", f"{merge_base_line}..{head}"],
             allow_failure=True,
         ).strip()
     except (subprocess.SubprocessError, ValueError):
@@ -2100,6 +2346,10 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
     per_phase_times: dict[str, list[float]] = defaultdict(list)
     per_actor_phase_times: dict[str, dict[str, list[float]]] = defaultdict(
         lambda: defaultdict(list))
+    # Per-PR observation table: {pr_number: {phase, actor, seconds}}
+    # M5 (Flow Efficiency) joins this with M4's per-PR table to compute
+    # the AAP-mandated median of per-PR ratios.
+    per_pr_observations: dict[str, dict[str, Any]] = {}
     excluded_count = 0
     in_window_count = 0
     total_count = len(merged)
@@ -2140,6 +2390,16 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
             continue
         per_phase_times[phase].append(flow_time_seconds)
         per_actor_phase_times[actor][phase].append(flow_time_seconds)
+        # Persist per-PR observation keyed by string PR number so M5 can
+        # join with M4's per-PR table by the same key.
+        pr_num = pr.get("number")
+        if pr_num is not None:
+            per_pr_observations[str(pr_num)] = {
+                "pr_number": pr_num,
+                "phase": phase,
+                "actor": actor,
+                "seconds": float(flow_time_seconds),
+            }
 
     if not any(per_phase_times.values()):
         raise InsufficientSignalError(
@@ -2202,13 +2462,14 @@ def extract_flow_time(windows: list[dict], use_cache: bool) -> dict:
         "in_window_count": in_window_count,
         "unit": "seconds",
         "per_actor": per_actor_results,
+        "per_pr_observations": per_pr_observations,
         "baseline_n": len(per_phase_times.get("baseline", [])),
         "ramp_up_n": len(per_phase_times.get("ramp_up", [])),
         "steady_state_n": len(per_phase_times.get("steady_state", [])),
         "post_intro_n": len(per_phase_times.get("post_intro", [])),
         "primary_command": (
             "GET /repos/.../pulls/{n}/commits | head -1 by author.date; "
-            "fallback: git log --format=%aI --reverse <base>..<head> | head -1"
+            "fallback: git log --format=%aI --reverse {MERGE_BASE}..{HEAD} | head -1"
         ),
     }
 
@@ -2489,25 +2750,30 @@ def extract_problem_records(windows: list[dict], use_cache: bool) -> dict:
             revert_of_revert.append(revert)
             continue
 
-        # Find most recent release tag T such that T is ancestor of original
+        # Find most recent release tag T such that T is ancestor of original.
+        # Routed through git_is_ancestor() (shared read-only helper) so the
+        # call respects the GIT_READONLY_SUBCOMMANDS allowlist, appends to
+        # commands.log via command_log_append, and applies the standard
+        # subprocess timeout. Direct subprocess.run() here would bypass all
+        # three controls (see code-review FAIL line 2499-2502).
         candidate_tags: list[dict] = []
         for release in release_tags:
             tag_sha = release.get("commit_sha") or release.get("target_commitish")
             if not tag_sha:
                 continue
             try:
-                result = subprocess.run(
-                    ["git", "merge-base", "--is-ancestor", tag_sha, original_sha],
-                    capture_output=True, timeout=15,
-                )
-                command_log_append(
-                    "git",
-                    f"git merge-base --is-ancestor {tag_sha} {original_sha}"
-                )
-                if result.returncode == 0:
+                if git_is_ancestor(tag_sha, original_sha):
                     candidate_tags.append(release)
-            except (subprocess.SubprocessError, subprocess.TimeoutExpired):
-                continue
+            except (FileNotFoundError, ValueError) as exc:
+                # FileNotFoundError → git binary missing (fatal for M8);
+                # ValueError → merge-base accidentally removed from
+                # allowlist. Either case is a setup defect; surface as
+                # InsufficientSignalError so the metric is correctly
+                # reported as unmeasurable without crashing the harness.
+                raise InsufficientSignalError(
+                    f"git_is_ancestor unavailable: {exc}",
+                    metric_id="M8",
+                ) from exc
 
         if not candidate_tags:
             unreleased.append({"revert": revert, "original_sha": original_sha})
@@ -2532,6 +2798,93 @@ def extract_problem_records(windows: list[dict], use_cache: bool) -> dict:
         if counts_per_release else 0.0
     )
 
+    # ----- Phase scalar aggregation (AAP §0.5.5 + checkpoint M8 field) --
+    # M8 is fundamentally a per-release rate, but AAP §0.5.5 plus the
+    # checkpoint require standard phase scalar fields so Rules 1 and 4
+    # can validate the metric and report acceleration consistently. The
+    # phase scalar is the mean attributable reverts per release computed
+    # over the windows in each phase. Reverts are attributed to a window
+    # by their authored timestamp. The window's phase determines which
+    # phase bucket the revert contributes to. Phase scalars are reported
+    # in absolute revert counts per phase rather than rate-per-release
+    # because the per-release denominator (release tags) may belong to a
+    # different phase than the revert itself. The unreleased and
+    # unattributable counts are also broken down per phase so the
+    # multiplier reflects only the attributable counts.
+    per_phase_attributed_counts: dict[str, int] = defaultdict(int)
+    per_phase_unattributed_counts: dict[str, int] = defaultdict(int)
+    per_phase_revert_of_revert_counts: dict[str, int] = defaultdict(int)
+    # Build a map from revert SHA to its authored timestamp for phase
+    # lookups during aggregation.
+    revert_iso_by_sha = {r["sha"]: r.get("authored_iso") for r in reverts}
+
+    def _phase_for_revert(sha: str) -> str:
+        ts_iso = revert_iso_by_sha.get(sha)
+        if not ts_iso:
+            return "baseline"
+        ts = _parse_iso(ts_iso)
+        if ts is None:
+            return "baseline"
+        window = find_window_for_timestamp(ts, windows)
+        return (window or {}).get("phase") or "baseline"
+
+    for attr in attributed:
+        phase = _phase_for_revert(attr["revert_sha"])
+        per_phase_attributed_counts[phase] += 1
+    for u in unattributable:
+        sha = u.get("sha") if isinstance(u, dict) else None
+        if sha:
+            phase = _phase_for_revert(sha)
+            per_phase_unattributed_counts[phase] += 1
+    for u in unreleased:
+        revert_sha = (u.get("revert") or {}).get("sha") if isinstance(u, dict) else None
+        if revert_sha:
+            phase = _phase_for_revert(revert_sha)
+            per_phase_unattributed_counts[phase] += 1
+    for r in revert_of_revert:
+        sha = r.get("sha") if isinstance(r, dict) else None
+        if sha:
+            phase = _phase_for_revert(sha)
+            per_phase_revert_of_revert_counts[phase] += 1
+
+    # Normalize per-phase attributable counts by the count of windows in
+    # each phase to produce a comparable rate (mean attributable reverts
+    # per window per phase). This mirrors the per-window aggregation used
+    # by M1, M2, and M9, so M8 phase scalars are directly comparable to
+    # the other count/rate metrics. Phases without any windows return
+    # None (insufficient signal).
+    phase_window_counts = {
+        "baseline": count_windows_in_phase(windows, "baseline"),
+        "ramp_up": count_windows_in_phase(windows, "ramp_up"),
+        "steady_state": count_windows_in_phase(windows, "steady_state"),
+        "post_intro": count_windows_in_phase(windows, "post_intro"),
+    }
+
+    def _phase_rate(phase: str) -> float | None:
+        n = phase_window_counts.get(phase, 0)
+        if n <= 0:
+            return None
+        return per_phase_attributed_counts.get(phase, 0) / n
+
+    phase_scalars: dict[str, float | None] = {
+        "baseline": _phase_rate("baseline"),
+        "ramp_up": _phase_rate("ramp_up"),
+        "steady_state": _phase_rate("steady_state"),
+        "post_intro": _phase_rate("post_intro"),
+    }
+    after_total = sum(
+        per_phase_attributed_counts.get(p, 0)
+        for p in ("ramp_up", "steady_state", "post_intro")
+    )
+    after_n = (
+        phase_window_counts["ramp_up"]
+        + phase_window_counts["steady_state"]
+        + phase_window_counts["post_intro"]
+    )
+    phase_scalars["after"] = after_total / after_n if after_n > 0 else None
+
+    multiplier = compute_multiplier(phase_scalars, lower_is_better=True)
+
     confidence = {
         "api": "High",
         "tags": "Medium",
@@ -2549,6 +2902,20 @@ def extract_problem_records(windows: list[dict], use_cache: bool) -> dict:
         "confidence": confidence,
         "source": f"git_log_reverts + releases_{source}",
         "mean_per_release": mean_per_release,
+        # Standard phase scalar fields — AAP §0.5.5 / checkpoint M8 field
+        "baseline": phase_scalars.get("baseline"),
+        "ramp_up": phase_scalars.get("ramp_up"),
+        "steady_state": phase_scalars.get("steady_state"),
+        "post_intro": phase_scalars.get("post_intro"),
+        "after": phase_scalars.get("after"),
+        "multiplier": multiplier,
+        "direction": "lower-is-better",
+        # Per-phase sub-counts for validation transparency
+        "phase_attributed_counts": dict(per_phase_attributed_counts),
+        "phase_unattributed_counts": dict(per_phase_unattributed_counts),
+        "phase_revert_of_revert_counts": dict(per_phase_revert_of_revert_counts),
+        "phase_window_counts": phase_window_counts,
+        # Roll-up sub-counts (unchanged for backward compatibility)
         "attributed_count": len(attributed),
         "unattributable_count": len(unattributable),
         "unreleased_count": len(unreleased),
@@ -2556,11 +2923,9 @@ def extract_problem_records(windows: list[dict], use_cache: bool) -> dict:
         "total_revert_count": len(reverts),
         "release_count": len(release_tags),
         "counts_per_release": dict(counts_per_release),
-        "multiplier": None,  # M8 is a per-release rate; no After/Before scalar
-        "direction": "lower-is-better",
         "primary_command": (
             "git log --grep='^Revert' --pretty=format:%H|%aI|%s|%P | "
-            "parse_reverts_commit_line | git merge-base --is-ancestor"
+            "parse_reverts_commit_line | git_is_ancestor(tag, original)"
         ),
     }
 
@@ -2698,19 +3063,120 @@ def _audit_event_is_admin_override(event: dict) -> bool:
     )
 
 
+def _detect_failing_required_ci_merge(pr: dict, use_cache: bool) -> bool:
+    """Return True when a merged PR's required-check status was failure at merge.
+
+    Approach (read-only, best-effort):
+        1. Fetch the check-runs for the PR's merge commit SHA (the head
+           SHA of the merged PR; ``pr['merge_commit_sha']`` is preferred,
+           falling back to ``pr['head']['sha']``).
+        2. The set of "required" checks is approximated by joining against
+           the branch protection rule (when available). When the
+           protection rule cannot be fetched (e.g., missing scope), every
+           failing check on the merge commit is treated as "required" —
+           this is the conservative interpretation for M10 because over-
+           counting policy bypass is preferable to silently omitting one
+           bypass class entirely (AAP §0.1.1).
+        3. If any required check has ``conclusion`` in
+           ``("failure", "timed_out", "action_required", "stale")`` and
+           the PR was nonetheless merged, the PR is counted as a
+           merges-with-failing-required-CI bypass.
+
+    Returns False on any data-fetch failure so this sub-count remains
+    conservative (under-count rather than fabricate).
+    """
+    if not pr or not pr.get("merged_at"):
+        return False
+    merge_sha = pr.get("merge_commit_sha") or (pr.get("head") or {}).get("sha")
+    if not merge_sha:
+        return False
+
+    # Fetch branch-protection required-check names once and cache module-
+    # wide. The cache lives in the function attribute so subsequent calls
+    # don't re-request the same endpoint.
+    required_names = _detect_failing_required_ci_merge._required_names  # type: ignore[attr-defined]
+    if required_names is _SENTINEL:
+        try:
+            protection = github_api_get(
+                "branches/main/protection",
+                use_cache=use_cache,
+            )
+        except Exception:  # noqa: BLE001  (defensive)
+            protection = None
+        names: set[str] | None = None
+        if isinstance(protection, dict):
+            block = protection.get("required_status_checks") or {}
+            checks = block.get("checks") or []
+            if isinstance(checks, list):
+                names = {
+                    str(c.get("context")) for c in checks
+                    if isinstance(c, dict) and c.get("context")
+                }
+            elif block.get("contexts"):
+                names = {str(c) for c in block.get("contexts") or []}
+        _detect_failing_required_ci_merge._required_names = names  # type: ignore[attr-defined]
+        required_names = names
+
+    # Fetch check-runs for the merge commit. The endpoint returns up to
+    # 100 check runs per page; M10 only needs the conclusion field so a
+    # single page is sufficient for most repos.
+    try:
+        check_runs_response = github_api_get(
+            f"commits/{merge_sha}/check-runs",
+            use_cache=use_cache,
+            params={"per_page": 100},
+        )
+    except Exception:  # noqa: BLE001
+        return False
+
+    runs: list[dict] = []
+    if isinstance(check_runs_response, dict):
+        runs = check_runs_response.get("check_runs") or []
+    elif isinstance(check_runs_response, list):
+        # github_api_get's pagination flattens results into a list when
+        # there is no Link-header next page; treat that as the runs set
+        # directly (defensive).
+        runs = check_runs_response
+
+    failure_conclusions = {"failure", "timed_out", "action_required", "stale"}
+    for run in runs:
+        if not isinstance(run, dict):
+            continue
+        conclusion = (run.get("conclusion") or "").lower()
+        if conclusion not in failure_conclusions:
+            continue
+        # If required-checks list is available, restrict to those names
+        # (or unique app/context names). When unavailable, every failing
+        # check qualifies (conservative interpretation per the docstring).
+        if required_names is not None and required_names:
+            name = (run.get("name") or "").strip()
+            if name not in required_names:
+                continue
+        return True
+    return False
+
+
+# Sentinel for _detect_failing_required_ci_merge first-call cache init.
+_SENTINEL: object = object()
+_detect_failing_required_ci_merge._required_names = _SENTINEL  # type: ignore[attr-defined]
+
+
 @safe_extract("M10")
 def extract_approved_exceptions(windows: list[dict], use_cache: bool) -> dict:
     """Extract Approved Exceptions (M10).
 
-    Tallies four sub-counts per window:
+    Tallies five sub-counts per window (AAP §0.1.1 enumerates five
+    policy-bypass classes; checkpoint report adds explicit verification
+    for the fifth class):
         - force_pushes (from audit log if available, else PushEvent.forced)
         - label_exceptions (PRs with exception/waiver/override labels)
         - admin_overrides (audit-log only — null when log unavailable)
         - protection_modifications (audit-log only)
+        - failing_required_ci_merges (PRs merged with failing required CI)
 
     Per-actor breakdown is included when an audit-log entry's actor is
-    identifiable; force-push and label sub-counts attribute to the
-    PR author / pusher.
+    identifiable; force-push, label, and failing-required-CI sub-counts
+    attribute to the PR author / pusher.
     """
     audit_log = fetch_audit_log_events(use_cache)
     has_audit = audit_log is not None and len(audit_log) > 0
@@ -2750,6 +3216,34 @@ def extract_approved_exceptions(windows: list[dict], use_cache: bool) -> dict:
                 exception_prs.append(pr)
                 break
 
+    # Failing-required-CI merges (M10 fifth bypass class).
+    # AAP §0.1.1 lists this as a required signal. We restrict to merged
+    # PRs because the bypass classification only applies once the PR has
+    # actually been merged with failing checks.
+    failing_ci_prs: list[dict] = []
+    logger = structured_logger(metric_id="M10", phase="extract_metrics")
+    # Reset the required-checks cache so a fresh harness invocation
+    # picks up the current branch-protection rule rather than stale
+    # data from a previous run.
+    _detect_failing_required_ci_merge._required_names = _SENTINEL  # type: ignore[attr-defined]
+    failing_ci_attempted = 0
+    failing_ci_errors = 0
+    for pr in prs:
+        if not pr.get("merged_at"):
+            continue
+        failing_ci_attempted += 1
+        try:
+            if _detect_failing_required_ci_merge(pr, use_cache):
+                failing_ci_prs.append(pr)
+        except Exception as exc:  # noqa: BLE001  (network resilience)
+            failing_ci_errors += 1
+            logger.warning(
+                f"M10: failing-required-CI detection failed for PR "
+                f"#{pr.get('number')}: {exc}",
+                extra={"context": {"pr_number": pr.get("number"),
+                                    "error": str(exc)}},
+            )
+
     # Admin overrides
     admin_overrides: list[tuple[datetime, str, str]] = []
     protection_mods: list[tuple[datetime, str]] = []
@@ -2772,12 +3266,29 @@ def extract_approved_exceptions(windows: list[dict], use_cache: bool) -> dict:
             "label_exceptions": 0,
             "admin_overrides": 0,
             "protection_mods": 0,
+            "failing_required_ci": 0,
             "total": 0,
         }
         for w in windows
     }
     per_actor_phase_counts: dict[str, dict[str, int]] = defaultdict(
         lambda: defaultdict(int))
+    # Separate per-actor cells for attributable-only sub-counts. Admin
+    # overrides and protection modifications are attributed to the
+    # audit-log actor (typically an org admin); validate_consistency.py
+    # cannot reconcile their per-actor sums against the overall phase
+    # totals because admin overrides may not appear in any PR-author
+    # set. The attributable-only cells preserve the unbroken sum.
+    per_actor_attributable_phase_counts: dict[str, dict[str, int]] = defaultdict(
+        lambda: defaultdict(int))
+
+    # Sub-count keys whose per-actor attribution is reliable (the actor is
+    # the PR author or pusher, identifiable by login). Admin overrides
+    # and protection modifications use audit-log actor names that may not
+    # appear in any PR-author set, so they are excluded from the
+    # attributable per-actor cells used by validate_consistency.py.
+    ATTRIBUTABLE_SUBCOUNTS = {"force_pushes", "label_exceptions",
+                              "failing_required_ci"}
 
     def _bump(window_id: str, key: str, phase: str, actor: str) -> None:
         bucket = per_window.get(window_id)
@@ -2786,6 +3297,8 @@ def extract_approved_exceptions(windows: list[dict], use_cache: bool) -> dict:
             bucket["total"] = bucket.get("total", 0) + 1
         if actor:
             per_actor_phase_counts[actor][phase] += 1
+            if key in ATTRIBUTABLE_SUBCOUNTS:
+                per_actor_attributable_phase_counts[actor][phase] += 1
 
     for ts, actor in force_pushes:
         window = find_window_for_timestamp(ts, windows)
@@ -2805,6 +3318,20 @@ def extract_approved_exceptions(windows: list[dict], use_cache: bool) -> dict:
         phase = window.get("phase") or "baseline"
         actor = engineering_actor(pr, phase)
         _bump(window["window_id"], "label_exceptions", phase, actor)
+
+    # Attribute each failing-required-CI merge to the window containing
+    # its merge timestamp. Actor identity is resolved via the engineering-
+    # actor selector for parity with the other PR-attributable sub-counts.
+    for pr in failing_ci_prs:
+        ts = _parse_iso(pr.get("merged_at"))
+        if ts is None:
+            continue
+        window = find_window_for_timestamp(ts, windows)
+        if window is None:
+            continue
+        phase = window.get("phase") or "baseline"
+        actor = engineering_actor(pr, phase)
+        _bump(window["window_id"], "failing_required_ci", phase, actor)
 
     for ts, actor, _action in admin_overrides:
         window = find_window_for_timestamp(ts, windows)
@@ -2851,18 +3378,32 @@ def extract_approved_exceptions(windows: list[dict], use_cache: bool) -> dict:
         "direction": "lower-is-better",
         "per_actor": {actor: dict(phase_counts)
                       for actor, phase_counts in per_actor_phase_counts.items()},
+        "per_actor_attributable": {
+            actor: dict(phase_counts)
+            for actor, phase_counts in per_actor_attributable_phase_counts.items()
+        },
         "sub_counts": {
             "force_pushes": sum(d["force_pushes"] for d in per_window.values()),
             "label_exceptions": sum(d["label_exceptions"] for d in per_window.values()),
             "admin_overrides": sum(d["admin_overrides"] for d in per_window.values()),
             "protection_mods": sum(d["protection_mods"] for d in per_window.values()),
+            "failing_required_ci": sum(d["failing_required_ci"]
+                                       for d in per_window.values()),
         },
+        # Attribution map: which sub-counts feed per-actor totals (used
+        # by validate_consistency.py to reconcile per-actor sums
+        # against the attributable subset, not the overall phase total).
+        "attributable_sub_counts": sorted(ATTRIBUTABLE_SUBCOUNTS),
+        "non_attributable_sub_counts": ["admin_overrides", "protection_mods"],
+        "failing_required_ci_attempted": failing_ci_attempted,
+        "failing_required_ci_errors": failing_ci_errors,
         "per_window": total_per_window,
         "audit_log_available": has_audit,
         "primary_command": (
             "GET /orgs/{owner}/audit-log (when audit_log:read scope present) + "
             "GET /repos/{owner}/{repo}/events (force-push detection) + "
-            "exception/waiver/override-labeled PR filter"
+            "exception/waiver/override-labeled PR filter + "
+            "GET /repos/.../commits/{merge_sha}/check-runs for failing required CI"
         ),
     }
 
@@ -2913,26 +3454,46 @@ def compute_regressions_from_ci(runs: list[dict],
             wf_runs,
             key=lambda r: _parse_iso(r.get("created_at") or "") or datetime.min.replace(tzinfo=timezone.utc),
         )
-        # Detect transitions
+        # Walk forward maintaining (a) the previous conclusion to detect
+        # a pass→fail transition, (b) a pending pass→fail candidate that
+        # has not yet sustained, and (c) a streak counter so we can
+        # confirm the candidate once it reaches 3 consecutive failures.
+        # AAP §0.1.1 requires "Flaky tests counted only if failing ≥3
+        # consecutive runs"; the prior implementation attributed at the
+        # transition only after the streak reached 3 (impossible, since
+        # the streak is 1 at the transition), which silently dropped
+        # every sustained regression. Tracking a pending candidate
+        # ensures the regression is attributed to the FIRST failure
+        # (the transition point) only when the streak is confirmed.
         prev_conclusion: str | None = None
-        consecutive_failures = 0
+        pending_transition_run: dict | None = None
+        failure_streak = 0
         for run in sorted_runs:
             conclusion = run.get("conclusion") or ""
             if conclusion == "failure":
-                consecutive_failures += 1
+                failure_streak += 1
+                # Detect a fresh pass→fail transition. The first failure
+                # in a sequence becomes the pending candidate; later
+                # failures simply extend the streak.
+                if prev_conclusion == "success" and pending_transition_run is None:
+                    pending_transition_run = run
+                # Confirm the pending candidate once the streak reaches 3
+                # — attribute the regression to the transition run, not
+                # the third failure, so the metric reflects the moment of
+                # regression rather than the confirmation point.
+                if pending_transition_run is not None and failure_streak >= 3:
+                    ts = _parse_iso(pending_transition_run.get("created_at"))
+                    if ts is not None:
+                        window = find_window_for_timestamp(ts, windows)
+                        if window is not None:
+                            per_window[window["window_id"]] += 1
+                    pending_transition_run = None  # confirmed; reset
             else:
-                consecutive_failures = 0
-            # A regression is a pass→fail transition (flaky if not sustained)
-            if (
-                prev_conclusion == "success"
-                and conclusion == "failure"
-                and consecutive_failures >= 3
-            ):
-                ts = _parse_iso(run.get("created_at"))
-                if ts is not None:
-                    window = find_window_for_timestamp(ts, windows)
-                    if window is not None:
-                        per_window[window["window_id"]] += 1
+                # Non-failure run breaks the streak. If a pending
+                # transition existed but never reached 3, the failure was
+                # flaky per AAP §0.1.1 and is NOT counted.
+                failure_streak = 0
+                pending_transition_run = None
             prev_conclusion = conclusion
     return per_window
 
@@ -3098,15 +3659,17 @@ def extract_escaped_defects(windows: list[dict], use_cache: bool) -> dict:
 #   "Insufficient signal — no SLA source."
 
 
-def extract_severity_from_labels(labels: list[dict]) -> str:
+def extract_severity_from_labels(labels: list[dict]) -> str | None:
     """Map a list of issue label dicts to a severity tier name.
 
     Recognized tiers: critical / high / medium / low. The function checks
     the explicit ``severity:<tier>`` labels first, then the priority alias
     (P0=critical, P1=high, P2=medium, P3=low), then bare ``critical`` /
-    ``high`` / etc. label names. Defaults to ``medium`` when no severity
-    label is present (medium is the moderate tier and avoids skewing the
-    SLA comparison in either direction).
+    ``high`` / etc. label names. Returns ``None`` when no severity label
+    is present — callers MUST handle the None case explicitly. AAP §0.7.3
+    forbids fabrication: defaulting an absent severity to "medium" would
+    be a fabricated SLA tier and could misclassify SLA failures. M12
+    skips issues without an identifiable severity rather than guessing.
     """
     for label in labels or []:
         name = (label.get("name") or "").lower().strip()
@@ -3126,7 +3689,8 @@ def extract_severity_from_labels(labels: list[dict]) -> str:
             return "low"
         if name in DEFAULT_SLA_HOURS:
             return name
-    return "medium"
+    # No severity label found — caller must report "missing severity tier".
+    return None
 
 
 _SLA_POLICY_RE = re.compile(
@@ -3254,6 +3818,9 @@ def extract_defects_out_of_sla(windows: list[dict], use_cache: bool) -> dict:
     severity_breakdown: dict[str, dict[str, int]] = defaultdict(
         lambda: defaultdict(int))
 
+    # Skip-counter: how many issues lack an identifiable severity tier
+    # and are therefore excluded from M12 per the no-fabrication boundary.
+    skipped_no_severity = 0
     for issue in issues:
         if issue.get("state") != "closed":
             continue
@@ -3272,8 +3839,24 @@ def extract_defects_out_of_sla(windows: list[dict], use_cache: bool) -> dict:
 
         labels = issue.get("labels") or []
         severity = extract_severity_from_labels(labels)
-        sla_hours = sla_tiers.get(severity) or DEFAULT_SLA_HOURS.get(
-            severity, 168.0)
+        # AAP §0.7.3 boundary: "MUST NOT fabricate, estimate, or
+        # extrapolate." If no severity label exists, the SLA tier cannot
+        # be determined; skip the issue rather than defaulting to a
+        # fabricated tier. The skip is counted for transparency.
+        if severity is None:
+            skipped_no_severity += 1
+            continue
+        # SLA hours must come from an actual source (Linear field or
+        # policy text). DEFAULT_SLA_HOURS is the fallback for tier→hours
+        # mapping only when the SLA source provided tier names but not
+        # explicit hour values for some tier; if the tier is missing
+        # entirely, we skip rather than fabricate.
+        sla_hours = sla_tiers.get(severity)
+        if sla_hours is None:
+            sla_hours = DEFAULT_SLA_HOURS.get(severity)
+        if sla_hours is None:
+            skipped_no_severity += 1
+            continue
 
         total_per_phase[phase] += 1
         severity_breakdown[severity][phase] += 1
@@ -3333,10 +3916,16 @@ def extract_defects_out_of_sla(windows: list[dict], use_cache: bool) -> dict:
         "by_severity": {sev: dict(by_phase)
                         for sev, by_phase in severity_breakdown.items()},
         "sla_tiers_hours": sla_tiers,
+        # Transparency: how many bug issues were excluded because no
+        # severity label was present. A high count signals that the
+        # repository's label hygiene is incomplete and M12 confidence
+        # should be reviewed.
+        "skipped_no_severity_count": skipped_no_severity,
         "primary_command": (
             "find_sla_source() → (linear|policy|none); "
             "GET /repos/.../issues?labels=bug&state=all; "
-            "resolution_hours > sla_tiers[severity]"
+            "resolution_hours > sla_tiers[severity]; "
+            "issues without severity labels are excluded per AAP §0.7.3"
         ),
     }
 
@@ -3416,7 +4005,17 @@ def extract_one(metric_n: int,
         m2_per_window = m2.get("per_window") if isinstance(m2, dict) else {}
         if not isinstance(m2_per_window, dict):
             m2_per_window = {}
-        return func(windows, m2_per_window, use_cache)
+        # Pass M2's confidence, status, and reason so M3 inherits the
+        # actual data-source confidence rather than hardcoding "High".
+        m2_confidence = (
+            m2.get("confidence") if isinstance(m2, dict) else None
+        )
+        m2_status = m2.get("status") if isinstance(m2, dict) else None
+        m2_reason = m2.get("reason") if isinstance(m2, dict) else None
+        return func(windows, m2_per_window, use_cache,
+                    m2_confidence=m2_confidence,
+                    m2_status=m2_status,
+                    m2_reason=m2_reason)
 
     if metric_n == 5:
         m4 = _ensure_dependency_loaded(4, shared_state, windows, use_cache)
@@ -3546,6 +4145,10 @@ def main(argv: list[str] | None = None) -> int:
     shared_state: dict[str, dict] = {}
     use_cache = not args.no_cache
     crash = False
+    # CRASH_MARKERS is populated by @safe_extract when a non-
+    # InsufficientSignalError exception is caught. Snapshot it before the
+    # run so we can detect crashes specifically from this invocation.
+    CRASH_MARKERS.clear()
 
     for n in targets:
         try:
@@ -3562,21 +4165,54 @@ def main(argv: list[str] | None = None) -> int:
                     "output_path": str(output_path),
                 }},
             )
+            # If the @safe_extract decorator captured a generic exception
+            # and converted it to an error envelope, mark the run as
+            # crashed but persist the envelope and continue with remaining
+            # metrics so the all-twelve-metrics quality gate still holds.
+            if result.get("status") == "error":
+                crash = True
         except Exception as exc:  # noqa: BLE001  (top-level crash boundary)
+            # This branch handles exceptions that escape the @safe_extract
+            # envelope (e.g., crashes in extract_one itself or save_json
+            # I/O errors). Persist a minimal error envelope so downstream
+            # consumers see exactly one file per metric.
+            tb_text = _redact_secrets(traceback.format_exc())
+            reason_text = _redact_secrets(str(exc) or type(exc).__name__)
             logger.error(
-                f"M{n} crashed: {exc}",
+                f"M{n} crashed outside @safe_extract: {reason_text}",
                 extra={"context": {
                     "metric_id": f"M{n}",
                     "error_type": type(exc).__name__,
-                    "traceback": traceback.format_exc(),
+                    "traceback": tb_text,
                 }},
             )
+            try:
+                save_json(
+                    data_dir / f"metric_{n}.json",
+                    {
+                        "metric_id": f"M{n}",
+                        "status": "error",
+                        "confidence": "Insufficient signal",
+                        "reason": reason_text,
+                        "error_type": type(exc).__name__,
+                        "traceback": tb_text,
+                    },
+                )
+            except Exception as save_exc:  # noqa: BLE001
+                logger.error(
+                    f"M{n} crash envelope save also failed: {save_exc}",
+                    extra={"context": {"metric_id": f"M{n}"}},
+                )
             crash = True
 
-    if crash:
+    # Either the orchestrator caught crashes directly above or @safe_extract
+    # converted them to error envelopes and populated CRASH_MARKERS. Both
+    # conditions promote the exit code to 1 per AAP §0.5.5.
+    if crash or CRASH_MARKERS:
         logger.error(
             "extract_metrics.py finished with at least one crash",
-            extra={"context": {"run_id": run_id, "targets": targets}},
+            extra={"context": {"run_id": run_id, "targets": targets,
+                               "crashed_metrics": sorted(CRASH_MARKERS)}},
         )
         return 1
 

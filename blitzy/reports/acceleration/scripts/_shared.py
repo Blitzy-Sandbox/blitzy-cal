@@ -572,6 +572,66 @@ def git_log(args: list[str] | tuple[str, ...] | Iterable[str],
     return git_run(["log"] + list(args), repo_root=repo_root, allow_failure=allow_failure)
 
 
+def git_is_ancestor(ancestor_sha: str, descendant_sha: str,
+                    repo_root: str | Path = ".",
+                    timeout: int = 30) -> bool:
+    """Return True if ``ancestor_sha`` is an ancestor of ``descendant_sha``.
+
+    Wraps ``git merge-base --is-ancestor <ancestor> <descendant>`` while
+    enforcing the same read-only allowlist, command logging, and timeout
+    conventions as :func:`git_run`. The git command exits 0 when the
+    ancestor relationship holds, 1 when it does not, and a different
+    non-zero code on actual error; this helper distinguishes the three
+    cases and returns False (not raise) for both "not an ancestor" and
+    "argument not found in repo" so callers can treat absence symmetrically.
+
+    This is the supported entry point for M8 (Problem Records) revert
+    attribution and any other read-only ancestry check; M8 must NOT call
+    ``subprocess.run`` directly with ``git merge-base --is-ancestor`` since
+    that bypasses the read-only allowlist contract and the command log.
+
+    Args:
+        ancestor_sha: The candidate ancestor commit SHA (or tag/ref).
+        descendant_sha: The descendant commit SHA (or tag/ref).
+        repo_root: Working directory for the subprocess.
+        timeout: Subprocess timeout in seconds.
+
+    Returns:
+        True when the ancestry relationship holds; False on exit code 1
+        ("not an ancestor"), on timeout, or on missing/invalid refs.
+
+    Raises:
+        ValueError: ``merge-base`` is unexpectedly removed from the
+            allowlist (defensive invariant for future maintainers).
+        FileNotFoundError: git not installed / not on PATH.
+    """
+    # Defensive: merge-base MUST be in the allowlist for this helper to
+    # function. Failing loudly on accidental removal preserves the
+    # security guarantee that all git invocations are read-only-checked.
+    if "merge-base" not in GIT_READONLY_SUBCOMMANDS:
+        raise ValueError(
+            "git_is_ancestor requires 'merge-base' in the read-only allowlist"
+        )
+    cmd = ["git", "merge-base", "--is-ancestor", ancestor_sha, descendant_sha]
+    command_log_append("git", " ".join(cmd))
+    try:
+        result = subprocess.run(
+            cmd, cwd=str(repo_root), check=False,
+            capture_output=True, timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        # Timeouts on ancestry checks indicate a problem with the
+        # repository state; treat them symmetrically with "not an
+        # ancestor" so M8 can tally the revert as unreleased and the
+        # run continues without crashing.
+        return False
+    except FileNotFoundError:
+        # git binary missing — propagate so the harness fails loudly
+        # rather than silently mis-reporting every ancestry check.
+        raise
+    return result.returncode == 0
+
+
 # ---------------------------------------------------------------------------
 # Section 13 — GitHub REST API Client (cache-by-default, Retry-After aware)
 # ---------------------------------------------------------------------------
@@ -651,7 +711,21 @@ def github_api_get(endpoint: str,
     """
     logger = structured_logger(phase="github_api")
 
-    if endpoint.startswith(("http://", "https://")):
+    # HTTPS-only enforcement: reject http:// absolute URLs to prevent
+    # accidental downgrade of GitHub API traffic to cleartext. This is
+    # a defense-in-depth measure — the GITHUB_API_BASE is https:// so
+    # relative endpoints are always safe, but absolute URLs (typically
+    # next-page Link headers) MUST also be https://.
+    if endpoint.startswith("http://"):
+        logger.error(
+            f"Rejected insecure HTTP endpoint: {endpoint!r}",
+            extra={"context": {"endpoint": endpoint}},
+        )
+        raise ValueError(
+            f"github_api_get rejects insecure HTTP endpoints: {endpoint!r}. "
+            "All GitHub API calls must use HTTPS."
+        )
+    if endpoint.startswith("https://"):
         url = endpoint
     elif endpoint.startswith("/"):
         url = GITHUB_API_BASE + endpoint
@@ -838,18 +912,32 @@ def save_json(path: Path | str, data: Any, indent: int = 2) -> None:
             fh.flush()
             try:
                 os.fsync(fh.fileno())
-            except OSError:
+            except OSError as fsync_exc:
                 # fsync may fail on some FS (e.g., tmpfs); the atomic replace
-                # still provides crash-consistency for most cases.
-                pass
+                # still provides crash-consistency for most cases. Log the
+                # failure at debug level so an operator who is chasing a
+                # crash-consistency issue can see that fsync was skipped on
+                # this filesystem, but do not crash the run.
+                logging.getLogger(__name__).debug(
+                    "save_json: fsync skipped (filesystem unsupported): %s",
+                    fsync_exc,
+                )
         tmp_path.replace(path)
     except Exception:
-        # Best-effort cleanup; never propagate cleanup failures.
+        # Best-effort cleanup; never propagate cleanup failures because
+        # the originating exception is the actionable one for the caller.
         try:
             if tmp_path.exists():
                 tmp_path.unlink()
-        except OSError:
-            pass
+        except OSError as cleanup_exc:
+            # Surface cleanup failures in the debug stream — the temp file
+            # will remain on disk until the next harness run, but the
+            # caller still gets the originating exception so they can
+            # diagnose the actual save failure.
+            logging.getLogger(__name__).debug(
+                "save_json: temp-file cleanup failed for %s: %s",
+                tmp_path, cleanup_exc,
+            )
         raise
     command_log_append("write", str(path))
 
@@ -962,6 +1050,126 @@ def safe_get(d: Any, *keys: Any, default: Any = None) -> Any:
         else:
             return default
     return cur if cur is not None else default
+
+
+# ---------------------------------------------------------------------------
+# Section 17b — Cross-Surface Formatting Policy (Rule 4 — Internal Consistency)
+# ---------------------------------------------------------------------------
+# The shared formatters below are the SINGLE canonical implementation used by
+# both ``build_report.py`` (Markdown surfaces: acceleration-report.md and
+# dashboard.md) and ``build_presentation.py`` (HTML surface:
+# executive-presentation.html). Any metric value that needs cross-surface
+# rendering MUST flow through one of these helpers so the same input value
+# produces byte-identical output in every surface.
+#
+# Review Finding 2 (MAJOR — Rule 4 / Cross-Surface Consistency) called out
+# that ``format_duration_seconds`` was previously implemented only in the
+# deck renderer, so a metric with ``unit == "seconds"`` rendered as
+# human-readable in the deck (``4.5d``) but as a raw second count in the
+# Markdown report (``386675``). The fix is to colocate the formatter here
+# and require both renderers to call it. Renderer-local formatters that
+# wrap this helper are permitted (e.g., to add HTML escaping in the deck)
+# but they MUST delegate the numeric → string conversion to
+# ``format_duration_seconds`` so the human-readable scaling is identical
+# across surfaces.
+#
+# Adding new shared formatters: when a new metric introduces a new unit
+# (e.g., bytes, kilobytes), add the canonical formatter here, document
+# the cross-surface contract in this section's header comment, and
+# import it from both renderers. NEVER duplicate a value-formatting
+# routine across the two renderers — that path created Finding 2.
+
+
+def format_duration_seconds(value: Any) -> str:
+    """Convert a raw second count to a human-readable duration string.
+
+    Canonical cross-surface formatter for durations measured in seconds
+    (M4 Flow Active, M7 Flow Time). The output is identical for the
+    Markdown report and the HTML deck, satisfying AAP §0.7.2 Rule 4
+    (Internal Consistency).
+
+    Insufficient signal handling is left to the caller because the
+    metric's ``status`` field is checked at the substitution layer; this
+    helper assumes ``value`` is either ``None`` or a numeric duration
+    in seconds. Renderer-local helpers SHOULD wrap this function rather
+    than re-implement the scaling logic.
+
+    Args:
+        value: A duration in seconds. May be ``None`` (returns "N/A"),
+            ``int``, ``float``, ``bool`` (returns "N/A"), a string, or
+            ``NaN`` (returns "N/A"). Negative values are surfaced
+            explicitly as a raw second count so they are visible as
+            anomalies.
+
+    Returns:
+        A short human-readable string. Examples:
+
+            None     → "N/A"
+            45       → "45s"
+            540      → "9.0m"
+            9072     → "2.5h"
+            54790    → "15.2h"
+            172800   → "2.0d"
+            386675   → "4.5d"
+
+    Note:
+        This helper does NOT HTML-escape its output. The deck renderer
+        is responsible for HTML escaping; the Markdown renderer does
+        not require it because the output contains no Markdown control
+        characters that need escaping.
+    """
+    if value is None:
+        return "N/A"
+    if isinstance(value, bool):
+        # bool subclasses int — guard against accidental True/False
+        # arithmetic.
+        return "N/A"
+    if not isinstance(value, (int, float)):
+        # Strings or other types are surfaced verbatim; the deck
+        # renderer adds HTML escaping in its wrapper.
+        return str(value)
+    if value != value:  # NaN
+        return "N/A"
+    seconds = float(value)
+    if seconds < 0:
+        # Negative durations are conceptually invalid; surface
+        # explicitly as a raw second count so the anomaly is visible.
+        return f"{seconds:.0f}s"
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    minutes = seconds / 60.0
+    if minutes < 60:
+        return f"{minutes:.1f}m"
+    hours = minutes / 60.0
+    # Threshold at 24 hours so multi-day PR cycles render as days. The
+    # 24h boundary aligns with the deck's pre-share rendering policy
+    # ("15.2h" for ~half-day spans; "4.5d" for multi-day spans).
+    if hours < 24:
+        return f"{hours:.1f}h"
+    days = hours / 24.0
+    return f"{days:.1f}d"
+
+
+def is_duration_seconds_metric(metric_data: Any) -> bool:
+    """Return True when the metric's ``unit`` field indicates seconds.
+
+    Renderers use this to decide whether to route a numeric value
+    through ``format_duration_seconds`` instead of the generic numeric
+    formatter. The check is intentionally narrow (exact-match on the
+    literal ``"seconds"``) so a future migration to ``"ms"``,
+    ``"hours"``, or a structured unit object does not silently change
+    behavior.
+
+    Args:
+        metric_data: A loaded metric JSON dict (one of the values from
+            ``load_all_metrics``). Non-dict inputs return False.
+
+    Returns:
+        True iff ``metric_data["unit"] == "seconds"``.
+    """
+    if not isinstance(metric_data, dict):
+        return False
+    return metric_data.get("unit") == "seconds"
 
 
 # ---------------------------------------------------------------------------

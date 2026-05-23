@@ -2,6 +2,7 @@
   "metric_id": "M3",
   "status": "ok",
   "confidence": "High",
+  "confidence_inherited_from": "M2",
   "source": "derived_from_M2_per_window",
   "baseline": null,
   "ramp_up": null,

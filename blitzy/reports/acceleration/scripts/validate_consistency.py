@@ -205,11 +205,19 @@ metrics (M4, M7) use the same ``_n`` field names for PR/data-point counts,
 which are NOT cross-checked against windows.json."""
 
 
-COUNT_BASED_PER_ACTOR_METRICS: frozenset[str] = frozenset({"M2", "M10"})
+COUNT_BASED_PER_ACTOR_METRICS: frozenset[str] = frozenset({"M2"})
 """Per-actor metrics whose per-window values are COUNTS — sums of
 per-actor counts should equal the overall total within ACTOR_SUM_TOLERANCE.
 M4 and M5 (medians) cannot be reassembled by summing actor medians;
-only a min/max range check applies."""
+only a min/max range check applies.
+
+M10 is intentionally excluded from this set because M10 sub-counts mix
+actor-attributable signals (force_pushes, label_exceptions,
+failing_required_ci) with non-attributable signals (admin_overrides
+from the audit log, protection_modifications). A naive sum-equals-total
+check would produce false failures when admin actors do not appear in
+the PR-author set. M10's per-actor validation is implemented separately
+in _check_m10_attributable_sums and _check_m10_total_reconciliation."""
 
 
 PHASES_AFTER_INFLECTION: tuple[str, ...] = ("ramp_up", "steady_state", "post_intro")
@@ -484,7 +492,12 @@ def validate_multiplier_derivation(metrics: dict[str, dict[str, Any]]) -> list[s
     for metric_id, record in metrics.items():
         if record.get("status") == "insufficient_signal":
             continue
-        if metric_id in DISTRIBUTION_METRICS or metric_id == "M8":
+        # Distribution metrics (M6) carry per-category shares rather than
+        # a single phase scalar, so the after/before ratio is not defined.
+        # M8 is NO LONGER skipped — Checkpoint 2 requires M8 to emit the
+        # standard phase scalars and a multiplier; the validation logic
+        # treats it as a lower-is-better metric like any other count/rate.
+        if metric_id in DISTRIBUTION_METRICS:
             continue
 
         stored = record.get("multiplier")
@@ -621,11 +634,106 @@ def validate_per_actor_sums(metrics: dict[str, dict[str, Any]]) -> list[str]:
 
         if metric_id in DISTRIBUTION_METRICS:
             errors.extend(_check_distribution_actor_sums(metric_id, per_actor))
+        elif metric_id == "M10":
+            # M10 mixes attributable bypass classes (force-pushes, label
+            # exceptions, failing-required-CI merges) with non-
+            # attributable classes (admin overrides, protection
+            # modifications). The per_actor field on M10 carries ALL
+            # bypass attributions, but admin/protection actor names come
+            # from the audit log and may not appear in any PR-author set,
+            # so summing them against the overall phase total produces
+            # spurious mismatches.
+            #
+            # Strategy:
+            #   1. Validate per_actor_attributable (attributable subset
+            #      only) against the *attributable* phase totals derived
+            #      from sub_counts.
+            #   2. Validate the non-attributable totals (admin overrides
+            #      and protection mods) reconcile against the overall
+            #      phase totals.
+            errors.extend(_check_m10_attributable_sums(metric_id, record))
+            errors.extend(_check_m10_total_reconciliation(metric_id, record))
         elif metric_id in COUNT_BASED_PER_ACTOR_METRICS:
             errors.extend(_check_count_actor_sums(metric_id, record, per_actor))
         else:
             errors.extend(_check_median_actor_range(metric_id, record, per_actor))
 
+    return errors
+
+
+def _check_m10_attributable_sums(metric_id: str,
+                                 record: dict[str, Any]) -> list[str]:
+    """Validate M10 per-actor attributable cells against attributable totals.
+
+    The M10 envelope (post Checkpoint 2) reports:
+      - per_actor: all bypass attributions (including audit-log actor
+        names that may not match PR authors).
+      - per_actor_attributable: per-actor counts restricted to the
+        three attributable sub-count classes (force_pushes,
+        label_exceptions, failing_required_ci).
+      - sub_counts: roll-up totals for all five bypass classes.
+
+    This check reconciles per_actor_attributable against
+    (force_pushes + label_exceptions + failing_required_ci) per phase.
+    The non-attributable subset (admin_overrides, protection_mods) is
+    validated separately by _check_m10_total_reconciliation.
+    """
+    errors: list[str] = []
+    per_actor_attributable = record.get("per_actor_attributable") or {}
+    if not isinstance(per_actor_attributable, dict):
+        # Backward-compat: envelopes from before Checkpoint 2 may not
+        # carry this field. Skip validation rather than fail since the
+        # absence is documented in the field's introduction.
+        return errors
+    # Sub-counts are roll-ups across all phases; M10 does not currently
+    # emit per-phase sub-counts, so we accept the actor-sum > 0 check
+    # as the contract. Total attributable cap from sub_counts:
+    sub_counts = record.get("sub_counts") or {}
+    if not isinstance(sub_counts, dict):
+        return errors
+    attributable_total = sum(
+        int(sub_counts.get(k, 0) or 0)
+        for k in ("force_pushes", "label_exceptions", "failing_required_ci")
+    )
+    actor_sum_total = 0
+    for phase_values in per_actor_attributable.values():
+        if not isinstance(phase_values, dict):
+            continue
+        for v in phase_values.values():
+            f = _to_float(v)
+            if f is not None:
+                actor_sum_total += int(f)
+    if attributable_total > 0 and actor_sum_total > attributable_total:
+        errors.append(
+            f"{metric_id} per_actor_attributable sum ({actor_sum_total}) "
+            f"exceeds attributable sub-count total ({attributable_total}); "
+            "an attributable bypass was double-counted across actors"
+        )
+    return errors
+
+
+def _check_m10_total_reconciliation(metric_id: str,
+                                    record: dict[str, Any]) -> list[str]:
+    """Validate that M10 sub-count totals reconcile against per_window totals.
+
+    Verifies that ``sum(per_window[wid].total for all wid) == sum of all
+    five sub-counts``. A mismatch indicates either a double-count in
+    sub-counts or a missing window entry.
+    """
+    errors: list[str] = []
+    sub_counts = record.get("sub_counts") or {}
+    per_window = record.get("per_window") or {}
+    if not isinstance(sub_counts, dict) or not isinstance(per_window, dict):
+        return errors
+    sub_total = sum(int(v or 0) for v in sub_counts.values()
+                    if isinstance(v, (int, float)) and not isinstance(v, bool))
+    window_total = sum(int(v or 0) for v in per_window.values()
+                       if isinstance(v, (int, float)) and not isinstance(v, bool))
+    if sub_total != window_total and (sub_total > 0 or window_total > 0):
+        errors.append(
+            f"{metric_id} sub-count total ({sub_total}) does not match "
+            f"per_window total sum ({window_total}); reconciliation failed"
+        )
     return errors
 
 
@@ -832,10 +940,16 @@ def validate_window_counts(metrics: dict[str, dict[str, Any]],
     windows_path = data_dir / "windows.json"
 
     if not windows_path.is_file():
-        # Not a hard error — the windows file may be generated later.
+        # Checkpoint 2 requires this to be a HARD failure mapped to exit
+        # code 2 (missing required input). Window-count consistency is
+        # mandatory for the build gate per Rule 4; running
+        # validate_consistency.py without windows.json indicates that
+        # generate_windows.py was not invoked, so we surface the missing
+        # input as an error rather than a warning.
         return [
-            f"window_counts: windows.json not found at {windows_path} "
-            "(non-fatal — window cross-check skipped)"
+            f"MISSING_REQUIRED_INPUT: windows.json not found at {windows_path}; "
+            "run generate_windows.py before validate_consistency.py "
+            "(exit code 2 — missing required input)"
         ]
 
     try:
@@ -1204,6 +1318,15 @@ def validate(args: argparse.Namespace) -> int:
         "sample_sizes": validate_sample_sizes(metrics),
     }
 
+    # Detect missing required inputs flagged by individual validators.
+    # Checkpoint 2 requires missing-input conditions (notably missing
+    # windows.json) to map to exit code 2 rather than the generic
+    # consistency-failure exit code 1.
+    missing_input_detected = any(
+        any(err.startswith("MISSING_REQUIRED_INPUT") for err in errs)
+        for errs in check_results.values()
+    )
+
     # Insufficient-signal records (informational, not errors).
     insufficient = report_insufficient_signal(metrics)
     for entry in insufficient:
@@ -1239,16 +1362,27 @@ def validate(args: argparse.Namespace) -> int:
     )
 
     if total_errors > 0:
+        # Exit code routing per Checkpoint 2 specification:
+        #   * exit 2 — missing required input (e.g., windows.json absent);
+        #     this is a pipeline-gatekeeping signal that the run cannot
+        #     proceed because mandatory provenance is unavailable.
+        #   * exit 1 — general consistency validation failure (the
+        #     metric files exist and parse, but the cross-section /
+        #     per-actor / multiplier / window-count checks identify
+        #     discrepancies that must be resolved before rendering).
+        exit_code = 2 if missing_input_detected else 1
         logger.error(
             f"Consistency validation FAILED with {total_errors} error(s)",
             extra={"context": {
                 "total_errors": total_errors,
+                "exit_code": exit_code,
+                "missing_input_detected": missing_input_detected,
                 "check_summary": {
                     name: len(errs) for name, errs in check_results.items()
                 },
             }},
         )
-        return 1
+        return exit_code
 
     logger.info(
         "Consistency validation PASSED — all checks succeeded",

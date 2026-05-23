@@ -4,6 +4,26 @@
   "confidence": "Low",
   "source": "git_log_reverts + releases_none",
   "mean_per_release": 0.0,
+  "baseline": 0.0,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 0.0,
+  "after": 0.0,
+  "multiplier": null,
+  "direction": "lower-is-better",
+  "phase_attributed_counts": {},
+  "phase_unattributed_counts": {
+    "baseline": 184
+  },
+  "phase_revert_of_revert_counts": {
+    "baseline": 11
+  },
+  "phase_window_counts": {
+    "baseline": 129,
+    "ramp_up": 0,
+    "steady_state": 0,
+    "post_intro": 7
+  },
   "attributed_count": 0,
   "unattributable_count": 47,
   "unreleased_count": 137,
@@ -11,7 +31,5 @@
   "total_revert_count": 195,
   "release_count": 0,
   "counts_per_release": {},
-  "multiplier": null,
-  "direction": "lower-is-better",
-  "primary_command": "git log --grep='^Revert' --pretty=format:%H|%aI|%s|%P | parse_reverts_commit_line | git merge-base --is-ancestor"
+  "primary_command": "git log --grep='^Revert' --pretty=format:%H|%aI|%s|%P | parse_reverts_commit_line | git_is_ancestor(tag, original)"
 }

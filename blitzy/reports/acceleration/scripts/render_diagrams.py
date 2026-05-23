@@ -23,7 +23,15 @@ Two validation strategies, in preference order:
 Exit codes:
   * 0 — all diagrams valid (or CLI unavailable and regex check passed)
   * 1 — one or more diagrams have syntax errors
-  * 2 — both source files missing entirely
+  * 2 — at least one requested source file is missing OR a requested
+        source file is present but contains zero Mermaid blocks
+        (the Visual Architecture Documentation rule requires that
+        every requested surface carry at least one diagram). Review
+        Finding 1 (MAJOR — Visual Architecture Rule): previously
+        exit 2 was only returned when BOTH files were missing; now
+        the absence of either requested surface (and per-surface
+        zero-block) blocks the pipeline. Use ``--allow-missing-source``
+        or ``--allow-zero-blocks`` to opt out for dry runs only.
 
 Constraints (AAP §0.7.3):
   * Read-only on analyzed repository and on the report/deck files
@@ -76,11 +84,52 @@ MARKDOWN_MERMAID_RE: re.Pattern[str] = re.compile(
 """Matches fenced ```mermaid ... ``` blocks; group 1 captures the source."""
 
 HTML_MERMAID_RE: re.Pattern[str] = re.compile(
-    r'<pre\s+class=["\']mermaid["\']\s*>(.*?)</pre>',
+    # The regex matches any <pre> element whose attribute list contains a
+    # ``class`` attribute that, in turn, includes ``mermaid`` as a
+    # whitespace-delimited token. This robustly accepts every legitimate
+    # variant a templating system might emit:
+    #
+    #   <pre class="mermaid">                  (canonical)
+    #   <pre class='mermaid'>                  (single quotes)
+    #   <pre class="mermaid diagram-block">    (additional classes)
+    #   <pre class="diagram-block mermaid">    (mermaid not first)
+    #   <pre id="d1" class="mermaid">          (attribute before class)
+    #   <pre  class="mermaid"  >               (extra whitespace)
+    #
+    # The previous regex required exactly ``class="mermaid"`` and missed
+    # all four variants. Review Finding 3 (MINOR — Robustness).
+    #
+    # Construction notes:
+    #   - ``<pre\b`` matches the opening tag (\b prevents matching
+    #     ``<presentation``).
+    #   - ``[^>]*?`` consumes any preceding attributes lazily.
+    #   - ``class=(["'])([^"']*)\1`` captures the class attribute value
+    #     into group(2) using a back-reference so the opening and
+    #     closing quotes match.
+    #   - ``[^>]*>`` consumes any attributes after class up to the
+    #     closing ``>`` of the opening tag.
+    #   - ``(?P<body>.*?)`` is the named group containing the Mermaid
+    #     source between the tags.
+    #
+    # An additional Python-level membership test in
+    # ``extract_mermaid_blocks_from_html`` checks that the class value
+    # contains ``mermaid`` as a whitespace-delimited token (matching
+    # the HTML5 class-token semantics that browsers use). This avoids
+    # false positives on classes like ``mermaid-disabled``.
+    r'<pre\b[^>]*?\bclass=(["\'])([^"\']*)\1[^>]*>(?P<body>.*?)</pre>',
     re.DOTALL | re.IGNORECASE,
 )
-"""Matches ``<pre class="mermaid">...</pre>`` blocks (single or double quotes,
-case-insensitive on the tag name); group 1 captures the source."""
+"""Matches ``<pre ... class="mermaid" ...>...</pre>`` blocks.
+
+Robust against single/double quotes, additional classes on the
+``class`` attribute, and attributes appearing before or after the
+``class`` attribute. The class attribute value is captured in group 2;
+the Mermaid source is captured in the named ``body`` group. Callers
+MUST verify that the class value contains ``mermaid`` as a
+whitespace-delimited token (see ``extract_mermaid_blocks_from_html``)
+because the regex itself is intentionally permissive on the class
+value to accept multi-class declarations like ``class="mermaid foo"``.
+"""
 
 VALID_MERMAID_DIRECTIVES: tuple[str, ...] = (
     "graph",
@@ -104,6 +153,35 @@ VALID_MERMAID_DIRECTIVES: tuple[str, ...] = (
 """Recognized Mermaid diagram-type opening keywords. A valid block must begin
 (after stripping any leading ``%%{init: ... }%%`` config directive and
 blank/comment lines) with one of these tokens."""
+
+
+# === Per-surface minimum Mermaid block counts ===============================
+# Review Finding 2 (MAJOR — Visual Architecture Rule): a requested source
+# file that exists but contains zero Mermaid blocks must NOT pass
+# validation. The minimums below codify the AAP-mandated diagram coverage
+# per surface so that a future content edit that strips diagrams is caught
+# at validation time. Set to 1 by default; the Markdown report and the
+# HTML deck are validated against this floor independently. The Markdown
+# report's actual diagram count is also enforced separately by
+# ``build_report.py``'s ``MIN_MERMAID_DIAGRAMS`` constant (currently 16);
+# this script's floor is a coarser per-surface presence check.
+
+MIN_MERMAID_BLOCKS_MARKDOWN: int = 1
+"""Minimum count of Mermaid blocks expected in the Markdown report surface.
+
+A render with fewer blocks fails the per-surface presence check and
+returns exit code 2 (Visual Architecture Documentation rule). The
+floor is intentionally lenient (1) so this script remains an
+independent pre-flight check; the Markdown report's full diagram
+inventory (16+ blocks) is enforced by ``build_report.py`` directly."""
+
+MIN_MERMAID_BLOCKS_HTML: int = 1
+"""Minimum count of Mermaid blocks expected in the HTML deck surface.
+
+A deck with zero blocks fails the per-surface presence check; reveal.js
+without at least one Mermaid diagram does not satisfy the executive
+presentation rule's "every slide has ≥1 non-text visual element"
+constraint."""
 
 
 # === Private regex helpers =================================================
@@ -199,20 +277,40 @@ def extract_mermaid_blocks_from_markdown(text: str) -> list[tuple[int, str]]:
 
 
 def extract_mermaid_blocks_from_html(text: str) -> list[tuple[int, str]]:
-    """Extract every ``<pre class="mermaid">...</pre>`` block from HTML text.
+    """Extract every ``<pre ... class="mermaid" ...>...</pre>`` block.
+
+    Robust against HTML class-attribute variants. Review Finding 3
+    (MINOR — Robustness) called out that the previous regex required
+    exactly ``<pre class="mermaid">`` and missed every legitimate
+    variant. ``HTML_MERMAID_RE`` now accepts any ``<pre>`` element with
+    a ``class`` attribute that contains ``mermaid`` as a whitespace-
+    delimited token; this Python-level check enforces HTML5 class-token
+    semantics so multi-class declarations like ``class="mermaid foo"``
+    are detected while ``class="mermaid-disabled"`` is correctly
+    excluded.
 
     Args:
         text: Full HTML document source.
 
     Returns:
-        A list of ``(line_number, mermaid_source)`` tuples in document order.
-        ``line_number`` is the 1-indexed line at which the opening ``<pre>``
-        tag begins; ``mermaid_source`` is the inner content stripped.
+        A list of ``(line_number, mermaid_source)`` tuples in document
+        order. ``line_number`` is the 1-indexed line at which the
+        opening ``<pre>`` tag begins; ``mermaid_source`` is the inner
+        content stripped.
     """
     blocks: list[tuple[int, str]] = []
     for match in HTML_MERMAID_RE.finditer(text):
+        # The regex captures the class attribute value in group(2) and
+        # the Mermaid source in the named "body" group. We enforce a
+        # whitespace-delimited membership check on the class value to
+        # avoid matching class names that merely contain the substring
+        # ``mermaid`` (e.g., ``mermaid-disabled`` or ``not-mermaid``).
+        class_value = match.group(2) or ""
+        class_tokens = class_value.split()
+        if "mermaid" not in class_tokens:
+            continue
         line_number = text[: match.start()].count("\n") + 1
-        body = match.group(1).strip()
+        body = match.group("body").strip()
         blocks.append((line_number, body))
     return blocks
 
@@ -635,6 +733,35 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip Mermaid CLI detection; use regex fallback exclusively.",
     )
+    parser.add_argument(
+        "--skip-report",
+        action="store_true",
+        help=("Do not validate the Markdown report surface. Use only when "
+              "intentionally validating the deck in isolation; the AAP "
+              "Visual Architecture rule normally requires both surfaces."),
+    )
+    parser.add_argument(
+        "--skip-deck",
+        action="store_true",
+        help=("Do not validate the HTML deck surface. Use only when "
+              "intentionally validating the report in isolation; the AAP "
+              "Visual Architecture rule normally requires both surfaces."),
+    )
+    parser.add_argument(
+        "--allow-missing-source",
+        action="store_true",
+        help=("Downgrade a missing requested source file from an exit-2 "
+              "blocker to a warning. For dry runs only; production builds "
+              "MUST validate both surfaces."),
+    )
+    parser.add_argument(
+        "--allow-zero-blocks",
+        action="store_true",
+        help=("Downgrade a requested surface with zero Mermaid blocks "
+              "from an exit-2 blocker to a warning. For dry runs only; "
+              "production builds MUST contain the diagrams the AAP "
+              "Visual Architecture rule requires per surface."),
+    )
     return parser
 
 
@@ -644,12 +771,25 @@ def main(argv: list[str] | None = None) -> int:
     Validates Mermaid blocks in the report and deck, logs every result,
     and returns an exit code reflecting the overall verdict.
 
+    Exit code semantics (Review Finding 1 / Finding 2):
+      * 0 — every requested surface exists, has ≥ the per-surface
+            Mermaid block floor (``MIN_MERMAID_BLOCKS_MARKDOWN`` /
+            ``MIN_MERMAID_BLOCKS_HTML``), and every block passed syntax
+            validation.
+      * 1 — at least one block has a syntax error.
+      * 2 — at least one requested source file is missing OR a present
+            file contains fewer Mermaid blocks than the per-surface
+            floor. Previously this code path only fired when BOTH files
+            were missing; the AAP §0.7.1 Visual Architecture rule
+            requires that every requested surface carry the diagrams
+            it claims to carry.
+
     Args:
         argv: Optional argv tail (excluding program name). When ``None``,
             ``sys.argv[1:]`` is used.
 
     Returns:
-        Exit code: 0 success, 1 errors found, 2 both files missing.
+        Exit code per the table above.
     """
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
@@ -669,7 +809,10 @@ def main(argv: list[str] | None = None) -> int:
                            "env_run_id_present": bool(env_run_id),
                            "report": str(args.report),
                            "deck": str(args.deck),
-                           "no_cli": bool(args.no_cli)}},
+                           "no_cli": bool(args.no_cli),
+                           "skip_report": bool(args.skip_report),
+                           "skip_deck": bool(args.skip_deck),
+                           "allow_zero_blocks": bool(args.allow_zero_blocks)}},
     )
 
     use_cli = (not args.no_cli) and detect_cli_availability()
@@ -693,46 +836,118 @@ def main(argv: list[str] | None = None) -> int:
             extra={"context": {"cli_available": True}},
         )
 
-    total_errors = 0
-    total_blocks = 0
-    sources_present = 0
+    # Per-surface validation accumulator. Each entry stores:
+    #   - requested: was this surface part of the requested validation set?
+    #   - present:   does the file exist on disk?
+    #   - blocks:    count of Mermaid blocks discovered (0 if absent)
+    #   - errors:    count of syntax errors detected (0 if absent)
+    #   - min:       per-surface block floor
+    #   - status:    one of "ok", "missing_file", "below_min_blocks", "errors"
+    per_surface: dict[str, dict] = {
+        "report": {
+            "requested": not args.skip_report,
+            "path": args.report,
+            "kind": "markdown",
+            "min": MIN_MERMAID_BLOCKS_MARKDOWN,
+            "present": False,
+            "blocks": 0,
+            "errors": 0,
+            "status": "skipped",
+        },
+        "deck": {
+            "requested": not args.skip_deck,
+            "path": args.deck,
+            "kind": "html",
+            "min": MIN_MERMAID_BLOCKS_HTML,
+            "present": False,
+            "blocks": 0,
+            "errors": 0,
+            "status": "skipped",
+        },
+    }
 
-    if args.report.is_file():
-        sources_present += 1
-        e, b = validate_file(args.report, "markdown", run_id, use_cli)
-        total_errors += e
-        total_blocks += b
-    else:
-        logger.warning(
-            f"Report file not found: {args.report}",
-            extra={"context": {"missing": str(args.report), "kind": "markdown"}},
-        )
+    for surface_name, surface in per_surface.items():
+        if not surface["requested"]:
+            logger.info(
+                f"Skipping {surface_name} ({surface['path']}) per --skip flag",
+                extra={"context": {"surface": surface_name,
+                                   "path": str(surface["path"])}},
+            )
+            continue
+        path: Path = surface["path"]
+        kind: str = surface["kind"]
+        if not path.is_file():
+            surface["status"] = "missing_file"
+            logger.error(
+                f"{surface_name} file not found: {path}",
+                extra={"context": {"surface": surface_name,
+                                   "missing": str(path),
+                                   "kind": kind}},
+            )
+            continue
+        surface["present"] = True
+        errors, blocks = validate_file(path, kind, run_id, use_cli)
+        surface["blocks"] = blocks
+        surface["errors"] = errors
+        if blocks < surface["min"] and not args.allow_zero_blocks:
+            surface["status"] = "below_min_blocks"
+            logger.error(
+                f"{surface_name} contains {blocks} Mermaid block(s); "
+                f"per-surface minimum is {surface['min']}",
+                extra={"context": {"surface": surface_name,
+                                   "path": str(path),
+                                   "blocks": blocks,
+                                   "min": surface["min"]}},
+            )
+        elif errors > 0:
+            surface["status"] = "errors"
+        else:
+            surface["status"] = "ok"
 
-    if args.deck.is_file():
-        sources_present += 1
-        e, b = validate_file(args.deck, "html", run_id, use_cli)
-        total_errors += e
-        total_blocks += b
-    else:
-        logger.warning(
-            f"Deck file not found: {args.deck}",
-            extra={"context": {"missing": str(args.deck), "kind": "html"}},
-        )
+    total_blocks = sum(s["blocks"] for s in per_surface.values())
+    total_errors = sum(s["errors"] for s in per_surface.values())
+    requested_surfaces = [n for n, s in per_surface.items() if s["requested"]]
+    missing_surfaces = [n for n, s in per_surface.items()
+                        if s["requested"] and s["status"] == "missing_file"]
+    below_min_surfaces = [n for n, s in per_surface.items()
+                          if s["requested"] and s["status"] == "below_min_blocks"]
 
     logger.info(
         f"render_diagrams.py complete: {total_blocks} blocks checked, "
-        f"{total_errors} errors across {sources_present} source file(s)",
+        f"{total_errors} errors across {len(requested_surfaces)} requested "
+        f"surface(s) ({', '.join(requested_surfaces)})",
         extra={"context": {"total_blocks": total_blocks,
                            "total_errors": total_errors,
-                           "sources_present": sources_present,
+                           "requested_surfaces": requested_surfaces,
+                           "missing_surfaces": missing_surfaces,
+                           "below_min_surfaces": below_min_surfaces,
+                           "per_surface": {
+                               n: {"blocks": s["blocks"],
+                                   "errors": s["errors"],
+                                   "status": s["status"]}
+                               for n, s in per_surface.items()
+                           },
                            "validator": "cli" if use_cli else "regex"}},
     )
 
-    # Exit code semantics:
-    #   2 — both source files missing entirely (nothing to validate)
-    #   1 — at least one syntax error
-    #   0 — success or CLI-absent-with-clean-regex (insufficient signal is OK)
-    if sources_present == 0:
+    # Exit code semantics (Review Finding 1 / Finding 2):
+    #
+    # * 2 — when ANY requested surface is missing on disk OR present
+    #       but contains fewer than its per-surface Mermaid block floor.
+    #       Previously this code only fired when BOTH files were
+    #       missing; the AAP Visual Architecture rule requires per-
+    #       surface diagram presence.
+    # * 1 — when at least one Mermaid block has a syntax error.
+    # * 0 — every requested surface validated cleanly.
+    #
+    # The ``--allow-missing-source`` and ``--allow-zero-blocks`` flags
+    # are dry-run escape hatches; when set, the corresponding gate
+    # downgrades from error to warning and the surface is not counted
+    # toward the exit-2 condition.
+
+    if missing_surfaces and not args.allow_missing_source:
+        return 2
+    if below_min_surfaces:  # already gated by allow_zero_blocks above
         return 2
     if total_errors > 0:
         return 1

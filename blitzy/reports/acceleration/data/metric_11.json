@@ -1,31 +1,6 @@
 {
   "metric_id": "M11",
-  "status": "ok",
-  "confidence": "Low",
-  "source": "ci_workflow_runs + git_log_skip_annotations",
-  "baseline": 88.0,
-  "ramp_up": null,
-  "steady_state": null,
-  "post_intro": 1.0,
-  "after": 1.0,
-  "multiplier": 0.011363636363636364,
-  "direction": "lower-is-better",
-  "sub_counts": {
-    "regressions": {
-      "baseline": null,
-      "ramp_up": null,
-      "steady_state": null,
-      "post_intro": null,
-      "after": null
-    },
-    "newly_skipped": {
-      "baseline": 88.0,
-      "ramp_up": null,
-      "steady_state": null,
-      "post_intro": 1.0,
-      "after": 1.0
-    }
-  },
-  "ci_runs_examined": 0,
-  "primary_command": "GET /repos/.../actions/runs (test workflows) + git log -p -- '**/*.test.{ts,tsx,js,jsx}' '**/*.spec.*' | regex SKIP_ANNOTATION_RE"
+  "status": "insufficient_signal",
+  "confidence": "Insufficient signal",
+  "reason": "CI test history unavailable — no JUnit XML or skip annotations found"
 }

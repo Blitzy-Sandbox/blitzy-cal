@@ -2,11 +2,11 @@
 
 This is the Observability dashboard for the 12-metric Development Acceleration Measurement for the `blitzy-cal` repository. Values are populated by `scripts/build_report.py` from `data/metric_*.json` at render time.
 
-> **Run ID:** `c9a76d9d-ccb5-40e1-b597-e3203042d867`
+> **Run ID:** `test_no_commands`
 > **Inflection Date:** `2026-02-25T00:24:31Z`
 > **Analysis Window:** `2021-03-10 → 2026-05-23`
 > **Phases Reported:** Baseline / Ramp-Up / Steady State (or Baseline / Post-Introduction if fewer than 90 days)
-> **Rendered At:** `2026-05-23T06:48:11.611263+00:00` (UTC)
+> **Rendered At:** `2026-05-23T09:19:56.749449+00:00` (UTC)
 
 ## KPI Summary
 
@@ -21,15 +21,15 @@ The table below lists each of the twelve metrics with its phase values, the Afte
 | 5 | Flow Efficiency | `N/A` | `N/A` | `N/A` | `N/A` | `High` | [M5](./acceleration-report.md#m5-flow-efficiency) |
 | 6 | Flow Distribution | `N/A` | `N/A` | `N/A` | `distribution_shift` | `Medium` | [M6](./acceleration-report.md#m6-flow-distribution) |
 | 7 | Flow Time | `N/A` | `N/A` | `N/A` | `N/A` | `High` | [M7](./acceleration-report.md#m7-flow-time) |
-| 8 | Problem Records in Release | `N/A` | `N/A` | `N/A` | `N/A` | `Low` | [M8](./acceleration-report.md#m8-problem-records-in-release) |
+| 8 | Problem Records in Release | `0` | `N/A` | `N/A` | `N/A` | `Low` | [M8](./acceleration-report.md#m8-problem-records-in-release) |
 | 9 | Releases | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal — no release source available (API empty, no semver tags, no CI deploys)` | `Insufficient signal` | [M9](./acceleration-report.md#m9-releases) |
 | 10 | Approved Exceptions | `0` | `N/A` | `N/A` | `N/A` | `Low` | [M10](./acceleration-report.md#m10-approved-exceptions) |
-| 11 | Escaped Defects | `88` | `N/A` | `N/A` | `0.01x` | `Low` | [M11](./acceleration-report.md#m11-escaped-defects) |
+| 11 | Escaped Defects | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal — CI test history unavailable — no JUnit XML or skip annotations found` | `Insufficient signal` | [M11](./acceleration-report.md#m11-escaped-defects) |
 | 12 | Defects Out of SLA | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal — no SLA source — neither Linear SLA field nor repository policy/runbook` | `Insufficient signal` | [M12](./acceleration-report.md#m12-defects-out-of-sla) |
 
 "Multiplier" is computed as After divided by Before where After is the mean of (Ramp-Up plus Steady State) values weighted by window count. For metrics where higher is better (M2, M3, M5, M9), greater than one indicates acceleration. For metrics where lower is better (M1, M4, M7, M8, M10, M11, M12), less than one indicates acceleration. Metric 6 is reported as a distribution shift rather than a multiplier.
 
-When a metric reports Insufficient signal, the Baseline, Ramp-Up, Steady State, and Multiplier cells render the string `Insufficient signal — <reason>`; the Confidence cell renders the same string.
+When a metric reports Insufficient signal, the Baseline, Ramp-Up, Steady State, and Multiplier cells render the string `Insufficient signal — {reason}`; the Confidence cell renders the same string. (The `{reason}` text in the previous sentence is a documentation placeholder describing the rendered cell content; it is NOT a template substitution token.)
 
 ## Confidence Distribution
 
@@ -39,16 +39,16 @@ The Mermaid pie chart below shows the count of metrics by confidence tier. Confi
 pie title Confidence Distribution — Metric Count by Tier
     "High" : 6
     "Medium" : 1
-    "Low" : 3
-    "Insufficient signal" : 2
+    "Low" : 2
+    "Insufficient signal" : 3
 ```
 
 Tier membership at the time of render:
 
 - **High:** M1, M2, M3, M4, M5, M7
 - **Medium:** M6
-- **Low:** M8, M10, M11
-- **Insufficient signal:** M9, M12
+- **Low:** M8, M10
+- **Insufficient signal:** M9, M11, M12
 
 Per Rule 3 (Confidence Transparency), Low-confidence and Insufficient-signal entries in the main report carry an explicit caveat callout. The dashboard surfaces tier counts so the at-a-glance reader can quickly identify how much of the overall picture rests on indirect or proxy data.
 
@@ -95,7 +95,7 @@ Field semantics:
 
 - `ts` — ISO 8601 UTC timestamp with microsecond precision
 - `level` — Standard `logging` levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-- `run_id` — UUIDv4 correlation ID (matches the `logs/c9a76d9d-ccb5-40e1-b597-e3203042d867/` directory name)
+- `run_id` — UUIDv4 correlation ID (matches the `logs/test_no_commands/` directory name)
 - `metric` — One of M1 through M12, or null for harness-level events
 - `phase` — Script name or pipeline phase
 - `message` — Human-readable message
@@ -103,7 +103,7 @@ Field semantics:
 
 ## Log Files per Run
 
-Each invocation of the extraction harness produces a fixed set of log files under `logs/c9a76d9d-ccb5-40e1-b597-e3203042d867/`. All files are append-only; re-running the harness with the same `BLITZY_RUN_ID` appends to the existing files.
+Each invocation of the extraction harness produces a fixed set of log files under `logs/test_no_commands/`. All files are append-only; re-running the harness with the same `BLITZY_RUN_ID` appends to the existing files.
 
 - `verify_environment.log` — environment capture
 - `derive_inflection.log` — inflection detection candidate computation

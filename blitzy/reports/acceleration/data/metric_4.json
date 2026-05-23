@@ -19,6 +19,50 @@
       "after": 54790.0
     }
   },
+  "per_pr_observations": {
+    "1": {
+      "pr_number": 1,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 15083.0
+    },
+    "2": {
+      "pr_number": 2,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 54790.0
+    },
+    "3": {
+      "pr_number": 3,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 56871.0
+    },
+    "4": {
+      "pr_number": 4,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 170189.0
+    },
+    "5": {
+      "pr_number": 5,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 9929.0
+    },
+    "6": {
+      "pr_number": 6,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 156429.0
+    },
+    "7": {
+      "pr_number": 7,
+      "phase": "post_intro",
+      "actor": "blitzy-agent",
+      "seconds": 20568.0
+    }
+  },
   "baseline_n": 0,
   "ramp_up_n": 0,
   "steady_state_n": 0,

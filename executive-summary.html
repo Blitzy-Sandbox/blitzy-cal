@@ -1115,6 +1115,20 @@ flowchart LR
   </script>
   <script>
     (function () {
+      // Capture the original Mermaid source for every diagram up-front, before
+      // any render pass runs. This is the source-of-truth for restoring a
+      // diagram that gets processed against a hidden (zero-width) parent slide
+      // and ends up with a degenerate viewBox="-8 -8 16 16" SVG. Saving
+      // synchronously here means `dataset.original` is always populated even
+      // along execution paths that bypass the `document.fonts.ready` handler
+      // below (e.g., browsers where `document.fonts.ready` is unavailable, or
+      // when fonts resolve before this IIFE finishes its synchronous body).
+      document.querySelectorAll('pre.mermaid').forEach(function (el) {
+        if (!el.dataset.original) {
+          el.dataset.original = el.textContent;
+        }
+      });
+
       function renderIconsAndDiagrams() {
         try {
           if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -1125,7 +1139,26 @@ flowchart LR
         }
         try {
           if (window.__mermaid && typeof window.__mermaid.run === 'function') {
-            // Only run on diagrams that have not yet been processed.
+            // Recovery pass: when a Mermaid diagram is processed while its
+            // parent slide is off-screen, reveal.js gives the slide zero
+            // layout width and Mermaid emits a degenerate viewBox="-8 -8 16 16"
+            // SVG. When the user later navigates onto that slide, the
+            // `.present` class is applied and the container has real layout
+            // width. Reset the `data-processed` flag for any `.present`
+            // diagram that was already processed (necessarily produced while
+            // hidden) so the subsequent `mermaid.run()` call below re-renders
+            // it against the now-visible container width.
+            document.querySelectorAll('.present .mermaid[data-processed="true"]').forEach(function (el) {
+              if (el.dataset.original) {
+                el.innerHTML = el.dataset.original;
+                el.removeAttribute('data-processed');
+              }
+            });
+            // Render any diagrams that have not yet been processed (initial
+            // pass) or that we just reset above (slidechanged pass). The
+            // `:not(...)` selector prevents idempotent slide visits from
+            // triggering needless re-renders when a diagram is already
+            // rendered correctly.
             window.__mermaid.run({ querySelector: '.mermaid:not([data-processed="true"])' });
           }
         } catch (err) {

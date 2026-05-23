@@ -1,0 +1,17 @@
+{
+  "repo_url": "https://github.com/Blitzy-Sandbox/blitzy-cal.git",
+  "git_version": "git version 2.51.0",
+  "commit_count": 16975,
+  "branch_count": 24,
+  "submodules": "none",
+  "date_range": {
+    "first": "2021-03-10T10:02:39Z",
+    "last": "2026-05-23T04:08:58Z"
+  },
+  "python_version": "3.13.7 (main, Mar  3 2026, 12:19:54) [GCC 15.2.0]",
+  "os": "Linux-6.6.122+-x86_64-with-glibc2.42",
+  "extracted_at": "2026-05-23T04:46:00.504162+00:00",
+  "run_id": "qa-verify-checkpoint-2",
+  "head_sha": "83efb405508440630e7549a04166989b3a385f89",
+  "default_branch": "main"
+}

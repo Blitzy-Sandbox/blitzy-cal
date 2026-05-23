@@ -1,0 +1,6 @@
+{
+  "metric_id": "M12",
+  "status": "insufficient_signal",
+  "confidence": "Insufficient signal",
+  "reason": "no SLA source — neither Linear SLA field nor repository policy/runbook"
+}

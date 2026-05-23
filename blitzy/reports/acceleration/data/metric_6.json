@@ -1,0 +1,46 @@
+{
+  "metric_id": "M6",
+  "status": "ok",
+  "confidence": "Medium",
+  "confidence_reason": "",
+  "source": "github_api_pulls_issues_labels",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": {
+    "risk-compliance": 0.14285714285714285,
+    "defect": 0.8571428571428571
+  },
+  "multiplier": "distribution_shift",
+  "direction": "distribution",
+  "per_actor": {
+    "blitzy-agent": {
+      "post_intro": {
+        "risk-compliance": 0.14285714285714285,
+        "defect": 0.8571428571428571
+      }
+    }
+  },
+  "unknown_rates": {
+    "baseline": 0.0,
+    "ramp_up": 0.0,
+    "steady_state": 0.0,
+    "post_intro": 0.0
+  },
+  "totals_per_phase": {
+    "baseline": 0,
+    "ramp_up": 0,
+    "steady_state": 0,
+    "post_intro": 7
+  },
+  "raw_counts_per_phase": {
+    "baseline": {},
+    "ramp_up": {},
+    "steady_state": {},
+    "post_intro": {
+      "risk-compliance": 1,
+      "defect": 6
+    }
+  },
+  "primary_command": "classify_flow_distribution per PR via label → conventional-commit prefix → keyword waterfall"
+}

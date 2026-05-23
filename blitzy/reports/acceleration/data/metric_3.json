@@ -1,0 +1,29 @@
+{
+  "metric_id": "M3",
+  "status": "ok",
+  "confidence": "High",
+  "source": "derived_from_M2_per_window",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 1.0,
+  "after": 1.0,
+  "multiplier": null,
+  "direction": "higher-is-better",
+  "phase_results": {
+    "baseline": {
+      "status": "insufficient_signal",
+      "reason": "zero mean",
+      "value": null,
+      "n": 129
+    },
+    "post_intro": {
+      "status": "ok",
+      "value": 1.0,
+      "mean": 1.0,
+      "stdev": 1.0,
+      "n": 7
+    }
+  },
+  "primary_command": "derived from M2 per-window counts (mean/stdev)"
+}

@@ -1,0 +1,10 @@
+{
+  "co_author_candidate": "2026-02-25T00:24:31Z",
+  "velocity_candidate": "2022-03-13T00:00:00Z",
+  "chosen_date": "2026-02-25T00:24:31Z",
+  "chosen_method": "co_author",
+  "divergence_days": 1445,
+  "rationale": "Candidates DISAGREE by 1445 days, exceeding the 30-day tolerance. Co-author candidate used by default per decision-log.md Row 1; divergence logged for manual review. No midpoint computed — fabrication forbidden (AAP §0.7.3).",
+  "computed_at": "2026-05-23T04:46:01.345615+00:00",
+  "run_id": "qa-verify-checkpoint-2"
+}

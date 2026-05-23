@@ -1,0 +1,25 @@
+{
+  "metric_id": "M5",
+  "status": "ok",
+  "confidence": "High",
+  "source": "derived_from_M4_M7",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 0.1416952220857309,
+  "after": 0.1416952220857309,
+  "multiplier": null,
+  "direction": "higher-is-better",
+  "per_actor": {
+    "blitzy-agent": {
+      "baseline": null,
+      "ramp_up": null,
+      "steady_state": null,
+      "post_intro": 0.1416952220857309,
+      "after": 0.1416952220857309
+    }
+  },
+  "primary_command": "derived from M4 (Flow Active) / M7 (Flow Time)",
+  "m4_confidence": "High",
+  "m7_confidence": "High"
+}

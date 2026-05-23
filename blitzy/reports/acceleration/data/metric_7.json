@@ -1,0 +1,32 @@
+{
+  "metric_id": "M7",
+  "status": "ok",
+  "confidence": "High",
+  "source": "github_api_pulls + pr_commits_api + git_log_fallback",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 386675.0,
+  "after": 386675.0,
+  "multiplier": null,
+  "direction": "lower-is-better",
+  "exclusion_rate": 0.0,
+  "excluded_count": 0,
+  "total_count": 7,
+  "in_window_count": 7,
+  "unit": "seconds",
+  "per_actor": {
+    "blitzy-agent": {
+      "baseline": null,
+      "ramp_up": null,
+      "steady_state": null,
+      "post_intro": 386675.0,
+      "after": 386675.0
+    }
+  },
+  "baseline_n": 0,
+  "ramp_up_n": 0,
+  "steady_state_n": 0,
+  "post_intro_n": 7,
+  "primary_command": "GET /repos/.../pulls/{n}/commits | head -1 by author.date; fallback: git log --format=%aI --reverse <base>..<head> | head -1"
+}

@@ -1,0 +1,28 @@
+{
+  "metric_id": "M4",
+  "status": "ok",
+  "confidence": "High",
+  "source": "github_api_pulls_reviews_commits_timeline",
+  "baseline": null,
+  "ramp_up": null,
+  "steady_state": null,
+  "post_intro": 54790.0,
+  "after": 54790.0,
+  "multiplier": null,
+  "direction": "lower-is-better",
+  "per_actor": {
+    "blitzy-agent": {
+      "baseline": null,
+      "ramp_up": null,
+      "steady_state": null,
+      "post_intro": 54790.0,
+      "after": 54790.0
+    }
+  },
+  "baseline_n": 0,
+  "ramp_up_n": 0,
+  "steady_state_n": 0,
+  "post_intro_n": 7,
+  "unit": "seconds",
+  "primary_command": "compute_flow_active_spans per PR using GET /repos/.../pulls/{n}/reviews + commits + issues/{n}/events"
+}

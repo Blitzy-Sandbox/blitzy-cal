@@ -20,9 +20,11 @@ number rendered on a slide.
 
 Validation rules (enforced; failure → non-zero exit):
 
-  * CDN versions pinned: reveal.js 5.1.0, Mermaid 11.10.0, Lucide 0.460.0
-    (validate_cdn_versions). Mermaid was upgraded from 11.4.0 to 11.10.0
-    to address the published XSS advisory; see decision-log.md.
+  * CDN versions pinned: reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0
+    (validate_cdn_versions). The Mermaid pin is anchored at 11.4.0 per
+    AAP §0.5.3/§0.5.5 and the Executive Presentation rule; see Row 26
+    of decision-log.md for the reversion record (the earlier 11.10.0
+    upgrade was reverted per QA Final Checkpoint C MAJOR Issue #1).
   * Slide count: 12-18 (target 16), enforced by ``<section>`` element count
     (validate_slide_count).
   * Every slide has ≥1 non-text visual element: Mermaid block, ``<table>``,
@@ -156,25 +158,34 @@ REQUIRED_REVEAL_VERSION: str = "5.1.0"
 """reveal.js version pinned by the user. Validated to appear as
 ``reveal.js@5.1.0`` in the rendered HTML."""
 
-REQUIRED_MERMAID_VERSION: str = "11.10.0"
+REQUIRED_MERMAID_VERSION: str = "11.4.0"
 """Mermaid version pinned by the deck.
 
-Review Finding 6 (MAJOR — Dependency Security): the previous pin
-(``11.4.0``) is affected by medium-severity XSS issues per Snyk; the
-fix landed in 11.10.0 and later. The new pin (``11.10.0``) is the
-first patched release in the 11.x series and is selected because:
+AAP §0.5.3 and §0.5.5 plus the user-specified Executive Presentation
+rule pin Mermaid at ``11.4.0`` EXACTLY. QA Final Checkpoint C MAJOR
+Issue #1 confirmed that any other version — including the previous
+``11.10.0`` upgrade attempted for an XSS advisory — violates the
+explicit "pinned CDN versions: reveal.js 5.1.0, Mermaid 11.4.0,
+Lucide 0.460.0" requirement. Per the project rules, the Agent Action
+Plan is the AUTHORITATIVE source for CDN version pins, so the
+``11.10.0`` pin has been reverted to ``11.4.0``.
 
-  * It is API-compatible with the 11.4.0 initialization and theming
-    used by the deck (``initialize({...})``, ``mermaid.run()``,
-    ``themeVariables``, ``securityLevel: 'loose'`` — all retained).
-  * It is the minimum upgrade path that resolves the published
-    advisory, so the deck does not pre-commit to features only
-    present in later 11.x point releases that the AAP has not
-    reviewed.
+  * The pin is API-compatible with the deck's initialization
+    (``initialize({...})``, ``mermaid.run()``, ``themeVariables``,
+    ``securityLevel: 'loose'`` — all retained from the prior render).
+  * The residual XSS risk in 11.4.x is acknowledged as a deferred
+    concern that the deployment environment can address via the
+    Content Security Policy ``script-src`` allowlist and the
+    `crossorigin="anonymous"` attribute already emitted on every
+    CDN tag (which permits a future maintainer to add SRI
+    ``integrity="sha384-..."`` attributes without further HTML
+    edits in an internet-enabled environment).
 
-The change is documented in ``decision-log.md`` (SRI/CDN security
-decision row) alongside the SRI hash inclusion that closes the
-remaining hardening gap surfaced by the review."""
+The reversion is documented in ``decision-log.md`` Row 26 as the
+append-only record that supersedes Row 21's upgrade decision; the
+build-time enforcement of the pin lives in
+``validate_cdn_versions()``, which fails the build on any drift
+from the AAP-pinned ``mermaid@11.4.0`` URL."""
 
 REQUIRED_LUCIDE_VERSION: str = "0.460.0"
 """Lucide version pinned by the user. Validated to appear as
@@ -310,11 +321,13 @@ PLAIN_PLACEHOLDER_RE: re.Pattern[str] = re.compile(r"<([A-Za-z0-9_.]+)>")
 #     ``slide-closing`` (validate_required_classes).
 #   * Every slide contains a non-text visual element
 #     (validate_non_text_visuals).
-#   * CDN versions appear as ``reveal.js@5.1.0``, ``mermaid@11.10.0``,
-#     ``lucide@0.460.0`` (validate_cdn_versions). Mermaid pin was raised
-#     from 11.4.0 to 11.10.0 to address the published XSS advisory; the
-#     rationale, alternatives, and compensating SRI controls are recorded
-#     in decision-log.md.
+#   * CDN versions appear as ``reveal.js@5.1.0``, ``mermaid@11.4.0``,
+#     ``lucide@0.460.0`` (validate_cdn_versions). The Mermaid pin is
+#     anchored at 11.4.0 per AAP §0.5.3/§0.5.5 and the Executive
+#     Presentation rule; the previous 11.10.0 upgrade was reverted per
+#     QA Final Checkpoint C MAJOR Issue #1. The reversion rationale and
+#     residual security treatment (CSP allowlist + future SRI hashes)
+#     are recorded in decision-log.md Row 26.
 #   * Reveal.js config: ``hash: true``, ``transition: 'slide'``,
 #     ``controlsTutorial: false``, ``width: 1920``, ``height: 1080``.
 #   * Mermaid init: ``startOnLoad: false`` and the slidechanged handler
@@ -339,9 +352,11 @@ DEFAULT_HTML_TEMPLATE: str = """\
 
     Pinned CDN versions (validated by scripts/build_presentation.py):
       - reveal.js     5.1.0   (jsdelivr)
-      - Mermaid      11.10.0  (jsdelivr) — upgraded from 11.4.0 to
-                                           address published XSS advisory
-                                           (see decision-log.md)
+      - Mermaid       11.4.0  (jsdelivr) — pinned per AAP §0.5.3/§0.5.5
+                                           and Executive Presentation
+                                           rule (see decision-log.md
+                                           Row 26 for the reversion of
+                                           the earlier 11.10.0 upgrade)
       - Lucide        0.460.0 (unpkg)
 
     Every CDN script and link tag carries crossorigin="anonymous" and
@@ -1736,12 +1751,17 @@ graph LR
   <!-- ============================================================
        External libraries — pinned versions (non-negotiable):
          - reveal.js 5.1.0   (jsdelivr)
-         - Mermaid   11.10.0 (jsdelivr) — upgraded from 11.4.0 to
-                                         address known XSS CVE; fix
-                                         landed at 11.10.0 per Snyk
-                                         advisory. See decision-log.md
-                                         (Mermaid version security row)
-                                         for rationale.
+         - Mermaid    11.4.0 (jsdelivr) — pinned per AAP §0.5.3/§0.5.5
+                                         and the Executive Presentation
+                                         rule. The earlier 11.10.0
+                                         upgrade (attempted for a Snyk
+                                         XSS advisory) was reverted per
+                                         QA Final Checkpoint C MAJOR
+                                         Issue #1; see decision-log.md
+                                         Row 26 for the reversion
+                                         rationale and the residual
+                                         security treatment (CSP
+                                         allowlist + future SRI hashes).
          - Lucide    0.460.0 (unpkg)
        Each script tag carries crossorigin="anonymous" and
        referrerpolicy="no-referrer" so that an SRI integrity attribute
@@ -1754,7 +1774,7 @@ graph LR
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.0/dist/mermaid.min.js"
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"
@@ -3165,9 +3185,10 @@ def validate_cdn_versions(html_text: str) -> list[str]:
     Searches for the literal strings ``reveal.js@<REQUIRED_REVEAL_VERSION>``,
     ``mermaid@<REQUIRED_MERMAID_VERSION>``, and
     ``lucide@<REQUIRED_LUCIDE_VERSION>``. Each must be present at least
-    once. Missing markers fail the build. The Mermaid pin currently
-    resolves to ``11.10.0``; the earlier ``11.4.0`` pin was raised to
-    address the published XSS advisory (see decision-log.md).
+    once. Missing markers fail the build. The Mermaid pin resolves to
+    ``11.4.0`` per AAP §0.5.3/§0.5.5 and the Executive Presentation
+    rule; the previous ``11.10.0`` upgrade attempt was reverted per
+    QA Final Checkpoint C MAJOR Issue #1 (see decision-log.md Row 26).
 
     Args:
         html_text: The rendered HTML.

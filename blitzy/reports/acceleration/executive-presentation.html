@@ -14,9 +14,11 @@
 
     Pinned CDN versions (validated by scripts/build_presentation.py):
       - reveal.js     5.1.0   (jsdelivr)
-      - Mermaid      11.10.0  (jsdelivr) — upgraded from 11.4.0 to
-                                           address published XSS advisory
-                                           (see decision-log.md)
+      - Mermaid       11.4.0  (jsdelivr) — pinned per AAP §0.5.3/§0.5.5
+                                           and Executive Presentation
+                                           rule (see decision-log.md
+                                           Row 26 for the reversion of
+                                           the earlier 11.10.0 upgrade)
       - Lucide        0.460.0 (unpkg)
 
     Every CDN script and link tag carries crossorigin="anonymous" and
@@ -31,7 +33,7 @@
     Slide count: 16 (target). Valid range 12-18 enforced by the renderer.
 
     Placeholder tokens of the form <M<N>.<field>>, <env.*>, <inflection.*>,
-    <phase_*>, , qa-finalA-fixes-verify-1779532737, 2026-05-23T10:38:58.813534+00:00, and
+    <phase_*>, , 4784f0b0-15af-4ceb-8fa1-a884977b6332, 2026-05-23T12:53:48.134257+00:00, and
     2021-03-08 → 2026-05-25 are substituted by scripts/build_presentation.py with
     values from data/*.json. The file remains valid HTML with tokens present;
     tokens sit inside text nodes / table cells / attribute-free positions.
@@ -1401,7 +1403,7 @@ graph LR
           <li><i data-lucide="book-open" class="lucide-icon"></i>Full reproducibility appendix included in <code>acceleration-report.md</code></li>
         </ul>
         <i data-lucide="arrow-right" class="lucide-icon closing-arrow" style="width:64px;height:64px;"></i>
-        <p class="footer">blitzy-cal &middot; 2026-02-25 inflection &middot; Run qa-finalA-fixes-verify-1779532737 &middot; Rendered 2026-05-23T10:38:58.813534+00:00</p>
+        <p class="footer">blitzy-cal &middot; 2026-02-25 inflection &middot; Run 4784f0b0-15af-4ceb-8fa1-a884977b6332 &middot; Rendered 2026-05-23T12:53:48.134257+00:00</p>
               </div>
       </section>
 
@@ -1411,12 +1413,17 @@ graph LR
   <!-- ============================================================
        External libraries — pinned versions (non-negotiable):
          - reveal.js 5.1.0   (jsdelivr)
-         - Mermaid   11.10.0 (jsdelivr) — upgraded from 11.4.0 to
-                                         address known XSS CVE; fix
-                                         landed at 11.10.0 per Snyk
-                                         advisory. See decision-log.md
-                                         (Mermaid version security row)
-                                         for rationale.
+         - Mermaid    11.4.0 (jsdelivr) — pinned per AAP §0.5.3/§0.5.5
+                                         and the Executive Presentation
+                                         rule. The earlier 11.10.0
+                                         upgrade (attempted for a Snyk
+                                         XSS advisory) was reverted per
+                                         QA Final Checkpoint C MAJOR
+                                         Issue #1; see decision-log.md
+                                         Row 26 for the reversion
+                                         rationale and the residual
+                                         security treatment (CSP
+                                         allowlist + future SRI hashes).
          - Lucide    0.460.0 (unpkg)
        Each script tag carries crossorigin="anonymous" and
        referrerpolicy="no-referrer" so that an SRI integrity attribute
@@ -1429,7 +1436,7 @@ graph LR
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.0/dist/mermaid.min.js"
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"

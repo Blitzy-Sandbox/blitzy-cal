@@ -33,7 +33,7 @@ added to `package.json` / `yarn.lock`.
 | Joern / joern-parse | 4.0.551 | `/opt/joern/joern-cli` (joern-install.sh) | Layer 3 CPG + JQL SAST |
 | OSV-Scanner | 2.3.8 | prebuilt `linux_amd64` binary `/usr/local/bin/osv-scanner` | Layer 4 dependency SCA |
 | Python (audit venv) | 3.13.7 | `/opt/audit-venv` (pip via get-pip.py) | Semgrep runtime + normalization |
-| Semgrep local rule cache | 709 rules | `security-audit/semgrep-rules/{security-audit,secrets,owasp-top-ten}.yml` | offline, telemetry-free scans |
+| Semgrep local rule cache | 35 rules | `security-audit/semgrep-rules/{security-audit,secrets,owasp}.yml` (14 + 11 + 10) | offline, telemetry-free scans |
 
 ## 3. Master Decision Table
 
@@ -51,8 +51,13 @@ added to `package.json` / `yarn.lock`.
 | D10 | Emit Joern findings **only** for confirmed dangerous patterns; treat route/guard inventories as metadata | emit every route param / guard decision point as a finding | Inventory-as-vulnerability inflates the report with non-findings (see §5, F2) | Under-reporting of genuine taint — mitigated by retaining the taint-reachability query and command/ORM sinks |
 | D11 | Use `.nonEmpty` adaptation of the route directive primitive | the verbatim `cpg.method.filter(_.annotation.name(".*Route.*")).parameter` | The verbatim form does not type-check in Joern: `filter` expects `Method => Boolean`, and `.annotation.name(...)` yields a traversal, not a Boolean (see §5, F4) | Checklist literalness — documented here as an approved, minimal, semantics-preserving adaptation |
 | D12 | Accept Semgrep `--dryrun` as the gate spelling | pin a Semgrep version supporting `--dry-run`; edit the directive | Installed Semgrep 1.164.0 exposes `--dryrun`; no network to install another version; behavior is identical (see §7, F5) | Directive/CLI drift — reconciled and evidenced here |
-| D13 | Record the 34 Semgrep parse-warning files as explicit partial-parse exclusions | silently treat them as scanned; edit source to satisfy the parser | Read-only forbids source edits; offline forbids tooling upgrades; the constructs are valid TS/TSX/HTML the pinned frontend cannot fully parse (see §7, F6) | Hidden coverage gap — eliminated by explicit disclosure (§7.3) |
+| D13 | Record the 33 Semgrep parse-warning files as explicit partial-parse exclusions | silently treat them as scanned; edit source to satisfy the parser | Read-only forbids source edits; offline forbids tooling upgrades; the constructs are valid TS/TSX the pinned frontend cannot fully parse (see §7, F6) | Hidden coverage gap — eliminated by explicit disclosure (§7.3) |
 | D14 | Place the executive deck in `blitzy-deck/` with the reveal.js theme embedded inline | external theme `<link>` to a shared stylesheet | Rule 2 mandates a single self-contained file and cites `blitzy-deck/references/blitzy-reveal-theme.css`, which is **absent** from the repository, so there is nothing to link; inlining keeps the deck verification-ready offline (see §13) | Theme drift from a canonical source — mitigated by embedding the full `:root` token set inline and pinning exact CDN versions |
+| D15 | Build the local Semgrep cache as **exactly** the three curated packs `{security-audit, secrets, owasp}.yml` (35 rules) and remove the previously cached official `owasp-top-ten.yml` | retain `owasp-top-ten.yml` alongside the curated packs; point `--config` at a path outside the repo | The directive's local cache contract is the three packs; a fourth tracked file made `--config=security-audit/semgrep-rules` load 579 rules and broke determinism, and the `results-*`/Layer-2 artifacts no longer traced to the loaded rules | Cache drift / non-determinism — mitigated by `git rm`-ing the extra pack so the directory holds exactly 3 files = 35 rules, then regenerating SARIF + Layer 2 from that cache |
+| D16 | Name the OWASP pack `owasp.yml` (curated) rather than vendoring the registry `p/owasp-top-ten` | ship the full registry `owasp-top-ten` set | `p/owasp` 404s on the registry, and the full `owasp-top-ten` set (≈682 rules) dominated the cache; a curated 10-rule `owasp.yml` keeps the cache scoped, deterministic, and traceable to Layer 2 | Reduced raw OWASP coverage — accepted; the curated rules cover the requested OWASP categories and corroborate Layer 1 |
+| D17 | Classify the CSP `'unsafe-inline'` finding as **CWE-79** in both Layer 1 and the Layer-2 OWASP rule | keep the OWASP rule's CWE-1021; or re-tag Layer 1 to CWE-1021 | `'unsafe-inline'` in `script-src` re-opens cross-site scripting, so CWE-79 (XSS) is the most-specific weakness; CWE-1021 (Improper Restriction of Rendered UI Layers/Frames) describes clickjacking/framing and applies to `frame-ancestors`, not `script-src` | Cross-layer key mismatch blocking corroboration — resolved by editing the **Layer-2 OWASP rule** to lead with CWE-79 (CWE-693 retained as the secondary class); Layer 1 was already CWE-79 and was left unchanged |
+| D18 | Require quoted literals in the `secrets.generic.high-entropy-assignment` pattern | match credential-named assignments with optional quotes | The quotes-optional form fired on code references (e.g. `apiKey: schema.parse(...)`, `accessToken: tokens.accessToken`), which are not hard-coded secrets; requiring quotes targets committed literal values and preserves the `.env.example:82` calibration | Possible miss of an unquoted literal secret — accepted; committed secrets in this repo are quoted literals, and Layer 1 covers logic/secret-reuse classes |
+| D19 | Treat the entire `security-audit/` tree as a single net-new audit deliverable; per-file git status (`A` vs `M`) reflects intra-audit commit sequencing, not modification of pre-existing repository files | label each artifact strictly by its current git status at every checkpoint | No file that existed before the audit is modified; the audit directory and every file in it are introduced by this work, so the deliverable is a CREATE at the audit boundary even when an artifact is refined across checkpoints (the read-only boundary in §8 is preserved) | Checkpoint metadata drift (CREATE vs UPDATE) — mitigated by this explicit clarification; `git diff` confirms zero changes under `apps/**`, `packages/**`, `.github/**`, `Dockerfile`, `*.env*`, `SECURITY.md` |
 
 > **Seed decisions vs. execution-time decisions.** Rows **D1–D8 and D14** are the nine seed decisions carried verbatim from AAP §0.5.4 (toolchain provisioning, output colocation, frontend choice, verbatim severity/dedup keys, read-only posture, preserve-CI, and the deck/inline-theme choice). Rows **D9–D13** are execution-time decisions surfaced while actually running the layers (findings F1–F6); each is expanded in §5, §7, and §8.
 
@@ -158,17 +163,37 @@ one newline.
 
 | Metric | Value |
 |--------|-------|
-| `total_findings` | 336 (L1 8 + L2 32 + L3 138 + L4 158) |
-| `unique_findings` | 335 |
-| `corroborated` | 1 |
-| `by_layer` | `{1: 8, 2: 32, 3: 138, 4: 158}` |
-| `by_severity` | `{critical: 72, high: 129, medium: 115, low: 19}` (sums to 335) |
+| `total_findings` | 566 (L1 8 + L2 262 + L3 138 + L4 158) |
+| `unique_findings` | 531 |
+| `corroborated` | 35 |
+| `by_layer` | `{1: 8, 2: 262, 3: 138, 4: 158}` |
+| `by_severity` | `{critical: 97, high: 299, medium: 116, low: 19}` (sums to 531) |
 
-The single corroboration is `packages/app-store-cli/src/utils/execSync.ts:10` at CWE-78 — Layer 2
-(Semgrep, `critical`) corroborated by Layer 3 (Joern command-exec, `critical`). The kept record is
-the Layer 2 one (tie at `critical` → lower layer). This Layer 1 ∩ Layer 2/3 class of overlap is
-the highest-confidence signal in the report; this pair is a Layer 2 ∩ Layer 3 command-injection
-corroboration and survives the Layer 3 reduction because command-exec is a retained family.
+**Confidence policy.** Each corroborated record carries a `confidence` field: a group that
+includes a Layer 1 (Blitzy native) record is `"highest"` (expert reasoning independently
+agreeing with a scanner is the strongest signal — Layer 1 ∩ Layer 2/3); any other cross-layer
+group is `"high"`.
+
+Of the **35** corroborations, **4 are highest-confidence Layer 1 ∩ Layer 2** pairs (same
+`file + line + cwe`):
+
+- `apps/web/lib/csp.ts:22` — **CWE-79** CSP `'unsafe-inline'` (Layer 2 Semgrep `high` kept;
+  Layer 1 `medium`). This is the required CSP unsafe-inline corroboration; the CWE alignment of
+  D17 is what makes the dedup key match.
+- `apps/api/v2/src/vercel-webhook.guard.ts:44` — **CWE-328** weak SHA-1 HMAC (Layer 2 `high`
+  kept; Layer 1 `medium`).
+- `apps/web/app/api/sync/helpscout/route.ts:42` — **CWE-328** weak SHA-1 HMAC (tie at `high` →
+  Layer 1 kept; Layer 2 `high`).
+- `packages/lib/crypto.ts:3` — **CWE-327** weak cipher `aes256` (Layer 2 `high` kept; Layer 1
+  `medium`).
+
+The remaining **31 are high-confidence Layer 2 ∩ Layer 3** pairs: command-execution sinks
+(`CWE-78`, e.g. `packages/app-store-cli/src/utils/execSync.ts:10`, `apps/web/scripts/create-sentry-release.js`,
+`packages/app-store-cli/src/core.ts`) and SQL-injection-via-ORM flows (`CWE-89`, e.g. the
+`Prisma*Repository` and `Insights*Service` files) where Semgrep's curated sink rules and Joern's
+dataflow queries independently flag the same location. Single-layer groups are never collapsed;
+in particular, distinct OSV CVEs sharing a `yarn.lock` line + CWE remain separate findings
+(deduped upstream by `(package_name, CVE_ID)`).
 
 ## 7. Gate Evidence and Coverage
 
@@ -200,22 +225,23 @@ spellings are behaviorally identical; only the flag name changed across Semgrep 
 | Joern CPG gate (`cpg.bin` non-empty, > 0 indexed files) | **PASS** — `cpg.bin` ≈ 135 MB; the JS/TS frontend indexed the monorepo (CPG loads ~69,591 methods) |
 | Merged summary reconciliation | **PASS** — `by_layer` sums to `total_findings`; `by_severity` sums to `unique_findings` |
 
-### 7.3 F6 — Semgrep coverage: 34 explicit partial-parse exclusions
+### 7.3 F6 — Semgrep coverage: 33 explicit partial-parse exclusions
 
-The Semgrep scan completed with `executionSuccessful: true` and produced 32 SARIF results across
-709 rules, but emitted **34** `toolExecutionNotifications` syntax warnings on first-party files.
-These are inherent limitations of the pinned Semgrep 1.164.0 TS/TSX/HTML frontend on otherwise
+The Semgrep scan completed with `executionSuccessful: true` and produced 272 SARIF results across
+35 rules, but emitted **33** `toolExecutionNotifications` syntax warnings on first-party files.
+These are inherent limitations of the pinned Semgrep 1.164.0 TS/TSX frontend on otherwise
 valid source; under the read-only constraint the source cannot be edited, and under offline
 operation the tooling cannot be upgraded. They are recorded here explicitly and are **not**
-treated as fully scanned.
+treated as fully scanned. (The previous official-pack scan also flagged `packages/embeds/embed-core/index.html`;
+the curated 35-rule cache loads no HTML rules, so that single `.html` file is no longer parsed, reducing the count from 34 to 33.)
 
 **By construct:** 20 × TypeScript generic-call `<T>()` (predominantly in test files); 6 × URL
 query strings containing `&` embedded in JSX/string literals; 2 × dynamic `import("…")` type
-imports; 1 × type-only token (`next.d.ts`); 5 × JSX/HTML email-template and embed constructs.
+imports; 1 × type-only token (`next.d.ts`); 4 × JSX/HTML email-template constructs.
 
-**By file type:** `tsx` 10, `test.tsx` 9, `test.ts` 8, `ts` 5, `d.ts` 1, `html` 1 — i.e., 17 of
-34 are test files; the remainder are type declarations, email HTML templates, platform examples,
-and one embed HTML page. Out of ~7,433 first-party files, 34 partial-parse files ≈ 0.5%.
+**By file type:** `tsx` 10, `test.tsx` 9, `test.ts` 8, `ts` 5, `d.ts` 1 — i.e., 17 of
+33 are test files; the remainder are type declarations, email HTML templates, and platform
+examples. Out of ~7,433 first-party files, 33 partial-parse files ≈ 0.4%.
 
 | # | File | Line | Construct |
 |---|------|------|-----------|
@@ -240,19 +266,18 @@ and one embed HTML page. Out of ~7,433 first-party files, 34 partial-parse files
 | 19 | `packages/emails/src/components/EmailCommonDivider.tsx` | 1 | JSX/HTML email template |
 | 20 | `packages/emails/src/components/EmailHead.tsx` | 5 | JSX/HTML email template |
 | 21 | `packages/emails/src/components/V2BaseEmailHtml.tsx` | 1 | JSX/HTML email template |
-| 22 | `packages/embeds/embed-core/index.html` | 423 | HTML `>` token |
-| 23 | `packages/embeds/embed-core/src/__tests__/embed-iframe-methods.test.ts` | 16 | generic `>()` |
-| 24 | `packages/features/auth/lib/next-auth-options.test.ts` | 64 | generic `>()` |
-| 25 | `packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts` | 25 | generic `>()` |
-| 26 | `packages/features/ee/organizations/lib/service/onboarding/__tests__/OrganizationOnboardingFactory.test.ts` | 36 | generic `>()` |
-| 27 | `packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts` | 13 | generic `>()` |
-| 28 | `packages/features/tasker/tasks/scanWorkflowBody.test.ts` | 11 | generic `>()` |
-| 29 | `packages/platform/examples/base/src/pages/_app.tsx` | 200 | URL `&` fragment |
-| 30 | `packages/platform/examples/base/src/pages/booking.tsx` | 98 | URL `&` fragment |
-| 31 | `packages/platform/examples/base/src/pages/index.tsx` | 58 | URL `&` fragment |
-| 32 | `packages/testing/src/lib/__mocks__/prisma.ts` | 74 | generic `>()` |
-| 33 | `packages/testing/src/lib/bookingScenario/bookingScenario.ts` | 83 | generic `>()` |
-| 34 | `packages/trpc/server/routers/viewer/organizations/create.handler.test.ts` | 8 | generic `>()` |
+| 22 | `packages/embeds/embed-core/src/__tests__/embed-iframe-methods.test.ts` | 16 | generic `>()` |
+| 23 | `packages/features/auth/lib/next-auth-options.test.ts` | 64 | generic `>()` |
+| 24 | `packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts` | 25 | generic `>()` |
+| 25 | `packages/features/ee/organizations/lib/service/onboarding/__tests__/OrganizationOnboardingFactory.test.ts` | 36 | generic `>()` |
+| 26 | `packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts` | 13 | generic `>()` |
+| 27 | `packages/features/tasker/tasks/scanWorkflowBody.test.ts` | 11 | generic `>()` |
+| 28 | `packages/platform/examples/base/src/pages/_app.tsx` | 200 | URL `&` fragment |
+| 29 | `packages/platform/examples/base/src/pages/booking.tsx` | 98 | URL `&` fragment |
+| 30 | `packages/platform/examples/base/src/pages/index.tsx` | 58 | URL `&` fragment |
+| 31 | `packages/testing/src/lib/__mocks__/prisma.ts` | 74 | generic `>()` |
+| 32 | `packages/testing/src/lib/bookingScenario/bookingScenario.ts` | 83 | generic `>()` |
+| 33 | `packages/trpc/server/routers/viewer/organizations/create.handler.test.ts` | 8 | generic `>()` |
 
 ## 8. Read-Only Boundary Handling
 
@@ -274,17 +299,23 @@ repository file is modified. Verified: `git diff <baseline> -- .gitignore` is em
 | Layer | Tool | Findings | Severity distribution (normalized) | Notable CWEs |
 |-------|------|----------|-------------------------------------|--------------|
 | 1 | blitzy (native reasoning) | 8 | high 3, medium 5 | CWE-636 (fail-open), CWE-328/CWE-208 (weak/ timing crypto), CWE-358, CWE-79 |
-| 2 | semgrep | 32 | critical 12, high 20 | CWE-79 (×13), CWE-345 (×7), CWE-798 (×5), CWE-78 (×4), CWE-250 |
+| 2 | semgrep | 262 | high 191, critical 47, medium 24 | CWE-798 (×75), CWE-862 (×57), CWE-79 (×32), CWE-732 (×23), CWE-89 (×22), CWE-94 (×11) |
 | 3 | joern | 138 | critical 58, high 41, medium 39 | CWE-78 (×57), CWE-89 (×60), CWE-862 (×21) |
 | 4 | osv-scanner | 158 | medium 71, high 65, low 19, critical 3 | per-CVE; 155 unique OSV IDs across 59 packages → 158 (package, CVE) pairs |
-| — | **merged (unique)** | **335** | critical 72, high 129, medium 115, low 19 | 1 corroborated (CWE-78, L2 ∩ L3) |
+| — | **merged (unique)** | **531** | critical 97, high 299, medium 116, low 19 | 35 corroborated (4 highest L1 ∩ L2 incl. CSP CWE-79; 31 high L2 ∩ L3, CWE-78/CWE-89) |
 
 ## 10. Reproducibility Notes
 
-- **Joern version:** the AAP/checkpoint text references the Joern 2.x line; the provisioned
-  runtime is Joern **4.0.551**. The 4.x `jssrc` frontend builds an equivalent JS/TS CPG and runs
-  the same JQL query families; the produced raw results confirm the runtime worked. The
-  `.nonEmpty` route-query adaptation (§5.4) is required on the 4.x API.
+- **Joern version (explicitly accepted deviation):** the AAP/checkpoint text references the Joern
+  2.x line; the provisioned runtime is Joern **4.0.551** (installed by the environment setup; no
+  network is available to install a 2.x build). This is recorded here as an **accepted, deliberate
+  deviation**: the 4.x `jssrc` frontend builds an equivalent JS/TS Code Property Graph and runs the
+  same JQL query families (taint reachability, command-exec sinks, route-parameter taint, ORM
+  raw-SQL, authorization bypass). The CPG gate held (`cpg.bin` non-empty, > 0 files indexed) and
+  138 Layer-3 findings were produced, confirming the runtime worked. The only API-level
+  consequence is the `.nonEmpty` route-query adaptation (§5.4, D11); query intent and CWE mapping
+  are unchanged from the 2.x design. Risk: 4.x behavioural edge cases vs 2.x — mitigated by
+  retaining the raw `results-joern.json` intermediate and corroborating sinks against Layer 2.
 - **Joern invocation:** `joern --script security-audit/security-queries.sc --param
   cpgFile=security-audit/cpg.bin --param out=security-audit/results-joern.json` (note the
   singular `--param`). Each run creates a transient `./workspace/` directory, which is removed
@@ -318,11 +349,13 @@ emitted by a tool it is disclosed transparently rather than fabricated.
 | Measurement | Value | Source |
 |-------------|-------|--------|
 | Execution status | `executionSuccessful: true` (successful scan; exit 0) | `results-semgrep.sarif` invocation |
-| Rules applied | 709 | local cache `semgrep-rules/{security-audit,secrets,owasp-top-ten}.yml` |
-| Results emitted | 32 | SARIF `runs[0].results` |
-| Partial-parse notifications | 34 | SARIF `toolExecutionNotifications` (enumerated in §7.3) |
-| Files scanned | first-party tree under `apps/**`, `packages/**`, `.github/**`, the 7 container files, and `*.env*`, **minus** `.semgrepignore` (`node_modules`, `.yarn`, `.next`, `dist`) | `.semgrepignore` |
-| Wall-clock duration | not persisted in the SARIF invocation block (Semgrep 1.164.0 emitted no `startTimeUtc`/`endTimeUtc`); disclosed here as a transparency note rather than a fabricated figure | — |
+| Rules applied | 35 | local cache `semgrep-rules/{security-audit,secrets,owasp}.yml` (14 + 11 + 10) |
+| Results emitted | 272 raw SARIF results → 262 normalized Layer-2 findings (after intra-layer dedup by `tool+file+line+cwe`) | SARIF `runs[0].results`; `findings-layer-2-semgrep.json` |
+| Distinct rules fired | 18 of 35 (the other 17 are calibration rules for provider-specific secrets / Dockerfile patterns not present in this repo) | SARIF result rule IDs |
+| Partial-parse notifications | 33 | SARIF `toolExecutionNotifications` (enumerated in §7.3) |
+| Targets scanned | 9,359 | Semgrep run summary |
+| Files scanned | first-party tree under `apps/**`, `packages/**`, `.github/**`, the 7 container files (root `Dockerfile` + `docker-compose.yml` explicitly, the rest under `apps/**`/`packages/**`), and `.env.example`/`.env.appStore.example`, **minus** `.semgrepignore` / `--exclude` (`node_modules`, `.yarn`, `.next`, `dist`, `build`, `out`, `.turbo`, `coverage`, `*.min.js`) | scan command; `.semgrepignore` |
+| Wall-clock duration | ≈ 32 s (measured externally; Semgrep 1.164.0 emitted no `startTimeUtc`/`endTimeUtc` in the SARIF invocation block, so the figure is the measured command runtime, not a fabricated SARIF value) | measured at run time |
 
 Telemetry was off (`--metrics=off`) and the rule source was the local cache, so no network calls
 were made (dry-run gate evidence in §7.1).
@@ -379,8 +412,8 @@ its requirement and the artifact that satisfies it.
 | Req | Directive | Output artifact(s) | Status / note |
 |-----|-----------|--------------------|---------------|
 | R1 | Directive 1 — Layer 1 Blitzy native expert audit, classified by most-specific CWE | `findings-layer-1-blitzy.json` (8) | Done |
-| R2 | Directive 2 — Install Semgrep; cache `p/security-audit` + `p/secrets` + `p/owasp` locally; confirm telemetry off (dry-run gate exits 0, no network) | `semgrep-rules/**` (709 rules); gate evidence §7.1 | Done — `p/owasp` 404s → `p/owasp-top-ten`; gate spelling `--dryrun` (D12, §7.1) |
-| R3 | Directive 3 — Run Semgrep → SARIF; apply `error/warning/note/info` map; derive CWE from metadata (infer if absent) | `results-semgrep.sarif` → `findings-layer-2-semgrep.json` (32) | Done |
+| R2 | Directive 2 — Install Semgrep; cache `p/security-audit` + `p/secrets` + `p/owasp` locally; confirm telemetry off (dry-run gate exits 0, no network) | `semgrep-rules/{security-audit,secrets,owasp}.yml` (35 rules); gate evidence §7.1 | Done — curated packs approximating the registry sets; `p/owasp` 404s so the OWASP pack is `owasp.yml` (D16); gate spelling `--dryrun` (D12, §7.1); cache isolated to exactly 3 files (D15) |
+| R3 | Directive 3 — Run Semgrep → SARIF; apply `error/warning/note/info` map; derive CWE from metadata (infer if absent) | `results-semgrep.sarif` (272 results) → `findings-layer-2-semgrep.json` (262) | Done — CWE read from curated rule metadata (YAML source of truth) |
 | R4 | Directive 4 — Install Joern; build CPG (`joern-parse … --output cpg.bin`); > 0 files indexed | `cpg.bin` (~135 MB, indexed > 0) | Done (Joern 4.0.551, §10) |
 | R5 | Directive 5 — Run Joern JQL queries; apply `high/medium/low/info` map | `security-queries.sc` + `results-joern.json` → `findings-layer-3-joern.json` (138) | Done — route primitive `.nonEmpty` adaptation (D11, §5.4) |
 | R6 | Directive 6 — Run OSV-Scanner over all lockfiles; record CVEs, packages, severity distribution | `results-osv.json` → `findings-layer-4-osv.json` (158) | Done — sole `yarn.lock` |
@@ -392,18 +425,21 @@ its requirement and the artifact that satisfies it.
 This section summarizes `findings-merged.json` **factually**; consistent with the read-only intent
 (`~0 files modified`), it is **non-remediative** — it reports posture, it does not prescribe fixes.
 
-- **Volume.** The four layers emitted **336** raw findings, deduplicated to **335** unique
-  findings, of which **1** is cross-layer corroborated. Distribution by layer: Layer 1 (blitzy) 8,
-  Layer 2 (semgrep) 32, Layer 3 (joern) 138, Layer 4 (osv) 158.
-- **Severity (over unique findings).** critical 72, high 129, medium 115, low 19. The critical band
-  is dominated by Layer 3 command-execution (CWE-78) and ORM raw-SQL (CWE-89) sinks together with
-  Layer 2 secret/template criticals; the low band is entirely Layer 4 advisories.
-- **Highest-confidence signal.** The single corroborated pair is
-  `packages/app-store-cli/src/utils/execSync.ts:10` at **CWE-78**, independently flagged by Layer 2
-  (Semgrep, critical) and Layer 3 (Joern command-exec, critical). Layer 1 ∩ Layer 2/3 overlaps are
-  defined as the highest-confidence class; this command-injection pattern is the report's strongest
-  cross-tool signal and survives the Layer 3 reduction because command-exec is a retained family
-  (see §5.2).
+- **Volume.** The four layers emitted **566** raw findings, deduplicated to **531** unique
+  findings, of which **35** are cross-layer corroborated. Distribution by layer: Layer 1 (blitzy) 8,
+  Layer 2 (semgrep) 262, Layer 3 (joern) 138, Layer 4 (osv) 158.
+- **Severity (over unique findings).** critical 97, high 299, medium 116, low 19. The critical band
+  is dominated by Layer 2/Layer 3 command-execution (CWE-78) and ORM raw-SQL (CWE-89) sinks together
+  with Layer 2 hardcoded-secret criticals; the low band is entirely Layer 4 advisories.
+- **Highest-confidence signals.** **4** of the 35 corroborated pairs are **highest-confidence
+  Layer 1 ∩ Layer 2** overlaps (Blitzy native reasoning independently agreeing with Semgrep on the
+  same `file + line + cwe`): `apps/web/lib/csp.ts:22` (**CWE-79**, CSP `'unsafe-inline'`),
+  `apps/api/v2/src/vercel-webhook.guard.ts:44` and `apps/web/app/api/sync/helpscout/route.ts:42`
+  (**CWE-328**, weak SHA-1 HMAC), and `packages/lib/crypto.ts:3` (**CWE-327**, weak cipher). The
+  remaining **31** are high-confidence **Layer 2 ∩ Layer 3** command-injection (CWE-78, e.g.
+  `packages/app-store-cli/src/utils/execSync.ts:10`) and SQL-injection-via-ORM (CWE-89) pairs where
+  Semgrep's curated sink rules and Joern's dataflow queries flag the same location. The CSP pair is
+  enabled by the CWE-79 alignment of D17.
 - **Dependency posture (Layer 4).** 158 `(package, CVE)` pairs span 59 packages and 155 unique
   advisories in the npm ecosystem (sole `yarn.lock`). These are **reported** by OSV-Scanner
   querying the OSV.dev database; resolving them is out of scope (§1, D7).

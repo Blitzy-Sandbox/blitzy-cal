@@ -14,8 +14,10 @@
 //   line        - line number of the finding (sink) location
 //   severity    - native Joern severity: one of high | medium | low | info
 //   description - short functional description of the finding
-//   family      - one of: command-exec | orm-raw-sql | route-taint |
+//   family      - one of: command-exec | orm-raw-sql |
 //                 taint-reachability | authz-bypass
+//                 (route/request parameters are collected as taint sources and
+//                 reported only when reachable by a sink; see taint-reachability)
 //
 // Read-only: the script only queries the CPG. Its sole write is the JSON file
 // passed via the --param out=... argument.
@@ -93,36 +95,34 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
     }
   } catch { case e: Throwable => System.err.println("[orm-raw-sql] skipped: " + e.getMessage) }
 
-  // ---- Family: route-taint (request parameters at route handlers) ----
+  // ---- Route-parameter sources (directive route query; taint-source inventory) ----
   try {
-    // Directive primitive (verbatim core) over methods carrying a Route-style annotation.
+    // Methods carrying a Route-style annotation; .nonEmpty yields the Boolean that
+    // Joern's filter(Method => Boolean) requires for this directive primitive.
     val directiveRouteParams = cpg.method.filter(_.annotation.name(".*Route.*").nonEmpty).parameter.l
-    // Broadened coverage: NestJS / Next.js HTTP route handlers via their decorators.
+    // HTTP route-handler parameters matched via NestJS / Next.js method decorators.
     val httpRouteParams = cpg.method.where(_.annotation.name("Get|Post|Put|Patch|Delete|All|.*Route.*")).parameter.l
-    // Parameters explicitly decorated as request-input carriers.
+    // Parameters decorated as request-input carriers.
     val requestParams = cpg.parameter.where(_.annotation.name("Body|Query|Param|Headers|Req|Request|UploadedFile|Ip|Session")).l
-    // Exclude the implicit receiver (this) parameter present on instance methods.
-    (directiveRouteParams ++ httpRouteParams ++ requestParams).distinct.filterNot(_.name == "this").foreach { param =>
-      // Decorated request inputs are explicit untrusted entry points (higher severity).
-      val isRequestInput = param.annotation.name("Body|Query|Param|Headers|Req|Request|UploadedFile|Ip|Session").nonEmpty
-      val severity = if (isRequestInput) "medium" else "info"
-      val description = s"Route handler parameter '${param.name}' in method '${param.method.name}' carries external request input"
-      record(param.location.filename, param.location.lineNumber.getOrElse(-1), severity, description, "route-taint")
-    }
-  } catch { case e: Throwable => System.err.println("[route-taint] skipped: " + e.getMessage) }
+    // Distinct source set excluding the implicit receiver (this). These parameters are
+    // the source inputs for the taint-reachability family below; the count is written to
+    // stderr as scan metadata and is not recorded as vulnerability findings.
+    val routeParamSources = (directiveRouteParams ++ httpRouteParams ++ requestParams).distinct.filterNot(_.name == "this")
+    System.err.println(s"[route-params] route/request parameter taint sources (metadata only, not findings): ${routeParamSources.size}")
+  } catch { case e: Throwable => System.err.println("[route-params] skipped: " + e.getMessage) }
 
   // ---- Family: authz-bypass (fail-open guards and unguarded routes) ----
   try {
-    // Guard entrypoints: NestJS guards implement canActivate.
+    // Guard entrypoints: NestJS guards implement canActivate. A finding is recorded
+    // only for the fail-open pattern (a literal `true` returned in a catch/error branch);
+    // guards without that pattern are not emitted as findings.
     cpg.method.name("canActivate").l.foreach { guard =>
-      // Fail-open pattern: a literal `true` returned inside a catch / error branch.
       val failOpen = guard.ast.isControlStructure.controlStructureType("CATCH").ast.isLiteral.code("true").nonEmpty
-      val owner = guard.typeDecl.name.headOption.getOrElse(guard.name)
-      val severity = if (failOpen) "high" else "info"
-      val description =
-        if (failOpen) s"Authorization guard '$owner' may fail open: returns true in a catch/error path"
-        else s"Authorization decision point canActivate in '$owner'"
-      record(guard.location.filename, guard.location.lineNumber.getOrElse(-1), severity, description, "authz-bypass")
+      if (failOpen) {
+        val owner = guard.typeDecl.name.headOption.getOrElse(guard.name)
+        val description = s"Authorization guard '$owner' may fail open: returns true in a catch/error path"
+        record(guard.location.filename, guard.location.lineNumber.getOrElse(-1), "high", description, "authz-bypass")
+      }
     }
     // Unguarded routes: HTTP route handlers with no method-level or class-level @UseGuards.
     cpg.method.where(_.annotation.name("Get|Post|Put|Patch|Delete|All")).l.foreach { handler =>

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Audit: blitzy-cal — Executive Summary</title>
+
+  <!-- reveal.js 5.1.0 core CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap">
+
+  <!-- Inline Blitzy theme -->
+  <style>
+    :root {
+      /* Backgrounds */
+      --bg-primary: #0B0E14;
+      --bg-secondary: #111722;
+      --bg-elevated: #1A2231;
+      --bg-overlay: rgba(124, 92, 252, 0.08);
+      /* Text */
+      --text-primary: #F5F7FA;
+      --text-secondary: #AEB9CC;
+      --text-muted: #6B7689;
+      /* Brand */
+      --brand-primary: #7C5CFC;
+      --brand-secondary: #5B8DEF;
+      --brand-accent: #36C5B0;
+      --brand-gradient: linear-gradient(135deg, #7C5CFC 0%, #5B8DEF 100%);
+      /* Layer accents (one per audit layer) */
+      --layer-1: #7C5CFC;
+      --layer-2: #5B8DEF;
+      --layer-3: #36C5B0;
+      --layer-4: #F5A623;
+      /* Severity scale */
+      --sev-critical: #FF4D4F;
+      --sev-high: #FF8A3D;
+      --sev-medium: #FFC53D;
+      --sev-low: #5BD1A0;
+      /* Lines / borders */
+      --border-subtle: rgba(245, 247, 250, 0.10);
+      --border-strong: rgba(245, 247, 250, 0.20);
+      /* Typography */
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      /* Radius / shadow / spacing */
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.45);
+      --space-unit: 8px;
+      /* Font-size scale tuned for 1920x1080 */
+      --fs-h1: 84px;
+      --fs-h2: 60px;
+      --fs-h3: 38px;
+      --fs-body: 30px;
+      --fs-small: 23px;
+      --fs-stat: 92px;
+    }
+
+    html, body { background: var(--bg-primary); }
+    /* reveal.js 5.x applies the viewport class to <html>; paint the full canvas dark
+       with the ambient brand glow so centered slides never reveal a white backdrop */
+    .reveal-viewport {
+      background-color: var(--bg-primary);
+      background-image:
+        radial-gradient(1500px 900px at 10% -8%, rgba(124, 92, 252, 0.10), transparent 60%),
+        radial-gradient(1400px 900px at 100% 108%, rgba(91, 141, 239, 0.08), transparent 60%);
+      background-repeat: no-repeat;
+    }
+
+    /* Deck base */
+    .reveal {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      font-size: var(--fs-body);
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+    .reveal .slides {
+      text-align: left;
+    }
+    .reveal .slides > section {
+      background: transparent;
+      padding: 64px 96px;
+      box-sizing: border-box;
+    }
+    /* Hero slide types fill the frame so their internal flex centering reads as full-bleed */
+    .reveal .slides > section.slide-title,
+    .reveal .slides > section.slide-divider,
+    .reveal .slides > section.slide-closing { min-height: 940px; }
+
+    /* Headings */
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: var(--font-heading);
+      color: var(--text-primary);
+      line-height: 1.08;
+      margin: 0 0 0.4em 0;
+      text-transform: none;
+      letter-spacing: -0.01em;
+    }
+    .reveal h1 { font-size: var(--fs-h1); font-weight: 700; }
+    .reveal h2 { font-size: var(--fs-h2); font-weight: 600; }
+    .reveal h3 { font-size: var(--fs-h3); font-weight: 600; }
+    .reveal p { font-size: var(--fs-body); color: var(--text-secondary); }
+    .reveal strong { color: var(--text-primary); font-weight: 600; }
+
+    /* Brand gradient text helper */
+    .grad-text {
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    /* Eyebrow / kicker label */
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: var(--fs-small);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--brand-accent);
+      margin: 0 0 18px 0;
+      font-weight: 500;
+    }
+
+    /* Bulleted content lists */
+    .reveal ul.bullets {
+      list-style: none;
+      margin: 24px 0 0 0;
+      padding: 0;
+    }
+    .reveal ul.bullets > li {
+      position: relative;
+      padding: 0 0 0 44px;
+      margin: 0 0 20px 0;
+      font-size: var(--fs-body);
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+    .reveal ul.bullets > li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.52em;
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+      background: var(--brand-gradient);
+      box-shadow: 0 0 14px rgba(124, 92, 252, 0.55);
+    }
+    .reveal ul.bullets > li b { color: var(--text-primary); font-weight: 600; }
+
+    /* Monospace inline accent (counts, CWE IDs, file paths) */
+    .mono {
+      font-family: var(--font-mono);
+      color: var(--brand-accent);
+      font-weight: 500;
+    }
+
+    /* Lucide icon sizing */
+    .reveal svg.lucide { stroke-width: 1.7; display: block; }
+
+    /* Circular icon chip */
+    .icon-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border-strong);
+      box-shadow: inset 0 0 0 1px rgba(124, 92, 252, 0.18);
+      color: var(--brand-primary);
+    }
+    .icon-chip svg.lucide { width: 48px; height: 48px; }
+    .icon-chip.hero {
+      width: 168px; height: 168px;
+      background: var(--brand-gradient);
+      color: #fff;
+      box-shadow: var(--shadow-card), 0 0 60px rgba(124, 92, 252, 0.5);
+      border: none;
+    }
+    .icon-chip.hero svg.lucide { width: 92px; height: 92px; }
+
+    /* Stat cards */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+      margin-top: 44px;
+    }
+    .stat-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 34px 30px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .stat-card .stat-icon {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-md);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--bg-overlay);
+      color: var(--brand-secondary);
+    }
+    .stat-card .stat-icon svg.lucide { width: 32px; height: 32px; }
+    .stat-card .stat-num {
+      font-family: var(--font-mono);
+      font-size: var(--fs-stat);
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+    .stat-card .stat-label {
+      font-size: var(--fs-small);
+      color: var(--text-secondary);
+    }
+
+    /* Layer cards */
+    .layer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 34px;
+      margin-top: 38px;
+    }
+    .layer-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-left: 8px solid var(--lc, var(--brand-primary));
+      border-radius: var(--radius-lg);
+      padding: 38px 38px;
+      box-shadow: var(--shadow-card);
+    }
+    .layer-card .layer-head {
+      display: flex; align-items: center; gap: 22px; margin-bottom: 18px;
+    }
+    .layer-card .layer-chip {
+      width: 74px; height: 74px;
+      border-radius: var(--radius-md);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--lc, var(--brand-primary)) 18%, transparent);
+      color: var(--lc, var(--brand-primary));
+      flex: 0 0 auto;
+    }
+    .layer-card .layer-chip svg.lucide { width: 40px; height: 40px; }
+    .layer-card h3 { margin: 0; color: var(--text-primary); }
+    .layer-card .layer-tool {
+      font-family: var(--font-mono);
+      font-size: var(--fs-small);
+      color: var(--lc, var(--brand-primary));
+    }
+    .layer-card p { font-size: 27px; margin: 6px 0 0 0; color: var(--text-secondary); }
+
+    /* Severity badges */
+    .sev-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 36px;
+    }
+    .sev-badge {
+      border-radius: var(--radius-lg);
+      padding: 30px 26px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-top: 6px solid var(--sc, var(--sev-medium));
+      box-shadow: var(--shadow-card);
+    }
+    .sev-badge .sev-num {
+      font-family: var(--font-mono);
+      font-size: 78px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--sc, var(--sev-medium));
+    }
+    .sev-badge .sev-name {
+      font-size: var(--fs-small);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-secondary);
+      margin-top: 10px;
+    }
+
+    /* Generic feature/icon cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      margin-top: 36px;
+    }
+    .feature-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 30px 32px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .feature-card .fc-icon {
+      width: 60px; height: 60px; flex: 0 0 auto;
+      border-radius: var(--radius-md);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--bg-overlay);
+      color: var(--brand-accent);
+    }
+    .feature-card .fc-icon svg.lucide { width: 34px; height: 34px; }
+    .feature-card .fc-title { font-family: var(--font-heading); font-weight: 600; color: var(--text-primary); font-size: 30px; }
+    .feature-card .fc-text { font-size: 25px; color: var(--text-secondary); margin-top: 6px; line-height: 1.3; }
+
+    /* Layer count chips row */
+    .chip-row { display: flex; gap: 18px; margin-top: 30px; flex-wrap: wrap; }
+    .count-chip {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      padding: 14px 24px;
+      font-size: var(--fs-small);
+      color: var(--text-secondary);
+    }
+    .count-chip .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--cc, var(--brand-primary)); }
+    .count-chip b { font-family: var(--font-mono); color: var(--text-primary); font-weight: 500; }
+
+    /* Callout */
+    .callout {
+      margin-top: 34px;
+      background: linear-gradient(120deg, rgba(124, 92, 252, 0.16), rgba(54, 197, 176, 0.10));
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 26px 32px;
+      display: flex; align-items: center; gap: 22px;
+      color: var(--text-primary);
+      font-size: 27px;
+    }
+    .callout .callout-icon { color: var(--brand-accent); flex: 0 0 auto; }
+    .callout .callout-icon svg.lucide { width: 44px; height: 44px; }
+
+    /* Mermaid sizing */
+    .reveal .mermaid {
+      display: flex;
+      justify-content: center;
+      margin-top: 24px;
+      background: transparent;
+    }
+    .reveal .mermaid svg { max-width: 100%; height: auto; max-height: 780px; }
+    /* Mermaid sizes the htmlLabel foreignObject using a fallback font, so the Inter web
+       font can be a few px wider and clip at the foreignObject edge. The node rect is
+       padded much wider (flowchart.padding), so we let the label paint OUTSIDE the
+       foreignObject and keep each explicit line on a single row -- it stays well within
+       the colored rect and never clips. */
+    .reveal .mermaid p { font-size: 22px !important; margin: 0; line-height: 1.28; }
+    .reveal .mermaid span.nodeLabel,
+    .reveal .mermaid .nodeLabel,
+    .reveal .mermaid .edgeLabel { font-size: 22px !important; }
+    .reveal .mermaid .nodeLabel { font-weight: 600; }
+    .reveal .mermaid foreignObject { overflow: visible; }
+    .reveal .mermaid foreignObject > div { overflow: visible !important; white-space: nowrap !important; }
+    .reveal .mermaid .nodeLabel,
+    .reveal .mermaid .nodeLabel p { white-space: nowrap !important; }
+    .diagram-wrap {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      margin-top: 28px;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* ---- Slide type: TITLE ---- */
+    section.slide-title { text-align: center; }
+    section.slide-title .title-wrap {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 30px; height: 100%;
+    }
+    section.slide-title h1 { font-size: 108px; margin: 0; }
+    section.slide-title .subtitle {
+      font-family: var(--font-heading);
+      font-size: 44px; font-weight: 500;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    section.slide-title .readonly-pill {
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 25px;
+      color: var(--brand-accent);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: 14px 30px;
+      background: var(--bg-overlay);
+    }
+    section.slide-title .brandmark {
+      font-family: var(--font-mono);
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      font-size: 22px;
+      color: var(--text-muted);
+    }
+
+    /* ---- Slide type: DIVIDER ---- */
+    section.slide-divider { text-align: center; }
+    section.slide-divider .divider-wrap {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 26px; height: 100%;
+    }
+    section.slide-divider .divider-num {
+      font-family: var(--font-mono);
+      font-size: 30px;
+      color: var(--brand-accent);
+      letter-spacing: 0.3em;
+    }
+    section.slide-divider h2 {
+      font-size: 92px;
+      margin: 0;
+    }
+    section.slide-divider .divider-rule {
+      width: 280px; height: 6px; border-radius: 3px;
+      background: var(--brand-gradient);
+      box-shadow: 0 0 24px rgba(124, 92, 252, 0.6);
+    }
+
+    /* ---- Slide type: CLOSING ---- */
+    section.slide-closing { text-align: center; }
+    section.slide-closing .closing-wrap {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 26px; height: 100%;
+    }
+    section.slide-closing h2 { font-size: 76px; margin: 0; }
+    section.slide-closing .artifacts {
+      display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 8px;
+    }
+    section.slide-closing .artifacts .count-chip { font-size: 24px; }
+
+    /* reveal controls / progress tinting to brand */
+    .reveal .progress { color: var(--brand-primary); height: 6px; }
+    .reveal .controls { color: var(--brand-secondary); }
+    .reveal .slide-number { background: transparent; color: var(--text-muted); font-family: var(--font-mono); }
+
+    /* Slide top heading row with small kicker icon */
+    .head-row { display: flex; align-items: center; gap: 20px; }
+    .head-row .head-ico { color: var(--brand-primary); }
+    .head-row .head-ico svg.lucide { width: 46px; height: 46px; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: title -->
+      <section class="slide-title">
+        <div class="title-wrap">
+          <span class="icon-chip hero"><i data-lucide="shield-check"></i></span>
+          <p class="kicker">Blitzy Security Assessment</p>
+          <h1 class="grad-text">Security Audit: blitzy-cal</h1>
+          <p class="subtitle">A Non-Invasive Four-Layer Security Assessment</p>
+          <div class="readonly-pill"><span class="mono">~0 files modified</span> &mdash; measurement, not remediation</div>
+          <div class="brandmark">Blitzy Platform</div>
+        </div>
+      </section>
+
+      <!-- Slide 2: executive summary at a glance -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="gauge"></i></span>
+          <h2>At a glance</h2>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <span class="stat-icon"><i data-lucide="file-json"></i></span>
+            <div class="stat-num">566</div>
+            <div class="stat-label">Total findings across four layers</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"><i data-lucide="git-compare"></i></span>
+            <div class="stat-num">35</div>
+            <div class="stat-label">Cross-layer corroborated signals</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"><i data-lucide="layers"></i></span>
+            <div class="stat-num">4</div>
+            <div class="stat-label">Independent scan layers</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"><i data-lucide="shield-check"></i></span>
+            <div class="stat-num">0</div>
+            <div class="stat-label">Application files modified</div>
+          </div>
+        </div>
+        <ul class="bullets">
+          <li><b>531</b> unique findings remain after cross-layer deduplication.</li>
+          <li>Every output is a brand-new report; the codebase is untouched.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 3: divider - What We Did -->
+      <section class="slide-divider">
+        <div class="divider-wrap">
+          <span class="icon-chip hero"><i data-lucide="search-code"></i></span>
+          <p class="divider-num">01</p>
+          <h2 class="grad-text">What We Did</h2>
+          <div class="divider-rule"></div>
+        </div>
+      </section>
+
+      <!-- Slide 4: four complementary layers -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="scan-line"></i></span>
+          <h2>Four complementary layers</h2>
+        </div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  L1["Layer 1<br/>Blitzy native"]:::l1 --> N["Normalized<br/>findings"]:::norm
+  L2["Layer 2<br/>Semgrep"]:::l2 --> N
+  L3["Layer 3<br/>Joern"]:::l3 --> N
+  L4["Layer 4<br/>OSV-Scanner"]:::l4 --> N
+  classDef l1 fill:#7C5CFC,stroke:#7C5CFC,color:#ffffff;
+  classDef l2 fill:#5B8DEF,stroke:#5B8DEF,color:#ffffff;
+  classDef l3 fill:#36C5B0,stroke:#36C5B0,color:#06231f;
+  classDef l4 fill:#F5A623,stroke:#F5A623,color:#2a1c00;
+  classDef norm fill:#1A2231,stroke:#7C5CFC,color:#F5F7FA;
+          </pre>
+        </div>
+        <ul class="bullets">
+          <li><b>Layer 1</b> Blitzy native reasoning, <b>Layer 2</b> Semgrep patterns, <b>Layer 3</b> Joern dataflow, <b>Layer 4</b> OSV dependency scan.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 5: Layer 1 and Layer 2 -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="brain"></i></span>
+          <h2>Reasoning and pattern layers</h2>
+        </div>
+        <div class="layer-grid">
+          <div class="layer-card" style="--lc: var(--layer-1);">
+            <div class="layer-head">
+              <span class="layer-chip"><i data-lucide="brain"></i></span>
+              <div>
+                <h3>Layer 1 &mdash; Blitzy native</h3>
+                <div class="layer-tool">tool: blitzy</div>
+              </div>
+            </div>
+            <p>Context-aware reasoning over code, configuration, and architecture &mdash; fail-open logic, configuration defaults, cross-file key reuse.</p>
+          </div>
+          <div class="layer-card" style="--lc: var(--layer-2);">
+            <div class="layer-head">
+              <span class="layer-chip"><i data-lucide="radar"></i></span>
+              <div>
+                <h3>Layer 2 &mdash; Semgrep</h3>
+                <div class="layer-tool">tool: semgrep</div>
+              </div>
+            </div>
+            <p>Curated pattern matching &mdash; committed secrets, CI/CD injection, container misconfiguration, crypto anti-patterns, insecure transport.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Layer 3 and Layer 4 -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="workflow"></i></span>
+          <h2>Dataflow and dependency layers</h2>
+        </div>
+        <div class="layer-grid">
+          <div class="layer-card" style="--lc: var(--layer-3);">
+            <div class="layer-head">
+              <span class="layer-chip"><i data-lucide="workflow"></i></span>
+              <div>
+                <h3>Layer 3 &mdash; Joern</h3>
+                <div class="layer-tool">tool: joern</div>
+              </div>
+            </div>
+            <p>Code Property Graph and taint queries &mdash; command injection <span class="mono">CWE-78</span>, SQL injection via ORM <span class="mono">CWE-89</span>, authorization bypass.</p>
+          </div>
+          <div class="layer-card" style="--lc: var(--layer-4);">
+            <div class="layer-head">
+              <span class="layer-chip"><i data-lucide="package-search"></i></span>
+              <div>
+                <h3>Layer 4 &mdash; OSV-Scanner</h3>
+                <div class="layer-tool">tool: osv-scanner</div>
+              </div>
+            </div>
+            <p>Lockfile matching against the OSV database &mdash; known CVEs in declared npm dependencies from the single <span class="mono">yarn.lock</span>.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Slide 7: divider - Why It Matters -->
+      <section class="slide-divider">
+        <div class="divider-wrap">
+          <span class="icon-chip hero"><i data-lucide="trending-up"></i></span>
+          <p class="divider-num">02</p>
+          <h2 class="grad-text">Why It Matters</h2>
+          <div class="divider-rule"></div>
+        </div>
+      </section>
+
+      <!-- Slide 8: business value and risk reduction -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="shield"></i></span>
+          <h2>Business value</h2>
+        </div>
+        <div class="card-grid">
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="trending-up"></i></span>
+            <div>
+              <div class="fc-title">Earlier risk detection</div>
+              <div class="fc-text">Issues surfaced before release, not after an incident.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="layers"></i></span>
+            <div>
+              <div class="fc-title">Defense in depth</div>
+              <div class="fc-text">Four techniques cover what any single scanner misses.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="list-checks"></i></span>
+            <div>
+              <div class="fc-title">Audit trail</div>
+              <div class="fc-text">Every decision and result recorded for compliance.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="check-circle"></i></span>
+            <div>
+              <div class="fc-title">Zero disruption</div>
+              <div class="fc-text">Read-only measurement; no source or config changed.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9: complementary, not redundant -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="git-compare"></i></span>
+          <h2>Complementary, not redundant</h2>
+        </div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  L1["Layer 1<br/>Blitzy native"]:::l1 --> V1["Logic flaws<br/>and key reuse"]:::box
+  L2["Layer 2<br/>Semgrep"]:::l2 --> V2["Secrets, patterns<br/>and CI/CD"]:::box
+  L3["Layer 3<br/>Joern"]:::l3 --> V3["Taint, SQLi<br/>and authz bypass"]:::box
+  L4["Layer 4<br/>OSV-Scanner"]:::l4 --> V4["Known dependency<br/>CVEs"]:::box
+  classDef l1 fill:#7C5CFC,stroke:#7C5CFC,color:#ffffff;
+  classDef l2 fill:#5B8DEF,stroke:#5B8DEF,color:#ffffff;
+  classDef l3 fill:#36C5B0,stroke:#36C5B0,color:#06231f;
+  classDef l4 fill:#F5A623,stroke:#F5A623,color:#2a1c00;
+  classDef box fill:#1A2231,stroke:#5B8DEF,color:#F5F7FA;
+          </pre>
+        </div>
+        <ul class="bullets">
+          <li>Each layer targets a <b>distinct vulnerability class</b> by design, so overlap signals real risk.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 10: divider - What Changed Architecturally -->
+      <section class="slide-divider">
+        <div class="divider-wrap">
+          <span class="icon-chip hero"><i data-lucide="git-branch"></i></span>
+          <p class="divider-num">03</p>
+          <h2 class="grad-text">What Changed Architecturally</h2>
+          <div class="divider-rule"></div>
+        </div>
+      </section>
+
+      <!-- Slide 11: audit pipeline architecture -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="network"></i></span>
+          <h2>The audit pipeline</h2>
+        </div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  P["Provision<br/>toolchain"]:::prov --> L1["Layer 1"]:::l1
+  P --> L2["Layer 2"]:::l2
+  P --> L3["Layer 3"]:::l3
+  P --> L4["Layer 4"]:::l4
+  L1 --> N["Normalize<br/>to schema"]:::box
+  L2 --> N
+  L3 --> N
+  L4 --> N
+  N --> D["Deduplicate<br/>corroborate"]:::box
+  D --> M["findings-<br/>merged.json"]:::merge
+  M --> O["Decision log<br/>and deck"]:::box
+  classDef prov fill:#111722,stroke:#5B8DEF,color:#F5F7FA;
+  classDef l1 fill:#7C5CFC,stroke:#7C5CFC,color:#ffffff;
+  classDef l2 fill:#5B8DEF,stroke:#5B8DEF,color:#ffffff;
+  classDef l3 fill:#36C5B0,stroke:#36C5B0,color:#06231f;
+  classDef l4 fill:#F5A623,stroke:#F5A623,color:#2a1c00;
+  classDef box fill:#1A2231,stroke:#7C5CFC,color:#F5F7FA;
+  classDef merge fill:#7C5CFC,stroke:#36C5B0,color:#ffffff;
+          </pre>
+        </div>
+        <ul class="bullets">
+          <li>Layers run independently against read-only inputs, then merge into one report.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 12: normalize, deduplicate, corroborate -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="git-merge"></i></span>
+          <h2>Normalize, deduplicate, corroborate</h2>
+        </div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  S["Common schema"]:::box --> K1["Dedup key<br/>file plus line plus CWE"]:::key
+  S --> K2["OSV key<br/>package plus CVE"]:::key
+  K1 --> MG["Merged summary"]:::merge
+  K2 --> MG
+  MG --> HC["Cross-layer match<br/>highest confidence"]:::hc
+  classDef box fill:#1A2231,stroke:#5B8DEF,color:#F5F7FA;
+  classDef key fill:#111722,stroke:#36C5B0,color:#F5F7FA;
+  classDef merge fill:#7C5CFC,stroke:#7C5CFC,color:#ffffff;
+  classDef hc fill:#36C5B0,stroke:#36C5B0,color:#06231f;
+          </pre>
+        </div>
+        <ul class="bullets">
+          <li>Higher severity wins on collision; agreement is annotated as <b>corroborated</b>.</li>
+        </ul>
+      </section>
+
+
+      <!-- Slide 13: findings landscape -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="bar-chart-3"></i></span>
+          <h2>Findings landscape</h2>
+        </div>
+        <div class="sev-grid">
+          <div class="sev-badge" style="--sc: var(--sev-critical);">
+            <div class="sev-num">97</div>
+            <div class="sev-name">Critical</div>
+          </div>
+          <div class="sev-badge" style="--sc: var(--sev-high);">
+            <div class="sev-num">299</div>
+            <div class="sev-name">High</div>
+          </div>
+          <div class="sev-badge" style="--sc: var(--sev-medium);">
+            <div class="sev-num">116</div>
+            <div class="sev-name">Medium</div>
+          </div>
+          <div class="sev-badge" style="--sc: var(--sev-low);">
+            <div class="sev-num">19</div>
+            <div class="sev-name">Low</div>
+          </div>
+        </div>
+        <div class="chip-row">
+          <span class="count-chip"><span class="dot" style="--cc: var(--layer-1);"></span>Layer 1 <b>8</b></span>
+          <span class="count-chip"><span class="dot" style="--cc: var(--layer-2);"></span>Layer 2 <b>262</b></span>
+          <span class="count-chip"><span class="dot" style="--cc: var(--layer-3);"></span>Layer 3 <b>138</b></span>
+          <span class="count-chip"><span class="dot" style="--cc: var(--layer-4);"></span>Layer 4 <b>158</b></span>
+        </div>
+        <div class="callout">
+          <span class="callout-icon"><i data-lucide="git-compare"></i></span>
+          <span><b>35</b> corroborated &mdash; <b>4</b> are highest-confidence where expert reasoning meets a scanner on the same line.</span>
+        </div>
+      </section>
+
+      <!-- Slide 14: risks and mitigations -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="alert-triangle"></i></span>
+          <h2>Risks and mitigations</h2>
+        </div>
+        <div class="card-grid">
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="alert-triangle"></i></span>
+            <div>
+              <div class="fc-title">Fail-open authorization</div>
+              <div class="fc-text">Blocked users could slip through on error; fail closed instead.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="key-round"></i></span>
+            <div>
+              <div class="fc-title">Reused secret key</div>
+              <div class="fc-text">One key spans many purposes; separate and rotate per use.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="lock"></i></span>
+            <div>
+              <div class="fc-title">Weak hashing and CSP</div>
+              <div class="fc-text">Legacy SHA-1 and inline scripts; modernize crypto and policy.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="fc-icon"><i data-lucide="bot"></i></span>
+            <div>
+              <div class="fc-title">Verification bypass</div>
+              <div class="fc-text">Bot check skipped when unset; require it in production.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 15: how the team onboards and continues -->
+      <section>
+        <div class="head-row">
+          <span class="head-ico"><i data-lucide="list-checks"></i></span>
+          <h2>How the team continues</h2>
+        </div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  A["Review<br/>findings-merged.json"]:::step --> B["Assign a<br/>triage owner"]:::step
+  B --> C["Re-run scans<br/>each release"]:::step
+  C --> D["Fold into<br/>code review"]:::done
+  classDef step fill:#1A2231,stroke:#5B8DEF,color:#F5F7FA;
+  classDef done fill:#36C5B0,stroke:#36C5B0,color:#06231f;
+          </pre>
+        </div>
+        <ul class="bullets">
+          <li>Artifacts live in <span class="mono">security-audit/</span> and this <span class="mono">blitzy-deck/</span>; nothing is wired into CI.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 16: closing -->
+      <section class="slide-closing">
+        <div class="closing-wrap">
+          <span class="icon-chip hero"><i data-lucide="check-circle"></i></span>
+          <h2 class="grad-text">Measured, not modified</h2>
+          <p>Four layers, one report, <span class="mono">~0 files modified</span>. The codebase is untouched.</p>
+          <div class="artifacts">
+            <span class="count-chip"><span class="dot" style="--cc: var(--brand-accent);"></span><span class="mono">security-audit/findings-merged.json</span></span>
+            <span class="count-chip"><span class="dot" style="--cc: var(--brand-primary);"></span><span class="mono">security-audit/decision-log.md</span></span>
+          </div>
+          <p class="brandmark" style="margin-top:14px;">A clear baseline for the team's next security milestone</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- reveal.js core (classic script -> global Reveal) -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <!-- Lucide icons (classic UMD -> global lucide) -->
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Mermaid (ES module) + initialization -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs';
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      securityLevel: 'loose',
+      fontFamily: 'Inter, sans-serif',
+      // Generous node padding widens each box well beyond its measured label, and the
+      // rendered label font is held slightly below the measured size (CSS below), so the
+      // Inter web font never overflows the box Mermaid measured with a fallback font.
+      flowchart: {
+        htmlLabels: true,
+        useMaxWidth: true,
+        padding: 26,
+        nodeSpacing: 64,
+        rankSpacing: 72,
+        diagramPadding: 18
+      },
+      themeVariables: {
+        background: '#111722',
+        primaryColor: '#1A2231',
+        primaryTextColor: '#F5F7FA',
+        primaryBorderColor: '#7C5CFC',
+        secondaryColor: '#5B8DEF',
+        tertiaryColor: '#36C5B0',
+        lineColor: '#5B8DEF',
+        mainBkg: '#1A2231',
+        nodeBorder: '#7C5CFC',
+        clusterBkg: '#111722',
+        fontSize: '26px'
+      }
+    });
+
+    function renderLucide() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    // Mermaid cannot measure elements inside hidden (display:none) reveal slides -- it
+    // produces a broken 36x36 error SVG. So we render each diagram lazily, only once its
+    // slide is actually visible, and never re-run Mermaid over an already-processed node.
+    async function renderMermaidIn(slide) {
+      if (!slide) return;
+      const blocks = Array.prototype.slice
+        .call(slide.querySelectorAll('.mermaid'))
+        .filter((el) => !el.getAttribute('data-processed'));
+      if (blocks.length) {
+        try { await mermaid.run({ nodes: blocks }); } catch { /* best-effort render */ }
+        Reveal.layout();
+      }
+    }
+
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080,
+      controls: true,
+      progress: true,
+      slideNumber: 'c/t',
+      center: true,
+      margin: 0.06
+    }).then(async () => {
+      // Wait for the brand web fonts to finish loading BEFORE Mermaid measures node boxes,
+      // so boxes are not sized with a narrower fallback font.
+      if (document.fonts?.ready) {
+        try { await document.fonts.ready; } catch { /* fonts API best-effort */ }
+      }
+      // Render the diagram on the slide shown at load, then icons.
+      await renderMermaidIn(Reveal.getCurrentSlide());
+      renderLucide();
+      Reveal.layout();
+      // On each navigation render that slide's diagram (now visible) and redraw icons.
+      Reveal.on('slidechanged', async (event) => {
+        await renderMermaidIn(event.currentSlide);
+        renderLucide();
+        Reveal.layout();
+      });
+    });
+  </script>
+</body>
+</html>
+

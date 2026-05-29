@@ -1,0 +1,31 @@
+# .semgrepignore - Semgrep (Layer 2) scan-exclusion list
+# Syntax: gitignore-style glob patterns
+# (https://git-scm.com/docs/gitignore#_pattern_format).
+#
+# Scope: excludes vendored dependencies and build / cache / test output so the
+# Semgrep scan (results-semgrep.sarif) reports on first-party code only. Known
+# CVEs in dependencies are covered separately by OSV-Scanner (Layer 4) against
+# yarn.lock, not by Semgrep.
+#
+# First-party scan targets are intentionally NOT excluded here:
+#   apps/**, packages/** (TS/JS source), .github/** (CI workflows + actions),
+#   Dockerfile, docker-compose*.yml, .env.example, .env.appStore.example.
+
+# Vendored dependencies (npm / Yarn Berry)
+node_modules
+.yarn
+
+# Build / compiled output
+.next
+dist
+build
+out
+
+# Tooling caches
+.turbo
+
+# Test / coverage output
+coverage
+
+# Minified / generated assets
+*.min.js

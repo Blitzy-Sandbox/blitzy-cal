@@ -1,0 +1,281 @@
+# Semgrep rule pack: p/security-audit (curated local cache).
+# Layer-2 SAST rules covering crypto anti-patterns, insecure transport,
+# command/eval execution (TypeScript/JavaScript), container misconfiguration
+# (Dockerfile), and CI/CD injection (GitHub Actions YAML).
+# Loaded by: semgrep scan --config=security-audit/semgrep-rules --metrics=off <repo>
+rules:
+  # --- TypeScript / JavaScript: cryptography, transport, execution ---
+  - id: security-audit.crypto.weak-hash
+    languages: [typescript, javascript]
+    severity: WARNING
+    message: "Weak hash function (MD5 or SHA-1) used in createHash/createHmac. MD5 and SHA-1 are cryptographically broken; use SHA-256 or stronger."
+    patterns:
+      - pattern-either:
+          - pattern: crypto.createHmac($ALGO, ...)
+          - pattern: createHmac($ALGO, ...)
+          - pattern: crypto.createHash($ALGO, ...)
+          - pattern: createHash($ALGO, ...)
+      - metavariable-regex:
+          metavariable: $ALGO
+          regex: '(?i)^["''](md5|sha1)["'']$'
+    metadata:
+      cwe:
+        - "CWE-328: Use of Weak Hash"
+      category: security
+      confidence: HIGH
+      technology: [nodejs]
+      references:
+        - https://cwe.mitre.org/data/definitions/328.html
+
+  - id: security-audit.crypto.weak-cipher-algorithm
+    languages: [typescript, javascript]
+    severity: WARNING
+    message: "Weak or legacy symmetric cipher (aes256/AES-256-CBC, AES-*-ECB, DES, RC4, Blowfish) used in createCipheriv/createDecipheriv or an algorithm constant. Prefer AES-256-GCM."
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: crypto.createCipheriv($ALGO, ...)
+              - pattern: crypto.createDecipheriv($ALGO, ...)
+              - pattern: createCipheriv($ALGO, ...)
+              - pattern: createDecipheriv($ALGO, ...)
+          - metavariable-regex:
+              metavariable: $ALGO
+              regex: '(?i)^["''](aes256|aes-(128|192|256)-(cbc|ecb)|des|des-ede3|rc4|bf|[a-z0-9-]*-ecb)["'']$'
+      - pattern-regex: '(?i)\b(const|let|var)\s+[a-z_$][a-z0-9_$]*\s*=\s*["''](aes256|aes-(128|192|256)-(cbc|ecb)|des|des-ede3|rc4|bf|[a-z0-9-]*-ecb)["'']'
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      category: security
+      confidence: MEDIUM
+      technology: [nodejs]
+      references:
+        - https://cwe.mitre.org/data/definitions/327.html
+
+  - id: security-audit.crypto.deprecated-createcipher
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: "Deprecated crypto.createCipher/createDecipher used. These derive keys without an IV and are insecure; use createCipheriv/createDecipheriv with a random IV."
+    pattern-either:
+      - pattern: crypto.createCipher(...)
+      - pattern: crypto.createDecipher(...)
+      - pattern: createCipher(...)
+      - pattern: createDecipher(...)
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      category: security
+      confidence: HIGH
+      technology: [nodejs]
+      references:
+        - https://cwe.mitre.org/data/definitions/327.html
+
+  - id: security-audit.crypto.insecure-random
+    languages: [typescript, javascript]
+    severity: WARNING
+    message: "Math.random() used to derive a security-sensitive value (token/secret/nonce/otp/password/apikey/salt/iv/key). It is not cryptographically secure; use crypto.randomBytes or crypto.randomUUID."
+    patterns:
+      - pattern-either:
+          - pattern: const $NAME = Math.random()
+          - pattern: let $NAME = Math.random()
+          - pattern: var $NAME = Math.random()
+          - pattern: $NAME = Math.random()
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: '(?i)(token|secret|nonce|otp|password|apikey|salt|iv|key)'
+    metadata:
+      cwe:
+        - "CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+      category: security
+      confidence: MEDIUM
+      technology: [nodejs]
+      references:
+        - https://cwe.mitre.org/data/definitions/338.html
+
+  - id: security-audit.transport.tls-verification-disabled
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: "TLS certificate verification disabled (rejectUnauthorized: false or NODE_TLS_REJECT_UNAUTHORIZED set to 0). This enables man-in-the-middle attacks; keep certificate validation enabled."
+    pattern-either:
+      - pattern: "rejectUnauthorized: false"
+      - pattern: $X.rejectUnauthorized = false
+      - pattern: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"'
+      - pattern: "process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'"
+    metadata:
+      cwe:
+        - "CWE-295: Improper Certificate Validation"
+      category: security
+      confidence: HIGH
+      technology: [nodejs]
+      references:
+        - https://cwe.mitre.org/data/definitions/295.html
+
+  - id: security-audit.command.os-command-and-eval
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: "Dynamic OS command or code execution with a non-literal argument (exec/execSync/spawn/spawnSync/eval/new Function). Untrusted input reaching these sinks enables command or code injection."
+    patterns:
+      - pattern-either:
+          - pattern: child_process.exec($X, ...)
+          - pattern: child_process.execSync($X, ...)
+          - pattern: child_process.spawn($X, ...)
+          - pattern: child_process.spawnSync($X, ...)
+          - pattern: exec($X, ...)
+          - pattern: execSync($X, ...)
+          - pattern: spawn($X, ...)
+          - pattern: spawnSync($X, ...)
+          - pattern: eval($X)
+          - pattern: new Function($X)
+      - pattern-not: child_process.exec("...", ...)
+      - pattern-not: child_process.execSync("...", ...)
+      - pattern-not: child_process.spawn("...", ...)
+      - pattern-not: child_process.spawnSync("...", ...)
+      - pattern-not: exec("...", ...)
+      - pattern-not: execSync("...", ...)
+      - pattern-not: spawn("...", ...)
+      - pattern-not: spawnSync("...", ...)
+      - pattern-not: eval("...")
+      - pattern-not: new Function("...")
+    metadata:
+      cwe:
+        - "CWE-78: Improper Neutralization of Special Elements used in an OS Command (OS Command Injection)"
+        - "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code (Eval Injection)"
+      category: security
+      confidence: MEDIUM
+      technology: [nodejs]
+      references:
+        - https://cwe.mitre.org/data/definitions/78.html
+        - https://cwe.mitre.org/data/definitions/95.html
+
+  # --- Dockerfile: container misconfiguration ---
+  - id: security-audit.dockerfile.hardcoded-secret-arg-env
+    languages: [dockerfile]
+    severity: WARNING
+    message: "Hard-coded secret default in a Dockerfile ARG/ENV (name contains SECRET/KEY/PASSWORD/TOKEN/APIKEY). Build-time secret defaults are baked into image layers; pass them at runtime instead."
+    pattern-regex: '(?im)^\s*(ARG|ENV)\s+\w*(SECRET|KEY|PASSWORD|PASSWD|TOKEN|APIKEY|API_KEY)\w*\s*=\s*\S+'
+    metadata:
+      cwe:
+        - "CWE-798: Use of Hard-coded Credentials"
+      category: security
+      confidence: MEDIUM
+      technology: [docker]
+      references:
+        - https://cwe.mitre.org/data/definitions/798.html
+
+  - id: security-audit.dockerfile.missing-user
+    languages: [dockerfile]
+    severity: WARNING
+    message: "Container reaches CMD without a preceding USER directive, so it runs as root. Add a non-root USER before CMD/ENTRYPOINT to drop privileges."
+    patterns:
+      - pattern: CMD ...
+      - pattern-not-inside: |
+          USER $U
+          ...
+    metadata:
+      cwe:
+        - "CWE-250: Execution with Unnecessary Privileges"
+      category: security
+      confidence: LOW
+      technology: [docker]
+      references:
+        - https://cwe.mitre.org/data/definitions/250.html
+
+  - id: security-audit.dockerfile.latest-or-untagged-image
+    languages: [dockerfile]
+    severity: INFO
+    message: "Base image uses the 'latest' tag or is untagged. Pin a specific image tag (and ideally a digest) for reproducible, trustworthy builds."
+    pattern-either:
+      - pattern-regex: '(?im)^\s*FROM\s+\S+:latest\b'
+      - pattern-regex: '(?im)^\s*FROM\s+[a-z0-9._/-]+\s*$'
+    metadata:
+      cwe:
+        - "CWE-1357: Reliance on Insufficiently Trustworthy Component"
+      category: security
+      confidence: LOW
+      technology: [docker]
+      references:
+        - https://cwe.mitre.org/data/definitions/1357.html
+
+  - id: security-audit.dockerfile.add-remote-url
+    languages: [dockerfile]
+    severity: WARNING
+    message: "ADD used with a remote URL. Remote content is fetched without integrity checks; use COPY for local files or download with a verified checksum."
+    pattern-regex: '(?im)^\s*ADD\s+https?://'
+    metadata:
+      cwe:
+        - "CWE-494: Download of Code Without Integrity Check"
+      category: security
+      confidence: MEDIUM
+      technology: [docker]
+      references:
+        - https://cwe.mitre.org/data/definitions/494.html
+
+  - id: security-audit.dockerfile.curl-pipe-shell
+    languages: [dockerfile]
+    severity: WARNING
+    message: "Remote script piped directly into a shell (curl|wget ... | bash/sh). Downloaded code runs without integrity verification; download, verify, then execute."
+    pattern-regex: '(?i)(curl|wget)\s+[^\n|]*\|\s*(bash|sh)\b'
+    metadata:
+      cwe:
+        - "CWE-494: Download of Code Without Integrity Check"
+      category: security
+      confidence: MEDIUM
+      technology: [docker]
+      references:
+        - https://cwe.mitre.org/data/definitions/494.html
+
+  # --- GitHub Actions YAML: CI/CD injection and misconfiguration ---
+  - id: security-audit.ci.pull-request-target
+    languages: [yaml]
+    severity: WARNING
+    message: "Workflow triggers on pull_request_target, which runs with repository secrets and a write token in the base-repo context. Do not check out or execute untrusted PR code under this trigger."
+    pattern-regex: '(?m)^\s*pull_request_target\s*:'
+    paths:
+      include:
+        - "**/.github/workflows/*.yml"
+        - "**/.github/workflows/*.yaml"
+    metadata:
+      cwe:
+        - "CWE-829: Inclusion of Functionality from Untrusted Control Sphere"
+      category: security
+      confidence: MEDIUM
+      technology: [github-actions]
+      references:
+        - https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+
+  - id: security-audit.ci.run-step-script-injection
+    languages: [yaml]
+    severity: ERROR
+    message: "Untrusted GitHub context (github.head_ref or github.event.* issue/comment/PR/review fields) interpolated into a workflow. Attacker-controlled values can inject code; pass them via env vars or use actions/github-script."
+    pattern-regex: '\$\{\{\s*github\.(head_ref|event\.(issue|comment|pull_request|review)\b[^}]*)\s*\}\}'
+    paths:
+      include:
+        - "**/.github/workflows/*.yml"
+        - "**/.github/workflows/*.yaml"
+    metadata:
+      cwe:
+        - "CWE-94: Improper Control of Generation of Code (Code Injection)"
+        - "CWE-78: Improper Neutralization of Special Elements used in an OS Command (OS Command Injection)"
+      category: security
+      confidence: MEDIUM
+      technology: [github-actions]
+      references:
+        - https://securitylab.github.com/research/github-actions-untrusted-input/
+
+  - id: security-audit.ci.excessive-token-permissions
+    languages: [yaml]
+    severity: INFO
+    message: "Workflow grants broad GITHUB_TOKEN permissions (write-all or contents/actions/id-token/packages: write). Apply least privilege by scoping permissions to the minimum required."
+    pattern-regex: '(?m)^\s*(permissions:\s*write-all|(contents|actions|id-token|packages):\s*write)\b'
+    paths:
+      include:
+        - "**/.github/workflows/*.yml"
+        - "**/.github/workflows/*.yaml"
+    metadata:
+      cwe:
+        - "CWE-732: Incorrect Permission Assignment for Critical Resource"
+      category: security
+      confidence: LOW
+      technology: [github-actions]
+      references:
+        - https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+

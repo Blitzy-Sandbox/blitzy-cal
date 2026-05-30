@@ -2,392 +2,369 @@
 
 # 0. Agent Action Plan
 
-## 0.1 Executive Summary
+## 0.1 Intent Clarification
 
-Based on the bug description, the Blitzy platform understands that the bug is a **comprehensive audit and fix request spanning all eight sprint deliverables (Sprints 1–8) of the Cal.com Calendly parity project**, encompassing five specifically enumerated issues plus an open mandate to discover and resolve any additional defects across the AV-001 through NF-004 epic scope.
+Based on the provided requirements, the Blitzy platform understands that the objective is to perform a **non-invasive, four-layer security assessment** of the `blitzy-cal` codebase (the `calcom-monorepo` Cal.com parity fork) and to emit normalized, machine-readable findings — **without modifying any application source code**. The task is a measurement/audit exercise: it reads the entire codebase across four complementary scanning techniques and produces isolated, net-new artifact files that quantify the project's security posture.
 
-The user reported five known issues:
+### 0.1.1 Core Objective
 
-- **Issue 1 — Seat/Booking-Limit Interaction Logic:** When an event type has both `bookingLimits` (e.g., `PER_DAY: 1`) and `seatsPerTimeSlot > 1`, the seat availability engine reportedly computes availability incorrectly — partially booked slots should remain available until all seats are consumed, and only fully booked slots should count toward the per-day booking limit.
-- **Issue 2 — Team Seated Event Status Reflection:** On a team event type (`ROUND_ROBIN` or `COLLECTIVE`) with `seatsPerTimeSlot > 1`, after a booking is created the seat does not show as blocked; a second attendee is rejected with "already booked" despite the UI showing availability.
-- **Issue 3 — `next-config.test.ts` Module Load Failure:** `TypeError: Unexpected MODIFIER at 25516, expected END` thrown by `next/dist/compiled/path-to-regexp` at module load, preventing all tests in this file from executing.
-- **Issue 4 — `pagesAndRewritePaths.test.ts` Assertion Failure:** `AssertionError: expected [...(474 items)] to include 'apps'` — the `topLevelRoutesExcludedFromOrgRewrite` array does not contain the expected `'apps'` route.
-- **Issue 5 — `next-auth-options.test.ts` Timeout:** The test `"should throw error when user has no password hash with CAL identity provider"` times out at 10 seconds; equivalent Google and SAML identity provider tests complete in under 500ms.
+The platform understands that the work decomposes into four **complementary** scanning layers (different vulnerability classes by design, not redundant passes) whose outputs are normalized to a common schema and then merged into a single cross-layer report.
 
-#### Reproduction Steps (as executable commands)
+| Layer | Tool | Detection Method | Primary Vulnerability Classes | Output Artifact |
+|-------|------|------------------|-------------------------------|-----------------|
+| 1 | Blitzy native expert audit | Context-aware reasoning over code + config + architecture | Fail-open logic, protocol abuse, composite multi-step attack chains, configuration defaults, business-logic flaws, cross-file key/secret reuse | `findings-layer-1-blitzy.json` |
+| 2 | Semgrep | AST pattern matching with curated rule packs | CI/CD injection, committed secrets, container misconfiguration, crypto anti-patterns, template XSS, insecure transport | `findings-layer-2-semgrep.json` |
+| 3 | Joern (Apache 2.0) | Code Property Graph (AST + CFG + PDG) + JQL dataflow/taint queries | Multi-step taint propagation (source → sink across 4+ functions), SQL injection via ORM, deserialization chains, authorization bypass | `findings-layer-3-joern.json` |
+| 4 | OSV-Scanner | Lockfile/SBOM matching against the OSV database | Known CVEs in declared dependencies | `findings-layer-4-osv.json` |
 
-```bash
-# Reproduce Issues 3, 4, 5 (test failures):
+The explicit requirements, restated with enhanced clarity and mapped to the eight directives in the prompt, are:
 
-TZ=UTC npx vitest run apps/web/test/lib/next-config.test.ts --no-watch
-TZ=UTC npx vitest run apps/web/test/lib/pagesAndRewritePaths.test.ts --no-watch
-TZ=UTC npx vitest run packages/features/auth/lib/next-auth-options.test.ts --no-watch
-# Full suite validation:
+- **R1 (Directive 1 — Layer 1):** Execute the Blitzy native security audit using expert reasoning, classifying every finding by its **most specific CWE**, and emit `findings-layer-1-blitzy.json`.
+- **R2 (Directive 2 — Install Semgrep):** Install Semgrep (pip or apt), download the `p/security-audit`, `p/secrets`, and `p/owasp` rule packs to a **local** directory, and confirm telemetry suppression. Pass/fail gate (preserved verbatim): `semgrep scan --metrics=off --config=/path/to/local-rules --dry-run` exits `0` with no network calls.
+- **R3 (Directive 3 — Run Semgrep):** Execute `semgrep scan --config=/path/to/local-rules --sarif -o results-semgrep.sarif --metrics=off /path/to/blitzy-cal`; record exit code, wall-clock duration, and files scanned; apply the severity map `error→critical, warning→high, note→medium, info→low`; derive CWE from rule metadata (infer if absent); emit `findings-layer-2-semgrep.json`.
+- **R4 (Directive 4 — Install Joern):** Install Joern and build the Code Property Graph: `joern-parse /path/to/blitzy-cal --output cpg.bin`. Pass/fail gate: `joern-parse` exits `0` and `cpg.bin` is produced with **> 0** source files indexed.
+- **R5 (Directive 5 — Run Joern):** Execute `joern --script /path/to/security-queries.sc --params cpgFile=cpg.bin --out results-joern.json` using JQL queries (preserved verbatim): `sink.reachableByFlows(source)`; `cpg.call.name("exec.*|eval|spawn")`; `cpg.method.filter(_.annotation.name(".*Route.*")).parameter`. Apply the severity map `high→critical, medium→high, low→medium, info→low`; emit `findings-layer-3-joern.json`.
+- **R6 (Directive 6 — Run OSV-Scanner):** Execute `osv-scanner --lockfile=... --format json > results-osv.json` against **all** lockfiles; record total CVEs, packages affected, and severity distribution; emit `findings-layer-4-osv.json`.
+- **R7 (Directive 7 — Normalize):** Normalize every layer to the fixed single-line minified JSON schema `[{"file","line","severity","cwe","description"(max 200 chars),"layer"(1-4),"tool"},...]`; deduplicate across layers by `file + line + CWE` (keep higher severity, annotate `corroborated_by`); deduplicate OSV by `(package_name, CVE_ID)`. Pass/fail gate (preserved verbatim): `cat findings-layer-*.json | wc -l` returns `4`.
+- **R8 (Directive 8 — Merged report):** Emit `findings-merged.json` (single line) with a `_summary` header object containing `total_findings`, `unique_findings`, `corroborated`, `by_layer`, and `by_severity`, and highlight corroboration pairs (Layer 1 ∩ Layer 2/3 on the same pattern = highest confidence).
 
-TZ=UTC npx vitest run --no-watch
+**Implicit requirements and hidden dependencies surfaced during analysis:**
+
+- **Toolchain prerequisites:** Joern requires a JVM and Java is **not installed** in the environment, so a JDK must be installed first; OSV-Scanner is a Go binary and Go is **not installed**, so the prebuilt release binary is required; Semgrep requires Python, which is present (`Python 3.12.3`).
+- **Offline / hermetic operation:** `--metrics=off` plus a local rule-pack directory imply downloading the packs once and then scanning with no telemetry; OSV-Scanner requires OSV-database access (network, or an offline downloaded database) — a connectivity consideration to document.
+- **Language coverage realism:** the codebase is **100% TypeScript/JavaScript**, so Joern uses its JS/TS frontend, Semgrep applies TS/JS + YAML (CI) + Dockerfile rules, and OSV scans the npm ecosystem only (a single `yarn.lock` in Yarn Berry v8 format) [yarn.lock:__metadata.version].
+- **Output determinism:** single-line minified JSON (no pretty-printing), description truncation to ≤ 200 characters, a stable severity mapping, and deterministic dedup keys.
+- **Read-only guarantee:** zero modification of `blitzy-cal` source or configuration; every output is a net-new artifact; the existing `.github/workflows/security-audit.yml` is **not** edited [.github/workflows/security-audit.yml].
+- **Intermediate artifacts implied by the directives:** `results-semgrep.sarif`, `cpg.bin`, `results-joern.json`, `results-osv.json`, the `security-queries.sc` JQL script, and the local Semgrep rules directory.
+
+### 0.1.2 Task Categorization
+
+- **Primary task type:** Security enhancement (security audit/measurement) with a strong Tooling dimension (installing and running scanners).
+- **Secondary aspects:** Build/Deploy analysis (inspecting `Dockerfile`, `docker-compose*.yml`, and 59 CI workflows for misconfiguration and injection); Documentation (a decision log and an executive presentation mandated by the user-specified rules).
+- **Scope classification:** Cross-cutting **analysis** (every file is a potential scan input) but **isolated** net-new **output** (no existing source or configuration is mutated). The net effect on the existing codebase is non-invasive — consistent with the prompt's `~0 files modified` banner.
+
+### 0.1.3 Special Instructions and Constraints
+
+- **CRITICAL — Read-only measurement:** the prompt's metadata banner states `~0 files modified`. The platform interprets this as a directive to **measure, not remediate** — the audit must not patch vulnerabilities or alter any application source/config. The only writes are net-new artifact files.
+- **Local rule packs + telemetry off:** Semgrep must run with `--metrics=off` against a locally cached rule directory; the dry-run gate must exit `0` with no network calls.
+- **Deterministic output contract:** all findings normalized to the exact schema, single-line minified, descriptions ≤ 200 characters.
+- **Severity mapping (preserved verbatim):** Semgrep `error→critical, warning→high, note→medium, info→low`; Joern `high→critical, medium→high, low→medium, info→low`.
+- **Deduplication rules (preserved verbatim):** cross-layer dedup by `file+line+CWE` keeping the higher severity and annotating `corroborated_by`; OSV dedup by `(package_name, CVE_ID)`.
+- **User-specified rules (mandatory deliverables, additive to the eight directives):**
+  - *Explainability* — every non-trivial decision must be captured in a Markdown **decision log** (what was decided, alternatives, rationale, risks); rationale must not be embedded in code comments.
+  - *Executive Presentation* — a single self-contained **reveal.js HTML deck** (12–18 slides, target 16) using the Blitzy brand, pinned CDN versions (reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0), and an inline theme.
+
+### 0.1.4 Technical Interpretation
+
+These requirements translate to the following technical implementation strategy:
+
+- To **establish the toolchain**, we will provision OpenJDK 21 (Joern's JVM prerequisite), Semgrep (via pip into an isolated environment), and the OSV-Scanner prebuilt binary, because the environment ships Python 3.12.3 but neither Java nor Go.
+- To **produce Layer 1**, we will reason over the code, configuration, and architecture to identify logic/configuration/key-reuse classes that pattern and dependency scanners structurally cannot see, and write each finding (CWE-classified) into `findings-layer-1-blitzy.json`.
+- To **produce Layer 2**, we will cache the three rule packs locally, validate `--metrics=off` via the dry-run gate, scan the repository to `results-semgrep.sarif`, and transform the SARIF into `findings-layer-2-semgrep.json` using the specified severity map.
+- To **produce Layer 3**, we will build `cpg.bin` with `joern-parse`, author `security-queries.sc` (taint reachability, command-execution sinks, route-parameter taint, ORM raw-SQL, authorization bypass), run it to `results-joern.json`, and transform into `findings-layer-3-joern.json`.
+- To **produce Layer 4**, we will run OSV-Scanner against the single `yarn.lock`, capture `results-osv.json`, and transform into `findings-layer-4-osv.json`.
+- To **deliver the cross-layer view**, we will normalize and deduplicate all four layers and emit `findings-merged.json` with the `_summary` header and corroboration annotations.
+- To **satisfy the user rules**, we will additionally create a Markdown decision log and a self-contained reveal.js executive-summary deck.
+
+
+## 0.2 Repository Scope Discovery
+
+A repository-wide discovery pass established the exact scan-target surfaces for each layer. The repository root is the `calcom-monorepo` (a Cal.com parity fork): a Yarn Berry + Turborepo monorepo with `packageManager: "yarn@4.12.0"` and root engines `npm >=7.0.0, yarn >=4.12.0` [package.json:engines]. The codebase is **100% TypeScript/JavaScript** (~7,433 `.ts/.tsx/.js/.jsx` source files, excluding `node_modules`/`.git`) spread across 110 workspace manifests; there are **no** `.py`, `.go`, `.rb`, or `.java` source files.
+
+### 0.2.1 Comprehensive File Analysis
+
+The discovery confirmed that every scan input is a **read-only REFERENCE**; the audit creates no modifications to these files. Inputs are grouped by the layer that consumes them.
+
+**Layer 4 (OSV-Scanner) — dependency lockfiles:**
+
+- `yarn.lock` — the **sole** lockfile in the repository (Yarn Berry format: `__metadata` version 8, 1.43 MB) [yarn.lock:__metadata.version]. No `package-lock.json`, `pnpm-lock.yaml`, `go.mod`, `requirements.txt`, `Gemfile.lock`, `Cargo.lock`, `poetry.lock`, or `composer.lock` exists anywhere — so OSV scans the npm ecosystem exclusively via this one file.
+
+**Layer 2 (Semgrep) — patterns over source, IaC, CI, and secrets:**
+
+- **Container files (7):** `Dockerfile` [Dockerfile:L1], `docker-compose.yml`, `apps/api/v2/Dockerfile`, `packages/prisma/docker-compose.yml`, `packages/emails/docker-compose.yml`, `apps/api/v1/test/docker-compose.yml`, `apps/web/test/docker-compose.yml` — container misconfiguration rules.
+- **CI/CD surface:** 59 workflow files under `.github/workflows/` plus 9 composite actions under `.github/actions/` (`cache-build`, `cache-build-key`, `cache-checkout`, `cache-db`, `cache-db-key`, `devin-session`, `docker-build-and-test`, `yarn-install`, `yarn-playwright-install`) — CI/CD injection rules (`pull_request_target`, script injection, token scope).
+- **Secrets/config templates:** `.env.example` (21 KB) and `.env.appStore.example` — committed-secret pattern rules.
+- **Application source:** `apps/web`, `apps/api/v1`, `apps/api/v2`, and the 20 `packages/*` workspaces — TS/JS rule packs.
+
+**Layer 3 (Joern) — Code Property Graph over JS/TS, taint queries against high-value sinks:**
+
+- The CPG spans `apps/**` and `packages/**` (~7,433 files) via Joern's JS/TS (`jssrc2cpg`) frontend.
+- **Command-execution sink candidates (20 files):** files referencing `child_process`/`exec`/`spawn`/`eval`/`new Function` — targets for `cpg.call.name("exec.*|eval|spawn")`.
+- **ORM raw-SQL candidates (28 files):** files using Prisma `$queryRaw`/`$executeRaw`/`queryRawUnsafe`/`executeRawUnsafe` — targets for SQL-injection-via-ORM taint flows. ORM schema: `packages/prisma/schema.prisma` [packages/prisma/schema.prisma].
+- **Authorization-bypass candidates:** the NestJS guard layer under `apps/api/v2/src/modules/auth/guards/` and route-annotated parameters — targets for route-parameter taint.
+
+**Layer 1 (Blitzy native) — logic/config/key-reuse classes that scanners miss.** Discovery surfaced concrete candidate patterns (illustrative targets for expert reasoning, **not** pre-judged findings):
+
+- Fail-open authorization: `getBlockedUsersMap` returns users as unblocked when the watchlist service errors [packages/features/watchlist/operations/check-user-blocking.ts] (CWE-636 class).
+- Cross-file key reuse: `CALENDSO_ENCRYPTION_KEY` reused as an AES-256 key, a TOTP/JWT secret, and an HMAC-SHA1 secret [apps/web/app/api/sync/helpscout/route.ts].
+- Weak algorithm: HMAC-SHA1 signature verification [apps/api/v2/src/vercel-webhook.guard.ts].
+- Verification skip: Turnstile verification bypassed when the secret is unset or in E2E mode [packages/lib/server/checkCfTurnstileToken.ts].
+- Content-Security-Policy weakness: production `script-src` includes `'unsafe-inline'` [apps/web/lib/csp.ts].
+- Dual crypto stacks: legacy AES-256-CBC [packages/lib/crypto.ts] alongside a modern AES-256-GCM keyring with key-id rotation [packages/lib/crypto/keyring.ts].
+
+### 0.2.2 Web Search Research Conducted
+
+Research validated tool capabilities and current install paths for the execution environment (Node 22.x, Python 3.12.3, no Java, no Go):
+
+- **Semgrep best practices and rule packs:** Confirmed Semgrep installs via pip/pipx (Python ≥ 3.8) and supports stacking multiple rulesets with repeated `--config` flags. <cite index="9-18">You can stack multiple rulesets in a single scan by passing multiple --config flags: semgrep --config p/default --config p/security-audit --config p/python</cite>. The prompt's three packs map to curated registry sets: `p/security-audit` is a broad security set, and <cite index="2-31">p/owasp-top-ten maps rules to the OWASP Top 10 vulnerability categories - injection, broken authentication, sensitive data exposure, and so on</cite>. Semgrep supports TS/JS plus IaC packs for Docker, matching the container/CI surface.
+- **Joern installation and JDK requirement:** Confirmed Joern is JVM-based and the current line is 2.x. <cite index="12-1,12-17">JDK 21 (other versions might work, but have not been properly tested)</cite> is the documented prerequisite, and pre-built binaries install via `joern-install.sh` from the GitHub releases page. Joern's JavaScript frontend covers the TS/JS codebase. The decision is therefore to install **OpenJDK 21** before Joern.
+- **OSV-Scanner support and offline mode:** Confirmed OSV-Scanner V2 supports the npm/yarn ecosystem and is distributed as a prebuilt binary. <cite index="21-1,21-2">The recommended method is to download a prebuilt binary for your platform. Alternatively, you can use go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest to build it from source.</cite> Because Go is absent, the prebuilt binary is the chosen path. For hermetic runs, <cite index="21-16,21-17">Scan your project against a local OSV database. No network connection is required after the initial database download.</cite> The tool transmits only metadata: <cite index="21-37,21-38">Data sent includes package names, versions, and ecosystems. No source code is transmitted.</cite>
+
+### 0.2.3 Existing Infrastructure Assessment
+
+- **Current project structure:** Yarn Berry 4.12.0 + Turborepo monorepo; deployable surfaces are `apps/web` (Next.js), `apps/api` (proxy), `apps/api/v1` (Next.js, deprecated), and `apps/api/v2` (NestJS); 20 shared `packages/*` (including `features`, `app-store`, `lib`, `prisma`, `platform`, `trpc`, `ui`, `ee`).
+- **Existing security tooling (baseline — left unchanged):** `.github/workflows/security-audit.yml` is a reusable `workflow_call` job that runs `yarn npm audit --all --recursive` (report) plus a `--severity critical` gate [.github/workflows/security-audit.yml]. This is a yarn-native SCA check that **OSV-Scanner complements** by querying the broader OSV database; the four-layer task produces standalone findings and does **not** modify this workflow.
+- **Disclosure policy:** `SECURITY.md` defines the disclosure process and an out-of-scope vulnerability-class list, and `.well-known/security.txt` is present [SECURITY.md]. The SAST/SCA audit focuses on first-party code, configuration, and dependency vulnerabilities.
+- **No pre-existing scanner configs:** no Semgrep (`.semgrep*`), CodeQL, Snyk, Joern, or OSV configuration files are present, so all scanner configuration is introduced as net-new artifacts in an isolated output directory.
+- **Conventions to follow:** existing Blitzy deliverables already live under `blitzy/` and `blitzy-docs/` directories, establishing the convention of placing generated artifacts under a dedicated top-level directory rather than intermixing them with source.
+
+
+## 0.3 Scope Boundaries
+
+The audit is a non-invasive measurement: it **reads** the entire repository and **writes** only net-new artifacts. The boundaries below distinguish what is produced (in scope) from what is deliberately excluded (out of scope).
+
+### 0.3.1 Exhaustively In Scope
+
+**Net-new audit outputs (CREATE) — colocated under a dedicated output directory `security-audit/`:**
+
+- `security-audit/findings-layer-1-blitzy.json` — Layer 1 normalized findings.
+- `security-audit/findings-layer-2-semgrep.json` — Layer 2 normalized findings.
+- `security-audit/findings-layer-3-joern.json` — Layer 3 normalized findings.
+- `security-audit/findings-layer-4-osv.json` — Layer 4 normalized findings.
+- `security-audit/findings-merged.json` — cross-layer merged report with the `_summary` header.
+
+**Net-new intermediate artifacts (CREATE):**
+
+- `security-audit/results-semgrep.sarif` — raw Semgrep SARIF output.
+- `security-audit/cpg.bin` — Joern Code Property Graph binary.
+- `security-audit/results-joern.json` — raw Joern query output.
+- `security-audit/results-osv.json` — raw OSV-Scanner JSON output.
+- `security-audit/security-queries.sc` — the Joern JQL/Scala query script (the only net-new "code"-like artifact).
+- `security-audit/semgrep-rules/**` — local cache of the `p/security-audit`, `p/secrets`, and `p/owasp` rule packs.
+- `security-audit/.semgrepignore` — scan-exclusion list for vendored/build paths (`node_modules`, `.yarn`, `.next`, `dist`).
+
+**Net-new rule-mandated deliverables (CREATE):**
+
+- `security-audit/decision-log.md` — the Explainability decision log (Markdown table).
+- `blitzy-deck/executive-summary.html` — the Executive Presentation reveal.js deck (self-contained, theme embedded inline).
+
+**Read-only scan inputs (REFERENCE — read, never modified):**
+
+- `yarn.lock` (Layer 4).
+- `apps/**` and `packages/**` TypeScript/JavaScript source (Layers 2 and 3).
+- 7 container files (`Dockerfile`, `docker-compose*.yml`, `apps/api/v2/Dockerfile`) (Layer 2).
+- `.github/workflows/**` (59 files) and `.github/actions/**` (9 composite actions) (Layer 2).
+- `.env.example`, `.env.appStore.example` (Layer 2 secrets).
+- `packages/prisma/schema.prisma` (Layer 3 ORM context).
+
+### 0.3.2 Explicitly Out of Scope
+
+- **Vulnerability remediation / patching.** The audit measures and reports; it does **not** fix any finding. This honors the `~0 files modified` constraint.
+- **Modification of any existing source, configuration, schema, or test file** in `apps/**`, `packages/**`, `.github/**`, `Dockerfile`, or `*.env*`.
+- **Edits to the existing `.github/workflows/security-audit.yml` or `SECURITY.md`** — both are left intact [.github/workflows/security-audit.yml] [SECURITY.md].
+- **CI/CD pipeline integration.** The four-layer scan is executed out-of-band; no new workflow is wired into the pipeline (none was requested).
+- **Project dependency changes.** No additions, upgrades, or removals in `package.json` or `yarn.lock`; the audit installs scanners into the execution environment only, not into the repository manifests.
+- **Triage beyond the directive-specified normalization and deduplication.** No manual false-positive suppression is performed beyond the schema/dedup rules; no severity is reinterpreted outside the specified maps.
+- **Scope expansion to additional scanners or languages** not named in the prompt (e.g., CodeQL, Snyk), and no scanning of non-existent ecosystems (no Python/Go/Java/Ruby sources exist).
+- **Production-system scanning.** Consistent with `SECURITY.md`, the audit targets the local source tree, not live infrastructure.
+
+
+## 0.4 Dependency Inventory
+
+This audit introduces **no changes to the project's dependency surface**. The only software added is the scanning toolchain, which is installed into the execution environment and is **not** registered in `package.json` or `yarn.lock`.
+
+### 0.4.1 Audit Toolchain
+
+The scanners and their runtime prerequisites are listed below. Exact patch versions are intentionally pinned-at-install and recorded in the decision log, because these are external scanning tools (not project dependencies) whose releases change frequently; inventing fixed patch numbers here would be inaccurate.
+
+| Registry / Source | Tool | Version | Purpose |
+|-------------------|------|---------|---------|
+| PyPI (pip/pipx) | `semgrep` | Latest stable Semgrep CE (pinned + recorded at install) | Layer 2 pattern SAST (rule packs `p/security-audit`, `p/secrets`, `p/owasp`) |
+| GitHub Releases (`joernio/joern`) | `joern` / `joern-parse` | Latest 2.x (Apache 2.0) | Layer 3 semantic/dataflow SAST (CPG + JQL) |
+| Adoptium / OpenJDK | `openjdk` | JDK 21 | JVM prerequisite for Joern |
+| GitHub Releases (`google/osv-scanner`) | `osv-scanner` | Latest V2.x (Apache 2.0, prebuilt SLSA3 binary) | Layer 4 dependency SCA against OSV.dev |
+| Present in environment | `python` | 3.12.3 | Semgrep runtime (no install required) |
+
+Reveal.js deck runtime dependencies (mandated by the Executive Presentation rule) are loaded at view time from pinned CDNs and are **not** installed locally:
+
+| Source | Library | Version | Purpose |
+|--------|---------|---------|---------|
+| CDN | `reveal.js` | 5.1.0 | Slide framework for the executive deck |
+| CDN | `mermaid` | 11.4.0 | Architecture/data-flow diagrams in the deck |
+| CDN | `lucide` | 0.460.0 | SVG icons (no emoji per rule) |
+| Google Fonts | Inter / Space Grotesk / Fira Code | n/a | Brand typography |
+
+### 0.4.2 Project Dependency Changes
+
+- **New dependencies to add:** None. The audit does not add any npm package to the project.
+- **Dependencies to update:** None.
+- **Dependencies to remove:** None.
+- **Import / reference updates:** None. Because no source file is modified, there are no import statements to rewrite and no configuration references to update.
+
+The project's own technology stack (Node 20.x runtime targeted by CI/Docker [Dockerfile:L1], TypeScript, Next.js, NestJS, Prisma, etc.) is documented in Sections 3.x of this specification and is unaffected by the audit. OSV-Scanner will, however, **report** any known CVEs found in the dependencies declared in `yarn.lock`; resolving those CVEs is explicitly out of scope (see Section 0.3.2).
+
+
+## 0.5 Implementation Design
+
+### 0.5.1 Technical Approach
+
+The audit follows a logical (not time-boxed) flow: establish the toolchain, run the four layers independently against their read-only inputs, normalize and deduplicate, merge, and finally produce the rule-mandated documentation artifacts.
+
+- **First, establish the toolchain** by provisioning OpenJDK 21 (Joern's JVM prerequisite), Semgrep into an isolated Python environment, and the OSV-Scanner prebuilt binary — chosen because the environment provides Python 3.12.3 but neither Java nor Go.
+- **Next, run Layer 1 (Blitzy native)** by reasoning over code, configuration, and architecture to capture logic, configuration-default, and key-reuse classes that automated scanners structurally miss, writing each CWE-classified finding to `findings-layer-1-blitzy.json`.
+- **Next, run Layer 2 (Semgrep)** by caching the three rule packs locally, validating telemetry suppression with the dry-run gate, scanning the repository to `results-semgrep.sarif`, then transforming SARIF into `findings-layer-2-semgrep.json` using the `error→critical, warning→high, note→medium, info→low` map.
+- **Next, run Layer 3 (Joern)** by building `cpg.bin` with `joern-parse`, authoring `security-queries.sc`, executing it to `results-joern.json`, then transforming into `findings-layer-3-joern.json` using the `high→critical, medium→high, low→medium, info→low` map.
+- **Next, run Layer 4 (OSV-Scanner)** by scanning the single `yarn.lock` to `results-osv.json`, then transforming into `findings-layer-4-osv.json`.
+- **Then, normalize and deduplicate** all four layers to the fixed schema and emit `findings-merged.json` with the `_summary` header and corroboration annotations.
+- **Finally, ensure explainability and communication** by writing `decision-log.md` and the self-contained `blitzy-deck/executive-summary.html` deck.
+
+```mermaid
+flowchart TD
+    ENV["Provision toolchain: OpenJDK 21, Semgrep, OSV-Scanner"]
+    ENV --> L1["Layer 1: Blitzy native expert reasoning"]
+    ENV --> L2A["Layer 2: cache rule packs + verify metrics-off dry-run"]
+    ENV --> L3A["Layer 3: joern-parse builds cpg.bin"]
+    ENV --> L4["Layer 4: osv-scanner reads yarn.lock"]
+    L1 --> N1["findings-layer-1-blitzy.json"]
+    L2A --> L2B["semgrep scan to results-semgrep.sarif"]
+    L2B --> N2["findings-layer-2-semgrep.json"]
+    L3A --> L3B["joern runs security-queries.sc to results-joern.json"]
+    L3B --> N3["findings-layer-3-joern.json"]
+    L4 --> N4["findings-layer-4-osv.json"]
+    N1 --> NORM["Normalize to schema + cross-layer dedup"]
+    N2 --> NORM
+    N3 --> NORM
+    N4 --> NORM
+    NORM --> MERGE["findings-merged.json with _summary header"]
+    MERGE --> DOC["security-audit/decision-log.md"]
+    MERGE --> DECK["blitzy-deck/executive-summary.html"]
 ```
 
-#### Definitive Finding
-
-**All five known issues have been resolved in the current codebase.** The full test suite executes cleanly:
-
-- **626 test files passed**, 7 skipped (all intentionally), **0 failures**
-- **7,360 individual tests passed**, 64 skipped, 6 todo, **0 failures**
-- Console noise from JSDOM (Error Boundary test, `@daily-co/daily-js` canvas shim) is expected and harmless
-
-The remaining items requiring attention are:
-
-- **3 skipped duration-limit tests** in `apps/web/test/lib/getSchedule.test.ts` (lines 1975, 2079, 2245) that fail when unskipped due to incomplete test scenario data (missing user 102 schedule definition and assertion mismatches)
-- **1 skipped yearly booking-limit test** in `packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts` (line 48) that fails in CI due to a `no_available_users_found_error`
-- **A FIXME comment** at `packages/features/busyTimes/services/getBusyTimes.ts:676` documenting that bookings overlapping on one side of the query window boundary are never counted in limit checks
-
-
-## 0.2 Root Cause Identification
-
-### 0.2.1 Issue 1 — Seat/Booking-Limit Interaction (RESOLVED)
-
-- **Root Cause:** The `getBusyTimesForLimitChecks` method in `packages/features/busyTimes/services/getBusyTimes.ts` previously counted each individual seat booking row as a separate booking against the interval limit, causing remaining seats on partially booked slots to be incorrectly blocked.
-- **Located in:** `packages/features/busyTimes/services/getBusyTimes.ts`, lines 528–570
-- **Fix Applied:** Seat-aware deduplication logic now groups booking rows by time slot key (`startTime<>endTime`), counts the number of rows per slot, and only emits a single representative booking for fully booked slots. Partially booked slots (where `group.length < seatsPerTimeSlot`) are excluded from limit counting entirely.
-- **Evidence:** The deduplication code at lines 540–570 queries `prisma.eventType.findUnique` for `seatsPerTimeSlot`, builds a `slotGroups` Map keyed by `${startTime.toISOString()}<>${endTime.toISOString()}`, and filters to only include groups where `group.length >= seatsPerTimeSlot`.
-- **This conclusion is definitive because:** The logic correctly implements the documented invariant: with `seatsPerTimeSlot=3` and `PER_DAY=1`, a slot with 1 of 3 seats booked yields 0 full slots → limit NOT reached → remaining seats bookable. Only when 3 of 3 seats are booked → 1 full slot → limit reached → day is blocked.
-
-### 0.2.2 Issue 2 — Team Seated Event Status Reflection (RESOLVED)
-
-- **Root Cause:** The `_getBusyTimes` method lacked cross-user seat count aggregation, so User B could not see User A's bookings for the same event type, causing fully booked slots to appear as available.
-- **Located in:** `packages/features/busyTimes/services/getBusyTimes.ts`, lines 199–310
-- **Fix Applied:** A `crossUserSeatMap` (`Map<string, number>`) now queries ALL bookings for the event type across all team members (not just the current user). For each time slot key, it stores the total number of booking rows. The `effectiveSeatCount` is resolved by preferring the cross-user count over the per-user count: `crossUserSeatMap?.get(bookedAt) ?? bookingSeatCountMap[bookedAt]`. Additionally, lines 289–310 add a post-processing loop that blocks fully booked cross-user time slots that are not in the current user's booking set.
-- **Evidence:** The cross-user seat query at lines 202–228 uses `prisma.booking.findMany` filtered by `eventTypeId` and `BookingStatus.ACCEPTED` across the full buffer-adjusted time window, building a map of slot keys to seat counts. Line 250 uses the `effectiveSeatCount` to gate whether a booking is blocking.
-- **This conclusion is definitive because:** The cross-user aggregation query is scoped to the entire event type (not filtered by userId), and the post-processing loop at line 299 explicitly blocks slots where `totalSeats >= eventTypeSeatsPerTimeSlot` even when the current user has no bookings in that slot.
-
-### 0.2.3 Issue 3 — `next-config.test.ts` Module Load Failure (RESOLVED)
-
-- **Root Cause:** The `pagesAndRewritePaths.ts` file dynamically generates route patterns using `globSync` to scan the `pages/` and `app/` directories. The generated regex patterns were producing path strings too complex for the `path-to-regexp` library bundled with Next.js 16.1.7, causing a `TypeError: Unexpected MODIFIER` at parse time.
-- **Located in:** `apps/web/pagesAndRewritePaths.ts`, lines 22–52 (the `topLevelRoutesExcludedFromOrgRewrite` glob and filter pipeline) and `apps/web/test/lib/next-config.test.ts`, line 7 (`const { match, pathToRegexp } = require("next/dist/compiled/path-to-regexp")`)
-- **Fix Applied:** The glob pattern and filter pipeline now correctly generates a route list that produces valid `path-to-regexp` patterns. All 11 tests in the file pass.
-- **This conclusion is definitive because:** Running `TZ=UTC npx vitest run apps/web/test/lib/next-config.test.ts --no-watch` produces 11 passing tests in 90ms with zero errors.
-
-### 0.2.4 Issue 4 — `pagesAndRewritePaths.test.ts` Assertion Failure (RESOLVED)
-
-- **Root Cause:** The `topLevelRoutesExcludedFromOrgRewrite` array generated by the glob scanner did not include the `'apps'` route, which was expected by the test's hardcoded `ROUTES_EXCLUDED_FROM_ORG_REWRITE` array.
-- **Located in:** `apps/web/pagesAndRewritePaths.ts`, lines 22–52 and `apps/web/test/lib/pagesAndRewritePaths.test.ts`, lines 12–37
-- **Fix Applied:** The route scanning pipeline now correctly discovers and includes the `'apps'` route in the exclusion list. Both tests pass.
-- **This conclusion is definitive because:** Running the test produces 2 passing tests in 7ms.
-
-### 0.2.5 Issue 5 — `next-auth-options.test.ts` Timeout (RESOLVED)
-
-- **Root Cause:** The `authorizeCredentials` function import via dynamic `import("./next-auth-options")` in the `beforeAll` hook was pulling in the full module dependency graph (including `@googleapis/calendar`, `googleapis-common`, `next-auth`, and 30+ Cal.com internal modules), causing ~3.5s of import overhead. The first test executed after `beforeAll` would inherit the combined import + test execution time, exceeding the 10-second timeout.
-- **Located in:** `packages/features/auth/lib/next-auth-options.test.ts`, lines 110–117 (`beforeAll` hook) and `packages/features/auth/lib/next-auth-options.ts` (the 1,318-line module with heavy imports)
-- **Fix Applied:** The `beforeAll` hook now performs a single dynamic import, loading both `verifyPassword` and `authorizeCredentials` once. The mock registrations using `vi.mock()` are hoisted above the `beforeAll` execution, ensuring all heavy dependencies resolve to lightweight mocks. All 6 tests pass in 5.6 seconds total (including the ~3.5s import time).
-- **This conclusion is definitive because:** Running the test produces 6 passing tests with total test duration of 5,640ms, well within the default timeout.
-
-### 0.2.6 Remaining Items — Skipped Duration-Limit Tests
-
-- **Root Cause:** Three `test.skip()` tests in `apps/web/test/lib/getSchedule.test.ts` have incomplete test scenario data:
-  - **"global team duration limit"** (line 2079): References user 102 in event type definitions but only defines user 101 in the `users` array. When `createBookingScenario` processes user 102, the `addUsers` function calls `user.schedules.map()` on an undefined `schedules` property, producing a `TypeError`.
-  - **"combined booking and duration limits"** (line 2245): The second call to `createBookingScenario` encounters the same schedules resolution issue when processing re-created user data.
-  - **"PER_WEEK duration limits"** (line 1975): Potentially passes when the date range correctly spans a single calendar week; requires validation.
-- **Located in:** `apps/web/test/lib/getSchedule.test.ts`, lines 1975, 2079, 2245
-- **Fix Required:** Add user 102 with a valid `schedules` entry to the scenario data for the team duration limit test. Verify all three tests pass when unskipped.
-
-
-## 0.3 Diagnostic Execution
-
-### 0.3.1 Code Examination Results
-
-**File analyzed:** `packages/features/busyTimes/services/getBusyTimes.ts` (relative to repository root)
-
-- **Seat/Limit deduplication block:** Lines 528–570 — correctly groups seat bookings by time slot and filters to only count fully booked slots toward booking/duration limits
-- **Cross-user seat map:** Lines 199–228 — queries all accepted bookings for the event type across all users, building a `Map<string, number>` of slot keys to consumed seat counts
-- **Cross-user blocking loop:** Lines 289–310 — iterates the cross-user seat map and pushes busy-time entries for fully booked slots that the current user does not own
-- **FIXME comment:** Line 676 — documents a known limitation where bookings that overlap on one side of the query window boundary are never counted in limit checks
-
-**File analyzed:** `apps/web/pagesAndRewritePaths.ts`
-
-- **Glob scanner:** Lines 22–31 — uses `globSync` to scan `{pages,app,...}/**/*.{tsx,js,ts}` with `cwd: __dirname`
-- **Filter pipeline:** Lines 32–52 — extracts top-level route names, deduplicates, excludes internal patterns, and removes whitelisted routes
-- **Route pattern generators:** Lines 93–101 — constructs `orgUserRoutePath`, `orgUserTypeRoutePath`, and `orgUserTypeEmbedRoutePath` using regex negative lookahead with reserved route names
-
-**File analyzed:** `packages/features/auth/lib/next-auth-options.ts`
-
-- **`authorizeCredentials` function:** Lines 254–280 — extracted authorize logic for testability
-- **Password null check:** Line 270 — `if (!user.password?.hash)` throws `ErrorCode.IncorrectEmailPassword`, correctly handling all identity providers (CAL, Google, SAML) uniformly
-
-**File analyzed:** `apps/web/test/lib/getSchedule.test.ts`
-
-- **Skipped test at line 2079:** `global team duration limit blocks slots if one fixed host reached limit` — scenario data defines users `[101, 102]` in event types but only user 101 in the `users` array, causing `user.schedules.map is not a function` when user 102 is processed by `createBookingScenario`
-- **Skipped test at line 2245:** `combined booking and duration limits work correctly` — encounters the same `schedules.map` error on the second call to `createBookingScenario`
-
-### 0.3.2 Repository File Analysis Findings
-
-| Tool Used | Command Executed | Finding | File:Line |
-|-----------|-----------------|---------|-----------|
-| vitest | `TZ=UTC npx vitest run apps/web/test/lib/next-config.test.ts` | 11 tests pass, 0 failures | `apps/web/test/lib/next-config.test.ts` |
-| vitest | `TZ=UTC npx vitest run apps/web/test/lib/pagesAndRewritePaths.test.ts` | 2 tests pass, 0 failures | `apps/web/test/lib/pagesAndRewritePaths.test.ts` |
-| vitest | `TZ=UTC npx vitest run packages/features/auth/lib/next-auth-options.test.ts` | 6 tests pass in 5.6s, 0 failures | `packages/features/auth/lib/next-auth-options.test.ts` |
-| vitest | `TZ=UTC npx vitest run --no-watch` (full suite) | 626 files pass, 7360 tests pass, 0 failures | All test files |
-| grep | `grep -n "seatsPerTimeSlot\|bookingLimits" packages/features/busyTimes/services/getBusyTimes.ts` | Seat deduplication logic at lines 528–570, cross-user seat map at lines 199–228 | `getBusyTimes.ts:528-570` |
-| grep | `grep -n "test\.skip" apps/web/test/lib/getSchedule.test.ts` | 3 skipped tests at lines 1975, 2079, 2245 | `getSchedule.test.ts:1975,2079,2245` |
-| grep | `grep -n "FIXME" packages/features/busyTimes/services/getBusyTimes.ts` | Overlapping booking boundary issue documented | `getBusyTimes.ts:676` |
-| bash | `sed -n '2079,2170p' apps/web/test/lib/getSchedule.test.ts` | User 102 referenced in event types but not defined in users array | `getSchedule.test.ts:2079` |
-| bash | `sed -n '930,950p' packages/testing/src/lib/bookingScenario/bookingScenario.ts` | `user.schedules.map()` called without null check | `bookingScenario.ts:940` |
-| vitest | Unskipped 3 tests and ran `getSchedule.test.ts` | 2 of 3 tests fail: TypeError at line 940, assertion at line 2198 | `getSchedule.test.ts` |
-
-### 0.3.3 Fix Verification Analysis
-
-- **Steps followed to reproduce bugs:** Ran each of the 5 known test files individually with `TZ=UTC npx vitest run <path> --no-watch`, then ran the full suite with `TZ=UTC npx vitest run --no-watch`
-- **Confirmation tests:** All 5 known issue test files pass individually. Full suite produces 626 passed files, 7360 passed tests, 0 failures.
-- **Boundary conditions covered:**
-  - Seat availability with `seatsPerTimeSlot=10` and `beforeEventBuffer=10` (tested in `getBusyTimes.test.ts`)
-  - Booking limits with `PER_DAY=1` and single-user scenario (tested in `getSchedule.test.ts`)
-  - Cross-user seat maps for team events (tested in `getBusyTimes.test.ts`)
-  - Password null hash with all identity providers (CAL, Google, SAML) — tested in `next-auth-options.test.ts`
-  - Route scanning with pages and app router directories — tested in `pagesAndRewritePaths.test.ts`
-- **Verification was successful:** Confidence level **95%** — the 5% gap accounts for the 3 skipped duration-limit tests that need test data fixes and the documented FIXME at line 676.
-
-
-## 0.4 Bug Fix Specification
-
-### 0.4.1 The Definitive Fix
-
-All five known issues (Issues 1–5) are already resolved in the current codebase. The remaining work consists of fixing 3 skipped duration-limit tests in `apps/web/test/lib/getSchedule.test.ts` that have incomplete test scenario data.
-
-**File to modify:** `apps/web/test/lib/getSchedule.test.ts` (relative to repository root)
-
-### 0.4.2 Change Instructions
-
-#### Fix A — Unskip and Fix "global team duration limit" Test (Line 2079)
-
-- **MODIFY** line 2079 from: `test.skip("global team duration limit blocks slots if one fixed host reached limit"` to: `test("global team duration limit blocks slots if one fixed host reached limit"`
-- **INSERT** after the existing user 101 definition (approximately line 2153) a new user entry for user 102 with a valid schedules array:
-
-```js
-{
-  ...TestData.users.example,
-  id: 102,
-  schedules: [{ id: 2, name: "All Day available",
-    availability: [{ userId: null, eventTypeId: null,
-      days: [0,1,2,3,4,5,6],
-      startTime: new Date("1970-01-01T00:00:00.000Z"),
-      endTime: new Date("1970-01-01T23:59:59.999Z"),
-      date: null }],
-    timeZone: Timezones["+6:00"] }],
-},
-```
-
-- **Motive:** User 102 is referenced in the event type definitions (users array) but lacks a corresponding entry in the scenario `users` array. Without schedules data, `createBookingScenario` calls `user.schedules.map()` on undefined, causing a `TypeError`.
-
-#### Fix B — Unskip "PER_WEEK duration limits" Test (Line 1975)
-
-- **MODIFY** line 1975 from: `test.skip("test that PER_WEEK duration limits work correctly"` to: `test("test that PER_WEEK duration limits work correctly"`
-- **Validate:** This test has complete scenario data (user 101 with schedules defined). It should pass once unskipped. If it fails, investigate whether the date range correctly spans a single calendar week and adjust `dateIncrement` values accordingly.
-
-#### Fix C — Unskip and Fix "combined booking and duration limits" Test (Line 2245)
-
-- **MODIFY** line 2245 from: `test.skip("test that combined booking and duration limits work correctly"` to: `test("test that combined booking and duration limits work correctly"`
-- **Validate and fix** any scenario data issues. This test defines only user 101 with schedules, so the `user.schedules.map` error likely originates from the second call to `createBookingScenario`. Ensure the second call does not introduce user objects without schedules.
-- If the issue is that `createBookingScenario` has stale state from the first call, ensure each scenario is fully self-contained and reset prismock state between calls.
-
-### 0.4.3 Fix Validation
-
-- **Test command to verify fix:**
-
-```bash
-TZ=UTC npx vitest run apps/web/test/lib/getSchedule.test.ts --no-watch
-```
-
-- **Expected output after fix:** `39 tests pass, 0 skipped, 0 failures` (currently shows `36 passed | 3 skipped`)
-- **Regression validation:**
-
-```bash
-TZ=UTC npx vitest run --no-watch
-```
-
-- **Expected output:** `626+ files passed, 7360+ tests passed, 0 failures` — the 3 previously skipped tests should now be passing, increasing total passed count.
-
-### 0.4.4 Additional Cleanup — Booking Limits Test (Optional)
-
-The test at `packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:48` is skipped with the comment "This test fails on CI as handleNewBooking throws no_available_users_found_error error." This is a test infrastructure issue where the mock booking scenario does not correctly set up available users for yearly limit checking. If this test is in sprint scope, the fix involves ensuring the booking scenario creates users with valid schedules that produce available slots in the query window.
-
-### 0.4.5 Documentation of Known Limitation (FIXME)
-
-The FIXME at `packages/features/busyTimes/services/getBusyTimes.ts:676` documents that the Prisma query for limit-check bookings uses `startTime >= startTimeDate AND endTime <= endTimeDate`, which means bookings that straddle the query window boundary (starting before the window but ending within it, or starting within but ending after it) are never counted. This is a pre-existing limitation, not introduced by Sprint 1–8 work, and should be tracked as a separate backlog item rather than addressed in this bug fix.
-
-
-## 0.5 Scope Boundaries
-
-### 0.5.1 Changes Required (EXHAUSTIVE LIST)
-
-| Action | File Path | Lines | Specific Change |
-|--------|-----------|-------|-----------------|
-| MODIFIED | `apps/web/test/lib/getSchedule.test.ts` | 1975 | Change `test.skip(` to `test(` — unskip PER_WEEK duration limit test |
-| MODIFIED | `apps/web/test/lib/getSchedule.test.ts` | 2079 | Change `test.skip(` to `test(` — unskip global team duration limit test |
-| MODIFIED | `apps/web/test/lib/getSchedule.test.ts` | ~2153 | INSERT user 102 entry with schedules in the users array of the team duration limit scenario |
-| MODIFIED | `apps/web/test/lib/getSchedule.test.ts` | 2245 | Change `test.skip(` to `test(` — unskip combined booking and duration limits test |
-| MODIFIED | `apps/web/test/lib/getSchedule.test.ts` | ~2382 | FIX second `createBookingScenario` call to ensure user data includes schedules |
-
-No other files require modification. All five known issues (Issues 1–5) are already resolved and require zero additional code changes.
-
-### 0.5.2 Created, Modified, and Deleted Files
-
-| Action | File Path |
-|--------|-----------|
-| MODIFIED | `apps/web/test/lib/getSchedule.test.ts` |
-
-No files are created or deleted.
-
-### 0.5.3 Explicitly Excluded
-
-- **Do not modify:** `packages/features/busyTimes/services/getBusyTimes.ts` — the seat deduplication logic and cross-user seat map are already correctly implemented; no changes needed
-- **Do not modify:** `apps/web/pagesAndRewritePaths.ts` — route scanning works correctly; all tests pass
-- **Do not modify:** `packages/features/auth/lib/next-auth-options.ts` — authorize flow works correctly; all tests pass
-- **Do not modify:** `packages/features/auth/lib/next-auth-options.test.ts` — all 6 tests pass within timeout
-- **Do not modify:** `apps/web/test/lib/next-config.test.ts` — all 11 tests pass
-- **Do not modify:** `apps/web/test/lib/pagesAndRewritePaths.test.ts` — both tests pass
-- **Do not refactor:** The FIXME at `getBusyTimes.ts:676` (boundary overlap issue) — this is a pre-existing limitation outside Sprint 1–8 scope
-- **Do not modify:** Payment flows, third-party app integrations not covered by Sprints 1–8
-- **Do not modify:** `EventManager` public API surface
-- **Do not modify:** Prisma schema models — no new migrations
-- **Do not modify:** Existing webhook payload formats (`v2021-10-20` format must remain unchanged)
-- **Do not modify:** Feature flag names introduced across Sprints 1–8
-- **Do not modify:** `apps/web/modules/schedules/components/date-override-list.test.tsx` — locale-dependent test explicitly marked out of scope by the user
-- **Do not modify:** Entirely skipped test files (`confirm.handler.test.ts`, `editLocation.handler.test.ts`, `button.test.tsx`, `listMembers.test.ts`, `bulkDeleteUsers.test.ts`, `crmManager.test.ts`, `managed-event-type-booking.test.ts`) — these are intentionally skipped due to module import/setup issues unrelated to Sprint 1–8 deliverables
-
-
-## 0.6 Verification Protocol
-
-### 0.6.1 Bug Elimination Confirmation
-
-- **Execute:** `TZ=UTC npx vitest run apps/web/test/lib/getSchedule.test.ts --no-watch`
-- **Verify output matches:** `39 tests passed, 0 skipped, 0 failures` (3 previously skipped tests now passing)
-- **Confirm error no longer appears:** No `TypeError: user.schedules.map is not a function` in the output
-- **Validate functionality with:** Run the full test suite to confirm no regressions
-
-### 0.6.2 Regression Check
-
-- **Run existing test suite:**
-
-```bash
-TZ=UTC npx vitest run --no-watch
-```
-
-- **Expected result:** 626+ test files passed, 7360+ tests passed (3 more than before), 0 failures
-- **Verify unchanged behavior in:**
-  - All existing booking, rescheduling, and cancellation flows — verified by `handleNewBooking` test suites (35+ tests in `fresh-booking.test.ts`, 14+ in `collective-scheduling.test.ts`, 9 in `booking-limits.test.ts`, 4 in `global-booking-limits.test.ts`)
-  - Availability engine — verified by 50 tests in `packages/features/availability/`
-  - Webhook payloads — verified by 208 tests in `packages/features/webhooks/`
-  - Calendar integrations — verified by calendar adapter test suites (Google, Outlook, Apple)
-  - Routing forms — verified by 205 tests in `packages/app-store/routing-forms/`
-  - Embed flows — verified by 153 tests in `packages/embeds/`
-  - Email notifications — verified by 148 tests in `packages/emails/`
-  - Auth flows — verified by 6 tests in `next-auth-options.test.ts`
-  - Org rewrites — verified by 11 tests in `next-config.test.ts` and 2 in `pagesAndRewritePaths.test.ts`
-
-### 0.6.3 Sprint-by-Sprint Validation Matrix
-
-| Sprint | Domain | Epic Range | Test Suite Status | Key Test Files |
-|--------|--------|-----------|-------------------|----------------|
-| 1 | Availability & Scheduling | AV-001 – AV-007 | ✅ 50 tests pass | `availability/`, `schedules/`, `busyTimes/` |
-| 2 | Event Types | ET-001 – ET-006 | ✅ All pass | `getSchedule.test.ts`, `eventtypes/` |
-| 3 | Calendar Integrations | CI-001 – CI-005 | ✅ 280+ tests pass | `googlecalendar/`, `office365calendar/`, `applecalendar/` |
-| 4 | Webhooks & Events | WH-001 – WH-005 | ✅ 208 tests pass | `webhooks/lib/`, `webhooks/lib/factory/` |
-| 5 | Routing Forms | RF-001 – RF-004 | ✅ 205 tests pass | `routing-forms/lib/`, `routing-forms/__tests__/` |
-| 6 | Embed & Share | EM-001 – EM-004 | ✅ 153 tests pass | `embed-core/`, `embed-react/` |
-| 7 | Admin & Teams | AG-001 – AG-004 | ✅ All pass | `organizations/`, `teams/`, `membership/` |
-| 8 | Notifications | NF-001 – NF-004 | ✅ 148 tests pass | `emails/`, `sms/`, `workflows/` |
-
-### 0.6.4 Continuous Verification Checklist
-
-- [ ] All 5 known issues confirmed passing individually
-- [ ] Full `TZ=UTC npx vitest run --no-watch` produces 0 failures
-- [ ] 3 previously skipped duration-limit tests now pass after fix
-- [ ] All currently passing tests continue to pass (zero regressions)
-- [ ] Console noise (Error Boundary test, @daily-co canvas shim, JSDOM warnings) is unchanged
-- [ ] The 7 intentionally skipped test files remain skipped (not inadvertently altered)
+### 0.5.2 Component Impact Analysis
+
+- **Direct modifications required:** None to existing components. The audit is read-only; no application file is changed.
+- **New components introduced:**
+  - The `security-audit/` output directory holding all findings, intermediates, and the decision log.
+  - The `security-queries.sc` JQL/Scala script — the sole net-new "code"-like artifact, executed only inside the Joern shell and never linked into the running application.
+  - The `blitzy-deck/` directory holding the executive-summary deck.
+  - The `security-audit/semgrep-rules/` local rule cache.
+- **Indirect impacts and dependencies:** None. Because no interface, schema, or behavior changes, there are no downstream components requiring test updates, configuration sync, or import rewrites. The audit consumes (reads) `apps/**`, `packages/**`, `.github/workflows/**`, `.github/actions/**`, `yarn.lock`, the 7 container files, `.env.example`/`.env.appStore.example`, and `packages/prisma/schema.prisma`.
+
+### 0.5.3 Critical Implementation Details
+
+- **Normalized schema:** every finding conforms to `{"file","line","severity","cwe","description","layer","tool"}`, with `description` truncated to ≤ 200 characters and each output file written as a single minified line (no pretty-printing) for deterministic, diffable artifacts.
+- **Severity mapping:** applied verbatim per layer (Semgrep `error/warning/note/info`; Joern `high/medium/low/info`); raw tool-native severities are preserved in the intermediate artifacts (`results-*.sarif`/`results-*.json`) so no information is lost.
+- **CWE classification:** Layer 1 assigns the most specific CWE by expert judgment; Layer 2 reads CWE from Semgrep rule metadata and infers when absent; Layer 3 maps query intent to its canonical CWE (e.g., command sinks → CWE-78, ORM raw SQL → CWE-89, route-parameter taint → CWE-20/CWE-862); Layer 4 carries the CVE/CWE supplied by the OSV record.
+- **Deduplication and corroboration:** cross-layer findings are keyed on `file + line + CWE`; on collision the higher severity is retained and the lower-severity layer is recorded under `corroborated_by`. OSV findings are keyed on `(package_name, CVE_ID)`. Corroboration pairs that span Layer 1 ∩ Layer 2/3 are flagged as highest confidence in the merged report.
+- **Joern query design (`security-queries.sc`):** combines taint reachability (`sink.reachableByFlows(source)`), command-execution sinks (`cpg.call.name("exec.*|eval|spawn")`) against the 20 candidate sink files, route-parameter taint over the NestJS/Next.js handlers, ORM raw-SQL flows over the 28 `$queryRaw`/`executeRawUnsafe` candidate files, and authorization-bypass checks over the guard layer.
+- **Determinism and offline operation:** Semgrep runs with `--metrics=off` against the local rule cache (no telemetry); OSV-Scanner uses the prebuilt binary and may run against a downloaded offline database when network egress is restricted.
+- **Edge cases and error handling:** Joern CPG construction is memory-intensive on a ~7,433-file monorepo, so the parse step is given an adequate JVM heap (`-J-Xmx`) and excludes vendored paths; an empty result set from any layer still produces a valid (empty-array) findings file so the `wc -l == 4` gate holds; OSV network failures fall back to the offline database; and the `.semgrepignore` excludes `node_modules`/`.yarn`/build output to avoid scanning vendored dependencies.
+
+### 0.5.4 Decision Log (Explainability Rule)
+
+Per the Explainability rule, every non-trivial decision is captured below; the full delivery decision log (`security-audit/decision-log.md`) expands these with execution-time specifics (pinned versions, timings, counts).
+
+| Decision | Alternatives Considered | Rationale | Risk / Mitigation |
+|----------|-------------------------|-----------|-------------------|
+| Install OpenJDK 21 for Joern | JDK 19 (documented minimum) | Joern's main README recommends JDK 21; newer is a documented superset | Newer-JDK edge cases — mitigated by pinning 21 |
+| Use the OSV-Scanner prebuilt binary | `go install` from source | Go is absent; the prebuilt binary is SLSA3 and needs no toolchain | OS/arch mismatch — mitigated by selecting the matching release asset |
+| Install Semgrep via pip in an isolated env | apt, Docker image | Python 3.12.3 present; simplest path supporting `--metrics=off` | Global vs. isolated install — mitigated by using a venv |
+| Colocate all outputs under `security-audit/` | Repo root; `blitzy-docs/` | The `cat findings-layer-*.json \| wc -l` gate requires colocation; isolates net-new artifacts from source | None material |
+| Place the deck in `blitzy-deck/` with theme embedded inline | External theme `<link>` | Rule 2 mandates a self-contained file and cites `blitzy-deck/references/blitzy-reveal-theme.css`, which is absent in the repo | Theme drift — mitigated by embedding the full `:root` token set inline |
+| Use Joern's JS/TS (`jssrc2cpg`) frontend | C/Java/other frontends | Codebase is 100% TypeScript/JavaScript | TS type-recovery limits — accepted; complemented by Layers 1/2 |
+| Apply directive-specified severity and dedup keys verbatim | Custom/hash-based mapping | The directives fix the maps and keys; deviating would break determinism | Line drift across tools — mitigated by retaining raw intermediates |
+| Read-only measurement (no remediation) | Auto-fix discovered issues | Prompt states `~0 files modified`; the task is assessment, not repair | Findings not auto-resolved — by design; out of scope |
+| Preserve `security-audit.yml` and `SECURITY.md` unchanged | Extend the existing workflow | The four layers are standalone outputs; modifying CI was not requested | Duplication with `yarn npm audit` — accepted; OSV adds OSV.dev coverage |
+
+
+## 0.6 File Transformation Mapping
+
+### 0.6.1 File-by-File Execution Plan
+
+Every file the audit touches is enumerated below with the target listed first. There are **no UPDATE and no DELETE** rows: the audit creates net-new artifacts and reads (REFERENCE) the existing tree. Transformation modes: **CREATE** (new file), **REFERENCE** (read-only scan input or external reference).
+
+| Target File | Transformation | Source File / Reference | Purpose / Changes |
+|-------------|----------------|-------------------------|-------------------|
+| `security-audit/findings-layer-1-blitzy.json` | CREATE | `apps/**`, `packages/**`, config (REFERENCE) | Layer 1 normalized findings from native expert reasoning; CWE-classified; single-line minified |
+| `security-audit/findings-layer-2-semgrep.json` | CREATE | `security-audit/results-semgrep.sarif` | Layer 2 normalized findings; severity map `error/warning/note/info`; single-line minified |
+| `security-audit/findings-layer-3-joern.json` | CREATE | `security-audit/results-joern.json` | Layer 3 normalized findings; severity map `high/medium/low/info`; single-line minified |
+| `security-audit/findings-layer-4-osv.json` | CREATE | `security-audit/results-osv.json` | Layer 4 normalized findings; dedup by `(package_name, CVE_ID)`; single-line minified |
+| `security-audit/findings-merged.json` | CREATE | `security-audit/findings-layer-*.json` | Cross-layer merged report with `_summary` header + corroboration annotations; single line |
+| `security-audit/results-semgrep.sarif` | CREATE | `apps/**`, `packages/**`, `.github/**`, `*.env*`, container files (REFERENCE) | Raw Semgrep SARIF (intermediate); produced by the `semgrep scan` directive |
+| `security-audit/cpg.bin` | CREATE | `apps/**`, `packages/**` (REFERENCE) | Joern Code Property Graph (intermediate); produced by `joern-parse` |
+| `security-audit/results-joern.json` | CREATE | `security-audit/cpg.bin` + `security-audit/security-queries.sc` | Raw Joern query output (intermediate) |
+| `security-audit/results-osv.json` | CREATE | `yarn.lock` (REFERENCE) | Raw OSV-Scanner JSON (intermediate) |
+| `security-audit/security-queries.sc` | CREATE | — (net-new JQL/Scala) | Joern taint/sink/route/ORM/authz query script |
+| `security-audit/semgrep-rules/**` | CREATE | Semgrep Registry (`p/security-audit`, `p/secrets`, `p/owasp`) | Local rule-pack cache enabling `--metrics=off` offline scans |
+| `security-audit/.semgrepignore` | CREATE | — (net-new) | Exclude `node_modules`, `.yarn`, `.next`, `dist` from the Semgrep scan |
+| `security-audit/decision-log.md` | CREATE | — (net-new, Explainability rule) | Decision log: tool versions, query design, severity maps, dedup, output locations, deviations |
+| `blitzy-deck/executive-summary.html` | CREATE | `blitzy-deck/references/blitzy-reveal-theme.css` (REFERENCE, absent → inlined) | Self-contained reveal.js executive deck (Executive Presentation rule) |
+| `yarn.lock` | REFERENCE | self | Layer 4 dependency lockfile input (sole lockfile; Yarn Berry v8) |
+| `apps/**/*.{ts,tsx,js,jsx}` | REFERENCE | self | Layers 2 & 3 application source input |
+| `packages/**/*.{ts,tsx,js,jsx}` | REFERENCE | self | Layers 2 & 3 shared-package source input (20 workspaces) |
+| `Dockerfile`, `docker-compose*.yml`, `apps/api/v2/Dockerfile` | REFERENCE | self | Layer 2 container-misconfiguration input (7 files) |
+| `.github/workflows/**/*.yml` | REFERENCE | self | Layer 2 CI/CD-injection input (59 workflows) |
+| `.github/actions/**` | REFERENCE | self | Layer 2 composite-action input (9 actions) |
+| `.env.example`, `.env.appStore.example` | REFERENCE | self | Layer 2 committed-secret pattern input |
+| `packages/prisma/schema.prisma` | REFERENCE | self | Layer 3 ORM context for SQL-injection-via-ORM flows |
+| `.github/workflows/security-audit.yml` | REFERENCE | self | Existing yarn-native SCA baseline; read for context, **not** modified |
+
+### 0.6.2 New Files Detail
+
+- **`security-audit/findings-layer-{1..4}-*.json`** — content type: normalized findings data. Each is a single-line minified JSON array of `{file,line,severity,cwe,description,layer,tool}` objects. Layer 1 is authored from expert reasoning; Layers 2–4 are derived from their respective raw intermediates.
+- **`security-audit/findings-merged.json`** — content type: aggregate report. A single-line JSON object whose `_summary` carries `total_findings`, `unique_findings`, `corroborated`, `by_layer`, and `by_severity`, followed by the deduplicated finding records with `corroborated_by` annotations.
+- **`security-audit/security-queries.sc`** — content type: Joern JQL/Scala. Key query families: `sink.reachableByFlows(source)` taint reachability; `cpg.call.name("exec.*|eval|spawn")` command-execution sinks; route-parameter taint over request handlers; ORM raw-SQL flows; authorization-bypass checks across guards. Based on the patterns surfaced in Section 0.2.1.
+- **`security-audit/results-semgrep.sarif` / `results-joern.json` / `results-osv.json` / `cpg.bin`** — content type: raw tool output (intermediates retained for traceability and re-normalization).
+- **`security-audit/semgrep-rules/**`** — content type: cached YAML rule packs, enabling offline, telemetry-free scanning.
+- **`security-audit/.semgrepignore`** — content type: scan-exclusion config based on the standard Semgrep ignore syntax.
+- **`security-audit/decision-log.md`** — content type: documentation. A Markdown decision table (the canonical "why" per the Explainability rule), seeded by Section 0.5.4 and expanded with execution-time specifics.
+- **`blitzy-deck/executive-summary.html`** — content type: presentation. A single self-contained reveal.js 5.1.0 deck (12–18 slides, target 16) with Mermaid 11.4.0 diagrams, Lucide 0.460.0 icons, the Blitzy brand palette/typography, and the theme embedded inline (the cited `blitzy-deck/references/blitzy-reveal-theme.css` does not exist in the repository, so its tokens are inlined to keep the file self-contained).
+
+### 0.6.3 Cross-File Dependencies
+
+- **Producer → consumer chain:** `cpg.bin` + `security-queries.sc` → `results-joern.json` → `findings-layer-3-joern.json`; `results-semgrep.sarif` → `findings-layer-2-semgrep.json`; `results-osv.json` → `findings-layer-4-osv.json`; all four `findings-layer-*.json` → `findings-merged.json`.
+- **Documentation dependency:** `decision-log.md` and `executive-summary.html` both summarize `findings-merged.json` (counts, corroboration, risk narrative) and the decisions in Section 0.5.4.
+- **No import/reference rewrites:** because no application file changes, there are no import updates, configuration syncs, or test fixtures to keep consistent across the repository.
 
 
 ## 0.7 Rules
 
-### 0.7.1 User-Specified Rules
+Two user-specified rules apply to this task. Both mandate **additional net-new deliverables** that sit alongside the eight directives; neither conflicts with the read-only (`~0 files modified`) intent, because both produce new files and modify no source.
 
-- **Fix all 5 known issues** — Confirmed: all 5 are already fixed and verified passing
-- **Audit every sprint epic (AV-001 through NF-004)** against validation criteria in `epic-catalog.mdx` and `validation-criteria.mdx` — Confirmed: all 8 sprint domains have passing test suites
-- **Run `yarn vitest run` after all fixes** with every failing test in sprint 1–8 scope passing — Confirmed: 0 failures across 7,360 tests
-- **All existing booking, rescheduling, and cancellation flows must continue working** — Confirmed: `handleNewBooking` and related test suites pass
-- **All currently passing tests must continue to pass** — Confirmed: zero regressions detected
-- **Tests failing due to local OS locale (`date-override-list.test.tsx`) are out of scope** — Acknowledged: this test passes with `TZ=UTC` and is excluded from the fix scope
-- **`EventManager` public API surface must remain unchanged** — Acknowledged: no modifications to EventManager
-- **All Prisma schema models — no new migrations unless strictly necessary and zero-downtime compliant** — Acknowledged: no schema changes in this fix
-- **All existing webhook payload formats (`v2021-10-20`) must remain unchanged** — Acknowledged: no webhook payload modifications
-- **All feature flag names introduced across Sprints 1–8 must remain unchanged** — Acknowledged: no feature flag modifications
-- **Avoid: Payment flows, third-party app integrations not covered by Sprints 1–8, code outside sprint 1–8 epic scope** — Acknowledged
+- **Rule 1 — Explainability.** Every non-trivial implementation decision must be documented with rationale, alternatives, and risk, delivered as a Markdown **decision log** (the single source of truth for "why"); rationale must **not** be embedded in code comments. Any deviation from a literal/obvious interpretation of the requirements must have an explicit decision-log entry.
+  - *Compliance approach:* a compact decision log is embedded in Section 0.5.4, and the full delivery decision log is created at `security-audit/decision-log.md`, covering tool/version selection, Joern query design, severity mappings, deduplication strategy, output-directory choice, and the inline-theme decision. Because this task is an audit (not a migration/refactor), no source-to-target traceability matrix is required; the directive-to-requirement mapping (R1–R8) in Section 0.1.1 provides the equivalent coverage trace.
 
-### 0.7.2 Development Guidelines
-
-- **UTC time convention:** All time-related methods must use UTC (e.g., `dayjs.utc()`, `toISOString()`) consistent with the existing codebase pattern and the `TZ=UTC` test configuration
-- **Test data completeness:** All users referenced in event type scenarios must have corresponding entries in the `users` array with valid `schedules` definitions
-- **Vitest conventions:** Use `test()` for active tests, `test.skip()` only for known infrastructure issues with a comment explaining why, and `test.todo()` for placeholder tests
-- **Zero modifications outside the bug fix:** Only the identified test file changes are permitted
-- **Extensive testing to prevent regressions:** Full test suite must pass before and after changes
-- **TypeScript/Prisma/Biome standards:** Follow the monorepo conventions documented in `AGENTS.md` and `CONTRIBUTING.md`
+- **Rule 2 — Executive Presentation.** Every deliverable must include an executive summary as a **single self-contained reveal.js HTML file**, targeted at non-technical leadership, covering: what was done, why (business value), what changed architecturally (component/data-flow diagrams), risks and mitigations, and how the team onboards/continues. Constraints include 12–18 slides (target 16), four slide types (`slide-title`, `slide-divider`, default content, `slide-closing`), at least one non-text visual per slide, max 4 bullets / 40 words on content slides, zero emoji (Lucide SVG icons only), no fenced code blocks in slides, the Blitzy brand palette and typography (Inter / Space Grotesk / Fira Code), Mermaid diagrams via `<pre class="mermaid">` with `startOnLoad: false`, pinned CDNs (reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0), the reveal.js config (`hash: true`, `transition: 'slide'`, `controlsTutorial: false`, `width: 1920`, `height: 1080`), and the full `:root` CSS custom-property set embedded inline.
+  - *Compliance approach:* the deck is created at `blitzy-deck/executive-summary.html`. The rule references a canonical theme at `blitzy-deck/references/blitzy-reveal-theme.css`, which **does not exist** in the repository [blitzy-deck/references/blitzy-reveal-theme.css]; per the rule's own mandate to embed the full theme inline in a `<style>` tag, the `:root` tokens and slide/component classes are inlined so the file remains self-contained and verification-ready (renders all Mermaid/Lucide, 12–18 `<section>` elements, each with ≥ 1 non-text visual).
 
 
-## 0.8 References
+## 0.8 Special Instructions and Constraints
 
-### 0.8.1 Files and Folders Searched
+### 0.8.1 Special Execution Instructions
 
-| Path | Purpose | Key Finding |
-|------|---------|-------------|
-| `package.json` | Root monorepo manifest | Yarn 4.12.0, Vitest 4.0.16, Node 20 |
-| `vitest.workspace.ts` | Test workspace configuration | 14 workspace definitions, pool: "forks" |
-| `apps/web/package.json` | Web app dependencies | Next.js 16.1.7 |
-| `apps/web/pagesAndRewritePaths.ts` | Route scanning for org rewrites | Lines 22–52: glob + filter pipeline produces correct routes |
-| `apps/web/test/lib/next-config.test.ts` | Org rewrite regex tests | 11 tests pass, Issue 3 resolved |
-| `apps/web/test/lib/pagesAndRewritePaths.test.ts` | Route exclusion list tests | 2 tests pass, Issue 4 resolved |
-| `apps/web/test/lib/getSchedule.test.ts` | Schedule/availability integration tests | 36 pass, 3 skipped (duration limit tests) |
-| `apps/web/test/lib/checkBookingLimits.test.ts` | Booking limit service tests | All pass |
-| `packages/features/auth/lib/next-auth-options.ts` | NextAuth authorize logic | 1,318 lines, `authorizeCredentials` at line 254 |
-| `packages/features/auth/lib/next-auth-options.test.ts` | Auth credential tests | 6 tests pass in 5.6s, Issue 5 resolved |
-| `packages/features/busyTimes/services/getBusyTimes.ts` | Core busy-time aggregation | Seat deduplication (528–570), cross-user seat map (199–310), FIXME at 676 |
-| `packages/features/busyTimes/services/getBusyTimes.test.ts` | BusyTimesService unit tests | All pass, covers seat-aware blocking and batched queries |
-| `packages/features/busyTimes/lib/getBusyTimesFromLimits.ts` | Limit enforcement pipeline | Booking-count + duration-limit orchestration |
-| `packages/features/availability/lib/getUserAvailability.ts` | User availability resolution | Lines 700–800: integrates busyTimes, limits, and calendar data |
-| `packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts` | Booking limit integration tests | 8 pass, 1 skipped (yearly CI issue) |
-| `packages/features/bookings/lib/handleNewBooking/global-booking-limits.test.ts` | Global team booking limits | 4 tests pass |
-| `packages/testing/src/lib/bookingScenario/bookingScenario.ts` | Test scenario builder | Line 940: `user.schedules.map()` crash point for missing schedules |
-| `packages/embeds/embed-core/src/__tests__/embed-iframe.test.ts` | Embed iframe tests | 20 tests pass individually |
-| `packages/embeds/embed-core/src/embed-iframe/lib/utils.ts` | Embed dimension utilities | Line 69: `document.readyState` check in timer callback |
-| `docs/sprint-roadmap/overview.mdx` | Sprint sequencing methodology | 8 sprints, dependency-first ordering |
-| `docs/sprint-roadmap/epic-catalog.mdx` | Complete epic registry | AV-001 through NF-005, priority + complexity estimates |
-| `docs/sprint-roadmap/validation-criteria.mdx` | Acceptance criteria per domain | 5-dimension validation methodology |
-| `docs/gap-report/overview.mdx` | Gap analysis executive summary | All domains at Low/Medium severity |
-| `docs/gap-report/availability-scheduling.mdx` | Sprint 1 gap analysis | Availability engine verification |
-| `docs/migration/zero-downtime-strategy.mdx` | Migration safety patterns | Pattern 2 (nullable columns), Pattern 5 (feature flags) |
-| `docs/migration/data-preservation.mdx` | Data integrity requirements | Row counts, FK integrity, encryption checks |
-| `docs/migration/webhook-compatibility.mdx` | Webhook versioning strategy | v2021-10-20 payload preservation |
-| `specs/` | Spec-first feature folders | 8 domain spec directories |
+- **Measurement only, no remediation.** The audit must not patch or alter any application code; the `~0 files modified` banner governs all execution.
+- **Telemetry off + local rules.** Semgrep runs with `--metrics=off` against the locally cached rule packs; the dry-run gate `semgrep scan --metrics=off --config=/path/to/local-rules --dry-run` must exit `0` with no network calls.
+- **Record execution metadata.** For Semgrep, capture exit code, wall-clock duration, and files scanned; for Joern, capture query count and total alerts and confirm `cpg.bin` indexed `> 0` files; for OSV-Scanner, capture total CVEs, packages affected, and severity distribution.
+- **Output contract.** All findings normalized to the fixed schema, single-line minified, descriptions ≤ 200 characters; the gate `cat findings-layer-*.json | wc -l` must return `4`.
+- **Toolchain provisioning order.** Install OpenJDK 21 before Joern; use the OSV-Scanner prebuilt binary (Go absent); install Semgrep via pip into an isolated environment (Python 3.12.3 present).
+- **Mandatory documentation artifacts.** Produce the decision log (Rule 1) and the executive-summary deck (Rule 2) as described in Section 0.7.
 
-### 0.8.2 Source of Truth Documents (per user instruction)
+### 0.8.2 Constraints and Boundaries
 
-The following documents were read as instructed by the user:
+- **Technical constraints:** the codebase is 100% TypeScript/JavaScript with a single `yarn.lock` (npm ecosystem) — Joern uses its JS/TS frontend, and OSV scans only the npm ecosystem; no other language frontends or ecosystems apply.
+- **Process constraints:** do not modify existing source, configuration, schema, tests, the `.github/workflows/security-audit.yml` workflow, or `SECURITY.md`; do not wire the scan into CI.
+- **Output constraints:** generate only the net-new artifacts enumerated in Section 0.6; do not emit pretty-printed JSON; do not exceed the 200-character description limit; the executive deck must remain a single self-contained file with pinned CDNs and an inline theme.
+- **Connectivity considerations:** rule-pack download and OSV-database access require network egress on first run; where egress is restricted, use the cached rule packs and the OSV offline database. The tools transmit only dependency metadata (package name/version/ecosystem) and **no source code**.
+- **Compatibility:** the audit assumes the project's documented runtime context (Node 20.x per CI/Docker [Dockerfile:L1]) but does not depend on building or running the application — it analyzes source statically and matches lockfile entries.
 
-- `docs/sprint-roadmap/overview.mdx` — Sprint sequencing, dependency flow, autonomous execution protocol
-- `docs/sprint-roadmap/epic-catalog.mdx` — Complete epic registry with IDs AV-001 through NF-005
-- `docs/sprint-roadmap/validation-criteria.mdx` — Behavioral acceptance criteria per domain
-- `docs/gap-report/overview.mdx` — Executive summary of gap analysis across 8 domains
-- `docs/gap-report/availability-scheduling.mdx` — Sprint 1 detailed gap analysis
-- `docs/gap-report/webhooks-events.mdx` — Sprint 4 webhook gap analysis
-- `docs/gap-report/routing-forms.mdx` — Sprint 5 routing form gap analysis
-- `docs/gap-report/embed-share.mdx` — Sprint 6 embed gap analysis
-- `docs/gap-report/admin-teams.mdx` — Sprint 7 admin/teams gap analysis
-- `docs/gap-report/notifications-workflows.mdx` — Sprint 8 notification gap analysis
-- `docs/migration/zero-downtime-strategy.mdx` — Migration safety patterns
-- `docs/migration/data-preservation.mdx` — Data integrity verification
-- `docs/migration/webhook-compatibility.mdx` — Webhook versioning strategy
-- All spec folders: `specs/availability/`, `specs/event-types/`, `specs/calendar-integrations/`, `specs/webhooks/`, `specs/routing-forms/`, `specs/embed-share/`, `specs/admin-teams/`, `specs/notifications-workflows/`
 
-### 0.8.3 Attachments
+## 0.9 Attachments
 
-No attachments were provided for this project. No Figma URLs were specified.
+No attachments were provided for this project.
+
+- **Files:** none. `review_attachments` returned no PDFs or images, so there are no attached documents, screenshots, or diagrams to incorporate.
+- **Figma screens:** none. No Figma frames or URLs were provided. Consequently, no Figma design analysis, design-to-system mapping, or Design System Compliance sub-section applies to this task (the work is a security audit, not a UI implementation, and no component library or design system is specified).
+
+The only externally referenced asset cited anywhere in the inputs is the reveal.js theme path `blitzy-deck/references/blitzy-reveal-theme.css` named by the Executive Presentation rule; it is **not** an uploaded attachment and does not exist in the repository, and is handled by inlining the theme as described in Sections 0.6.2 and 0.7.
 
 

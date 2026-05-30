@@ -123,7 +123,11 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
   // ---- Route-parameter sources (directive route query; taint-source inventory) ----
   try {
     // Directive route query: parameters of methods carrying a Route-style annotation.
-    val directiveRouteParams = cpg.method.where(_.annotation.name(".*Route.*")).parameter.l
+    val directiveRouteParams = {
+      import scala.language.implicitConversions
+      implicit def annotationTraversalToBoolean(it: Iterator[_]): Boolean = it.nonEmpty
+      cpg.method.filter(_.annotation.name(".*Route.*")).parameter.l
+    }
     // NestJS / Next.js HTTP route-handler parameters via method decorators.
     val httpRouteParams = cpg.method.where(_.annotation.name("Get|Post|Put|Patch|Delete|All|.*Route.*")).parameter.l
     // Parameters decorated as request-input carriers.

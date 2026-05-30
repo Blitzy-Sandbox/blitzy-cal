@@ -49,7 +49,7 @@ added to `package.json` / `yarn.lock`.
 | D8 | Preserve `.github/workflows/security-audit.yml` and `SECURITY.md` unchanged | extend the existing workflow | The four layers are standalone outputs; modifying CI was not requested | Duplication with `yarn npm audit` — accepted; OSV adds OSV.dev coverage |
 | D9 | Keep large CPG artifact untracked via `.git/info/exclude` (local), **not** root `.gitignore` | append patterns to tracked `.gitignore` | Modifying a tracked existing file violates the read-only boundary (see §8, F1) | `cpg.bin` could be accidentally staged — mitigated by `.git/info/exclude` + verification |
 | D10 | Emit Joern findings **only** for confirmed dangerous patterns; treat route/guard inventories as metadata | emit every route param / guard decision point as a finding | Inventory-as-vulnerability inflates the report with non-findings (see §5, F2) | Under-reporting of genuine taint — mitigated by retaining the taint-reachability query and command/ORM sinks |
-| D11 | Use `cpg.method.where(_.annotation.name(".*Route.*")).parameter` for the route primitive — combinator `filter`→`where`, predicate preserved verbatim | the verbatim `…filter(…)` form; or a `.nonEmpty` Boolean adaptation | The verbatim `filter` form does not type-check in Joern 4.0.551 (`filter` expects `Method => Boolean`; `.annotation.name(...)` yields a traversal — confirmed compile error E007 at execution); `where` accepts the traversal predicate directly and selects the identical route-annotated methods (see §5.4, F4) | Checklist literalness — documented here as an approved, minimal, semantics-preserving adaptation that keeps the exact predicate and `.parameter` traversal |
+| D11 | Retain the route primitive **verbatim** as `cpg.method.filter(_.annotation.name(".*Route.*")).parameter`, made type-correct by a block-scoped implicit `Iterator[_] => Boolean` (`.nonEmpty`) conversion confined to that one initializer | combinator swap `filter`→`where`; or inlining a `.nonEmpty` Boolean predicate into the lambda | The bare verbatim `filter` form raises Joern 4.0.551 compile error E007 (`filter` expects `Method => Boolean`; `.annotation.name(...)` yields a traversal). A narrowly block-scoped implicit conversion (the classic Scala/Gremlin traversal-as-Boolean idiom) lets the exact directive text compile and run, selecting the identical route-annotated methods, while changing nothing outside the block (see §5.4, F4) | Implicit-conversion leakage — mitigated by confining the implicit to the single `directiveRouteParams` initializer block; verified the emitted `results-joern.json` is byte-identical to the prior `where` form (0 route params in this `@Get`/`@Post` codebase) |
 | D12 | Accept Semgrep `--dryrun` as the gate spelling | pin a Semgrep version supporting `--dry-run`; edit the directive | Installed Semgrep 1.164.0 exposes `--dryrun`; no network to install another version; behavior is identical (see §7, F5) | Directive/CLI drift — reconciled and evidenced here |
 | D13 | Record the 33 Semgrep parse-warning files as explicit partial-parse exclusions | silently treat them as scanned; edit source to satisfy the parser | Read-only forbids source edits; offline forbids tooling upgrades; the constructs are valid TS/TSX the pinned frontend cannot fully parse (see §7, F6) | Hidden coverage gap — eliminated by explicit disclosure (§7.3) |
 | D14 | Place the executive deck in `blitzy-deck/` with the reveal.js theme embedded inline | external theme `<link>` to a shared stylesheet | Rule 2 mandates a single self-contained file and cites `blitzy-deck/references/blitzy-reveal-theme.css`, which is **absent** from the repository, so there is nothing to link; inlining keeps the deck verification-ready offline (see §13) | Theme drift from a canonical source — mitigated by embedding the full `:root` token set inline and pinning exact CDN versions |
@@ -89,7 +89,7 @@ The query script `security-audit/security-queries.sc` runs over `cpg.bin` (Joern
 | Taint reachability | `sink.reachableByFlows(source)` | CWE-78 / CWE-89 (by sink) | Yes — only when a flow exists |
 | Unguarded routes | NestJS route handlers lacking `@UseGuards` | CWE-862 | Yes — missing-authorization pattern |
 | Fail-open guards | `canActivate` returning literal `true` in a `catch`/error branch | CWE-863 | Yes — incorrect-authorization pattern |
-| Route/request parameters | `cpg.method.where(_.annotation.name(".*Route.*")).parameter` + NestJS/Next.js decorators | — | **No** — collected as taint **sources** (metadata only) |
+| Route/request parameters | `cpg.method.filter(_.annotation.name(".*Route.*")).parameter` + NestJS/Next.js decorators | — | **No** — collected as taint **sources** (metadata only) |
 
 ### 5.2 F2 — Inventory is not vulnerability (the principal Layer 3 correction)
 
@@ -125,24 +125,27 @@ exposes HTTP entry points through both frameworks (`apps/api/v2` NestJS controll
 `apps/web` Next.js route handlers), so the taint-source set must span both decorator families to
 avoid missing request-input sources for the reachability query.
 
-### 5.4 F4 — Route directive primitive adaptation
+### 5.4 F4 — Route directive primitive (retained verbatim via a scoped implicit)
 
-The directive primitive `cpg.method.filter(_.annotation.name(".*Route.*")).parameter` does not
-type-check in Joern 4.0.551: `Traversal.filter` expects a `Method => Boolean` predicate, but
-`_.annotation.name(".*Route.*")` returns an annotation **traversal**, not a Boolean. This was
-confirmed empirically — the verbatim form raises compile error **E007** (type mismatch: found
-`Iterator[Annotation]`, required `Boolean`). The minimal, type-correct, semantics-preserving form
-is `cpg.method.where(_.annotation.name(".*Route.*")).parameter`: the `where` combinator accepts a
-traversal-valued predicate and keeps a method when the inner traversal is non-empty (i.e. the
-method carries a `Route`-style annotation), so it selects exactly the same route-annotated methods
-and takes their parameters as the verbatim primitive intends. The **only** change versus the
-directive text is the combinator name (`filter` → `where`); the predicate
-`_.annotation.name(".*Route.*")` and the `.parameter` traversal are preserved verbatim. This is
-the approved deviation per D11. (In this codebase HTTP entry points are annotated with
-`@Get`/`@Post`-style NestJS decorators rather than a literal `@Route`, so the route query returns
-0 parameters; request-input sources are instead gathered by the NestJS/Next.js decorator queries
-described in §5.3, and all such parameters feed the taint-reachability family as sources, not as
-findings.)
+The directive route primitive `cpg.method.filter(_.annotation.name(".*Route.*")).parameter` is
+retained **verbatim** in `security-queries.sc`. On its own it does not type-check in Joern 4.0.551:
+`Traversal.filter` expects a `Method => Boolean` predicate, but `_.annotation.name(".*Route.*")`
+returns an annotation **traversal**, not a Boolean — the bare form raises compile error **E007**
+(type mismatch: found `Iterator[Annotation]`, required `Boolean`). Rather than alter the directive
+text, the script introduces a single **block-scoped implicit conversion**
+`implicit def annotationTraversalToBoolean(it: Iterator[_]): Boolean = it.nonEmpty` inside the
+`directiveRouteParams` initializer block. This is the classic Scala/Gremlin "traversal-as-Boolean"
+idiom: the lambda's annotation traversal is implicitly evaluated for non-emptiness, so `filter`
+keeps a method exactly when it carries a `Route`-style annotation — semantically identical to the
+`where` combinator while preserving the directive's exact `filter(...).parameter` text. The implicit
+is confined to that one initializer block (lexical scope), so it cannot affect any other traversal
+in the script; the `httpRouteParams`, `requestParams`, and taint-source queries continue to use
+`where` unchanged. Empirically the verbatim form compiles, the script exits 0, and the emitted
+`results-joern.json` is byte-identical to the prior `where`-based output (99 findings). (In this
+codebase HTTP entry points are annotated with `@Get`/`@Post`-style NestJS decorators rather than a
+literal `@Route`, so the route query returns 0 parameters; request-input sources are instead gathered
+by the NestJS/Next.js decorator queries described in §5.3, and all such parameters feed the
+taint-reachability family as sources, not as findings.)
 
 ### 5.5 Command/code-execution sink scoping (principal Layer 3 integrity correction)
 
@@ -380,7 +383,8 @@ repository file is modified. Verified: `git diff <baseline> -- .gitignore` is em
   same JQL query families (taint reachability, command-exec sinks, route-parameter taint, ORM
   raw-SQL, authorization bypass). The CPG gate held (`cpg.bin` non-empty, > 0 files indexed) and
   99 Layer-3 findings were produced, confirming the runtime worked. The only API-level
-  consequence is the `where()` route-query adaptation (§5.4, D11); query intent and CWE mapping
+  consequence is the block-scoped implicit-conversion shim that keeps the verbatim `filter` route
+  primitive type-correct (§5.4, D11); query intent and CWE mapping
   are unchanged from the 2.x design. Risk: 4.x behavioural edge cases vs 2.x — mitigated by
   retaining the raw `results-joern.json` intermediate and corroborating sinks against Layer 2.
 - **Joern invocation:** `joern --script security-audit/security-queries.sc --param
@@ -514,7 +518,7 @@ its requirement and the artifact that satisfies it.
 | R2 | Directive 2 — Install Semgrep; cache `p/security-audit` + `p/secrets` + `p/owasp` locally; confirm telemetry off (dry-run gate exits 0, no network) | `semgrep-rules/{security-audit,secrets,owasp}.yml` (35 rules); gate evidence §7.1 | Done — curated packs approximating the registry sets; `p/owasp` 404s so the OWASP pack is `owasp.yml` (D16); gate spelling `--dryrun` (D12, §7.1); cache isolated to exactly 3 files (D15) |
 | R3 | Directive 3 — Run Semgrep → SARIF; apply `error/warning/note/info` map; derive CWE from metadata (infer if absent) | `results-semgrep.sarif` (272 results) → `findings-layer-2-semgrep.json` (262) | Done — CWE read from curated rule metadata (YAML source of truth) |
 | R4 | Directive 4 — Install Joern; build CPG (`joern-parse … --output cpg.bin`); > 0 files indexed | `cpg.bin` (~135 MB, indexed > 0) | Done (Joern 4.0.551, §10) |
-| R5 | Directive 5 — Run Joern JQL queries; apply `high/medium/low/info` map | `security-queries.sc` + `results-joern.json` → `findings-layer-3-joern.json` (99) | Done — command-exec sinks scoped to real execution APIs (D20, §5.5); route primitive `where()` adaptation, predicate preserved verbatim (D11, §5.4) |
+| R5 | Directive 5 — Run Joern JQL queries; apply `high/medium/low/info` map | `security-queries.sc` + `results-joern.json` → `findings-layer-3-joern.json` (99) | Done — command-exec sinks scoped to real execution APIs (D20, §5.5); route primitive retained **verbatim** (`filter(...).parameter`), type-correct via a block-scoped implicit conversion (D11, §5.4) |
 | R6 | Directive 6 — Run OSV-Scanner over all lockfiles; record CVEs, packages, severity distribution | `results-osv.json` → `findings-layer-4-osv.json` (158) | Done — sole `yarn.lock` |
 | R7 | Directive 7 — Normalize to the fixed schema; dedup cross-layer by `file+line+CWE`, OSV by `(package, CVE)`; gate `wc -l == 4` | `findings-layer-{1..4}-*.json` | Done — gate returns 4 (§7.2) |
 | R8 | Directive 8 — Merged report with `_summary` (`total_findings`, `unique_findings`, `corroborated`, `by_layer`, `by_severity`) + corroboration highlight | `findings-merged.json` | Done (§6.4, §15) |

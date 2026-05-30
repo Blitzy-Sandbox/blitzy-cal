@@ -25,7 +25,7 @@
       /* Text */
       --text-primary: #F5F7FA;
       --text-secondary: #AEB9CC;
-      --text-muted: #6B7689;
+      --text-muted: #8A93A6;
       /* Brand */
       --brand-primary: #7C5CFC;
       --brand-secondary: #5B8DEF;
@@ -36,6 +36,8 @@
       --layer-2: #5B8DEF;
       --layer-3: #36C5B0;
       --layer-4: #F5A623;
+      /* Layer-1 text-on-card variant (AA-compliant lightness for normal text) */
+      --layer-1-text: #A78BFF;
       /* Severity scale */
       --sev-critical: #FF4D4F;
       --sev-high: #FF8A3D;
@@ -63,8 +65,7 @@
     }
 
     html, body { background: var(--bg-primary); }
-    /* reveal.js 5.x applies the viewport class to <html>; paint the full canvas dark
-       with the ambient brand glow so centered slides never reveal a white backdrop */
+    /* Full-canvas dark background with ambient brand glow */
     .reveal-viewport {
       background-color: var(--bg-primary);
       background-image:
@@ -89,7 +90,7 @@
       padding: 64px 96px;
       box-sizing: border-box;
     }
-    /* Hero slide types fill the frame so their internal flex centering reads as full-bleed */
+    /* Hero slide types fill the frame */
     .reveal .slides > section.slide-title,
     .reveal .slides > section.slide-divider,
     .reveal .slides > section.slide-closing { min-height: 940px; }
@@ -257,7 +258,7 @@
     .layer-card .layer-tool {
       font-family: var(--font-mono);
       font-size: var(--fs-small);
-      color: var(--lc, var(--brand-primary));
+      color: var(--lc-text, var(--lc, var(--brand-primary)));
     }
     .layer-card p { font-size: 27px; margin: 6px 0 0 0; color: var(--text-secondary); }
 
@@ -355,11 +356,7 @@
       background: transparent;
     }
     .reveal .mermaid svg { max-width: 100%; height: auto; max-height: 780px; }
-    /* Mermaid sizes the htmlLabel foreignObject using a fallback font, so the Inter web
-       font can be a few px wider and clip at the foreignObject edge. The node rect is
-       padded much wider (flowchart.padding), so we let the label paint OUTSIDE the
-       foreignObject and keep each explicit line on a single row -- it stays well within
-       the colored rect and never clips. */
+    /* Mermaid htmlLabel: allow label to paint past the foreignObject; one line per row */
     .reveal .mermaid p { font-size: 22px !important; margin: 0; line-height: 1.28; }
     .reveal .mermaid span.nodeLabel,
     .reveal .mermaid .nodeLabel,
@@ -461,7 +458,7 @@
       <!-- Slide 1: title -->
       <section class="slide-title">
         <div class="title-wrap">
-          <span class="icon-chip hero"><i data-lucide="shield-check"></i></span>
+          <span class="icon-chip hero"><i data-lucide="shield-check" aria-hidden="true"></i></span>
           <p class="kicker">Blitzy Security Assessment</p>
           <h1 class="grad-text">Security Audit: blitzy-cal</h1>
           <p class="subtitle">A Non-Invasive Four-Layer Security Assessment</p>
@@ -473,33 +470,33 @@
       <!-- Slide 2: executive summary at a glance -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="gauge"></i></span>
+          <span class="head-ico"><i data-lucide="gauge" aria-hidden="true"></i></span>
           <h2>At a glance</h2>
         </div>
         <div class="stat-grid">
           <div class="stat-card">
-            <span class="stat-icon"><i data-lucide="file-json"></i></span>
-            <div class="stat-num">566</div>
+            <span class="stat-icon"><i data-lucide="file-json" aria-hidden="true"></i></span>
+            <div class="stat-num">527</div>
             <div class="stat-label">Total findings across four layers</div>
           </div>
           <div class="stat-card">
-            <span class="stat-icon"><i data-lucide="git-compare"></i></span>
-            <div class="stat-num">35</div>
+            <span class="stat-icon"><i data-lucide="git-compare" aria-hidden="true"></i></span>
+            <div class="stat-num">31</div>
             <div class="stat-label">Cross-layer corroborated signals</div>
           </div>
           <div class="stat-card">
-            <span class="stat-icon"><i data-lucide="layers"></i></span>
+            <span class="stat-icon"><i data-lucide="layers" aria-hidden="true"></i></span>
             <div class="stat-num">4</div>
             <div class="stat-label">Independent scan layers</div>
           </div>
           <div class="stat-card">
-            <span class="stat-icon"><i data-lucide="shield-check"></i></span>
+            <span class="stat-icon"><i data-lucide="shield-check" aria-hidden="true"></i></span>
             <div class="stat-num">0</div>
             <div class="stat-label">Application files modified</div>
           </div>
         </div>
         <ul class="bullets">
-          <li><b>531</b> unique findings remain after cross-layer deduplication.</li>
+          <li><b>496</b> unique findings remain after cross-layer deduplication.</li>
           <li>Every output is a brand-new report; the codebase is untouched.</li>
         </ul>
       </section>
@@ -507,7 +504,7 @@
       <!-- Slide 3: divider - What We Did -->
       <section class="slide-divider">
         <div class="divider-wrap">
-          <span class="icon-chip hero"><i data-lucide="search-code"></i></span>
+          <span class="icon-chip hero"><i data-lucide="search-code" aria-hidden="true"></i></span>
           <p class="divider-num">01</p>
           <h2 class="grad-text">What We Did</h2>
           <div class="divider-rule"></div>
@@ -517,7 +514,7 @@
       <!-- Slide 4: four complementary layers -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="scan-line"></i></span>
+          <span class="head-ico"><i data-lucide="scan-line" aria-hidden="true"></i></span>
           <h2>Four complementary layers</h2>
         </div>
         <div class="diagram-wrap">
@@ -542,29 +539,29 @@ flowchart LR
       <!-- Slide 5: Layer 1 and Layer 2 -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="brain"></i></span>
+          <span class="head-ico"><i data-lucide="brain" aria-hidden="true"></i></span>
           <h2>Reasoning and pattern layers</h2>
         </div>
         <div class="layer-grid">
-          <div class="layer-card" style="--lc: var(--layer-1);">
+          <div class="layer-card" style="--lc: var(--layer-1); --lc-text: var(--layer-1-text);">
             <div class="layer-head">
-              <span class="layer-chip"><i data-lucide="brain"></i></span>
+              <span class="layer-chip"><i data-lucide="brain" aria-hidden="true"></i></span>
               <div>
                 <h3>Layer 1 &mdash; Blitzy native</h3>
                 <div class="layer-tool">tool: blitzy</div>
               </div>
             </div>
-            <p>Context-aware reasoning over code, configuration, and architecture &mdash; fail-open logic, configuration defaults, cross-file key reuse.</p>
+            <p>Context-aware reasoning over code and architecture &mdash; fail-open logic, cross-file key reuse.</p>
           </div>
           <div class="layer-card" style="--lc: var(--layer-2);">
             <div class="layer-head">
-              <span class="layer-chip"><i data-lucide="radar"></i></span>
+              <span class="layer-chip"><i data-lucide="radar" aria-hidden="true"></i></span>
               <div>
                 <h3>Layer 2 &mdash; Semgrep</h3>
                 <div class="layer-tool">tool: semgrep</div>
               </div>
             </div>
-            <p>Curated pattern matching &mdash; committed secrets, CI/CD injection, container misconfiguration, crypto anti-patterns, insecure transport.</p>
+            <p>Curated pattern matching &mdash; committed secrets, CI/CD injection, crypto anti-patterns.</p>
           </div>
         </div>
       </section>
@@ -572,29 +569,29 @@ flowchart LR
       <!-- Slide 6: Layer 3 and Layer 4 -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="workflow"></i></span>
+          <span class="head-ico"><i data-lucide="workflow" aria-hidden="true"></i></span>
           <h2>Dataflow and dependency layers</h2>
         </div>
         <div class="layer-grid">
           <div class="layer-card" style="--lc: var(--layer-3);">
             <div class="layer-head">
-              <span class="layer-chip"><i data-lucide="workflow"></i></span>
+              <span class="layer-chip"><i data-lucide="workflow" aria-hidden="true"></i></span>
               <div>
                 <h3>Layer 3 &mdash; Joern</h3>
                 <div class="layer-tool">tool: joern</div>
               </div>
             </div>
-            <p>Code Property Graph and taint queries &mdash; command injection <span class="mono">CWE-78</span>, SQL injection via ORM <span class="mono">CWE-89</span>, authorization bypass.</p>
+            <p>Code Property Graph taint queries &mdash; command injection, ORM SQL injection, authorization bypass.</p>
           </div>
           <div class="layer-card" style="--lc: var(--layer-4);">
             <div class="layer-head">
-              <span class="layer-chip"><i data-lucide="package-search"></i></span>
+              <span class="layer-chip"><i data-lucide="package-search" aria-hidden="true"></i></span>
               <div>
                 <h3>Layer 4 &mdash; OSV-Scanner</h3>
                 <div class="layer-tool">tool: osv-scanner</div>
               </div>
             </div>
-            <p>Lockfile matching against the OSV database &mdash; known CVEs in declared npm dependencies from the single <span class="mono">yarn.lock</span>.</p>
+            <p>Lockfile matching the OSV database &mdash; known CVEs in npm dependencies.</p>
           </div>
         </div>
       </section>
@@ -603,7 +600,7 @@ flowchart LR
       <!-- Slide 7: divider - Why It Matters -->
       <section class="slide-divider">
         <div class="divider-wrap">
-          <span class="icon-chip hero"><i data-lucide="trending-up"></i></span>
+          <span class="icon-chip hero"><i data-lucide="trending-up" aria-hidden="true"></i></span>
           <p class="divider-num">02</p>
           <h2 class="grad-text">Why It Matters</h2>
           <div class="divider-rule"></div>
@@ -613,36 +610,36 @@ flowchart LR
       <!-- Slide 8: business value and risk reduction -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="shield"></i></span>
+          <span class="head-ico"><i data-lucide="shield" aria-hidden="true"></i></span>
           <h2>Business value</h2>
         </div>
         <div class="card-grid">
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="trending-up"></i></span>
+            <span class="fc-icon"><i data-lucide="trending-up" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Earlier risk detection</div>
-              <div class="fc-text">Issues surfaced before release, not after an incident.</div>
+              <div class="fc-text">Surfaced before release, not post-incident.</div>
             </div>
           </div>
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="layers"></i></span>
+            <span class="fc-icon"><i data-lucide="layers" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Defense in depth</div>
-              <div class="fc-text">Four techniques cover what any single scanner misses.</div>
+              <div class="fc-text">Covers what a single scanner misses.</div>
             </div>
           </div>
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="list-checks"></i></span>
+            <span class="fc-icon"><i data-lucide="list-checks" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Audit trail</div>
-              <div class="fc-text">Every decision and result recorded for compliance.</div>
+              <div class="fc-text">Every decision recorded for compliance.</div>
             </div>
           </div>
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="check-circle"></i></span>
+            <span class="fc-icon"><i data-lucide="check-circle" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Zero disruption</div>
-              <div class="fc-text">Read-only measurement; no source or config changed.</div>
+              <div class="fc-text">Read-only; no source or config changed.</div>
             </div>
           </div>
         </div>
@@ -651,7 +648,7 @@ flowchart LR
       <!-- Slide 9: complementary, not redundant -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="git-compare"></i></span>
+          <span class="head-ico"><i data-lucide="git-compare" aria-hidden="true"></i></span>
           <h2>Complementary, not redundant</h2>
         </div>
         <div class="diagram-wrap">
@@ -676,7 +673,7 @@ flowchart LR
       <!-- Slide 10: divider - What Changed Architecturally -->
       <section class="slide-divider">
         <div class="divider-wrap">
-          <span class="icon-chip hero"><i data-lucide="git-branch"></i></span>
+          <span class="icon-chip hero"><i data-lucide="git-branch" aria-hidden="true"></i></span>
           <p class="divider-num">03</p>
           <h2 class="grad-text">What Changed Architecturally</h2>
           <div class="divider-rule"></div>
@@ -686,7 +683,7 @@ flowchart LR
       <!-- Slide 11: audit pipeline architecture -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="network"></i></span>
+          <span class="head-ico"><i data-lucide="network" aria-hidden="true"></i></span>
           <h2>The audit pipeline</h2>
         </div>
         <div class="diagram-wrap">
@@ -720,7 +717,7 @@ flowchart LR
       <!-- Slide 12: normalize, deduplicate, corroborate -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="git-merge"></i></span>
+          <span class="head-ico"><i data-lucide="git-merge" aria-hidden="true"></i></span>
           <h2>Normalize, deduplicate, corroborate</h2>
         </div>
         <div class="diagram-wrap">
@@ -746,12 +743,12 @@ flowchart LR
       <!-- Slide 13: findings landscape -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="bar-chart-3"></i></span>
+          <span class="head-ico"><i data-lucide="bar-chart-3" aria-hidden="true"></i></span>
           <h2>Findings landscape</h2>
         </div>
         <div class="sev-grid">
           <div class="sev-badge" style="--sc: var(--sev-critical);">
-            <div class="sev-num">97</div>
+            <div class="sev-num">62</div>
             <div class="sev-name">Critical</div>
           </div>
           <div class="sev-badge" style="--sc: var(--sev-high);">
@@ -770,48 +767,48 @@ flowchart LR
         <div class="chip-row">
           <span class="count-chip"><span class="dot" style="--cc: var(--layer-1);"></span>Layer 1 <b>8</b></span>
           <span class="count-chip"><span class="dot" style="--cc: var(--layer-2);"></span>Layer 2 <b>262</b></span>
-          <span class="count-chip"><span class="dot" style="--cc: var(--layer-3);"></span>Layer 3 <b>138</b></span>
+          <span class="count-chip"><span class="dot" style="--cc: var(--layer-3);"></span>Layer 3 <b>99</b></span>
           <span class="count-chip"><span class="dot" style="--cc: var(--layer-4);"></span>Layer 4 <b>158</b></span>
         </div>
         <div class="callout">
-          <span class="callout-icon"><i data-lucide="git-compare"></i></span>
-          <span><b>35</b> corroborated &mdash; <b>4</b> are highest-confidence where expert reasoning meets a scanner on the same line.</span>
+          <span class="callout-icon"><i data-lucide="git-compare" aria-hidden="true"></i></span>
+          <span><b>31</b> corroborated &mdash; <b>4</b> are highest-confidence where expert reasoning meets a scanner on the same line.</span>
         </div>
       </section>
 
       <!-- Slide 14: risks and mitigations -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="alert-triangle"></i></span>
+          <span class="head-ico"><i data-lucide="alert-triangle" aria-hidden="true"></i></span>
           <h2>Risks and mitigations</h2>
         </div>
         <div class="card-grid">
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="alert-triangle"></i></span>
+            <span class="fc-icon"><i data-lucide="alert-triangle" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Fail-open authorization</div>
-              <div class="fc-text">Blocked users could slip through on error; fail closed instead.</div>
+              <div class="fc-text">Slips through on error; fail closed.</div>
             </div>
           </div>
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="key-round"></i></span>
+            <span class="fc-icon"><i data-lucide="key-round" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Reused secret key</div>
-              <div class="fc-text">One key spans many purposes; separate and rotate per use.</div>
+              <div class="fc-text">One key, many purposes; rotate it.</div>
             </div>
           </div>
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="lock"></i></span>
+            <span class="fc-icon"><i data-lucide="lock" aria-hidden="true"></i></span>
             <div>
-              <div class="fc-title">Weak hashing and CSP</div>
-              <div class="fc-text">Legacy SHA-1 and inline scripts; modernize crypto and policy.</div>
+              <div class="fc-title">Weak hashing &amp; CSP</div>
+              <div class="fc-text">Legacy SHA-1, inline scripts; modernize both.</div>
             </div>
           </div>
           <div class="feature-card">
-            <span class="fc-icon"><i data-lucide="bot"></i></span>
+            <span class="fc-icon"><i data-lucide="bot" aria-hidden="true"></i></span>
             <div>
               <div class="fc-title">Verification bypass</div>
-              <div class="fc-text">Bot check skipped when unset; require it in production.</div>
+              <div class="fc-text">Skipped when unset; require it.</div>
             </div>
           </div>
         </div>
@@ -820,7 +817,7 @@ flowchart LR
       <!-- Slide 15: how the team onboards and continues -->
       <section>
         <div class="head-row">
-          <span class="head-ico"><i data-lucide="list-checks"></i></span>
+          <span class="head-ico"><i data-lucide="list-checks" aria-hidden="true"></i></span>
           <h2>How the team continues</h2>
         </div>
         <div class="diagram-wrap">
@@ -841,7 +838,7 @@ flowchart LR
       <!-- Slide 16: closing -->
       <section class="slide-closing">
         <div class="closing-wrap">
-          <span class="icon-chip hero"><i data-lucide="check-circle"></i></span>
+          <span class="icon-chip hero"><i data-lucide="check-circle" aria-hidden="true"></i></span>
           <h2 class="grad-text">Measured, not modified</h2>
           <p>Four layers, one report, <span class="mono">~0 files modified</span>. The codebase is untouched.</p>
           <div class="artifacts">
@@ -868,9 +865,7 @@ flowchart LR
       theme: 'base',
       securityLevel: 'loose',
       fontFamily: 'Inter, sans-serif',
-      // Generous node padding widens each box well beyond its measured label, and the
-      // rendered label font is held slightly below the measured size (CSS below), so the
-      // Inter web font never overflows the box Mermaid measured with a fallback font.
+      // Flowchart node padding and label font-size settings
       flowchart: {
         htmlLabels: true,
         useMaxWidth: true,
@@ -896,13 +891,11 @@ flowchart LR
 
     function renderLucide() {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
+        window.lucide.createIcons({ attrs: { 'aria-hidden': 'true', focusable: 'false' } });
       }
     }
 
-    // Mermaid cannot measure elements inside hidden (display:none) reveal slides -- it
-    // produces a broken 36x36 error SVG. So we render each diagram lazily, only once its
-    // slide is actually visible, and never re-run Mermaid over an already-processed node.
+    // Render each Mermaid diagram lazily when its slide becomes visible; skip processed nodes
     async function renderMermaidIn(slide) {
       if (!slide) return;
       const blocks = Array.prototype.slice
@@ -926,8 +919,7 @@ flowchart LR
       center: true,
       margin: 0.06
     }).then(async () => {
-      // Wait for the brand web fonts to finish loading BEFORE Mermaid measures node boxes,
-      // so boxes are not sized with a narrower fallback font.
+      // Await brand web fonts before running Mermaid
       if (document.fonts?.ready) {
         try { await document.fonts.ready; } catch { /* fonts API best-effort */ }
       }

@@ -231,8 +231,6 @@ rules:
     pattern-regex: '(?m)^\s*pull_request_target\s*:'
     paths:
       include:
-        - ".github/workflows/*.yml"
-        - ".github/workflows/*.yaml"
         - "**/.github/workflows/*.yml"
         - "**/.github/workflows/*.yaml"
     metadata:
@@ -251,8 +249,6 @@ rules:
     pattern-regex: '\$\{\{\s*github\.(head_ref|event\.(issue|comment|pull_request|review)\b[^}]*)\s*\}\}'
     paths:
       include:
-        - ".github/workflows/*.yml"
-        - ".github/workflows/*.yaml"
         - "**/.github/workflows/*.yml"
         - "**/.github/workflows/*.yaml"
     metadata:
@@ -272,8 +268,6 @@ rules:
     pattern-regex: '(?m)^\s*(permissions:\s*write-all|(contents|actions|id-token|packages):\s*write)\b'
     paths:
       include:
-        - ".github/workflows/*.yml"
-        - ".github/workflows/*.yaml"
         - "**/.github/workflows/*.yml"
         - "**/.github/workflows/*.yaml"
     metadata:

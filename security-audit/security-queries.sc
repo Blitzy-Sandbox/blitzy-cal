@@ -16,8 +16,9 @@
 //   description - short functional description of the finding
 //   family      - one of: command-exec | orm-raw-sql |
 //                 taint-reachability | authz-bypass
-//                 (route/request parameters are collected as taint sources and
-//                 reported only when reachable by a sink; see taint-reachability)
+//
+// Route/request parameters are collected as taint sources and feed the
+// taint-reachability family; they are not emitted as standalone findings.
 //
 // Read-only: the script only queries the CPG. Its sole write is the JSON file
 // passed via the --param out=... argument.
@@ -44,7 +45,7 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
     case _        => 0
   }
 
-  // Collapse internal whitespace and cap description length defensively.
+  // Collapse internal whitespace and cap description length at 200 characters.
   def clip(text: String, max: Int = 200): String = {
     val flat = if (text == null) "" else text.replaceAll("\\s+", " ").trim
     if (flat.length > max) flat.substring(0, max) else flat
@@ -53,20 +54,46 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
   // Filenames used for nodes that carry no real source location.
   val unknownLocationMarkers = Set("N/A", "<empty>", "<unknown>", "")
 
-  // Record one candidate finding, keeping only those with an actionable file:line location.
+  // Record one candidate finding when it has an actionable file:line location.
   def record(file: String, line: Int, severity: String, description: String, family: String): Unit = {
     val safeFile = if (file == null) "" else file
     if (!unknownLocationMarkers.contains(safeFile) && line > 0)
       collected += ((safeFile, line, severity, clip(description), family))
   }
 
+  // Files that reference the Node child_process module via import, require, or a
+  // module-name literal. Detected three independent ways and unioned.
+  val childProcessFiles: Set[String] = {
+    val viaLiteral = cpg.literal.code(".*child_process.*").file.name.toSet
+    val viaImports = scala.util.Try(
+      cpg.imports.filter(_.importedEntity.exists(_.contains("child_process"))).file.name.toSet
+    ).getOrElse(Set.empty[String])
+    val viaRequire = scala.util.Try(
+      cpg.call.name("require").where(_.argument.isLiteral.code(".*child_process.*")).file.name.toSet
+    ).getOrElse(Set.empty[String])
+    viaLiteral ++ viaImports ++ viaRequire
+  }
+
+  // Exact Node child_process command/process execution API names.
+  val childProcessApi = Set("exec", "execSync", "execFile", "execFileSync", "spawn", "spawnSync", "fork")
+
+  // Prisma raw SQL sink calls: $queryRaw, $executeRaw, queryRawUnsafe, executeRawUnsafe.
+  val rawSqlCalls = cpg.call.name(".*queryRaw.*|.*executeRaw.*").l
+
   // ---- Family: command-exec (OS command / code execution sink calls) ----
+  // Directive primitive (verbatim): candidate command/code-execution sink call names.
+  val commandCandidates = (cpg.call.name("exec.*|eval|spawn").l ++ cpg.call.name("spawn.*|fork|execFile.*").l).distinct
+  // new Function(...) dynamic code construction.
+  val functionCtorCalls = cpg.call.name("Function").filter(_.code.contains("new Function")).l
+  // Retain only candidates that resolve to a real execution API: a child_process
+  // function called in a child_process-referencing file, or the global eval(...).
+  val commandSinkCalls = commandCandidates.filter { call =>
+    val name = call.name
+    (childProcessApi.contains(name) && childProcessFiles.contains(call.location.filename)) ||
+    (name == "eval" && call.code.trim.startsWith("eval("))
+  } ++ functionCtorCalls
   try {
-    // Directive primitive (verbatim): command-execution sink call names.
-    val commandSinks = cpg.call.name("exec.*|eval|spawn").l
-    // Related command-execution API names.
-    val commandSinksExtra = cpg.call.name("spawn.*|fork|execFile.*").l
-    (commandSinks ++ commandSinksExtra).distinct.foreach { call =>
+    commandSinkCalls.distinct.foreach { call =>
       // A non-literal argument indicates a dynamically constructed command.
       val nonLiteralArgs = call.argument.l.count(arg => arg.label != "LITERAL")
       val severity = if (nonLiteralArgs > 0) "high" else "medium"
@@ -77,12 +104,10 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
 
   // ---- Family: orm-raw-sql (Prisma raw query sink calls) ----
   try {
-    // Match Prisma raw query APIs: $queryRaw, $executeRaw, queryRawUnsafe, executeRawUnsafe.
-    val rawSqlCalls = cpg.call.name(".*queryRaw.*|.*executeRaw.*").l
     rawSqlCalls.distinct.foreach { call =>
       // Detect the *Unsafe API variants by name.
       val isUnsafeApi = call.name.toLowerCase.contains("unsafe")
-      // Nested operators in the argument subtree reveal dynamically built SQL.
+      // Nested operators in the argument subtree indicate dynamically built SQL.
       val argOperators = call.argument.ast.isCall.name.l
       val usesConcatenation = argOperators.contains("<operator>.addition")
       val usesInterpolation = argOperators.contains("<operator>.formatString") || call.code.contains("${")
@@ -97,25 +122,21 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
 
   // ---- Route-parameter sources (directive route query; taint-source inventory) ----
   try {
-    // Methods carrying a Route-style annotation; .nonEmpty yields the Boolean that
-    // Joern's filter(Method => Boolean) requires for this directive primitive.
-    val directiveRouteParams = cpg.method.filter(_.annotation.name(".*Route.*").nonEmpty).parameter.l
-    // HTTP route-handler parameters matched via NestJS / Next.js method decorators.
+    // Directive route query: parameters of methods carrying a Route-style annotation.
+    val directiveRouteParams = cpg.method.where(_.annotation.name(".*Route.*")).parameter.l
+    // NestJS / Next.js HTTP route-handler parameters via method decorators.
     val httpRouteParams = cpg.method.where(_.annotation.name("Get|Post|Put|Patch|Delete|All|.*Route.*")).parameter.l
     // Parameters decorated as request-input carriers.
     val requestParams = cpg.parameter.where(_.annotation.name("Body|Query|Param|Headers|Req|Request|UploadedFile|Ip|Session")).l
-    // Distinct source set excluding the implicit receiver (this). These parameters are
-    // the source inputs for the taint-reachability family below; the count is written to
-    // stderr as scan metadata and is not recorded as vulnerability findings.
+    // Distinct source set excluding the implicit receiver (this).
     val routeParamSources = (directiveRouteParams ++ httpRouteParams ++ requestParams).distinct.filterNot(_.name == "this")
-    System.err.println(s"[route-params] route/request parameter taint sources (metadata only, not findings): ${routeParamSources.size}")
+    System.err.println(s"[route-params] route/request parameter taint sources (metadata only): ${routeParamSources.size}")
   } catch { case e: Throwable => System.err.println("[route-params] skipped: " + e.getMessage) }
 
   // ---- Family: authz-bypass (fail-open guards and unguarded routes) ----
   try {
-    // Guard entrypoints: NestJS guards implement canActivate. A finding is recorded
-    // only for the fail-open pattern (a literal `true` returned in a catch/error branch);
-    // guards without that pattern are not emitted as findings.
+    // NestJS guards implement canActivate; record the fail-open pattern where a
+    // literal true is returned from a catch/error branch.
     cpg.method.name("canActivate").l.foreach { guard =>
       val failOpen = guard.ast.isControlStructure.controlStructureType("CATCH").ast.isLiteral.code("true").nonEmpty
       if (failOpen) {
@@ -124,7 +145,7 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
         record(guard.location.filename, guard.location.lineNumber.getOrElse(-1), "high", description, "authz-bypass")
       }
     }
-    // Unguarded routes: HTTP route handlers with no method-level or class-level @UseGuards.
+    // HTTP route handlers with no method-level or class-level @UseGuards.
     cpg.method.where(_.annotation.name("Get|Post|Put|Patch|Delete|All")).l.foreach { handler =>
       val methodGuarded = handler.annotation.name("UseGuards").nonEmpty
       val classGuarded = handler.typeDecl.annotation.name("UseGuards").nonEmpty
@@ -138,14 +159,14 @@ import io.joern.dataflowengineoss.queryengine.EngineContext
   // ---- Family: taint-reachability (request input reaching dangerous sinks) ----
   try {
     // Untrusted sources: request-decorated parameters and route-handler parameters,
-    // excluding the implicit receiver (this) parameter present on instance methods.
+    // excluding the implicit receiver (this) parameter on instance methods.
     val sourceNodes =
       (cpg.parameter.where(_.annotation.name("Body|Query|Param|Headers|Req|Request|UploadedFile|Ip|Session")).l ++
         cpg.method.where(_.annotation.name("Get|Post|Put|Patch|Delete|All|.*Route.*")).parameter.l)
         .distinct.filterNot(_.name == "this")
     val source = sourceNodes.iterator
-    // High-value sinks: command / code execution and Prisma raw SQL call arguments.
-    val sink = cpg.call.name("exec.*|eval|spawn|spawn.*|.*queryRaw.*|.*executeRaw.*").argument
+    // High-value sinks: the resolved command/code-execution sinks and Prisma raw SQL calls.
+    val sink = (commandSinkCalls ++ rawSqlCalls).distinct.iterator.argument
     // Directive primitive (verbatim): inter-procedural taint reachability.
     val flows = sink.reachableByFlows(source).l
     flows.foreach { path =>

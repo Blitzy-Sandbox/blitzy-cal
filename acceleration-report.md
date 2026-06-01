@@ -449,6 +449,22 @@ This section enumerates the risks to interpretation arising from every Low-confi
 
 No metric in this report carries a High confidence tag, because no direct issue-tracker source was available; the highest tag used is Medium (git commit patterns). This ceiling is itself a risk to over-interpretation and is reflected in the tags throughout §5.
 
+### §9.1 Executive-presentation dependency exposure (CDN-pinned Mermaid)
+
+The sibling deliverable (`acceleration-report-executive-presentation.html`) loads three CDN-pinned libraries: reveal.js 5.1.0, Lucide 0.460.0, and Mermaid 11.4.0. The Mermaid pin `mermaid@11.4.0` (presentation line 735) falls within the affected version range of several GitHub-reviewed advisories. Each advisory, its fixed version, the diagram type whose code path it affects, and whether that code path is present in this deck are listed below.
+
+| Advisory | Type / sink | Severity | Affected → Fixed | Affected diagram type | Present in deck |
+|----------|-------------|----------|------------------|-----------------------|-----------------|
+| CVE-2025-54881 (GHSA-7rqq-prvp-x9jh) | Cross-site scripting — sequence-diagram KaTeX labels passed to `innerHTML` via `calculateMathMLDimensions` | Moderate (CVSS 5.3) | ≥ 11.0.0-alpha.1, < 11.10.0 → 11.10.0 | `sequenceDiagram` with KaTeX | No |
+| CVE-2025-54880 (GHSA-8gwm-58g9-j8pw) | Cross-site scripting — architecture-diagram `iconText` passed to the d3 `html()` method | Moderate | < 11.10.0 → 11.10.0 | `architecture-beta` | No |
+| CVE-2026-41149 (GHSA-ghcm-xqfw-q4vr) | HTML injection — state-diagram `classDef` (escapes the SVG; `<script>` is stripped, so not full XSS) | Moderate (CVSS 5.3) | ≥ 11.0.0-alpha.1, < 11.15.0 → 11.15.0 | `stateDiagram` `classDef` | No |
+| CVE-2026-41148, CVE-2026-41159 | CSS injection — `classDefs` and configuration keys (`fontFamily`, `themeCSS`) | Moderate | < 11.15.0 → 11.15.0 | untrusted `classDef` / configuration input | No |
+| CVE-2026-41150 (GHSA-6m6c-36f7-fhxh) | Denial of service — Gantt `excludes` parsing loop (advisory maturity: no known exploit; not listed in CISA KEV) | Moderate | ≤ 11.14.0 → 11.15.0 | `gantt` `excludes` | No |
+
+The latest Mermaid release not subject to any of the above advisories is 11.15.0. None of the affected code paths is present in this deliverable. The deck contains two `pre.mermaid` blocks — a `flowchart LR` (presentation line 478) and an `xychart-beta` (presentation line 611) — and contains no `sequenceDiagram`, `architecture-beta`, `stateDiagram`, `gantt`, `classDef`, or KaTeX syntax. The `mermaid.initialize` call (presentation line 755) does not set `securityLevel`, so the default `strict` level applies, and it sets `htmlLabels: false`; the diagram source and the theme configuration are author-authored static content, and the file exposes no user-input channel. The absence of the affected code paths holds independent of each advisory's severity rating.
+
+The pin is retained at 11.4.0 because the Agent Action Plan specifies that exact version in §0.4.1 (Dependency Inventory) and in the Executive-Presentation rule (§0.8.2), and the no-dependency-change constraint (§0.4) applies; a change to 11.15.0 would require an Agent Action Plan revision and is outside the scope of this measurement (§0.3.2). Under that precedence (D1: explicit Agent Action Plan rules outrank a suggested resolution), the version is retained and this exposure is recorded here. The verification commands and advisory sources are in §11.15.
+
 ---
 
 ## §10 Limitations
@@ -462,6 +478,7 @@ No metric in this report carries a High confidence tag, because no direct issue-
 - **Day-count convention.** Period duration uses the pivot date as the shared partition point (§4.2): the Baseline duration is 1,490 days (pivot − first commit) and the Accelerated duration is 402 days (last commit − pivot), and the two sum to the full 1,892-day history span. Commit velocity (M2) is computed on these exact durations.
 - **Runtime versions.** Metrics are reported under the analysis-environment baseline of git 2.43.0 and python3 3.12.3 (Agent Action Plan §0.1.1; §2). The extraction commands (§11) are version-independent across the git 2.4x–2.5x and python 3.1x ranges because they use only stable `git log`/`rev-list` plumbing and Python standard-library text processing, so the derived counts do not depend on the exact runtime point version.
 - **Source-document reference.** The retention and testing-topology figures attributed in the Agent Action Plan to `blitzy-docs/technical-specifications.md` §6.6 are not present in that file as it exists in this repository; the workflow `retention-days` settings are cited instead (§3).
+- **Executive-presentation Mermaid pin.** The presentation pins `mermaid@11.4.0`, the version specified by Agent Action Plan §0.4.1 and the Executive-Presentation rule (§0.8.2). That version falls within the affected range of several Moderate-severity Mermaid advisories fixed in 11.10.0 and 11.15.0 (the latest release not subject to any of them is 11.15.0). The affected diagram types — sequence, architecture, state, and Gantt — and KaTeX are not used by the deck, which renders only a `flowchart` and an `xychart`; `securityLevel` is the default `strict`, `htmlLabels` is `false`, and the file has no user-input channel. The pin is retained per the version specification and the no-dependency-change constraint (§0.4); a change to 11.15.0 would require an Agent Action Plan revision (§0.3.2). The exposure, reachability analysis, and mitigations are recorded in §9.1, and the verification commands in §11.15.
 
 ---
 
@@ -796,6 +813,40 @@ print(f'SUM commits={tc} touches={tt} weighted_load={tt/tc:.2f}')   # 6179 24536
 ```bash
 # Workspace globs that define the modules
 python3 -c "import json; print(json.load(open('package.json'))['workspaces'])"
+```
+
+### §11.15 Executive-presentation CDN dependency advisory check (§9.1)
+
+The Mermaid version pinned in the presentation, the diagram types it renders, and its security configuration are verified by the read-only commands below. Advisory data is taken from the GitHub Advisory Database, the National Vulnerability Database, and the Snyk vulnerability database — documented external sources; no repository data is involved.
+
+```bash
+# (1) CDN library versions referenced by the presentation
+grep -nE "(reveal\.js|lucide|mermaid)@[0-9]" acceleration-report-executive-presentation.html
+#   reveal.js@5.1.0 (lines 26, 27, 731); lucide@0.460.0 (line 732); mermaid@11.4.0 (line 735)
+
+# (2) Mermaid diagram declarations present (first line of each pre.mermaid block)
+grep -nA1 '<pre class="mermaid">' acceleration-report-executive-presentation.html
+#   line 478: flowchart LR ; line 611: xychart-beta
+
+# (2b) Advisory-affected diagram types and KaTeX — absent (no matches; grep exit status 1)
+grep -nE "sequenceDiagram|stateDiagram|architecture-beta|gantt|classDef|katex|KaTeX" acceleration-report-executive-presentation.html
+
+# (3) Mermaid security configuration: default strict level; HTML labels disabled
+grep -nE "securityLevel|htmlLabels" acceleration-report-executive-presentation.html
+#   htmlLabels: false (lines 761, 762); securityLevel not set -> default 'strict'
+```
+
+```text
+# Advisory sources consulted (read-only; external to the target repository)
+#   CVE-2025-54881  GHSA-7rqq-prvp-x9jh  XSS (sequence / KaTeX)        Moderate, CVSS 5.3   fixed mermaid 11.10.0
+#   CVE-2025-54880  GHSA-8gwm-58g9-j8pw  XSS (architecture iconText)   Moderate             fixed mermaid 11.10.0
+#   CVE-2026-41149  GHSA-ghcm-xqfw-q4vr  HTML injection (state)        Moderate, CVSS 5.3   fixed mermaid 11.15.0
+#   CVE-2026-41148 / CVE-2026-41159      CSS injection                 Moderate             fixed mermaid 11.15.0
+#   CVE-2026-41150  GHSA-6m6c-36f7-fhxh  Gantt parsing DoS             Moderate             fixed mermaid 11.15.0
+#   Latest release not subject to the above: mermaid 11.15.0
+#   https://github.com/advisories/GHSA-7rqq-prvp-x9jh
+#   https://github.com/advisories/GHSA-8gwm-58g9-j8pw
+#   https://github.com/advisories/GHSA-ghcm-xqfw-q4vr
 ```
 
 ---

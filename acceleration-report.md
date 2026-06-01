@@ -1,6 +1,6 @@
 # Development Acceleration Measurement — `blitzy-cal`
 
-A version-control measurement of development-velocity change attributable to the introduction of AI engineering tooling in the `blitzy-cal` repository. Twelve flow and operational metrics are computed over two periods — a baseline period and an accelerated period — split at a detected Tool Introduction Date, and each metric is reported as an after-versus-before comparison. The measurement is read-only: it reads git history and repository files and writes only this report (and its sibling executive presentation).
+A version-control measurement of development-velocity change attributable to the introduction of AI engineering tooling in the `blitzy-cal` repository. Twelve flow and operational metrics are computed over two periods — a baseline period and an accelerated period — split at a detected Tool Introduction Date, and each metric is reported as an after-versus-before comparison. The measurement is read-only: it reads git history and repository files and writes only this report. A sibling executive presentation (a self-contained reveal.js HTML deck) is the planned second deliverable, to be built from this report's finalized figures; it is not yet written at this checkpoint.
 
 Every reported number carries a confidence tag (High / Medium / Low / Insufficient signal), a provenance chain, and a matching command in the Reproducibility Appendix (§11). Where a data source is unavailable, the value is stated as `Insufficient signal — [reason]` rather than estimated.
 
@@ -8,36 +8,36 @@ Every reported number carries a confidence tag (High / Medium / Low / Insufficie
 
 ## §1 Executive Summary
 
-The Tool Introduction Date is **2025-04-08**, the date of the earliest AI `Co-authored-by:` trailer in commit history (Devin AI; see §4.1). This date splits the history into a **Baseline** period (2021-03-10 → 2025-04-07; 12,699 commits) and an **Accelerated** period (2025-04-08 → 2026-05-15; 4,181 commits). The Accelerated period is further segmented into Ramp-Up (first 90 days) and Steady State (90+ days).
+The Tool Introduction Date is **2025-04-08**, the date of the earliest AI `Co-authored-by:` trailer in commit history (Devin AI; see §4.1). This date splits the history into a **Baseline** period (2021-03-10 → 2025-04-07; 12,701 commits) and an **Accelerated** period (2025-04-08 → 2026-05-15; 4,179 commits). The Accelerated period is further segmented into Ramp-Up (first 90 days) and Steady State (90+ days).
 
 The headline figures below are reproduced in the per-metric deep-dives (§5), the traceability matrix (§6), and — where applicable — the acceleration curve (§8). Each value is identical across those sections (Rule 4).
 
 | # | Metric | Before | After | Multiplier (after ÷ before) | Confidence |
 |---|--------|--------|-------|------------------------------|------------|
 | M1 | Flow Load — avg files changed per commit | 6.17 | 7.25 | 1.18× | Medium |
-| M2 | Flow Velocity — commits per day | 8.52 | 10.37 | 1.22× | Medium |
+| M2 | Flow Velocity — commits per day | 8.52 | 10.40 | 1.22× | Medium |
 | M3 | Flow Predictability — CV of windowed commit counts (proxy) | 0.445 | 0.535 | 1.20× | Low |
 | M4 | Flow Active Time — median intra-session inter-commit interval (proxy) | 28.1 min | 28.6 min | 1.02× | Low |
-| M5 | Flow Efficiency — active-day density (proxy) | 88.5% | 80.4% | 0.91× | Low |
-| M6 | Flow Distribution — feature share of classified commits | 15.9% | 21.6% | 1.36× | Medium |
+| M5 | Flow Efficiency — active-day density (proxy) | 88.5% | 80.6% | 0.91× | Low |
+| M6 | Flow Distribution — feature share of classified commits | 15.9% | 21.5% | 1.35× | Medium |
 | M7 | Flow Time — median inter-release interval (proxy) | n/a (0 releases) | 4.7 days | 0 → N | Low |
 | M8 | Problem Records in Release — revert commits | 147 | 71 | 0.48× (absolute) | Medium |
 | M9 | Releases — changeset "Version Packages" commits | 0 | 22 | 0 → 22 | Medium-Low |
-| M10 | Approved Exceptions | Insufficient signal | Insufficient signal | — | Insufficient |
-| M11 | Escaped Defects — skipped/todo test files (snapshot) | Insufficient signal (historical) | 46 files / 114 call sites (snapshot) | — | Low |
-| M12 | Defects Out of SLA | Insufficient signal | Insufficient signal | — | Insufficient |
+| M10 | Approved Exceptions | Insufficient signal — no PR-review/approval API access | Insufficient signal — no PR-review/approval API access | — | Insufficient |
+| M11 | Escaped Defects — skipped/todo test files (snapshot) | Insufficient signal — CI artifact retention 7–30 days | 46 files / 114 call sites (snapshot) | — | Low |
+| M12 | Defects Out of SLA | Insufficient signal — no SLA data source | Insufficient signal — no SLA data source | — | Insufficient |
 
 Supporting observations, each detailed and sourced in §5:
 
-- **Commit velocity** rose from 8.52 to 10.37 commits per day (1.22×), measured as commits divided by inclusive calendar days in each period (§5.2).
-- The **AI actor cohort** authored **700** commits in the Accelerated period — **16.7%** of the period's 4,181 commits — making it the single highest-volume author identity; the cohort comprises Blitzy Agent (597 commits) and Devin (103 commits) (§5.2, §7).
+- **Commit velocity** rose from 8.52 to 10.40 commits per day (1.22×), measured as commits divided by the pivot-partition day count in each period (§5.2).
+- The **AI actor cohort** authored **699** commits in the Accelerated period — **16.7%** of the period's 4,179 commits — making it the single highest-volume author identity; the cohort comprises Blitzy Agent (597 commits) and Devin (102 commits) (§5.2, §7).
 - The AI actor's commits average **1.55 files per commit**, below both period-wide averages (6.17 before, 7.25 after) (§5.1).
-- The **conventional-commit mix** shifted: the feature (`feat`) share rose from 15.9% to 21.6% of classified commits and the defect-fix (`fix`) share fell from 58.3% to 41.5% (§5.6).
+- The **conventional-commit mix** shifted: the feature (`feat`) share rose from 15.9% to 21.5% of classified commits and the defect-fix (`fix`) share fell from 58.3% to 41.5% (§5.6).
 - **Revert commits** fell in absolute terms from 147 to 71, while the per-commit revert rate rose from 1.16% to 1.70% (§5.8).
 - **Changeset-driven releases** ("Version Packages" commits) went from 0 in the Baseline to 22 in the Accelerated period; the repository carries 0 git tags throughout (§5.9).
 - Four metrics resolve to `Insufficient signal` for their strict definitions because the required data sources (issue-tracker / PR-review API, time-tracking, SLA policy) are unavailable: M10 and M12 fully, and the strict definitions of M3, M4, M5, and M7 (proxies are provided at Low confidence) (§3, §5, §10).
 
-The highest sustained windowed commit velocity occurs in the Steady State phase (149.8 commits per two-week window, versus 119.0 in the Baseline; §8). This phase begins in late 2025 within the Devin-cohort era and continues through the first Blitzy Agent commit (2026-02-25); the attribution of the AI cohort is discussed in §10.
+The highest sustained windowed commit velocity occurs in the Steady State phase (150.1 commits per two-week window, versus 119.0 in the Baseline; §8). This phase begins in late 2025 within the Devin-cohort era and continues through the first Blitzy Agent commit (2026-02-25); the attribution of the AI cohort is discussed in §10.
 
 ---
 
@@ -115,12 +115,14 @@ A second AI actor identity, Blitzy Agent (`agent@blitzy.com`), first appears on 
 
 ### §4.2 Period split and day-count convention
 
-| Period | Date range | Commits | Days (inclusive) | Commits/day |
-|--------|------------|---------|------------------|-------------|
-| Baseline (before) | 2021-03-10 → 2025-04-07 | 12,699 | 1,490 | 8.52 |
-| Accelerated (after) | 2025-04-08 → 2026-05-15 | 4,181 | 403 | 10.37 |
+The period boundary is the pivot date 2025-04-08. The split is computed deterministically by comparing each commit's author timestamp (`%at`, epoch seconds) to the pivot commit's author timestamp (epoch `1744128404`): commits with an author epoch below the pivot are Baseline, and commits at or after the pivot epoch are Accelerated. This epoch comparison is timezone-independent and reproduces identically on every run (§11.4); it is used in place of a bare `--before`/`--since=2025-04-08` date filter, which resolves the bare date against the local wall clock and shifts the boundary by one to two commits between runs.
 
-Period length uses **inclusive calendar-day counting**: `days = (last_day − first_day) + 1`, applied identically to both periods. Under this single convention the Baseline spans 1,490 days and the Accelerated period spans 403 days. (An exclusive date-difference would yield 402 days for the Accelerated period; the inclusive convention is used uniformly here, and the multiplier rounds to 1.22× under either count.)
+| Period | Date range | Commits | Days | Commits/day |
+|--------|------------|---------|------|-------------|
+| Baseline (before) | 2021-03-10 → 2025-04-07 | 12,701 | 1,490 | 8.52 |
+| Accelerated (after) | 2025-04-08 → 2026-05-15 | 4,179 | 402 | 10.40 |
+
+Period duration uses the pivot date as the shared partition point, applied identically to both periods: the Baseline duration is `pivot − first commit = 2025-04-08 − 2021-03-10 = 1,490 days`, and the Accelerated duration is `last commit − pivot = 2026-05-15 − 2025-04-08 = 402 days`. The two durations sum to the full history span (1,490 + 402 = 1,892 days = 2026-05-15 − 2021-03-10). Commits/day is the period commit count divided by this duration: Baseline 12,701 ÷ 1,490 = 8.52; Accelerated 4,179 ÷ 402 = 10.40; multiplier 1.22×.
 
 ### §4.3 Windowing
 
@@ -130,7 +132,7 @@ A single deterministic windowing function is reused identically across both peri
 2. Anchor on the Monday of the earliest commit's ISO week (2021-03-08).
 3. Assign each commit to a **14-day (two-week) bucket**: `window_index = (monday − anchor) // 14 days`.
 
-Accelerated-period windows are classified by their start date: **Ramp-Up** = windows whose start falls in the first 90 days after the pivot (2025-04-08 → 2025-07-07); **Steady State** = windows whose start falls 90+ days after the pivot (2025-07-08 onward). The function appears in full in §11.12.
+Accelerated-period windows are classified by their start date against the 90-day boundary `RAMP_END = pivot + 90 days = 2025-07-07`: **Ramp-Up** = windows whose start falls on or before that boundary (`start ≤ 2025-07-07`), i.e. the first 90 days after the pivot inclusive of the boundary window; **Steady State** = windows whose start falls strictly after it (`start ≥ 2025-07-21`, the next Monday-aligned window). The boundary window starting **2025-07-07** therefore belongs to **Ramp-Up**. This `start ≤ RAMP_END` convention is applied identically in the chart (§8.2), the data table (§8.3), and the windowing function (§11.12).
 
 ### §4.4 Actor framing
 
@@ -166,7 +168,7 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 - **Definition.** Work-in-progress proxied by commit size (files changed per commit).
 - **Before:** 6.17 files/commit. **After:** 7.25 files/commit. **Multiplier:** 1.18×. **AI actor (Blitzy Agent):** 1.55 files/commit.
 - **Confidence:** Medium (git commit-statistics proxy).
-- **Provenance.** Requirement: quantify PR/commit size before vs after → Command: `git log <range> --shortstat` summed and divided by the count of commits carrying a diffstat (§11.7) → Raw output: ≈6.17 (before, over ≈12,230 diffstat commits), ≈7.25 (after, over ≈4,150 diffstat commits), 1.55 (AI actor, over 578 diffstat commits); the diffstat-commit count varies by one to two commits at the period boundary across runs while the averages are stable to two decimals → Derived: before 6.17; after 7.25; AI actor 1.55 → Reported: 6.17 → 7.25.
+- **Provenance.** Requirement: quantify PR/commit size before vs after → Command: `git log --shortstat` with each commit's files-changed count gated by the pivot epoch and averaged over the commits carrying a diffstat (§11.7) → Raw output: 6.17 (before, over 12,232 diffstat commits), 7.25 (after, over 4,150 diffstat commits), 1.55 (AI actor, over 578 diffstat commits) → Derived: before 6.17; after 7.25; AI actor 1.55 → Reported: 6.17 → 7.25. The same `--shortstat` files-per-commit method is applied identically to both periods and to the AI actor; the reconciliation of the Baseline value against the source-reference figure is documented in §10.
 - **Context.** `AGENTS.md` states the PR-size guideline "Never create large PRs (>500 lines or >10 files)" and "Keep PRs under 500 lines of code" and "under 10 code files." The AI actor's per-commit footprint (1.55 files) is below both period-wide averages and below this guideline.[^agents-prsize]
 - **Caveat.** Merge commits fell from 445 (before) to 8 (after); `--shortstat` emits no diffstat line for a merge commit, so merge commits are excluded from this average in both periods and merge-commit file counts are not used as an after-period PR-size proxy. The metric measures non-merge commit file counts.
 
@@ -175,10 +177,10 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 ### §5.2 M2 — Flow Velocity
 
 - **Definition.** Completed items per period, proxied by commits per day.
-- **Before:** 8.52 commits/day. **After:** 10.37 commits/day. **Multiplier:** 1.22×.
+- **Before:** 8.52 commits/day. **After:** 10.40 commits/day. **Multiplier:** 1.22×.
 - **Confidence:** Medium (git commit counts).
-- **Provenance.** Requirement: completed work per unit time before vs after → Command: `git rev-list --count` over each range, divided by inclusive calendar days (§11.4, §4.2) → Raw output: 12,699 commits / 1,490 days; 4,181 commits / 403 days → Derived: 8.52; 10.37 → Multiplier 10.37 ÷ 8.52 = 1.22× → Reported: 8.52 → 10.37 (1.22×).
-- **Actor framing (actor-aggregated).** In the Accelerated period the AI actor cohort authored 700 commits (Blitzy Agent 597; Devin 103), which is 16.7% of the period's 4,181 commits and the highest volume of any single author identity. The top human author in the period authored 322 commits (§7).
+- **Provenance.** Requirement: completed work per unit time before vs after → Command: count commits per period by epoch-gating each commit's author timestamp against the pivot epoch, divided by the pivot-partition day count (§11.4, §4.2) → Raw output: 12,701 commits / 1,490 days; 4,179 commits / 402 days → Derived: 8.52; 10.40 → Multiplier 10.40 ÷ 8.52 = 1.22× → Reported: 8.52 → 10.40 (1.22×).
+- **Actor framing (actor-aggregated).** In the Accelerated period the AI actor cohort authored 699 commits (Blitzy Agent 597; Devin 102), which is 16.7% of the period's 4,179 commits and the highest volume of any single author identity. The top human author in the period authored 322 commits (§7).
 - **Caveat.** Commit count is a volume proxy for completed work, not a count of closed issues or merged pull requests; a higher-confidence count would require the issue-tracker / PR API (§3).
 
 ### §5.3 M3 — Flow Predictability
@@ -196,34 +198,35 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 - **Strict result:** `Insufficient signal — no time-tracking source`. Git does not record active working time.
 - **Proxy (reported):** median interval between consecutive commits by the same period population within an 8-hour session window. **Before:** 28.1 min. **After:** 28.6 min. **AI actor (Blitzy Agent):** 7.0 min. **Multiplier (before→after):** 1.02×.
 - **Confidence:** Low (inter-commit-interval proxy).
-- **Provenance.** Requirement: active time per actor before vs after → Command: extract commit epochs per range, compute gaps ≤ 8 h, take the median (§11.8) → Raw output: 11,364 intra-session gaps (before), 3,958 (after), 577 (AI actor) → Derived medians: 28.1 min; 28.6 min; 7.0 min → Reported: 28.1 → 28.6 min.
+- **Provenance.** Requirement: active time per actor before vs after → Command: extract commit author epochs, gate by the pivot epoch, compute consecutive gaps ≤ 8 h, take the median (§11.8) → Raw output: 11,365 intra-session gaps (before), 3,957 (after), 577 (AI actor) → Derived medians: 28.1 min; 28.6 min; 7.0 min → Reported: 28.1 → 28.6 min.
 - **Caveat (Low).** Inter-commit interval is a cadence proxy, not active coding time; commits do not bracket continuous work, and the 8-hour session threshold is a chosen heuristic. The AI actor's shorter median interval (7.0 min) reflects more frequent commits within sessions, not a direct measurement of effort.
 
 ### §5.5 M5 — Flow Efficiency
 
 - **Definition (strict).** Active time divided by total elapsed time (including wait).
 - **Strict result:** `Insufficient signal — no work-item active/wait timing`. Per-item active and wait durations are not recorded in git.
-- **Proxy (reported):** active-day density = distinct calendar days with at least one commit ÷ total inclusive days in the period. **Before:** 88.5% (1,318 ÷ 1,490). **After:** 80.4% (324 ÷ 403). **Multiplier:** 0.91×.
+- **Proxy (reported):** active-day density = distinct calendar days with at least one commit ÷ total days in the period (pivot-partition convention, §4.2). **Before:** 88.5% (1,318 ÷ 1,490). **After:** 80.6% (324 ÷ 402). **Multiplier:** 0.91×.
 - **Confidence:** Low (activity-density proxy).
-- **Provenance.** Requirement: ratio of active to elapsed time → Command: count distinct commit dates per range, divide by inclusive period days (§11.9, §4.2) → Raw output: 1,318 active days / 1,490 (before); 324 active days / 403 (after) → Derived: 88.5%; 80.4% → Reported: 88.5% → 80.4%.
+- **Provenance.** Requirement: ratio of active to elapsed time → Command: count distinct commit dates per range (epoch-gated), divide by the pivot-partition day count (§11.9, §4.2) → Raw output: 1,318 active days / 1,490 (before); 324 active days / 402 (after) → Derived: 88.5%; 80.6% → Reported: 88.5% → 80.6%.
+- **Actor framing (actor-perspective).** Computed from the AI actor's perspective, the Blitzy Agent has 23 distinct active days across its own 51-day participation span (first commit 2026-02-25 to last 2026-04-16), an active-day density of **45.1%** (23 ÷ 51). The AI actor's density is measured over its own participation span rather than the full Accelerated period, because the actor entered partway through the period; the figure is the actor-row counterpart to the period-wide densities above (§11.9).
 - **Caveat (Low).** Active-day density measures how many days saw any commit, not the active-to-wait ratio of work items; it is not the strict definition. `.github/CODEOWNERS` (lines 41–47) exempts test files (`*.spec.*`, `*.test.*`, `*.test-suite.*`, `*.integration-test.*`) from review, which would affect any review-based "ready-for-review" timing were the PR API available.
 
 ### §5.6 M6 — Flow Distribution
 
 - **Definition.** Mix of work types (features / defects / debt / risk), classified from conventional-commit subject prefixes.
 - **Confidence:** Medium (git commit-subject patterns).
-- **Result (share of classified commits).** Classified totals: 6,903 (before), 3,674 (after).
+- **Result (share of classified commits).** Classified totals: 6,905 (before), 3,672 (after).
 
 | Work type (mapping) | Before | After |
 |---------------------|--------|-------|
-| Features (`feat`) | 15.9% | 21.6% |
+| Features (`feat`) | 15.9% | 21.5% |
 | Defects (`fix`) | 58.3% | 41.5% |
 | Debt (`refactor` + `chore` + `perf`) | 20.8% | 27.7% |
 | Risk (`revert`) | 2.1% | 1.6% |
 
-- **Per-prefix raw counts.** Before — `fix` 4,024, `feat` 1,096, `chore` 1,081, `refactor` 196, `perf` 160, `revert` 145, `test` 125, `docs` 45, `ci` 12, `build` 11, `style` 8. After — `fix` 1,524, `feat` 793, `chore` 605, `refactor` 279, `docs` 208, `perf` 133, `revert` 59, `test` 48, `ci` 13, `style` 10, `build` 2.
-- **Provenance.** Requirement: work-type mix before vs after → Command: `git log <range> --format='%s'`, match leading conventional prefix, tally (§11.6) → Raw output: per-prefix counts above → Derived: percentage shares over classified totals (6,903; 3,674) → Reported: feature share 15.9% → 21.6%; defect share 58.3% → 41.5%.
-- **Actor framing.** This distribution is actor-aggregated over each period's full author population (AI actor included in the Accelerated period).
+- **Per-prefix raw counts.** Before — `fix` 4,024, `feat` 1,098, `chore` 1,081, `refactor` 196, `perf` 160, `revert` 145, `test` 125, `docs` 45, `ci` 12, `build` 11, `style` 8. After — `fix` 1,524, `feat` 791, `chore` 605, `refactor` 279, `docs` 208, `perf` 133, `revert` 59, `test` 48, `ci` 13, `style` 10, `build` 2.
+- **Provenance.** Requirement: work-type mix before vs after → Command: extract `%s` subjects, gate by the pivot epoch, match the leading conventional prefix, and tally (§11.6) → Raw output: per-prefix counts above → Derived: percentage shares over classified totals (6,905; 3,672) → Reported: feature share 15.9% → 21.5%; defect share 58.3% → 41.5%.
+- **Actor framing (actor-aggregated).** This distribution is actor-aggregated over each period's full author population (AI actor included in the Accelerated period). The AI actor's own subject distribution differs from the period-wide mix: across the Blitzy Agent's 307 classified commits, `docs` is the largest share at 41.7% (128), followed by `feat` 33.2% (102) and `fix` 22.8% (70), with `refactor` 1.0% (3) and `test`/`chore` 0.7% (2 each). The AI actor's feature share (33.2%) exceeds the period-wide feature share (21.5%), and its defect-fix share (22.8%) is below the period-wide fix share (41.5%).
 - **Caveat.** Percentages are computed over commits whose subject begins with a recognized conventional prefix; commits without such a prefix are excluded from the denominator. Label-based classification (higher confidence) would require the GitHub API (§3).
 
 ### §5.7 M7 — Flow Time
@@ -239,9 +242,9 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 
 - **Definition.** Count of revert commits as a proxy for problem records.
 - **Before:** 147. **After:** 71 (absolute). **Multiplier (absolute):** 0.48×.
-- **Normalized:** per-day 0.099 → 0.176; per-commit 1.16% → 1.70%.
+- **Normalized:** per-day 0.099 → 0.177; per-commit 1.16% → 1.70%.
 - **Confidence:** Medium (git revert markers).
-- **Provenance.** Requirement: problem records before vs after → Command: `git log <range> -i --grep='^Revert'` counted (§11.5) → Raw output: 147 (before), 71 (after) → Derived: per-day 147 ÷ 1,490 = 0.099 and 71 ÷ 403 = 0.176; per-commit 147 ÷ 12,699 = 1.16% and 71 ÷ 4,181 = 1.70% → Reported: 147 → 71 absolute; 1.16% → 1.70% per-commit.
+- **Provenance.** Requirement: problem records before vs after → Command: `git log -i --grep='^Revert'` with the matched commits' author epochs gated against the pivot epoch (§11.5) → Raw output: 147 (before), 71 (after) → Derived: per-day 147 ÷ 1,490 = 0.099 and 71 ÷ 402 = 0.177; per-commit 147 ÷ 12,701 = 1.16% and 71 ÷ 4,179 = 1.70% → Reported: 147 → 71 absolute; 1.16% → 1.70% per-commit.
 - **Caveat.** Absolute reverts fell (147 → 71) while the per-commit revert rate rose (1.16% → 1.70%); both views are reported and neither is presented as the sole figure. This message-based match (`^Revert` anywhere a line begins, case-insensitive) is broader than the subject-prefix `revert` count used in the M6 distribution (145 before, 59 after); the two counts measure different things and are reported separately. A combined short flag `-iE` is misparsed by the git option parser and returns 0; the working form uses separate `-i` (§11.5).
 
 ### §5.9 M9 — Releases
@@ -258,7 +261,8 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 - **Definition.** Count of approved exceptions / review overrides.
 - **Result:** `Insufficient signal — no PR-review/approval API access`.
 - **Confidence:** Insufficient.
-- **Provenance.** Requirement: approved exceptions before vs after → Intended source: GitHub PR reviews API (`GET /repos/{owner}/{repo}/pulls/{n}/reviews`) and branch-protection override events → Availability: unavailable (no API tooling or token; §3) → Reported: Insufficient signal.
+- **Provenance.** Requirement: approved exceptions before vs after → Intended source: GitHub PR reviews API (`GET /repos/{owner}/{repo}/pulls/{n}/reviews`) and branch-protection override events → Availability: unavailable (no API tooling or token; §3) → Reported: Insufficient signal — no PR-review/approval API access.
+- **Actor framing (actor-aggregated).** This metric is actor-aggregated in its definition (per-actor approved exceptions), but the actor-level source is the same PR-review/approval API that is unavailable; consequently every actor row is unavailable: human actors `Insufficient signal — no PR-review/approval API access`, and the AI actor (Blitzy Agent / Devin) `Insufficient signal — no PR-review/approval API access`. No actor row is derived from a proxy.
 - **Caveat (Insufficient).** Approval and override data resides in the PR-review system and is not recoverable from commit history; no git proxy faithfully represents an "approved exception," so no value is derived rather than substituting a misleading proxy.
 
 ### §5.11 M11 — Escaped Defects (newly skipped / failed tests)
@@ -273,9 +277,9 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 ### §5.12 M12 — Defects Out of SLA
 
 - **Definition.** Count of defects breaching a service-level agreement.
-- **Result:** `Insufficient signal — no SLA/severity data source`.
+- **Result:** `Insufficient signal — no SLA data source`.
 - **Confidence:** Insufficient.
-- **Provenance.** Requirement: defects out of SLA before vs after → Intended source: issue-tracker severity labels and SLA timestamps, or an in-repo SLA/severity/runbook policy → Availability: a repository search found no SLA, severity-policy, or runbook file, and the issue-tracker API is unavailable (§3) → Reported: Insufficient signal.
+- **Provenance.** Requirement: defects out of SLA before vs after → Intended source: issue-tracker severity labels and SLA timestamps, or an in-repo SLA/severity/runbook policy → Availability: a repository search found no SLA, severity-policy, or runbook file, and the issue-tracker API is unavailable (§3) → Reported: Insufficient signal — no SLA data source.
 - **Caveat (Insufficient).** Neither a severity classification nor SLA timestamps exist in any available source; no value is derived and none is estimated.
 
 ---
@@ -288,24 +292,24 @@ Each user requirement is mapped to the report section that satisfies it, the app
 |-------------|---------|---------------------|------------------------|
 | Repository discovery (redacted) | §2 | §11.1 (`git remote get-url origin`, redacted) | `https://github.com/Blitzy-Sandbox/blitzy-cal.git`; 16,880 commits; 26 branches; 0 tags |
 | Tool Introduction Date detection | §4.1 | §11.2 | 2025-04-08 (commit `76a820f3…`) |
-| Period split | §4.2 | §11.4 | Before 12,699 / 1,490 d; After 4,181 / 403 d |
+| Period split | §4.2 | §11.4 | Before 12,701 / 1,490 d; After 4,179 / 402 d |
 | M1 Flow Load | §5.1 | §11.7 | 6.17 → 7.25 (1.18×); AI actor 1.55 — Medium |
-| M2 Flow Velocity | §5.2 | §11.4 | 8.52 → 10.37 commits/day (1.22×) — Medium |
+| M2 Flow Velocity | §5.2 | §11.4 | 8.52 → 10.40 commits/day (1.22×) — Medium |
 | M3 Flow Predictability | §5.3 | §11.12 | strict Insufficient; proxy CV 0.445 → 0.535 — Low |
 | M4 Flow Active Time | §5.4 | §11.8 | strict Insufficient; proxy 28.1 → 28.6 min; AI actor 7.0 min — Low |
-| M5 Flow Efficiency | §5.5 | §11.9 | strict Insufficient; proxy 88.5% → 80.4% — Low |
-| M6 Flow Distribution | §5.6 | §11.6 | feature 15.9% → 21.6%; defect 58.3% → 41.5% — Medium |
+| M5 Flow Efficiency | §5.5 | §11.9 | strict Insufficient; proxy 88.5% → 80.6% — Low |
+| M6 Flow Distribution | §5.6 | §11.6 | feature 15.9% → 21.5%; defect 58.3% → 41.5% — Medium |
 | M7 Flow Time | §5.7 | §11.10 | strict Insufficient; proxy after 4.7 d; before n/a — Low |
 | M8 Problem Records (reverts) | §5.8 | §11.5 | 147 → 71; 1.16% → 1.70% per commit — Medium |
 | M9 Releases | §5.9 | §11.6 | 0 → 22; 0 tags — Medium-Low |
-| M10 Approved Exceptions | §5.10 | §11.13 (API, unavailable) | Insufficient signal |
+| M10 Approved Exceptions | §5.10 | §11.13 (API, unavailable) | Insufficient signal — no PR-review/approval API access |
 | M11 Escaped Defects | §5.11 | §11.11 | 46 files / 114 call sites (snapshot); historical Insufficient — Low |
-| M12 Defects Out of SLA | §5.12 | §11.13 (API, unavailable) | Insufficient signal |
-| Engineering-actor framing | §4.4, §5.2, §7 | §11.3 | AI cohort 700 (16.7%); Blitzy 597; Devin 103 |
-| Temporal phase analysis | §4.3, §8 | §11.12 | Baseline 119.0 / Ramp-Up 117.2 / Steady 149.8 per window |
+| M12 Defects Out of SLA | §5.12 | §11.13 (API, unavailable) | Insufficient signal — no SLA data source |
+| Engineering-actor framing | §4.4, §5.2, §7 | §11.3 | AI cohort 699 (16.7%); Blitzy 597; Devin 102 |
+| Temporal phase analysis | §4.3, §8 | §11.12 | Baseline 119.0 / Ramp-Up 121.0 / Steady 150.1 per window |
 | Confidence model | §4.5, all §5 | n/a (tagging rule) | Tags present on all 12 metrics |
-| Multi-module aggregation | §4.6, §7.2 | §11.14 | Per-module table; weighted by file-touch volume |
-| Two deliverables | §1, §10 | n/a | This report + sibling reveal.js presentation |
+| Multi-module aggregation | §4.6, §7.2 | §11.14 | Per-module Flow Load; commit-volume-weighted aggregate 3.97 files/commit |
+| Two deliverables | §1, §10 | n/a | This report (written); sibling reveal.js presentation (planned second deliverable) |
 | Credential redaction | §2 | §11.1 | Token scrubbed; redacted URL only |
 
 ---
@@ -316,16 +320,16 @@ Each user requirement is mapped to the report section that satisfies it, the app
 
 Author identities are alias-deduplicated before aggregation: `zomars` is merged into Omar López; multiple spellings of Hariom Balhara are merged; `CarinaWolli` is merged into Carina Wollendorfer; multiple email addresses for the same person are consolidated. Bot identities are excluded from human rows (Crowdin Bot, `github-actions[bot]`, `dependabot[bot]`, `kodiakhq[bot]`, `coderabbitai[bot]`, `cubic-dev-ai[bot]`, and similar). The AI tool is represented as a labeled **AI actor** row, not as a human engineer.
 
-Period author totals after de-duplication: Baseline — 11,477 human commits across 737 distinct human identities, plus 1,221 bot commits (excluded) and 1 AI-actor commit. Accelerated — 3,373 human commits across 200 distinct human identities, plus 108 bot commits (excluded) and 700 AI-actor commits.
+Period author totals after de-duplication: Baseline — 11,478 human commits across 735 distinct human identities, plus 1,221 bot commits (excluded) and 2 AI-actor commits. Accelerated — 3,372 human commits across 200 distinct human identities, plus 108 bot commits (excluded) and 699 AI-actor commits. These three components sum to the period totals (11,478 + 1,221 + 2 = 12,701; 3,372 + 108 + 699 = 4,179) and are reproduced by the alias-de-duplication script in §11.3.
 
 **Baseline period — top human authors (commits):**
 
 | Rank | Engineer | Commits |
 |------|----------|---------|
-| 1 | Omar López (incl. `zomars`) | 1,380 |
+| 1 | Omar López (incl. `zomars`) | 1,381 |
 | 2 | Peer Richelsen | 929 |
 | 3 | Alex van Andel | 826 |
-| 4 | Hariom Balhara | 671 |
+| 4 | Hariom Balhara | 678 |
 | 5 | sean-brydon | 497 |
 | 6 | Agusti Fernandez Pardo | 465 |
 | 7 | Udit Takkar | 455 |
@@ -337,9 +341,9 @@ Period author totals after de-duplication: Baseline — 11,477 human commits acr
 
 | Rank | Author | Commits | Type |
 |------|--------|---------|------|
-| — | **AI cohort (Blitzy Agent + Devin)** | **700** | **AI actor** |
+| — | **AI cohort (Blitzy Agent + Devin)** | **699** | **AI actor** |
 | — | • Blitzy Agent | 597 | AI actor |
-| — | • Devin | 103 | AI actor |
+| — | • Devin | 102 | AI actor |
 | 1 | Anik Dhabal Babu | 322 | Human |
 | 2 | Benny Joo | 214 | Human |
 | 3 | Eunjae Lee | 207 | Human |
@@ -347,45 +351,47 @@ Period author totals after de-duplication: Baseline — 11,477 human commits acr
 | 5 | sean-brydon | 184 | Human |
 | 6 | Hariom Balhara | 183 | Human |
 | 7 | Alex van Andel | 160 | Human |
-| 8 | Joe Au-Yeung | 148 | Human |
+| 8 | Joe Au-Yeung | 147 | Human |
 | 9 | Morgan | 146 | Human |
 | 10 | Lauris Skraucis | 132 | Human |
 
-The AI cohort's 700 commits exceed the highest human author total in the period (322), and represent 16.7% of the period's 4,181 commits. Blitzy Agent alone (597) accounts for 14.3% and Devin (103) for 2.5%. In the Baseline period the AI cohort footprint is a single Devin-authored commit.
+The AI cohort's 699 commits exceed the highest human author total in the period (322), and represent 16.7% of the period's 4,179 commits. Blitzy Agent alone (597) accounts for 14.3% and Devin (102) for 2.4%. In the Baseline period the AI cohort footprint is 2 Devin-authored commits.
 
 ### §7.2 Per-module aggregation
 
-Extraction is run per workspace and weighted by file-touch volume (§4.6). The Accelerated-period file-touch counts per top-level module are below, with Baseline counts shown for comparison.
+Extraction is run per workspace and aggregated weighted by commit volume (§4.6). The worked example below is **M1 Flow Load** computed per module over the Accelerated period: each commit's `--numstat` file-touches are attributed to the top-level module of each touched path, the per-module Flow Load is the module's file-touches divided by the number of commits touching that module, and the weight is the module's commit count divided by the total module-commit incidences across the listed modules (Σ commits = 6,174). The same commit-volume weights apply to the other commit-aggregated metrics; Flow Load is shown as the representative worked aggregation because it is file-based and decomposes cleanly per module.
 
-| Module | Before (file-touches) | After (file-touches) |
-|--------|-----------------------|----------------------|
-| `apps/web` | 26,103 | 7,655 |
-| `packages/features` | 9,373 | 7,154 |
-| `apps/api` | 4,430 | 2,717 |
-| `packages/trpc` | 3,364 | 2,200 |
-| `packages/app-store` | 7,604 | 1,781 |
-| `packages/lib` | 2,292 | 1,552 |
-| `packages/platform` | 1,814 | 1,124 |
-| `packages/prisma` | 1,473 | 584 |
-| `packages/ui` | 3,299 | 349 |
-| `packages/embeds` | 954 | 269 |
-| `packages/emails` | 839 | 268 |
+| Module | Commits (touching module) | File-touches | Flow Load (files/commit) | Weight |
+|--------|---------------------------|--------------|--------------------------|--------|
+| `apps/web` | 1,519 | 6,992 | 4.60 | 0.246 |
+| `packages/features` | 1,469 | 6,833 | 4.65 | 0.238 |
+| `apps/api` | 621 | 2,691 | 4.33 | 0.101 |
+| `packages/trpc` | 570 | 2,172 | 3.81 | 0.092 |
+| `packages/lib` | 522 | 1,492 | 2.86 | 0.085 |
+| `packages/platform` | 430 | 1,122 | 2.61 | 0.070 |
+| `packages/app-store` | 392 | 1,754 | 4.47 | 0.063 |
+| `packages/prisma` | 326 | 584 | 1.79 | 0.053 |
+| `packages/ui` | 161 | 349 | 2.17 | 0.026 |
+| `packages/emails` | 89 | 268 | 3.01 | 0.014 |
+| `packages/embeds` | 75 | 269 | 3.59 | 0.012 |
 
-The two highest-volume Accelerated-period modules are `apps/web` (7,655 file-touches) and `packages/features` (7,154); these two modules dominate the commit-volume weighting and therefore contribute most to the aggregated metrics in §5. The per-module ordering is consistent across periods for the leading modules (`apps/web` first, `packages/features` second).
+The commit-volume-weighted aggregate is computed as `weighted_load = Σ(load_m × commits_m) / Σ(commits_m) = Σ(file-touches_m) / Σ(commits_m) = 24,526 ÷ 6,174 = 3.97 files/commit` (§11.14). The two highest-volume Accelerated-period modules, `apps/web` (weight 0.246) and `packages/features` (weight 0.238), together carry 48.4% of the weight and therefore dominate the aggregate.
+
+This module-attributed aggregate (3.97) is below the repository-wide M1 Flow Load (7.25, §5.1) by construction: the per-module decomposition assigns each file-touch to exactly one module, so a commit spanning several modules is partitioned across their rows, whereas the repository-wide `--shortstat` average counts every file of every commit once against a single per-commit total. The two figures are therefore complementary views — the repository-wide average is the per-commit footprint, and the weighted per-module aggregate is the mean module-local footprint — and are not expected to be equal. The per-module ordering by commit volume is consistent with the file-touch ordering, with `apps/web` and `packages/features` leading in both periods.
 
 ---
 
 ## §8 Acceleration Curve
 
-Commit velocity is bucketed into Monday-aligned two-week windows (§4.3) and reported as commits per window. The windowing produces 136 windows across the full history: 107 Baseline, 6 Ramp-Up, and 23 Steady State. The two-week window that straddles the pivot starts on 2025-03-31 (before the pivot) and is therefore classified Baseline; the first Accelerated window starts 2025-04-14.
+Commit velocity is bucketed into Monday-aligned two-week windows (§4.3) and reported as commits per window. The windowing produces 136 windows across the full history: 107 Baseline, 7 Ramp-Up, and 22 Steady State. The two-week window that straddles the pivot starts on 2025-03-31 (before the pivot) and is therefore classified Baseline; the first Accelerated window starts 2025-04-14, and the Ramp-Up phase closes with the boundary window starting 2025-07-07 (§4.3).
 
 ### §8.1 Phase summary
 
 | Phase | Windows | Mean commits/window | Multiplier vs Baseline |
 |-------|---------|---------------------|------------------------|
 | Baseline | 107 | 119.0 | 1.00× (reference) |
-| Ramp-Up (first 90 days) | 6 | 117.2 | 0.98× |
-| Steady State (90+ days) | 23 | 149.8 | 1.26× |
+| Ramp-Up (first 90 days) | 7 | 121.0 | 1.02× |
+| Steady State (90+ days) | 22 | 150.1 | 1.26× |
 
 ### §8.2 Accelerated-period windowed velocity
 
@@ -411,7 +417,7 @@ The complete Accelerated-period series backing the chart (window start date, pha
 | 2025-05-26 | Ramp-Up | 56 | 2025-12-22 | Steady State | 174 |
 | 2025-06-09 | Ramp-Up | 109 | 2026-01-05 | Steady State | 342 |
 | 2025-06-23 | Ramp-Up | 143 | 2026-01-19 | Steady State | 239 |
-| 2025-07-07 | Steady State | 144 | 2026-02-02 | Steady State | 245 |
+| 2025-07-07 | Ramp-Up | 144 | 2026-02-02 | Steady State | 245 |
 | 2025-07-21 | Steady State | 102 | 2026-02-16 | Steady State | 192 |
 | 2025-08-04 | Steady State | 125 | 2026-03-02 | Steady State | 187 |
 | 2025-08-18 | Steady State | 154 | 2026-03-16 | Steady State | 233 |
@@ -421,7 +427,7 @@ The complete Accelerated-period series backing the chart (window start date, pha
 | 2025-10-13 | Steady State | 116 | 2026-05-11 | Steady State | 1 |
 | 2025-10-27 | Steady State | 150 | | | |
 
-The Ramp-Up phase mean (117.2 commits/window) is at the Baseline level (119.0). The Steady State phase mean (149.8) is 1.26× the Baseline. The highest windowed counts occur in the window starting 2026-01-05 (342) and the windows of December 2025 and January–March 2026. The final four windows (2026-03-30 onward: 45, 11, 0, 1) fall near the data cutoff (2026-05-15) and reflect a partial window boundary rather than a velocity change. The Steady State rise begins in December 2025 — within the Devin-cohort era — and continues through the first Blitzy Agent commit (2026-02-25); the cohort attribution is addressed in §10.
+The Ramp-Up phase mean (121.0 commits/window, 7 windows) is at the Baseline level (119.0; 1.02×). The Steady State phase mean (150.1, 22 windows) is 1.26× the Baseline. The highest windowed counts occur in the window starting 2026-01-05 (342) and the windows of December 2025 and January–March 2026. The final four windows (2026-03-30 onward: 45, 11, 0, 1 — including the zero-count window starting 2026-04-27) fall near the data cutoff (2026-05-15) and reflect a partial window boundary rather than a velocity change. The Steady State rise begins in December 2025 — within the Devin-cohort era — and continues through the first Blitzy Agent commit (2026-02-25); the cohort attribution is addressed in §10.
 
 ---
 
@@ -433,7 +439,7 @@ This section enumerates the risks to interpretation arising from every Low-confi
 |------|------------------|-------------|------------|
 | Proxy-versus-definition gap | M3, M4, M5, M7 | The strict definitions require issue-tracker, time-tracking, or PR data that is unavailable; reported figures are git proxies | Strict definitions are marked `Insufficient signal`; proxies are tagged Low and carry an explicit caveat naming the substitution |
 | Snapshot-only data | M11 | Skipped/todo test counts are a single point-in-time reading; no historical series exists | Reported as a `HEAD` snapshot at Low confidence; historical split marked `Insufficient signal` with the workflow `retention-days` basis cited |
-| No source available | M10, M12 | Approval/override data and SLA/severity data have no available source | Reported as `Insufficient signal`; no proxy substituted and no value estimated |
+| No source available | M10, M12 | Approval/override data and SLA/severity data have no available source | M10 reported as `Insufficient signal — no PR-review/approval API access` and M12 as `Insufficient signal — no SLA data source`; no proxy substituted and no value estimated |
 | API unavailability | M6, M9, M10, M11, M12 | The GitHub REST API would raise confidence (labels, releases, reviews, CI history, SLA) but is unreachable | Documented access attempt in §3; git proxies used at stated confidence; would-be endpoints listed in §11.13 |
 | Boundary/cutoff effects | M3, §8 | The final Accelerated windows are partial (near the 2026-05-15 cutoff), inflating the Accelerated CV and depressing the last windowed counts | Boundary effect disclosed in §5.3 and §8.3; per-day velocity (M2) computed on exact date ranges and unaffected |
 | Day-count convention | M2, M5, M8 | Inclusive vs exclusive day counting changes per-day denominators | A single inclusive convention is applied identically to both periods and documented in §4.2 |
@@ -447,13 +453,13 @@ No metric in this report carries a High confidence tag, because no direct issue-
 
 ## §10 Limitations
 
-- **Devin-versus-Blitzy attribution ambiguity.** Two AI signals coexist in the Accelerated period. Devin AI produced the earliest AI `Co-authored-by:` trailer (2025-04-08) and is used as the pivot; Blitzy Agent (`agent@blitzy.com`) first appears on 2026-02-25 and is the actor named in the originating request. This report uses the earliest AI trailer as the pivot and frames the Accelerated-period actor population as the **full AI cohort, with Blitzy as one actor row** (597 commits) alongside Devin (103 commits). Consequently, the Accelerated-period AI-attributed activity (700 commits) spans both tools, and the Steady-State velocity rise (§8) begins before the first Blitzy commit. Readers separating Blitzy-specific from Devin-specific effects should use the per-actor rows in §7.1 rather than the cohort total.
+- **Devin-versus-Blitzy attribution ambiguity.** Two AI signals coexist in the Accelerated period. Devin AI produced the earliest AI `Co-authored-by:` trailer (2025-04-08) and is used as the pivot; Blitzy Agent (`agent@blitzy.com`) first appears on 2026-02-25 and is the actor named in the originating request. This report uses the earliest AI trailer as the pivot and frames the Accelerated-period actor population as the **full AI cohort, with Blitzy as one actor row** (597 commits) alongside Devin (102 commits). Consequently, the Accelerated-period AI-attributed activity (699 commits) spans both tools, and the Steady-State velocity rise (§8) begins before the first Blitzy commit. Readers separating Blitzy-specific from Devin-specific effects should use the per-actor rows in §7.1 rather than the cohort total.
 - **Confidence ceiling at Medium.** Because the GitHub REST API and issue tracker were unavailable, no metric reaches High confidence. Most metrics are Medium (git commit patterns) or Low (proxies). Figures should not be read as issue-tracker-grade counts.
-- **Insufficient-signal metrics.** M10 (Approved Exceptions) and M12 (Defects Out of SLA) have no available source and are reported as `Insufficient signal`. The strict definitions of M3, M4, M5, and M7 are likewise `Insufficient signal`; only Low-confidence proxies are provided for those four.
+- **Insufficient-signal metrics.** M10 (Approved Exceptions) is reported as `Insufficient signal — no PR-review/approval API access` and M12 (Defects Out of SLA) as `Insufficient signal — no SLA data source`; neither has an available source. The strict definitions of M3, M4, M5, and M7 are likewise `Insufficient signal` (each with its own stated reason in §5); only Low-confidence proxies are provided for those four.
 - **M11 is a snapshot.** Escaped-defect data is a `HEAD` snapshot (46 files / 114 call sites); CI artifact retention (7–30 days per the workflow settings) precludes a historical before/after split.
-- **M1 before-value and direction.** The Baseline files-per-commit value re-derives to 6.17 under the `--shortstat` method applied identically to both periods; the after value is 7.25. The period-wide average therefore rises slightly (1.18×), while the AI actor's own per-commit footprint (1.55 files) is below both period averages. The Agent Action Plan cited a Baseline of 8.39 for this metric; that value did not reproduce under the documented command and the reproducible 6.17 is reported (§5.1, §11.7).
+- **M1 Baseline value — source reconciliation.** The metric figures in this report are the values produced by the reproducible extraction commands in §11, in keeping with the data-provenance and reproducibility requirements (Rules 1 and 5), the no-fabrication constraint, and the Agent Action Plan's provision (§0.3.2) that the numeric results are produced in this report and that figures gathered during discovery are command-validation inputs rather than fixed findings. Under the `--shortstat` files-per-commit method (§11.7) applied identically to both periods and to the AI actor, the Baseline is 6.17 files/commit, the Accelerated period is 7.25, and the AI actor is 1.55; the period-wide average rises (1.18×), while the AI actor's per-commit footprint (1.55 files) sits below both period averages. A source-reference figure of 8.39 was recorded for the Baseline during discovery; the Baseline figure reported here (6.17) is the value the §11.7 command yields under the same method that produces the reproduced Accelerated value (7.25) and AI-actor value (1.55), so all three M1 figures share one extraction method and one provenance chain.
 - **Branch-count figure.** The live branch count is 26 (§2); figures of 27 (Agent Action Plan) and 25 (earlier extraction) differ because ephemeral working branches change over time. The branch count is environment context only and feeds no metric.
-- **Day-count convention.** The Accelerated period spans 403 inclusive days under the single convention applied here; an exclusive date-difference yields 402. The velocity multiplier rounds to 1.22× under either count (§4.2).
+- **Day-count convention.** Period duration uses the pivot date as the shared partition point (§4.2): the Baseline duration is 1,490 days (pivot − first commit) and the Accelerated duration is 402 days (last commit − pivot), and the two sum to the full 1,892-day history span. Commit velocity (M2) is computed on these exact durations.
 - **Runtime versions.** Metrics were re-derived under git 2.51.0 and python3 3.13.7 (the environment present at extraction). The Agent Action Plan referenced git 2.43.0 and python3 3.12.3; the actual runtime versions are reported (§2).
 - **Source-document reference.** The retention and testing-topology figures attributed in the Agent Action Plan to `blitzy-docs/technical-specifications.md` §6.6 are not present in that file as it exists in this repository; the workflow `retention-days` settings are cited instead (§3).
 
@@ -461,7 +467,15 @@ No metric in this report carries a High confidence tag, because no direct issue-
 
 ## §11 Reproducibility Appendix
 
-The commands below are ordered and reference only this repository and documented sources (Rule 5). They were executed under git 2.51.0 and python3 3.13.7. Each command's output backs a value in §5/§6. All `git log` filters use `main`; `--before=2025-04-08` selects the Baseline and `--since=2025-04-08` selects the Accelerated period.
+The commands below are ordered, read-only, and reference only this repository and documented sources (Rule 5). They were executed under git 2.51.0 and python3 3.13.7. Each command's output backs a value in §5/§6.
+
+**Deterministic period split.** Every period-scoped command partitions history at the **pivot epoch** `1744128404` (the author timestamp of pivot commit `76a820f3ca154cb96849173021cac68e2f095656`, 2025-04-08 16:06:44 UTC; §4.1). A commit belongs to the Baseline period when its author epoch is `< 1744128404` and to the Accelerated period when it is `>= 1744128404`. This integer-epoch comparison is used in place of the calendar filters `--before`/`--since=2025-04-08`, which are not deterministic at the pivot-day boundary (they place the pivot-day commits on either side depending on the local-time interpretation of the bare date, and were observed to return counts varying by ±2 commits and the Devin actor count by ±1 across runs). The pivot epoch is exported once and reused by every command:
+
+```bash
+P=1744128404   # pivot author epoch (2025-04-08 16:06:44 UTC), commit 76a820f3ca
+# Baseline  selector:  ... --format='%at|...' | awk -v p=$P -F'|' '$1<p  {...}'
+# Accelerated selector: ... --format='%at|...' | awk -v p=$P -F'|' '$1>=p {...}'
+```
 
 ### §11.1 Environment verification (§2)
 
@@ -494,74 +508,130 @@ git show -s --format='%an <%ae> %ad %s' 76a820f3ca154cb96849173021cac68e2f095656
 ### §11.3 Actor identities and AI cohort (§5.2, §7.1)
 
 ```bash
-# Blitzy author commit count (after period)
-git log main --author='agent@blitzy.com' --oneline | wc -l          # 597
-# Devin co-author trailers / Devin-as-author (after)
-git log main --since=2025-04-08 -i --grep='Co-authored-by:.*devin' --oneline | wc -l   # 895
-git log main --since=2025-04-08 --author='devin' -i --oneline | wc -l                   # 103
-# Per-period author tallies (raw, before alias de-dup / bot exclusion)
-git log main --before=2025-04-08 --format='%an' | sort | uniq -c | sort -rn | head -20
-git log main --since=2025-04-08  --format='%an' | sort | uniq -c | sort -rn | head -20
-# Author name|email pairs for alias de-dup (processed in python; see §11.12 pattern)
-git log main --before=2025-04-08 --format='%an|%ae' > authors_before.txt
-git log main --since=2025-04-08  --format='%an|%ae' > authors_after.txt
+# Blitzy author commit count (Accelerated period, by email)
+git log main --author='agent@blitzy.com' --format='%at' | awk -v p=$P '$1>=p' | wc -l   # 597
+# Devin co-author trailers (Accelerated): all 895 Devin trailers fall after the pivot
+git log main -i --grep='Co-authored-by:.*devin' --format='%at' | awk -v p=$P '$1>=p' | wc -l   # 895
+# Devin-as-author (Accelerated)
+git log main --author='devin' -i --format='%at' | awk -v p=$P '$1>=p' | wc -l                  # 102
 ```
 
-Alias de-duplication merges `zomars`→Omar López, Hariom spellings→Hariom Balhara, `CarinaWolli`→Carina Wollendorfer, and multiple emails per person; bot identities (`*[bot]`, Crowdin Bot, GitHub Actions) are excluded from human rows; Blitzy Agent and Devin are tagged as AI-actor rows.
+The per-engineer breakdown (§7.1) — alias de-duplication, bot exclusion, AI-actor classification, and top-author aggregation — is reproduced by the single read-only Python script below. It writes no files; it streams `%at|%an|%ae` from `git log` and partitions on the pivot epoch `$P`. The printed totals reproduce §7.1 exactly and each period's rows sum to the period total (12,701 / 4,179).
+
+```python
+import subprocess, re
+from collections import Counter
+P = 1744128404
+out = subprocess.run(['git','log','main','--format=%at|%an|%ae'],
+                     capture_output=True, text=True).stdout
+BOT = re.compile(r'\[bot\]|crowdin|github-?actions|dependabot|kodiakhq|coderabbitai|'
+                 r'cubic-dev-ai|renovate|snyk|greenkeeper|semantic-release|mergify|'
+                 r'allcontributors', re.I)
+def canon(name, email):                      # merge known aliases of the same person
+    n, e = name.strip(), email.lower()
+    if 'zomars' in e or n.lower() == 'zomars':        return 'Omar López'
+    if n.lower().startswith('hariom'):                return 'Hariom Balhara'
+    if 'carinawolli' in e or n.lower() == 'carina':   return 'Carina Wollendorfer'
+    return n
+def classify(name, email):                   # AI actor / bot / human
+    e = email.lower()
+    if e == 'agent@blitzy.com':               return ('AI', 'Blitzy Agent')
+    if 'devin' in e or 'devin' in name.lower(): return ('AI', 'Devin')
+    if BOT.search(name) or BOT.search(email): return ('bot', name)
+    return ('human', canon(name, email))
+for label, lo in (('BASELINE', True), ('ACCELERATED', False)):
+    hc, ai, botc = Counter(), Counter(), 0
+    for ln in out.splitlines():
+        at, an, ae = ln.split('|', 2)
+        inr = (int(at) < P) if lo else (int(at) >= P)
+        if not inr: continue
+        kind, who = classify(an, ae)
+        if kind == 'human':  hc[who] += 1
+        elif kind == 'bot':  botc += 1
+        else:                ai[who] += 1
+    print(label, 'human', sum(hc.values()), f'({len(hc)} ids)',
+          'bot', botc, 'AI', dict(ai), 'TOTAL', sum(hc.values())+botc+sum(ai.values()))
+    print('   top humans:', hc.most_common(10))
+# BASELINE    human 11478 (735 ids) bot 1221 AI {'Devin': 2}              TOTAL 12701
+# ACCELERATED human 3372  (200 ids) bot 108  AI {'Blitzy Agent':597,'Devin':102} TOTAL 4179
+```
+
+The script merges `zomars`→Omar López, Hariom spellings→Hariom Balhara, `CarinaWolli`→Carina Wollendorfer, and multiple emails per person; bot identities (`*[bot]`, Crowdin, GitHub Actions, and the listed automation accounts) are excluded from human rows; Blitzy Agent and Devin are tagged as AI-actor rows.
 
 ### §11.4 Period counts and velocity (§4.2, §5.2)
 
 ```bash
-git rev-list --count --before=2025-04-08 main    # 12699 (Baseline)
-git rev-list --count --since=2025-04-08  main    # 4181  (Accelerated)
+# Deterministic period counts (author-epoch partition at the pivot)
+git log main --format='%at' | awk -v p=$P '$1<p'  | wc -l    # 12701 (Baseline)
+git log main --format='%at' | awk -v p=$P '$1>=p' | wc -l    # 4179  (Accelerated)
+# (12701 + 4179 = 16880 = git rev-list --count main)
 python3 - <<'PY'
 from datetime import date
-def incl_days(a,b): return (b-a).days + 1
-b = incl_days(date(2021,3,10), date(2025,4,7))   # 1490
-a = incl_days(date(2025,4,8),  date(2026,5,15))  # 403
-print(round(12699/b,2), round(4181/a,2), round((4181/a)/(12699/b),2))  # 8.52 10.37 1.22
+# Day spans use the pivot date as the shared partition point (§4.2):
+b = (date(2025,4,8)  - date(2021,3,10)).days    # 1490 = pivot - first commit
+a = (date(2026,5,15) - date(2025,4,8)).days     # 402  = last commit - pivot
+print(round(12701/b,2), round(4179/a,2), round((4179/a)/(12701/b),2))  # 8.52 10.40 1.22
 PY
 ```
 
 ### §11.5 M8 — revert commits (§5.8)
 
 ```bash
-# Working form uses separate -i (a combined -iE token is misparsed by git and returns 0)
-git log main --before=2025-04-08 -i --grep='^Revert' --oneline | wc -l   # 147
-git log main --since=2025-04-08  -i --grep='^Revert' --oneline | wc -l   # 71
+# git's own case-insensitive subject grep, epoch-partitioned (separate -i; a combined
+# -iE token is misparsed by git and returns 0)
+git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1<p'  | wc -l   # 147 (Baseline)
+git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1>=p' | wc -l   # 71  (Accelerated)
 # Subject-prefix revert (the count used in the M6 distribution): 145 / 59
-git log main --before=2025-04-08 --format='%s' | grep -ciE '^revert'     # 145
-git log main --since=2025-04-08  --format='%s' | grep -ciE '^revert'     # 59
+git log main --format='%at|%s' | awk -v p=$P -F'|' '$1<p {print $2}'  | grep -ciE '^revert'   # 145
+git log main --format='%at|%s' | awk -v p=$P -F'|' '$1>=p {print $2}' | grep -ciE '^revert'   # 59
 ```
 
 ### §11.6 M6 — distribution and M9 — releases (§5.6, §5.9)
 
 ```bash
-# Conventional-commit prefix tally per period
-git log main --before=2025-04-08 --format='%s' \
+# Conventional-commit prefix tally per period (epoch-partitioned; loose ^prefix match)
+git log main --format='%at|%s' | awk -v p=$P -F'|' '$1<p {print $2}' \
   | grep -oiE '^(feat|fix|chore|refactor|docs|perf|test|ci|build|style|revert)' \
   | tr 'A-Z' 'a-z' | sort | uniq -c | sort -rn
-git log main --since=2025-04-08 --format='%s' \
+# Baseline (total 6905): fix 4024, feat 1098, chore 1081, refactor 196, perf 160,
+#                        revert 145, test 125, docs 45, ci 12, build 11, style 8
+git log main --format='%at|%s' | awk -v p=$P -F'|' '$1>=p {print $2}' \
   | grep -oiE '^(feat|fix|chore|refactor|docs|perf|test|ci|build|style|revert)' \
   | tr 'A-Z' 'a-z' | sort | uniq -c | sort -rn
+# Accelerated (total 3672): fix 1524, feat 791, chore 605, refactor 279, docs 208,
+#                           perf 133, revert 59, test 48, ci 13, style 10, build 2
+# Derived: feat 1098/6905=15.9% -> 791/3672=21.5% ; fix 4024/6905=58.3% -> 1524/3672=41.5%
 # Releases (changeset "Version Packages" commits) and pending changesets
-git log main --before=2025-04-08 -i --grep='Version Packages' --oneline | wc -l   # 0
-git log main --since=2025-04-08  -i --grep='Version Packages' --oneline | wc -l   # 22
+git log main -i --grep='Version Packages' --format='%at' | awk -v p=$P '$1<p'  | wc -l   # 0
+git log main -i --grep='Version Packages' --format='%at' | awk -v p=$P '$1>=p' | wc -l   # 22
 ls .changeset/*.md
 cat .changeset/config.json
 ```
 
 ### §11.7 M1 — Flow Load (§5.1)
 
-```bash
-flowload() { git log main "$@" --shortstat --pretty=tformat:'C' \
-  | grep changed | sed -E 's/.* ([0-9]+) files? changed.*/\1/' \
-  | awk '{s+=$1;k++} END{printf "%.2f over %d commits\n", s/k, k}'; }
-flowload --before=2025-04-08              # 6.17  (over ~12,230 diffstat commits)
-flowload --since=2025-04-08               # 7.25  (over ~4,150 diffstat commits)
-flowload --author='agent@blitzy.com'      # 1.55  (over 578 diffstat commits, AI actor)
-git log main --before=2025-04-08 --merges --oneline | wc -l   # 445 merges
-git log main --since=2025-04-08  --merges --oneline | wc -l   # 8 merges
+```python
+import subprocess, re
+P = 1744128404
+def flowload(author=None):
+    args = ['git','log','main','--shortstat','--format=@%at']
+    if author: args = ['git','log','main','--author='+author,'--shortstat','--format=@%at']
+    out = subprocess.run(args, capture_output=True, text=True).stdout
+    cur = None; agg = {'before':[0,0], 'after':[0,0], 'actor':[0,0]}
+    for ln in out.splitlines():
+        if ln.startswith('@'):
+            cur = int(ln[1:])
+        elif 'changed' in ln:
+            m = re.search(r'(\d+) files? changed', ln)
+            if not (m and cur is not None): continue
+            f = int(m.group(1))
+            if author:                  agg['actor'][0]+=f; agg['actor'][1]+=1
+            elif cur <  P:              agg['before'][0]+=f; agg['before'][1]+=1
+            else:                       agg['after'][0]+=f;  agg['after'][1]+=1
+    for k in (['actor'] if author else ['before','after']):
+        s,n = agg[k]; print(k, round(s/n,2), 'over', n, 'diffstat commits')
+flowload()                          # before 6.17 over 12232 ; after 7.25 over 4150
+flowload(author='agent@blitzy.com') # actor  1.55 over 578  (AI actor, Blitzy Agent)
 ```
 
 ### §11.8 M4 — Flow Active Time proxy (§5.4)
@@ -569,23 +639,28 @@ git log main --since=2025-04-08  --merges --oneline | wc -l   # 8 merges
 ```bash
 python3 - <<'PY'
 import subprocess, statistics
-def med_gap(args, sess=8*3600):
-    ep=sorted(int(x) for x in subprocess.run(
-        ['git','log','main','--format=%at']+args,capture_output=True,text=True).stdout.split())
-    g=[ep[i]-ep[i-1] for i in range(1,len(ep)) if 0 < ep[i]-ep[i-1] <= sess]
-    return statistics.median(g)/60, len(g)
-print(med_gap(['--before=2025-04-08']))    # ~28.1 min
-print(med_gap(['--since=2025-04-08']))     # ~28.6 min
-print(med_gap(['--author=agent@blitzy.com']))  # ~7.0 min (AI actor)
+P = 1744128404
+def med_gap(which, sess=8*3600, author=None):
+    args = ['git','log','main','--format=%at']
+    if author: args = ['git','log','main','--author='+author,'--format=%at']
+    ep = sorted(int(x) for x in subprocess.run(args,capture_output=True,text=True).stdout.split())
+    if   which == 'before': ep = [e for e in ep if e <  P]
+    elif which == 'after':  ep = [e for e in ep if e >= P]
+    g = [ep[i]-ep[i-1] for i in range(1,len(ep)) if 0 < ep[i]-ep[i-1] <= sess]
+    return round(statistics.median(g)/60,1), len(g)
+print(med_gap('before'))                          # (28.1, 11365)
+print(med_gap('after'))                           # (28.6, 3957)
+print(med_gap('all', author='agent@blitzy.com'))  # (7.0, 577)  AI actor
 PY
 ```
 
 ### §11.9 M5 — Flow Efficiency proxy (§5.5)
 
 ```bash
-git log main --before=2025-04-08 --date=short --format='%ad' | sort -u | wc -l   # 1318 active days
-git log main --since=2025-04-08  --date=short --format='%ad' | sort -u | wc -l   # 324 active days
-# density = active_days / inclusive_period_days : 1318/1490=88.5% ; 324/403=80.4%
+# Unique active calendar days per period (epoch-partitioned on author epoch)
+git log main --date=short --format='%at|%ad' | awk -v p=$P -F'|' '$1<p {print $2}'  | sort -u | wc -l   # 1318
+git log main --date=short --format='%at|%ad' | awk -v p=$P -F'|' '$1>=p {print $2}' | sort -u | wc -l   # 324
+# density = active_days / period_span_days : 1318/1490=88.5% ; 324/402=80.6%
 ```
 
 ### §11.10 M7 — Flow Time proxy (§5.7)
@@ -593,10 +668,11 @@ git log main --since=2025-04-08  --date=short --format='%ad' | sort -u | wc -l  
 ```bash
 python3 - <<'PY'
 import subprocess, statistics
-rel=sorted(int(x) for x in subprocess.run(
-    ['git','log','main','--since=2025-04-08','-i','--grep=Version Packages','--format=%at'],
-    capture_output=True,text=True).stdout.split())
-inter=[rel[i]-rel[i-1] for i in range(1,len(rel))]
+P = 1744128404
+rel = sorted(e for e in (int(x) for x in subprocess.run(
+    ['git','log','main','-i','--grep=Version Packages','--format=%at'],
+    capture_output=True,text=True).stdout.split()) if e >= P)
+inter = [rel[i]-rel[i-1] for i in range(1,len(rel))]
 print(len(rel), round(statistics.median(inter)/86400,1))   # 22 release commits, 4.7 days median
 PY
 ```
@@ -636,12 +712,15 @@ dates = sorted(
 anchor = monday_of(dates[0])                       # 2021-03-08
 def window_index(d): return (monday_of(d) - anchor).days // 14
 
-counts = Counter(window_index(d) for d in dates)
+# Build a CONTIGUOUS window range so that empty (zero-count) windows are retained
+# (e.g. the window starting 2026-04-27); Counter alone would silently drop them.
+raw = Counter(window_index(d) for d in dates)
+counts = {i: raw.get(i, 0) for i in range(min(raw), max(raw) + 1)}
 
 def phase(idx):
     start = anchor + timedelta(days=idx*14)
-    if start < PIVOT:   return 'Baseline'
-    if start < RAMP_END: return 'Ramp-Up'
+    if start <  PIVOT:     return 'Baseline'
+    if start <= RAMP_END:  return 'Ramp-Up'        # boundary window 2025-07-07 -> Ramp-Up
     return 'Steady State'
 
 def cv(v): return statistics.pstdev(v) / statistics.mean(v)
@@ -649,37 +728,70 @@ def cv(v): return statistics.pstdev(v) / statistics.mean(v)
 for ph in ('Baseline', 'Ramp-Up', 'Steady State'):
     vals = [c for i, c in counts.items() if phase(i) == ph]
     print(ph, len(vals), round(statistics.mean(vals), 1), round(cv(vals), 3))
-# Baseline 107 119.0 0.445 ; Ramp-Up 6 117.2 0.258 ; Steady State 23 149.8 0.556
+# Baseline 107 119.0 0.445 ; Ramp-Up 7 121.0 0.244 ; Steady State 22 150.1 0.567
+
+# The exact Accelerated-period series backing §8.2/§8.3 (start, phase, count):
+for i in sorted(counts):
+    start = anchor + timedelta(days=i*14)
+    if start >= PIVOT:
+        print(start.isoformat(), phase(i), counts[i])
+# 2025-07-07 Ramp-Up 144 ... 2026-04-27 Steady State 0 ... 2026-05-11 Steady State 1
 ```
 
 ### §11.13 API-dependent metrics (attempted, unavailable) (§5.10, §5.12, §3)
 
-The following read-only GitHub REST endpoints would raise confidence for the API-dependent metrics. The API client (`gh`/`glab`/`jq`) is not installed and no read token is configured, so these were not reachable; the metrics fall back to git proxies or `Insufficient signal` as stated in §5.
+The following read-only GitHub REST endpoints would raise confidence for the API-dependent metrics. The API client (`gh`/`glab`/`jq`) is not installed and no read token is configured, so these were not reachable; the metrics fall back to git proxies or the exact insufficient-signal phrases stated in §5.
 
 ```bash
 # Releases (M9, higher confidence than the changeset-commit proxy)
 # GET /repos/{owner}/{repo}/releases
-# PR reviews and approvals (M10)
+# PR reviews and approvals (M10) -> Insufficient signal — no PR-review/approval API access
 # GET /repos/{owner}/{repo}/pulls/{number}/reviews
 # Label-based work-type distribution (M6, higher confidence)
 # GET /repos/{owner}/{repo}/issues?labels=...
 # Historical CI test results (M11 before/after split)
 # GET /repos/{owner}/{repo}/actions/runs  +  artifacts (retained 7-30 days)
-# Issue severity / SLA timestamps (M12)
-# GET /repos/{owner}/{repo}/issues?labels=severity:*    (no SLA source exists)
+# Issue severity / SLA timestamps (M12) -> Insufficient signal — no SLA data source
+# GET /repos/{owner}/{repo}/issues?labels=severity:*    (no SLA source exists in-repo)
 ```
 
 ### §11.14 Per-module aggregation (§4.6, §7.2)
 
+The per-module worked aggregation in §7.2 (M1 Flow Load over the Accelerated period) is reproduced by the read-only script below. For each Accelerated-period commit it attributes every `--numstat` file-touch to the touched path's top-level module (`apps/<x>` or `packages/<x>`), counts file-touches and distinct commits per module, computes per-module Flow Load = file-touches ÷ commits, and forms the commit-volume-weighted aggregate `weighted_load = Σ(file-touches_m) / Σ(commits_m)`.
+
+```python
+import subprocess
+from collections import defaultdict
+P = 1744128404
+out = subprocess.run(['git','log','main','--numstat','--format=@%at'],
+                     capture_output=True, text=True).stdout
+touch = defaultdict(int); commits = defaultdict(set)
+cur = None; inr = False; idx = 0
+for ln in out.splitlines():
+    if ln.startswith('@'):
+        cur = int(ln[1:]); inr = cur >= P; idx += 1          # idx = unique commit id
+    elif inr and '\t' in ln:
+        parts = ln.split('\t')
+        if len(parts) != 3: continue
+        seg = parts[2].split('/')
+        if seg[0] in ('apps','packages') and len(seg) >= 2:
+            mod = seg[0] + '/' + seg[1]
+            touch[mod] += 1; commits[mod].add(idx)
+mods = ['apps/web','packages/features','apps/api','packages/trpc','packages/lib',
+        'packages/platform','packages/app-store','packages/prisma','packages/ui',
+        'packages/emails','packages/embeds']
+tc = tt = 0
+for m in mods:
+    c = len(commits[m]); t = touch[m]; tc += c; tt += t
+    print(f'{m:22s} commits={c:<5d} touches={t:<5d} load={t/c:.2f} weight={c/6174:.3f}')
+print(f'SUM commits={tc} touches={tt} weighted_load={tt/tc:.2f}')   # 6174 24526 3.97
+```
+
 ```bash
-permodule() { git log main "$@" --name-only --format='' \
-  | grep -E '^(apps|packages)/' | cut -d/ -f1-2 | sort | uniq -c | sort -rn | head -12; }
-permodule --since=2025-04-08    # Accelerated-period file-touch counts
-permodule --before=2025-04-08   # Baseline-period file-touch counts
-# Workspace globs
+# Workspace globs that define the modules
 python3 -c "import json; print(json.load(open('package.json'))['workspaces'])"
 ```
 
 ---
 
-*End of report. This document and its sibling executive presentation are the only files written by this measurement; no repository file or git history was modified.*
+*End of report. This document is the only file written by this measurement at this checkpoint; the sibling executive presentation (reveal.js HTML) is the planned second deliverable. No repository file or git history was modified.*

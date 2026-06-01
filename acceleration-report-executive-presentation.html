@@ -55,7 +55,14 @@
       /* Text */
       --blitzy-text: #333333;
       --blitzy-text-muted: #999999;
+      /* Accessible muted token for SMALL text on light surfaces (WCAG 2.1 AA >= 4.5:1):
+         5.74:1 on surface-0 #FFFFFF, 5.06:1 on surface-1, 5.10:1 on surface-2, 5.27:1 on surface-3.
+         The lighter --blitzy-text-muted (#999999, 2.85:1) is retained for large/non-essential accents only. */
+      --blitzy-text-muted-accessible: #666666;
       --blitzy-text-invert: #FFFFFF;
+      /* Inverted-text opacities for text on dark hero/divider/closing surfaces (tokenized; no stray rgba in rules) */
+      --blitzy-text-invert-soft: rgba(255, 255, 255, 0.86);
+      --blitzy-text-invert-softer: rgba(255, 255, 255, 0.92);
 
       /* Typography */
       --ff-body: 'Inter', sans-serif;
@@ -74,6 +81,8 @@
       --radius-md: 0.875rem;
       --radius-sm: 0.5rem;
       --gap: 1.6rem;
+      /* Vertical rhythm: block separation between a heading/cards and the element below */
+      --space-block: 1.4rem;
 
       /* reveal.js link color hook */
       --r-link-color: var(--blitzy-primary);
@@ -112,7 +121,7 @@
     .reveal h3 { font-size: 1.55rem; }
     .reveal p { margin: 0 0 0.8rem 0; }
     .reveal strong { color: var(--blitzy-primary-deep); font-weight: 700; }
-    .reveal em { color: var(--blitzy-text-muted); font-style: normal; }
+    .reveal em { color: var(--blitzy-text-muted-accessible); font-style: normal; }
 
     .reveal ul { display: block; margin: 0; padding-inline-start: 0; list-style: none; }
     .reveal ul li {
@@ -158,12 +167,12 @@
     .slide-divider .eyebrow,
     .slide-closing .eyebrow { color: var(--blitzy-accent-teal); }
 
-    .subtitle { color: var(--blitzy-text-muted); font-size: 1.25rem; font-weight: 500; }
+    .subtitle { color: var(--blitzy-text-muted-accessible); font-size: 1.25rem; font-weight: 500; }
     .source-note {
       font-family: var(--ff-mono);
       font-size: 0.78rem;
-      color: var(--blitzy-text-muted);
-      margin-top: 1.4rem;
+      color: var(--blitzy-text-muted-accessible);
+      margin-top: var(--space-block);
       letter-spacing: 0.02em;
     }
 
@@ -176,7 +185,7 @@
     .slide-title h2,
     .slide-title h3,
     .slide-title p { color: var(--blitzy-text-invert); }
-    .slide-title .subtitle { color: rgba(255, 255, 255, 0.86); }
+    .slide-title .subtitle { color: var(--blitzy-text-invert-soft); }
     .slide-title .hero-icon { color: var(--blitzy-accent-teal); }
 
     /* ---------- Slide type: DIVIDER (gradient, white text, centered) ---------- */
@@ -199,7 +208,7 @@
     .slide-closing p { color: var(--blitzy-text-invert); }
     .slide-closing h2 { font-size: 2.9rem; }
     .slide-closing ul { display: inline-block; text-align: left; margin: 1.4rem auto; }
-    .slide-closing ul li { color: rgba(255, 255, 255, 0.92); }
+    .slide-closing ul li { color: var(--blitzy-text-invert-softer); }
     .slide-closing .hero-icon { color: var(--blitzy-accent-teal); }
 
     /* ---------- Hero icon (large Lucide focal icon) ---------- */
@@ -273,7 +282,7 @@
       line-height: 1.05;
       color: var(--blitzy-primary-deep);
     }
-    .kpi-value .kpi-delta { color: var(--blitzy-text-muted); font-weight: 500; }
+    .kpi-value .kpi-delta { color: var(--blitzy-text-muted-accessible); font-weight: 500; }
     .kpi-label {
       font-size: 0.98rem;
       color: var(--blitzy-text);
@@ -283,7 +292,7 @@
     .kpi-sub {
       font-family: var(--ff-mono);
       font-size: 0.78rem;
-      color: var(--blitzy-text-muted);
+      color: var(--blitzy-text-muted-accessible);
       letter-spacing: 0.02em;
     }
 
@@ -291,7 +300,7 @@
     .icon-row {
       display: flex;
       gap: var(--gap);
-      margin-top: 1.4rem;
+      margin-top: var(--space-block);
       flex-wrap: wrap;
     }
     .icon-row .icon-cell {
@@ -316,7 +325,7 @@
     }
     .icon-row .icon-cell .icon-detail {
       font-size: 0.82rem;
-      color: var(--blitzy-text-muted);
+      color: var(--blitzy-text-muted-accessible);
       line-height: 1.25;
     }
 
@@ -354,7 +363,9 @@
       color: var(--blitzy-primary-deep);
     }
     .data-table .ai-row td:first-child { box-shadow: inset 0.3rem 0 0 0 var(--blitzy-primary); }
-    .data-table .tag { font-family: var(--ff-mono); font-size: 0.82rem; color: var(--blitzy-text-muted); }
+    .data-table .tag { font-family: var(--ff-mono); font-size: 0.82rem; color: var(--blitzy-text-muted-accessible); }
+    /* Inset modifier: separates a table from the cards/heading above it using the deck spacing scale */
+    .data-table--inset { margin-top: var(--space-block); }
 
     /* Confidence pills */
     .pill {
@@ -368,8 +379,8 @@
       border: 1px solid var(--blitzy-border-soft);
     }
     .pill-medium { background: var(--blitzy-surface-2); color: var(--blitzy-primary-deep); }
-    .pill-low { background: var(--blitzy-surface-1); color: var(--blitzy-text-muted); }
-    .pill-insufficient { background: var(--blitzy-surface-3); color: var(--blitzy-text-muted); }
+    .pill-low { background: var(--blitzy-surface-1); color: var(--blitzy-text-muted-accessible); }
+    .pill-insufficient { background: var(--blitzy-surface-3); color: var(--blitzy-text-muted-accessible); }
 
     /* ---------- Mermaid container ---------- */
     pre.mermaid {
@@ -395,7 +406,7 @@
     .two-col.narrow-right { grid-template-columns: 1.2fr 0.8fr; }
     .center-block { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
     .lead { font-size: 1.15rem; color: var(--blitzy-text); }
-    .muted { color: var(--blitzy-text-muted); }
+    .muted { color: var(--blitzy-text-muted-accessible); }
 
     /* reveal chrome themed to brand */
     .reveal .progress { color: var(--blitzy-primary); height: 4px; }
@@ -439,7 +450,7 @@
             <div class="kpi-icon"><i data-lucide="bot"></i></div>
             <div class="kpi-value">#1</div>
             <div class="kpi-label">AI cohort is the top author identity</div>
-            <div class="kpi-sub">699 commits &middot; 16.7% of after</div>
+            <div class="kpi-sub">700 commits &middot; 16.7% of after</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="package-check"></i></div>
@@ -457,7 +468,24 @@
         <p class="source-note">Source: acceleration-report.md &sect;1, &sect;5.1, &sect;5.2, &sect;5.9, &sect;7</p>
       </section>
 
-      <!-- 3 · CONTENT — WHAT WAS DONE ------------------------------- -->
+      <!-- 3 · CONTENT — ARCHITECTURE / DATA-FLOW (Mermaid) ---------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Pipeline</span>
+          <h2>How the measurement flows</h2>
+        </div>
+        <pre class="mermaid">
+flowchart LR
+    A["Git history<br/>16,880 commits"] --> B["Tool Introduction<br/>Date 2025-04-08"]
+    B --> C["Two-week windows<br/>Baseline / Ramp-Up / Steady"]
+    C --> D["Twelve metrics<br/>before vs after"]
+    D --> E["acceleration-report.md"]
+    E --> F["This presentation"]
+        </pre>
+        <p class="source-note">Mirrors acceleration-report.md &sect;4 methodology pipeline</p>
+      </section>
+
+      <!-- 4 · CONTENT — WHAT WAS DONE ------------------------------- -->
       <section data-background-color="var(--blitzy-surface-1)">
         <div class="slide-head">
           <span class="eyebrow">Scope</span>
@@ -477,23 +505,6 @@
             <div class="icon-cell"><i data-lucide="presentation"></i><span class="icon-caption">Present</span></div>
           </div>
         </div>
-      </section>
-
-      <!-- 4 · CONTENT — ARCHITECTURE / DATA-FLOW (Mermaid) ---------- -->
-      <section data-background-color="var(--blitzy-surface-1)">
-        <div class="slide-head">
-          <span class="eyebrow">Pipeline</span>
-          <h2>How the measurement flows</h2>
-        </div>
-        <pre class="mermaid">
-flowchart LR
-    A["Git history<br/>16,880 commits"] --> B["Tool Introduction<br/>Date 2025-04-08"]
-    B --> C["Two-week windows<br/>Baseline / Ramp-Up / Steady"]
-    C --> D["Twelve metrics<br/>before vs after"]
-    D --> E["acceleration-report.md"]
-    E --> F["This presentation"]
-        </pre>
-        <p class="source-note">Mirrors acceleration-report.md &sect;4 methodology pipeline</p>
       </section>
 
       <!-- 5 · DIVIDER — HOW WE MEASURED ----------------------------- -->
@@ -572,20 +583,20 @@ flowchart LR
           </div>
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="shapes"></i></div>
-            <div class="kpi-value">1.35&times;</div>
+            <div class="kpi-value">1.38&times;</div>
             <div class="kpi-label">Feature share of work</div>
-            <div class="kpi-sub">15.9% &rarr; 21.5%</div>
+            <div class="kpi-sub">15.6% &rarr; 21.5%</div>
           </div>
         </div>
-        <table class="data-table" style="margin-top:1.4rem;">
+        <table class="data-table data-table--inset">
           <thead>
             <tr><th>Work type</th><th class="num">Before</th><th class="num">After</th></tr>
           </thead>
           <tbody>
-            <tr><td>Features (<code>feat</code>)</td><td class="num">15.9%</td><td class="num">21.5%</td></tr>
-            <tr><td>Defects (<code>fix</code>)</td><td class="num">58.3%</td><td class="num">41.5%</td></tr>
-            <tr><td>Debt (refactor + chore + perf)</td><td class="num">20.8%</td><td class="num">27.7%</td></tr>
-            <tr><td>Risk (<code>revert</code>)</td><td class="num">2.1%</td><td class="num">1.6%</td></tr>
+            <tr><td>Features (<code>feat</code>)</td><td class="num">15.6%</td><td class="num">21.5%</td></tr>
+            <tr><td>Defects (<code>fix</code>)</td><td class="num">57.3%</td><td class="num">41.4%</td></tr>
+            <tr><td>Debt (refactor + chore + perf)</td><td class="num">20.4%</td><td class="num">27.6%</td></tr>
+            <tr><td>Risk (<code>revert</code>)</td><td class="num">2.0%</td><td class="num">1.6%</td></tr>
           </tbody>
         </table>
       </section>
@@ -659,9 +670,9 @@ xychart-beta
             <tr><th>Author</th><th class="num">Commits</th><th>Type</th></tr>
           </thead>
           <tbody>
-            <tr class="ai-row"><td>AI cohort (Blitzy Agent + Devin)</td><td class="num">699</td><td>AI actor</td></tr>
+            <tr class="ai-row"><td>AI cohort (Blitzy Agent + Devin)</td><td class="num">700</td><td>AI actor</td></tr>
             <tr><td>&bull; Blitzy Agent</td><td class="num">597</td><td class="tag">AI actor</td></tr>
-            <tr><td>&bull; Devin</td><td class="num">102</td><td class="tag">AI actor</td></tr>
+            <tr><td>&bull; Devin</td><td class="num">103</td><td class="tag">AI actor</td></tr>
             <tr><td>Anik Dhabal Babu</td><td class="num">322</td><td class="tag">Human</td></tr>
             <tr><td>Benny Joo</td><td class="num">214</td><td class="tag">Human</td></tr>
             <tr><td>Eunjae Lee</td><td class="num">207</td><td class="tag">Human</td></tr>
@@ -669,7 +680,7 @@ xychart-beta
             <tr><td>sean-brydon</td><td class="num">184</td><td class="tag">Human</td></tr>
           </tbody>
         </table>
-        <p class="source-note">AI cohort 699 &gt; top human 322 &middot; 16.7% of the period's 4,179 commits (&sect;7.1)</p>
+        <p class="source-note">AI cohort 700 &gt; top human 322 &middot; 16.7% of the period's 4,181 commits (&sect;7.1)</p>
       </section>
 
       <!-- 15 · CONTENT — RISKS & ONBOARDING ------------------------- -->
@@ -682,7 +693,7 @@ xychart-beta
           <ul>
             <li>Attribution ambiguity (Devin vs Blitzy) disclosed in the report</li>
             <li>Insufficient signal: approvals (M10), SLA defects (M12)</li>
-            <li>Snapshot only: skipped/todo tests &mdash; 46 files, 114 sites (M11)</li>
+            <li>Snapshot only: skipped/todo tests &mdash; 46 files, 95 sites (M11)</li>
             <li>Raise confidence: read-only API tooling; re-run the appendix</li>
           </ul>
           <div class="icon-row">
@@ -723,6 +734,22 @@ xychart-beta
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs';
 
+    /* Brand-token fidelity (AAP §0.8.2): the Mermaid JS theme must draw from the same
+       :root custom properties as the stylesheet — no hardcoded hex/rgb literals in JS.
+       The <style> block defining these tokens lives in <head> and this is a deferred
+       module script, so the CSSOM is fully available; getComputedStyle resolves each
+       token to its computed value here at module load. */
+    const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const brand = {
+      surface0: cssVar('--blitzy-surface-0'),
+      surface1: cssVar('--blitzy-surface-1'),
+      surface2: cssVar('--blitzy-surface-2'),
+      text:     cssVar('--blitzy-text'),
+      muted:    cssVar('--blitzy-text-muted'),
+      primary:  cssVar('--blitzy-primary'),
+      fontBody: cssVar('--ff-body')
+    };
+
     /* Mermaid initialized with the Blitzy brand token palette (AAP §0.8.2).
        startOnLoad:false — diagrams are rendered on demand by renderCurrentSlide(). */
     mermaid.initialize({
@@ -741,26 +768,28 @@ xychart-beta
         xAxis: { labelFontSize: 13, labelPadding: 4, showTitle: false },
         yAxis: { labelFontSize: 16, titleFontSize: 16, labelPadding: 6 }
       },
+      /* All colors below resolve to Blitzy :root tokens (zero hardcoded hex/rgb).
+         Readable text (titles, axis labels) uses --blitzy-text; graphical gridlines
+         and ticks keep --blitzy-text-muted; the series/border uses --blitzy-primary. */
       themeVariables: {
-        primaryColor: '#F2F0FE',
-        primaryTextColor: '#333333',
-        primaryBorderColor: '#5B39F3',
-        lineColor: '#999999',
-        secondaryColor: '#F4EFF6',
-        fontFamily: 'Inter',
-        /* xychart palette + axis colors drawn from Blitzy tokens (strong purple line). */
+        primaryColor: brand.surface2,
+        primaryTextColor: brand.text,
+        primaryBorderColor: brand.primary,
+        lineColor: brand.muted,
+        secondaryColor: brand.surface1,
+        fontFamily: brand.fontBody,
         xyChart: {
-          backgroundColor: '#FFFFFF',
-          titleColor: '#333333',
-          xAxisLabelColor: '#333333',
-          xAxisTitleColor: '#333333',
-          xAxisTickColor: '#999999',
-          xAxisLineColor: '#999999',
-          yAxisLabelColor: '#333333',
-          yAxisTitleColor: '#333333',
-          yAxisTickColor: '#999999',
-          yAxisLineColor: '#999999',
-          plotColorPalette: '#5B39F3'
+          backgroundColor: brand.surface0,
+          titleColor: brand.text,
+          xAxisLabelColor: brand.text,
+          xAxisTitleColor: brand.text,
+          xAxisTickColor: brand.muted,
+          xAxisLineColor: brand.muted,
+          yAxisLabelColor: brand.text,
+          yAxisTitleColor: brand.text,
+          yAxisTickColor: brand.muted,
+          yAxisLineColor: brand.muted,
+          plotColorPalette: brand.primary
         }
       }
     });

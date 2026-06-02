@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Executive presentation — Development Acceleration Measurement for blitzy-cal. AI-attributable development velocity, derived from version-control history. All figures mirror acceleration-report.md." />
+  <title>Development Acceleration Measurement — blitzy-cal | Executive Presentation</title>
+  <!-- Inline data-URI favicon (keeps the file self-contained; avoids a /favicon.ico request) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%235B39F3'/%3E%3Cpath d='M17 6 L9 18 h6 l-2 8 l10-13 h-6 z' fill='%2394FAD5'/%3E%3C/svg%3E" />
+
+  <!--
+    Self-contained reveal.js executive deck (AAP §0.8.2).
+    - ONE HTML file, no build step, no local file dependencies.
+    - All libraries via PINNED jsDelivr CDN: reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0.
+    - Cross-deliverable consistency (Report Rule 4 extended): every quantitative value
+      below equals its counterpart in acceleration-report.md.
+    - Zero emoji; all icons are Lucide SVG (data-lucide attribute on an i element).
+  -->
+
+  <!-- Google Fonts: Inter (body), Space Grotesk (display), Fira Code (mono/eyebrow) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- reveal.js 5.1.0 core + reset (pinned CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+
+  <style>
+    /* ============================================================
+       BLITZY REVEAL.JS BRAND THEME — inline-embedded token catalog
+       (AAP §0.5.3). Every color / gradient / font value used in the
+       rules below resolves to one of these :root custom properties;
+       there are no stray hardcoded color values outside :root.
+       ============================================================ */
+    :root {
+      /* Brand palette */
+      --blitzy-primary: #5B39F3;
+      --blitzy-primary-dark: #2D1C77;
+      --blitzy-primary-navy: #1A105F;
+      --blitzy-primary-light: #7A6DEC;
+      --blitzy-primary-deep: #4101DB;
+      --blitzy-accent-teal: #94FAD5;
+
+      /* Surfaces */
+      --blitzy-surface-0: #FFFFFF;
+      --blitzy-surface-1: #F4EFF6;
+      --blitzy-surface-2: #F2F0FE;
+      --blitzy-surface-3: #F5F5F5;
+
+      /* Borders */
+      --blitzy-border: #D9D9D9;
+      --blitzy-border-soft: rgba(91, 57, 243, 0.18);
+
+      /* Text */
+      --blitzy-text: #333333;
+      --blitzy-text-muted: #999999;
+      /* Accessible muted token for SMALL text on light surfaces (WCAG 2.1 AA >= 4.5:1):
+         5.74:1 on surface-0 #FFFFFF, 5.06:1 on surface-1, 5.10:1 on surface-2, 5.27:1 on surface-3.
+         The lighter --blitzy-text-muted (#999999, 2.85:1) is retained for large/non-essential accents only. */
+      --blitzy-text-muted-accessible: #666666;
+      --blitzy-text-invert: #FFFFFF;
+      /* Inverted-text opacities for text on dark hero/divider/closing surfaces (tokenized; no stray rgba in rules) */
+      --blitzy-text-invert-soft: rgba(255, 255, 255, 0.86);
+      --blitzy-text-invert-softer: rgba(255, 255, 255, 0.92);
+
+      /* Typography */
+      --ff-body: 'Inter', sans-serif;
+      --ff-display: 'Space Grotesk', sans-serif;
+      --ff-mono: 'Fira Code', monospace;
+
+      /* Gradients */
+      --gradient-hero: linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%);
+      --gradient-divider: linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%);
+      --gradient-accent-bar: linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%);
+
+      /* Derived design tokens (shadows / radius / spacing) — decimal rgba, no hex */
+      --blitzy-shadow-card: 0 0.5rem 1.75rem rgba(65, 1, 219, 0.10);
+      --blitzy-shadow-soft: 0 0.25rem 0.75rem rgba(26, 16, 95, 0.08);
+      --radius-lg: 1.25rem;
+      --radius-md: 0.875rem;
+      --radius-sm: 0.5rem;
+      --gap: 1.6rem;
+      /* Vertical rhythm: block separation between a heading/cards and the element below */
+      --space-block: 1.4rem;
+
+      /* reveal.js link color hook */
+      --r-link-color: var(--blitzy-primary);
+      --r-link-color-hover: var(--blitzy-primary-deep);
+    }
+
+    /* ---------- Base ---------- */
+    html, body { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: inherit; }
+
+    .reveal {
+      font-family: var(--ff-body);
+      font-size: 30px;
+      color: var(--blitzy-text);
+      font-weight: 400;
+    }
+    /* Default content slides sit on the lightest brand surface */
+    .reveal .slides section {
+      text-align: left;
+      padding: 2.2rem 2.8rem;
+    }
+    .reveal .slides section.present { line-height: 1.35; }
+
+    /* ---------- Typography ---------- */
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: var(--ff-display);
+      color: var(--blitzy-text);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin: 0 0 1.2rem 0;
+      text-transform: none;
+    }
+    .reveal h1 { font-size: 3.1rem; }
+    .reveal h2 { font-size: 2.35rem; }
+    .reveal h3 { font-size: 1.55rem; }
+    .reveal p { margin: 0 0 0.8rem 0; }
+    .reveal strong { color: var(--blitzy-primary-deep); font-weight: 700; }
+    .reveal em { color: var(--blitzy-text-muted-accessible); font-style: normal; }
+
+    .reveal ul { display: block; margin: 0; padding-inline-start: 0; list-style: none; }
+    .reveal ul li {
+      position: relative;
+      margin: 0 0 0.9rem 0;
+      padding-inline-start: 2.1rem;
+      line-height: 1.32;
+    }
+    /* Brand bullet marker (gradient dot) — color-independent of text */
+    .reveal ul li::before {
+      content: "";
+      position: absolute;
+      inset-inline-start: 0;
+      inset-block-start: 0.55em;
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      background: var(--gradient-accent-bar);
+    }
+
+    .reveal code {
+      font-family: var(--ff-mono);
+      font-size: 0.9em;
+      background: var(--blitzy-surface-2);
+      color: var(--blitzy-primary-deep);
+      padding: 0.08em 0.4em;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--blitzy-border-soft);
+    }
+
+    /* Eyebrow — Fira Code uppercase context label */
+    .eyebrow {
+      font-family: var(--ff-mono);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-size: 0.92rem;
+      color: var(--blitzy-primary);
+      margin: 0 0 1rem 0;
+      display: block;
+    }
+    .slide-title .eyebrow,
+    .slide-divider .eyebrow,
+    .slide-closing .eyebrow { color: var(--blitzy-accent-teal); }
+
+    .subtitle { color: var(--blitzy-text-muted-accessible); font-size: 1.25rem; font-weight: 500; }
+    .source-note {
+      font-family: var(--ff-mono);
+      font-size: 0.78rem;
+      color: var(--blitzy-text-muted-accessible);
+      margin-top: var(--space-block);
+      letter-spacing: 0.02em;
+    }
+
+    /* ---------- Slide type: TITLE (hero gradient, white text) ---------- */
+    .reveal .slides section.slide-title {
+      text-align: center;
+      padding: 3rem 4rem;
+    }
+    .slide-title h1,
+    .slide-title h2,
+    .slide-title h3,
+    .slide-title p { color: var(--blitzy-text-invert); }
+    .slide-title .subtitle { color: var(--blitzy-text-invert-soft); }
+    .slide-title .hero-icon { color: var(--blitzy-accent-teal); }
+
+    /* ---------- Slide type: DIVIDER (gradient, white text, centered) ---------- */
+    .reveal .slides section.slide-divider {
+      text-align: center;
+      padding: 3rem 4rem;
+    }
+    .slide-divider h2,
+    .slide-divider p { color: var(--blitzy-text-invert); }
+    .slide-divider h2 { font-size: 3rem; }
+    .slide-divider .eyebrow { color: var(--blitzy-accent-teal); }
+    .slide-divider .hero-icon { color: var(--blitzy-accent-teal); }
+
+    /* ---------- Slide type: CLOSING (navy, takeaway) ---------- */
+    .reveal .slides section.slide-closing {
+      text-align: center;
+      padding: 3rem 4rem;
+    }
+    .slide-closing h2,
+    .slide-closing p { color: var(--blitzy-text-invert); }
+    .slide-closing h2 { font-size: 2.9rem; }
+    .slide-closing ul { display: inline-block; text-align: left; margin: 1.4rem auto; }
+    .slide-closing ul li { color: var(--blitzy-text-invert-softer); }
+    .slide-closing .hero-icon { color: var(--blitzy-accent-teal); }
+
+    /* ---------- Hero icon (large Lucide focal icon) ---------- */
+    .hero-icon { display: flex; justify-content: center; margin: 0 0 1.6rem 0; }
+    .slide-closing .hero-icon { margin-bottom: 1.2rem; }
+    .hero-icon svg { width: 8.5rem; height: 8.5rem; stroke-width: 1.4; }
+
+    /* ---------- Accent bar (thin gradient rule) ---------- */
+    .accent-bar {
+      width: 9rem;
+      height: 0.4rem;
+      border-radius: 999px;
+      background: var(--gradient-accent-bar);
+      margin: 1.4rem 0;
+    }
+    .slide-title .accent-bar,
+    .slide-closing .accent-bar { margin-inline: auto; }
+
+    /* ---------- Brand lockup (closing branding) ---------- */
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      margin-top: 1.8rem;
+      color: var(--blitzy-text-invert);
+    }
+    .brand-lockup .brand-word {
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 1.9rem;
+      letter-spacing: -0.01em;
+    }
+    .brand-lockup svg { width: 2.2rem; height: 2.2rem; color: var(--blitzy-accent-teal); }
+
+    /* ---------- KPI grid + cards (before/after multipliers) ---------- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--gap);
+      margin-top: 0.6rem;
+    }
+    .kpi-grid.kpi-2 { grid-template-columns: repeat(2, 1fr); }
+    .kpi-grid.kpi-3 { grid-template-columns: repeat(3, 1fr); }
+    .kpi-card {
+      background: var(--blitzy-surface-0);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.4rem;
+      box-shadow: var(--blitzy-shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::after {
+      content: "";
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline: 0;
+      height: 0.3rem;
+      background: var(--gradient-accent-bar);
+    }
+    .kpi-icon { color: var(--blitzy-primary); }
+    .kpi-icon svg { width: 2.6rem; height: 2.6rem; stroke-width: 1.75; }
+    .kpi-value {
+      font-family: var(--ff-display);
+      font-weight: 700;
+      font-size: 2.5rem;
+      line-height: 1.05;
+      color: var(--blitzy-primary-deep);
+    }
+    .kpi-value .kpi-delta { color: var(--blitzy-text-muted-accessible); font-weight: 500; }
+    .kpi-label {
+      font-size: 0.98rem;
+      color: var(--blitzy-text);
+      font-weight: 500;
+      line-height: 1.25;
+    }
+    .kpi-sub {
+      font-family: var(--ff-mono);
+      font-size: 0.78rem;
+      color: var(--blitzy-text-muted-accessible);
+      letter-spacing: 0.02em;
+    }
+
+    /* ---------- Icon row (multi-icon content) ---------- */
+    .icon-row {
+      display: flex;
+      gap: var(--gap);
+      margin-top: var(--space-block);
+      flex-wrap: wrap;
+    }
+    .icon-row .icon-cell {
+      flex: 1 1 0;
+      min-width: 11rem;
+      background: var(--blitzy-surface-2);
+      border: 1px solid var(--blitzy-border-soft);
+      border-radius: var(--radius-md);
+      padding: 1.3rem 1.1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .icon-row .icon-cell svg { width: 3rem; height: 3rem; color: var(--blitzy-primary); stroke-width: 1.6; }
+    .icon-row .icon-cell .icon-caption {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--blitzy-text);
+      line-height: 1.25;
+    }
+    .icon-row .icon-cell .icon-detail {
+      font-size: 0.82rem;
+      color: var(--blitzy-text-muted-accessible);
+      line-height: 1.25;
+    }
+
+    /* ---------- Styled data table (brand tokens) ---------- */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.6rem;
+      font-size: 1.02rem;
+      box-shadow: var(--blitzy-shadow-soft);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .data-table thead th {
+      background: var(--gradient-divider);
+      color: var(--blitzy-text-invert);
+      font-family: var(--ff-display);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.85rem 1.1rem;
+      font-size: 1rem;
+    }
+    .data-table tbody td {
+      padding: 0.72rem 1.1rem;
+      border-bottom: 1px solid var(--blitzy-border-soft);
+      color: var(--blitzy-text);
+    }
+    .data-table tbody tr:nth-child(odd) { background: var(--blitzy-surface-0); }
+    .data-table tbody tr:nth-child(even) { background: var(--blitzy-surface-1); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table .num { text-align: right; font-family: var(--ff-mono); }
+    .data-table .ai-row td {
+      background: var(--blitzy-surface-2);
+      font-weight: 600;
+      color: var(--blitzy-primary-deep);
+    }
+    .data-table .ai-row td:first-child { box-shadow: inset 0.3rem 0 0 0 var(--blitzy-primary); }
+    .data-table .tag { font-family: var(--ff-mono); font-size: 0.82rem; color: var(--blitzy-text-muted-accessible); }
+    /* Inset modifier: separates a table from the cards/heading above it using the deck spacing scale */
+    .data-table--inset { margin-top: var(--space-block); }
+
+    /* Confidence pills */
+    .pill {
+      display: inline-block;
+      font-family: var(--ff-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.12rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--blitzy-border-soft);
+    }
+    .pill-medium { background: var(--blitzy-surface-2); color: var(--blitzy-primary-deep); }
+    .pill-low { background: var(--blitzy-surface-1); color: var(--blitzy-text-muted-accessible); }
+    .pill-insufficient { background: var(--blitzy-surface-3); color: var(--blitzy-text-muted-accessible); }
+
+    /* ---------- Mermaid container ---------- */
+    pre.mermaid {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      text-align: center;
+      margin: 0.4rem auto 0 auto;
+      width: 100%;
+      font-size: 1rem;
+      overflow: visible;
+    }
+    pre.mermaid svg { max-width: 100%; height: auto; }
+
+    /* ---------- Layout helpers ---------- */
+    .slide-head { margin-bottom: 1.1rem; }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 2.2rem;
+      align-items: center;
+    }
+    .two-col.narrow-right { grid-template-columns: 1.2fr 0.8fr; }
+    .center-block { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+    .lead { font-size: 1.15rem; color: var(--blitzy-text); }
+    .muted { color: var(--blitzy-text-muted-accessible); }
+
+    /* reveal chrome themed to brand */
+    .reveal .progress { color: var(--blitzy-primary); height: 4px; }
+    .reveal .controls { color: var(--blitzy-primary); }
+    .reveal .slide-number { background: var(--blitzy-border-soft); color: var(--blitzy-text-invert); font-family: var(--ff-mono); }
+
+    /* Accessibility — touch-target hygiene: the default reveal navigation arrows render
+       ~36x36px (.controls-arrow is 3.6em at a 10px button font-size). Enlarge the sized
+       arrow element and its button to at least the 44x44px threshold; the em-based arrow
+       glyph (drawn via :before/:after) stays centered within the larger box. The pause
+       overlay's resume button is likewise raised to a 44px-tall hit area. */
+    .reveal .controls button { min-width: 44px; min-height: 44px; }
+    .reveal .controls .controls-arrow { width: 44px; height: 44px; }
+    .reveal .pause-overlay .resume-button { min-height: 44px; padding: 12px 20px; }
+
+    /* Lucide icons inherit currentColor by default; default sizing for bare <i> */
+    [data-lucide] { display: inline-flex; }
+    svg.lucide { vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+<!-- ===================== SLIDES INSERTED BELOW ===================== -->
+
+      <!-- 1 · TITLE -------------------------------------------------- -->
+      <section class="slide-title" data-background-gradient="var(--gradient-hero)">
+        <div class="hero-icon"><i data-lucide="gauge"></i></div>
+        <span class="eyebrow">Development Acceleration Measurement</span>
+        <h1>AI-Attributable Velocity in blitzy-cal</h1>
+        <div class="accent-bar"></div>
+        <p class="subtitle">Version-control evidence across the analysis window 2021-03-10 &rarr; 2026-05-15</p>
+        <p class="source-note">Read-only measurement &middot; 16,880 commits &middot; figures mirror acceleration-report.md</p>
+      </section>
+
+      <!-- 2 · CONTENT — KPI HEADLINE -------------------------------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Headline Results</span>
+          <h2>Before vs after the Tool Introduction Date</h2>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="gauge"></i></div>
+            <div class="kpi-value">1.22&times;</div>
+            <div class="kpi-label">Flow Velocity &mdash; commits per day</div>
+            <div class="kpi-sub">8.52 &rarr; 10.40</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="bot"></i></div>
+            <div class="kpi-value">#1</div>
+            <div class="kpi-label">AI cohort is the top author identity</div>
+            <div class="kpi-sub">700 commits &middot; 16.7% of after</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="package-check"></i></div>
+            <div class="kpi-value">0 &rarr; 22</div>
+            <div class="kpi-label">Releases &mdash; "Version Packages" commits</div>
+            <div class="kpi-sub">0 git tags throughout</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="git-commit-horizontal"></i></div>
+            <div class="kpi-value">1.55</div>
+            <div class="kpi-label">AI actor files per commit</div>
+            <div class="kpi-sub">period 6.17 &rarr; 7.25</div>
+          </div>
+        </div>
+        <p class="source-note">Source: acceleration-report.md &sect;1, &sect;5.1, &sect;5.2, &sect;5.9, &sect;7</p>
+      </section>
+
+      <!-- 3 · CONTENT — ARCHITECTURE / DATA-FLOW (Mermaid) ---------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Pipeline</span>
+          <h2>How the measurement flows</h2>
+        </div>
+        <pre class="mermaid">
+flowchart LR
+    A["Git history<br/>16,880 commits"] --> B["Tool Introduction<br/>Date 2025-04-08"]
+    B --> C["Two-week windows<br/>Baseline / Ramp-Up / Steady"]
+    C --> D["Twelve metrics<br/>before vs after"]
+    D --> E["acceleration-report.md"]
+    E --> F["This presentation"]
+        </pre>
+        <p class="source-note">Mirrors acceleration-report.md &sect;4 methodology pipeline</p>
+      </section>
+
+      <!-- 4 · CONTENT — WHAT WAS DONE ------------------------------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Scope</span>
+          <h2>What we did</h2>
+        </div>
+        <div class="two-col">
+          <ul>
+            <li>Read-only measurement of git history &mdash; zero repository files modified</li>
+            <li>Twelve flow &amp; operational metrics, each computed identically</li>
+            <li>Split at the Tool Introduction Date: a before and an after period</li>
+            <li>Two deliverables: a technical report and this presentation</li>
+          </ul>
+          <div class="icon-row">
+            <div class="icon-cell"><i data-lucide="search"></i><span class="icon-caption">Mine history</span></div>
+            <div class="icon-cell"><i data-lucide="git-branch"></i><span class="icon-caption">Split periods</span></div>
+            <div class="icon-cell"><i data-lucide="file-text"></i><span class="icon-caption">Report</span></div>
+            <div class="icon-cell"><i data-lucide="presentation"></i><span class="icon-caption">Present</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 · DIVIDER — HOW WE MEASURED ----------------------------- -->
+      <section class="slide-divider" data-background-gradient="var(--gradient-divider)">
+        <div class="hero-icon"><i data-lucide="ruler"></i></div>
+        <span class="eyebrow">Method</span>
+        <h2>How We Measured</h2>
+      </section>
+
+      <!-- 6 · CONTENT — METHODOLOGY --------------------------------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Methodology</span>
+          <h2>Identical logic, two periods</h2>
+        </div>
+        <div class="two-col">
+          <ul>
+            <li>Pivot 2025-04-08 &mdash; earliest AI co-author trailer (Devin)</li>
+            <li>Commits bucketed into Monday-aligned two-week windows</li>
+            <li>Phases: Baseline, Ramp-Up (first 90 days), Steady State (90+)</li>
+            <li>Same extraction both periods &mdash; only date range and actor change</li>
+          </ul>
+          <div class="icon-row">
+            <div class="icon-cell"><i data-lucide="flag"></i><span class="icon-caption">Pivot date</span></div>
+            <div class="icon-cell"><i data-lucide="calendar-range"></i><span class="icon-caption">2-week windows</span></div>
+            <div class="icon-cell"><i data-lucide="repeat"></i><span class="icon-caption">Identical logic</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 · CONTENT — CONFIDENCE MODEL (styled table) ------------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow"><i data-lucide="shield-check"></i> Confidence</span>
+          <h2>Every figure is tagged</h2>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Confidence</th><th>Basis</th><th>Metrics in this measurement</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>High</td><td>Issue-tracker direct counts</td><td>None &mdash; no such source available</td></tr>
+            <tr><td>Medium</td><td>Git commit patterns</td><td>M1, M2, M6, M8 (M9 Medium-Low)</td></tr>
+            <tr><td>Low</td><td>Indirect proxies</td><td>M3, M4, M5, M7, M11</td></tr>
+            <tr><td>Insufficient</td><td>Required source unavailable</td><td>M10, M12</td></tr>
+          </tbody>
+        </table>
+        <p class="source-note">Confidence ceiling is Medium &mdash; no issue-tracker source qualified for High (&sect;4.5, &sect;10)</p>
+      </section>
+
+      <!-- 8 · DIVIDER — FLOW METRICS -------------------------------- -->
+      <section class="slide-divider" data-background-gradient="var(--gradient-divider)">
+        <div class="hero-icon"><i data-lucide="activity"></i></div>
+        <span class="eyebrow">Group One</span>
+        <h2>Flow Metrics</h2>
+      </section>
+
+      <!-- 9 · CONTENT — FLOW METRICS GROUP 1 ------------------------ -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Flow Metrics</span>
+          <h2>Velocity, load, and work mix</h2>
+        </div>
+        <div class="kpi-grid kpi-3">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="gauge"></i></div>
+            <div class="kpi-value">1.22&times;</div>
+            <div class="kpi-label">Flow Velocity</div>
+            <div class="kpi-sub">8.52 &rarr; 10.40 commits/day</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="git-commit-horizontal"></i></div>
+            <div class="kpi-value">1.18&times;</div>
+            <div class="kpi-label">Flow Load &mdash; files/commit</div>
+            <div class="kpi-sub">6.17 &rarr; 7.25</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="shapes"></i></div>
+            <div class="kpi-value">1.38&times;</div>
+            <div class="kpi-label">Feature share of work</div>
+            <div class="kpi-sub">15.6% &rarr; 21.5%</div>
+          </div>
+        </div>
+        <table class="data-table data-table--inset">
+          <thead>
+            <tr><th>Work type</th><th class="num">Before</th><th class="num">After</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Features (<code>feat</code>)</td><td class="num">15.6%</td><td class="num">21.5%</td></tr>
+            <tr><td>Defects (<code>fix</code>)</td><td class="num">57.3%</td><td class="num">41.4%</td></tr>
+            <tr><td>Debt (refactor + chore + perf)</td><td class="num">20.4%</td><td class="num">27.6%</td></tr>
+            <tr><td>Risk (<code>revert</code>)</td><td class="num">2.0%</td><td class="num">1.6%</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 10 · CONTENT — ACCELERATION CURVE (Mermaid xychart) ------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Acceleration Curve</span>
+          <h2>Commit velocity by two-week window</h2>
+        </div>
+        <pre class="mermaid">
+xychart-beta
+    x-axis ["Apr-14", "Apr-28", "May-12", "May-26", "Jun-09", "Jun-23", "Jul-07", "Jul-21", "Aug-04", "Aug-18", "Sep-01", "Sep-15", "Sep-29", "Oct-13", "Oct-27", "Nov-10", "Nov-24", "Dec-08", "Dec-22", "Jan-05", "Jan-19", "Feb-02", "Feb-16", "Mar-02", "Mar-16", "Mar-30", "Apr-13", "Apr-27", "May-11"]
+    y-axis "Commits per two-week window" 0 --> 360
+    line [138, 116, 141, 56, 109, 143, 144, 102, 125, 154, 200, 138, 109, 116, 150, 136, 147, 256, 174, 342, 239, 245, 192, 187, 233, 45, 11, 0, 1]
+        </pre>
+        <p class="source-note">Steady State mean 150.1/window (1.26&times; Baseline 119.0); windowed peak 342 at 2026-01-05 (&sect;8)</p>
+      </section>
+
+      <!-- 11 · DIVIDER — OPERATIONAL SIGNALS ------------------------ -->
+      <section class="slide-divider" data-background-gradient="var(--gradient-divider)">
+        <div class="hero-icon"><i data-lucide="server-cog"></i></div>
+        <span class="eyebrow">Group Two</span>
+        <h2>Operational Signals</h2>
+      </section>
+
+      <!-- 12 · CONTENT — RELEASES & PROBLEM RECORDS ----------------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Operational Signals</span>
+          <h2>Releases and problem records</h2>
+        </div>
+        <div class="kpi-grid kpi-3">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="package-check"></i></div>
+            <div class="kpi-value">0 &rarr; 22</div>
+            <div class="kpi-label">Releases (Version Packages)</div>
+            <div class="kpi-sub">changeset-driven &middot; 0 tags</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="git-merge"></i></div>
+            <div class="kpi-value">147 &rarr; 71</div>
+            <div class="kpi-label">Revert commits (absolute)</div>
+            <div class="kpi-sub">per-commit 1.16% &rarr; 1.70%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i data-lucide="timer"></i></div>
+            <div class="kpi-value">4.7 days</div>
+            <div class="kpi-label">Median inter-release (after)</div>
+            <div class="kpi-sub">release-cadence proxy &middot; Low</div>
+          </div>
+        </div>
+        <p class="source-note">Source: acceleration-report.md &sect;5.7, &sect;5.8, &sect;5.9</p>
+      </section>
+
+      <!-- 13 · DIVIDER — PEOPLE & AI -------------------------------- -->
+      <section class="slide-divider" data-background-gradient="var(--gradient-divider)">
+        <div class="hero-icon"><i data-lucide="users"></i></div>
+        <span class="eyebrow">Group Three</span>
+        <h2>People &amp; AI</h2>
+      </section>
+
+      <!-- 14 · CONTENT — PER-ENGINEER / AI ACTOR (styled table) ----- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow"><i data-lucide="bot"></i> People &amp; AI</span>
+          <h2>Top authors, after period</h2>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Author</th><th class="num">Commits</th><th>Type</th></tr>
+          </thead>
+          <tbody>
+            <tr class="ai-row"><td>AI cohort (Blitzy Agent + Devin)</td><td class="num">700</td><td>AI actor</td></tr>
+            <tr><td>&bull; Blitzy Agent</td><td class="num">597</td><td class="tag">AI actor</td></tr>
+            <tr><td>&bull; Devin</td><td class="num">103</td><td class="tag">AI actor</td></tr>
+            <tr><td>Anik Dhabal Babu</td><td class="num">322</td><td class="tag">Human</td></tr>
+            <tr><td>Benny Joo</td><td class="num">214</td><td class="tag">Human</td></tr>
+            <tr><td>Eunjae Lee</td><td class="num">207</td><td class="tag">Human</td></tr>
+            <tr><td>Keith Williams</td><td class="num">200</td><td class="tag">Human</td></tr>
+            <tr><td>sean-brydon</td><td class="num">184</td><td class="tag">Human</td></tr>
+          </tbody>
+        </table>
+        <p class="source-note">AI cohort 700 &gt; top human 322 &middot; 16.7% of the period's 4,181 commits (&sect;7.1)</p>
+      </section>
+
+      <!-- 15 · CONTENT — RISKS & ONBOARDING ------------------------- -->
+      <section data-background-color="var(--blitzy-surface-1)">
+        <div class="slide-head">
+          <span class="eyebrow">Risks &amp; Onboarding</span>
+          <h2>Transparency and next steps</h2>
+        </div>
+        <div class="two-col">
+          <ul>
+            <li>Attribution ambiguity (Devin vs Blitzy) disclosed in the report</li>
+            <li>Insufficient signal: approvals (M10), SLA defects (M12)</li>
+            <li>Snapshot only: skipped/todo tests &mdash; 46 files, 95 sites (M11)</li>
+            <li>Raise confidence: read-only API tooling; re-run the appendix</li>
+          </ul>
+          <div class="icon-row">
+            <div class="icon-cell"><i data-lucide="alert-triangle"></i><span class="icon-caption">Disclosed</span></div>
+            <div class="icon-cell"><i data-lucide="key-round"></i><span class="icon-caption">API + token</span></div>
+            <div class="icon-cell"><i data-lucide="book-open"></i><span class="icon-caption">Reproducible</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 16 · CLOSING ---------------------------------------------- -->
+      <section class="slide-closing" data-background-color="var(--blitzy-primary-navy)">
+        <div class="hero-icon"><i data-lucide="rocket"></i></div>
+        <span class="eyebrow">Takeaway</span>
+        <h2>Measured Acceleration, Transparent Method</h2>
+        <ul>
+          <li>Add read-only API tooling to raise confidence beyond Medium</li>
+          <li>Re-run every metric via the reproducibility appendix</li>
+          <li>Track Steady-State velocity forward</li>
+        </ul>
+        <div class="accent-bar"></div>
+        <div class="brand-lockup"><i data-lucide="zap"></i><span class="brand-word">Blitzy</span></div>
+      </section>
+
+      <!-- ===================== END SLIDES ===================== -->
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Libraries (pinned CDN, no build step):
+         reveal.js 5.1.0  (UMD global: Reveal)
+         lucide   0.460.0 (UMD global: lucide)
+         mermaid  11.4.0  (ESM import)
+       ============================================================ -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs';
+
+    /* Brand-token fidelity (AAP §0.8.2): the Mermaid JS theme must draw from the same
+       :root custom properties as the stylesheet — no hardcoded hex/rgb literals in JS.
+       The <style> block defining these tokens lives in <head> and this is a deferred
+       module script, so the CSSOM is fully available; getComputedStyle resolves each
+       token to its computed value here at module load. */
+    const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const brand = {
+      surface0: cssVar('--blitzy-surface-0'),
+      surface1: cssVar('--blitzy-surface-1'),
+      surface2: cssVar('--blitzy-surface-2'),
+      text:     cssVar('--blitzy-text'),
+      muted:    cssVar('--blitzy-text-muted'),
+      primary:  cssVar('--blitzy-primary'),
+      fontBody: cssVar('--ff-body')
+    };
+
+    /* Mermaid initialized with the Blitzy brand token palette (AAP §0.8.2).
+       startOnLoad:false — diagrams are rendered on demand by renderCurrentSlide(). */
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      /* Native SVG text labels (htmlLabels:false) measure widths accurately via
+         getBBox, avoiding the foreignObject under-measure that clips the last
+         glyph of flowchart node labels. */
+      htmlLabels: false,
+      flowchart: { htmlLabels: false, useMaxWidth: true, padding: 14, nodeSpacing: 55, rankSpacing: 70 },
+      /* xychart sized to fill the slide; CSS max-width:100% scales it down to fit. */
+      xyChart: {
+        width: 1680,
+        height: 540,
+        titlePadding: 10,
+        xAxis: { labelFontSize: 13, labelPadding: 4, showTitle: false },
+        yAxis: { labelFontSize: 16, titleFontSize: 16, labelPadding: 6 }
+      },
+      /* All colors below resolve to Blitzy :root tokens (zero hardcoded hex/rgb).
+         Readable text (titles, axis labels) uses --blitzy-text; graphical gridlines
+         and ticks keep --blitzy-text-muted; the series/border uses --blitzy-primary. */
+      themeVariables: {
+        primaryColor: brand.surface2,
+        primaryTextColor: brand.text,
+        primaryBorderColor: brand.primary,
+        lineColor: brand.muted,
+        secondaryColor: brand.surface1,
+        fontFamily: brand.fontBody,
+        xyChart: {
+          backgroundColor: brand.surface0,
+          titleColor: brand.text,
+          xAxisLabelColor: brand.text,
+          xAxisTitleColor: brand.text,
+          xAxisTickColor: brand.muted,
+          xAxisLineColor: brand.muted,
+          yAxisLabelColor: brand.text,
+          yAxisTitleColor: brand.text,
+          yAxisTickColor: brand.muted,
+          yAxisLineColor: brand.muted,
+          plotColorPalette: brand.primary
+        }
+      }
+    });
+
+    /* Hydrate every Lucide <i data-lucide> in the document (idempotent: lucide
+       replaces each <i> with an <svg>, so re-invocation is a no-op for done icons).
+       Every icon in this deck is decorative — each is paired with visible text (a
+       heading, KPI value/label, icon caption, eyebrow label, or brand word) — so each
+       hydrated SVG is marked aria-hidden="true" and focusable="false" to hide it from
+       assistive technologies and keep it out of the keyboard tab order. */
+    function hydrateIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        /* Primary path: pass the accessibility attributes through createIcons so every
+           generated <svg.lucide> carries them. The attrs option is additive and does
+           not override Lucide's default 'lucide lucide-<name>' class (relied on by CSS). */
+        window.lucide.createIcons({ attrs: { 'aria-hidden': 'true', 'focusable': 'false' } });
+      }
+      /* Safety net (idempotent): guarantee the attributes are present on every hydrated
+         icon, independent of the createIcons attrs behavior in this Lucide build. */
+      document.querySelectorAll('svg.lucide').forEach(function (svg) {
+        if (svg.getAttribute('aria-hidden') !== 'true') { svg.setAttribute('aria-hidden', 'true'); }
+        if (svg.getAttribute('focusable') !== 'false') { svg.setAttribute('focusable', 'false'); }
+      });
+    }
+
+    /* Web fonts must be loaded before Mermaid measures label widths; otherwise
+       Mermaid sizes node boxes with a fallback font and the wider webfont text
+       (Inter) overflows and clips. fontsReady gates all diagram rendering. */
+    let fontsReady = false;
+
+    /* Render only the CURRENT slide's Mermaid diagrams, and only those not yet
+       processed. Scoping to the current slide guarantees a laid-out (non
+       display:none) container — important for xychart/flowchart width — and the
+       data-processed filter prevents double-rendering on revisited slides. */
+    function renderCurrentSlideMermaid() {
+      if (!fontsReady) { return; }
+      if (typeof Reveal === 'undefined' || !Reveal.getCurrentSlide) { return; }
+      const slide = Reveal.getCurrentSlide();
+      if (!slide) { return; }
+      const nodes = Array.from(slide.querySelectorAll('pre.mermaid'))
+        .filter((n) => n.getAttribute('data-processed') !== 'true');
+      if (nodes.length === 0) { return; }
+      /* After Mermaid injects the (tall) SVG, re-run reveal's layout so the slide
+         re-centers around the now-larger diagram instead of overflowing. */
+      mermaid.run({ nodes })
+        .then(() => { if (typeof Reveal !== 'undefined' && Reveal.layout) { Reveal.layout(); } })
+        .catch((err) => console.error('Mermaid render error:', err));
+    }
+
+    function renderVisuals() {
+      renderCurrentSlideMermaid();
+      hydrateIcons();
+    }
+
+    /* reveal.js configuration — EXACT per AAP §0.8.2. */
+    Reveal.initialize({
+      hash: true,
+      transition: 'slide',
+      controlsTutorial: false,
+      width: 1920,
+      height: 1080,
+      plugins: []
+    });
+
+    Reveal.on('ready', renderVisuals);
+    Reveal.on('slidechanged', renderVisuals);
+
+    /* Hydrate icons immediately (icons are font-independent and live in the DOM
+       regardless of slide state). */
+    hydrateIcons();
+
+    /* Once the brand web fonts are loaded, enable Mermaid rendering and draw the
+       current slide's diagram with correct (Inter) label metrics. */
+    const fontsPromise = (document.fonts && document.fonts.ready)
+      ? document.fonts.ready
+      : Promise.resolve();
+    fontsPromise.then(() => {
+      fontsReady = true;
+      renderVisuals();
+    });
+  </script>
+</body>
+</html>

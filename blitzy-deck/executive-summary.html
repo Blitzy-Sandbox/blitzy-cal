@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cal.com Security Audit — Executive Summary</title>
+  <!-- Inline data-URI favicon (self-contained; no local file) to avoid a 404 request. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Crect%20width='24'%20height='24'%20rx='5'%20fill='%235B39F3'/%3E%3Cpath%20d='M12%206l4%202v3c0%202.5-1.7%204.3-4%205-2.3-.7-4-2.5-4-5V8z'%20fill='%2394FAD5'/%3E%3C/svg%3E">
+
+  <!-- Google Fonts: Inter (body), Space Grotesk (display), Fira Code (mono / eyebrows) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- reveal.js core CSS (pinned 5.1.0). No prebuilt reveal theme is loaded; the inline Blitzy theme below must win. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+
+  <style>
+    /* ============================================================
+       BLITZY EXECUTIVE DECK THEME (inlined — self-contained)
+       The canonical Blitzy reveal theme stylesheet is an internal
+       reference that is not present in this repository, so its brand
+       tokens are embedded here directly to honor the self-contained,
+       no-build-step, no-local-dependency requirement (AAP 0.7.2).
+       ============================================================ */
+    :root {
+      /* Brand palette (exact hex) */
+      --blitzy-primary: #5B39F3;
+      --blitzy-dark: #2D1C77;
+      --blitzy-teal: #94FAD5;
+      --blitzy-navy: #1A105F;
+      --blitzy-grad-1: #7A6DEC;
+      --blitzy-grad-2: #4101DB;
+
+      /* Neutral ramp */
+      --blitzy-ink: #1A1430;
+      --blitzy-bg: #FFFFFF;
+      --blitzy-bg-soft: #FBFAFF;
+      --blitzy-muted: #6B6680;
+      --blitzy-surface: #F2F0FE;
+      --blitzy-surface-2: #F4EFF6;
+      --blitzy-border: #E6E2F5;
+      --blitzy-stage: #120A33;
+
+      /* Gradient treatments (brand) applied to hero / divider / closing slide types */
+      --grad-hero: linear-gradient(135deg, #1A105F 0%, #2D1C77 58%, #4101DB 100%);
+      --grad-divider: linear-gradient(120deg, #5B39F3 0%, #4101DB 100%);
+      --grad-closing: linear-gradient(135deg, #1A105F 0%, #2D1C77 55%, #4101DB 100%);
+
+      /* Severity colors (accessible) */
+      --sev-critical: #B3123B;
+      --sev-high: #D9480F;
+      --sev-medium: #F0B429;
+      --sev-low: #5EAAA8;
+
+      /* Typography tokens */
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-display: 'Space Grotesk', 'Inter', sans-serif;
+      --font-mono: 'Fira Code', ui-monospace, monospace;
+    }
+
+    /* Outer stage (letterboxing) */
+    html, body { background: var(--blitzy-stage); }
+    .reveal-viewport { background: var(--blitzy-stage); }
+
+    /* Base reveal overrides */
+    .reveal {
+      font-family: var(--font-body);
+      color: var(--blitzy-ink);
+      font-size: 32px;
+      font-weight: 400;
+      letter-spacing: 0.005em;
+    }
+    .reveal .slides { text-align: left; }
+    .reveal .slides > section { height: 100%; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: var(--font-display);
+      color: var(--blitzy-ink);
+      font-weight: 700;
+      letter-spacing: -0.012em;
+      line-height: 1.08;
+      margin: 0 0 0.4em;
+      text-transform: none;
+    }
+    .reveal h2 { font-size: 56px; }
+    .reveal p { line-height: 1.4; }
+    .reveal strong { color: var(--blitzy-dark); font-weight: 700; }
+    .reveal code {
+      font-family: var(--font-mono);
+      background: var(--blitzy-surface);
+      color: var(--blitzy-dark);
+      padding: 0.06em 0.34em;
+      border-radius: 6px;
+      font-size: 0.86em;
+    }
+    .reveal a { color: var(--blitzy-primary); }
+
+    /* Slide padding wrapper */
+    .slide-pad {
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+      padding: 70px 116px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Eyebrow label (uppercase Fira Code) */
+    .eyebrow {
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 21px;
+      font-weight: 500;
+      color: var(--blitzy-primary);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ---------- Slide type: TITLE (hero) ---------- */
+    .reveal .slide-title .slide-pad { justify-content: center; }
+    .reveal .slide-title, .reveal .slide-title h1 { color: #FFFFFF; }
+    .reveal .slide-title h1 { font-size: 96px; margin-bottom: 0.18em; }
+    .reveal .slide-title .eyebrow { color: var(--blitzy-teal); }
+    .reveal .slide-title .subtitle {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 500;
+      color: var(--blitzy-teal);
+      margin: 6px 0 0;
+    }
+    .reveal .slide-title .accent-rule {
+      width: 200px; height: 7px; border-radius: 4px;
+      background: var(--blitzy-teal);
+      margin: 34px 0 30px;
+    }
+    .reveal .slide-title .meta {
+      font-family: var(--font-mono);
+      font-size: 23px;
+      color: rgba(255,255,255,0.72);
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .reveal .slide-title .meta > span {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid rgba(148,250,213,0.32);
+      border-radius: 999px;
+      padding: 7px 18px;
+    }
+    .reveal .slide-title .meta > span.hero-badge {
+      color: var(--blitzy-teal);
+      border-color: rgba(148,250,213,0.55);
+      background: rgba(148,250,213,0.10);
+    }
+
+    /* Slide number + nav controls — legible on both light and dark slides */
+    .reveal .slide-number {
+      background: rgba(26,16,95,0.55);
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      border-radius: 8px;
+      padding: 5px 11px;
+    }
+    .reveal .controls { color: var(--blitzy-primary); }
+    .reveal .progress { color: var(--blitzy-primary); }
+
+    /* ---------- Slide type: DIVIDER ---------- */
+    .reveal .slide-divider .slide-pad { justify-content: center; align-items: center; text-align: center; }
+    .reveal .slide-divider, .reveal .slide-divider h2 { color: #FFFFFF; }
+    .reveal .slide-divider h2 { font-size: 92px; margin: 0.18em 0 0; }
+    .reveal .slide-divider .divider-index {
+      font-family: var(--font-mono);
+      font-size: 30px; font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 0.12em;
+    }
+    .reveal .slide-divider .divider-icon { color: var(--blitzy-teal); margin-bottom: 8px; }
+
+    /* ---------- Slide type: CLOSING ---------- */
+    .reveal .slide-closing .slide-pad { justify-content: center; }
+    .reveal .slide-closing, .reveal .slide-closing h2 { color: #FFFFFF; }
+    .reveal .slide-closing h2 { font-size: 72px; }
+    .reveal .slide-closing .eyebrow { color: var(--blitzy-teal); }
+    .reveal .slide-closing .accent-rule {
+      width: 180px; height: 6px; border-radius: 3px;
+      background: var(--blitzy-teal); margin: 26px 0;
+    }
+    .reveal .slide-closing .lead { font-size: 36px; color: rgba(255,255,255,0.92); max-width: 1380px; }
+    .reveal .slide-closing .cta {
+      margin-top: 30px; font-family: var(--font-mono);
+      font-size: 24px; color: var(--blitzy-teal);
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    /* ---------- Content slide helper ---------- */
+    .reveal .slide-content h2 { color: var(--blitzy-ink); }
+    .reveal .lead-sub { color: var(--blitzy-muted); font-size: 26px; margin: -4px 0 8px; }
+
+    /* Bullet lists (content) */
+    .reveal .slide-pad ul.bullets {
+      list-style: none; margin: 26px 0 0; padding: 0;
+    }
+    .reveal .slide-pad ul.bullets > li {
+      position: relative;
+      padding-left: 40px;
+      margin-bottom: 20px;
+      font-size: 30px;
+      line-height: 1.34;
+      color: var(--blitzy-ink);
+    }
+    .reveal .slide-pad ul.bullets > li::before {
+      content: ""; position: absolute; left: 6px; top: 14px;
+      width: 14px; height: 14px; border-radius: 4px;
+      background: var(--blitzy-primary);
+      transform: rotate(45deg);
+    }
+
+    /* ---------- KPI cards ---------- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 30px;
+      margin-top: 34px;
+    }
+    .kpi-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .kpi-card {
+      background: var(--blitzy-surface);
+      border: 1px solid var(--blitzy-border);
+      border-radius: 20px;
+      padding: 36px 30px;
+      box-shadow: 0 14px 34px rgba(45,28,119,0.10);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .kpi-card .kpi-icon { color: var(--blitzy-primary); margin-bottom: 8px; }
+    .kpi-card .kpi-num {
+      font-family: var(--font-display);
+      font-size: 78px; font-weight: 700; line-height: 1;
+      color: var(--blitzy-primary);
+    }
+    .kpi-card .kpi-num.accent { color: var(--blitzy-grad-2); }
+    .kpi-card .kpi-label {
+      font-size: 22px; font-weight: 500; color: var(--blitzy-muted);
+      margin-top: 8px;
+    }
+
+    /* ---------- Styled table ---------- */
+    .blitzy-table-wrap {
+      margin-top: 30px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 14px 34px rgba(45,28,119,0.12);
+      border: 1px solid var(--blitzy-border);
+    }
+    table.blitzy-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 25px;
+      background: var(--blitzy-bg);
+    }
+    table.blitzy-table thead th {
+      background: var(--blitzy-navy);
+      color: #FFFFFF;
+      text-align: left;
+      padding: 20px 26px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 24px;
+    }
+    table.blitzy-table tbody td {
+      padding: 18px 26px;
+      border-bottom: 1px solid var(--blitzy-border);
+      color: var(--blitzy-ink);
+      vertical-align: middle;
+    }
+    table.blitzy-table tbody tr:nth-child(even) { background: var(--blitzy-surface); }
+    table.blitzy-table tbody tr:last-child td { border-bottom: none; }
+    table.blitzy-table td .zone-name { font-weight: 600; color: var(--blitzy-dark); }
+    table.blitzy-table td code { font-size: 0.8em; }
+
+    /* ---------- Severity chips ---------- */
+    .chip {
+      display: inline-block;
+      padding: 5px 16px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 19px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .chip-critical { background: var(--sev-critical); color: #FFFFFF; }
+    .chip-high { background: var(--sev-high); color: #FFFFFF; }
+    .chip-medium { background: var(--sev-medium); color: #3A2D00; }
+    .chip-low { background: var(--sev-low); color: #06302E; }
+    .chip-count { font-weight: 700; }
+
+    /* ---------- Lucide icon sizing ---------- */
+    .reveal i[data-lucide] {
+      width: 1em; height: 1em;
+      stroke-width: 2;
+      vertical-align: middle;
+      display: inline-block;
+    }
+    .reveal .icon-lg { width: 1.6em; height: 1.6em; }
+    .reveal .icon-xl { width: 132px; height: 132px; stroke-width: 1.5; }
+
+    /* ---------- Icon list (business value / onboarding) ---------- */
+    ul.icon-list { list-style: none; margin: 30px 0 0; padding: 0; }
+    ul.icon-list > li {
+      display: flex; align-items: flex-start; gap: 22px;
+      margin-bottom: 26px;
+    }
+    ul.icon-list > li .li-icon {
+      flex: 0 0 auto;
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      background: var(--blitzy-surface);
+      border: 1px solid var(--blitzy-border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--blitzy-primary);
+      font-size: 34px;
+    }
+    ul.icon-list > li .li-body { padding-top: 4px; }
+    ul.icon-list .li-title { font-weight: 600; font-size: 30px; color: var(--blitzy-ink); }
+    ul.icon-list .li-sub { font-size: 24px; color: var(--blitzy-muted); margin-top: 2px; }
+
+    /* ---------- Mermaid container ---------- */
+    .reveal pre.mermaid {
+      background: transparent;
+      box-shadow: none;
+      border: none;
+      text-align: center;
+      margin: 30px auto 0;
+      padding: 0;
+      width: 100%;
+      max-width: 1500px;
+      font-size: 16px;
+    }
+    /* Scale the diagram up to fill the slide; height:auto preserves aspect ratio.
+       !important overrides Mermaid's inline max-width from useMaxWidth. */
+    .reveal pre.mermaid svg {
+      max-width: 100% !important;
+      width: auto;
+      height: auto;
+      max-height: 600px;
+      display: block;
+      margin: 0 auto;
+    }
+    /* Render SVG labels in Inter to match the font Mermaid measured with. */
+    .reveal pre.mermaid svg text,
+    .reveal pre.mermaid .nodeLabel,
+    .reveal pre.mermaid foreignObject div,
+    .reveal pre.mermaid foreignObject span {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    /* Footer brand mark on content slides */
+    .slide-foot {
+      position: absolute;
+      bottom: 30px; left: 116px; right: 116px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 17px;
+      color: var(--blitzy-muted);
+      letter-spacing: 0.06em;
+    }
+    .slide-foot .foot-mark { color: var(--blitzy-primary); font-weight: 500; }
+
+    /* Two-column content helper */
+    .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+
+    /* Pill row */
+    .pill-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+    .pill {
+      font-family: var(--font-mono);
+      font-size: 19px;
+      background: var(--blitzy-surface);
+      border: 1px solid var(--blitzy-border);
+      color: var(--blitzy-dark);
+      padding: 6px 14px;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ========== SLIDE 1 — TITLE ========== -->
+      <section class="slide-title" data-background-gradient="linear-gradient(135deg, #1A105F 0%, #2D1C77 58%, #4101DB 100%)">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="shield-check"></i> Confidential — Leadership Briefing</div>
+          <h1>Cal.com Security Audit</h1>
+          <div class="subtitle">Four-Layer Assessment — read-only architectural and automated measurement</div>
+          <div class="accent-rule"></div>
+          <div class="meta">
+            <span class="hero-badge"><i data-lucide="file-check"></i> 0 application files modified</span>
+            <span>Semgrep 1.164.0</span>
+            <span>OSV-Scanner 2.3.8</span>
+            <span>Blitzy native L1 / L3</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 2 — AT A GLANCE (KPI) — beat a ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="gauge"></i> Executive Summary — At a Glance</div>
+          <h2>A complete, read-only security measurement</h2>
+          <div class="kpi-grid">
+            <div class="kpi-card"><i data-lucide="layers" class="icon-lg kpi-icon"></i><div class="kpi-num">4</div><div class="kpi-label">Detection layers</div></div>
+            <div class="kpi-card"><i data-lucide="file-json" class="icon-lg kpi-icon"></i><div class="kpi-num">9</div><div class="kpi-label">Net-new deliverables</div></div>
+            <div class="kpi-card"><i data-lucide="file-check" class="icon-lg kpi-icon"></i><div class="kpi-num accent">0</div><div class="kpi-label">Application files modified</div></div>
+            <div class="kpi-card"><i data-lucide="search-check" class="icon-lg kpi-icon"></i><div class="kpi-num">400</div><div class="kpi-label">Findings catalogued</div></div>
+          </div>
+          <ul class="bullets">
+            <li>Layers measure architecture, patterns, dataflow, and dependencies.</li>
+            <li>All results normalized to one schema, then merged.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 3 — DIVIDER: What We Did ========== -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
+        <div class="slide-pad">
+          <i data-lucide="search-check" class="icon-xl divider-icon"></i>
+          <div class="divider-index">Section 01</div>
+          <h2>What We Did</h2>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 4 — AUDIT SCOPE (table) — beat a ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="scan-line"></i> Scope</div>
+          <h2>Five security zones, one monorepo</h2>
+          <div class="blitzy-table-wrap">
+            <table class="blitzy-table">
+              <thead><tr><th>Security zone</th><th>Audit surface</th><th>Scale</th></tr></thead>
+              <tbody>
+                <tr><td><span class="zone-name">Application source</span></td><td><code>apps/**</code> + <code>packages/**</code> TS / JS</td><td>~7,440 files</td></tr>
+                <tr><td><span class="zone-name">Configuration &amp; secrets</span></td><td><code>.env*.example</code> + <code>.yarnrc.yml</code></td><td>8 templates</td></tr>
+                <tr><td><span class="zone-name">Container images</span></td><td>root + API v2 <code>Dockerfile</code></td><td>2 images</td></tr>
+                <tr><td><span class="zone-name">CI / CD pipelines</span></td><td><code>.github/workflows</code></td><td>59 workflows</td></tr>
+                <tr><td><span class="zone-name">Dependencies</span></td><td><code>yarn.lock</code> supply chain</td><td>1 lockfile</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 5 — FOUR-LAYER METHODOLOGY (mermaid) — beat a ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="layers"></i> Methodology</div>
+          <h2>Four complementary detection layers</h2>
+<pre class="mermaid">
+flowchart LR
+L1["L1 Blitzy Architectural"] --> F1["findings-layer-1-blitzy.json"]
+L2["L2 Semgrep SAST"] --> F2["findings-layer-2-semgrep.json"]
+L3["L3 Blitzy Taint"] --> F3["findings-layer-3-blitzy-taint.json"]
+L4["L4 OSV-Scanner SCA"] --> F4["findings-layer-4-osv.json"]
+</pre>
+          <ul class="bullets">
+            <li>L1 and L3 are native Blitzy reasoning; L2 Semgrep; L4 OSV-Scanner.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 6 — DIVIDER: Why It Matters ========== -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
+        <div class="slide-pad">
+          <i data-lucide="target" class="icon-xl divider-icon"></i>
+          <div class="divider-index">Section 02</div>
+          <h2>Why It Matters</h2>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 7 — BUSINESS VALUE (icon list) — beat b ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="trending-up"></i> Business Value</div>
+          <h2>Assurance that compounds</h2>
+          <ul class="icon-list">
+            <li><span class="li-icon"><i data-lucide="shield-check"></i></span><span class="li-body"><div class="li-title">Risk reduction</div><div class="li-sub">Exposure quantified, not assumed.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="clipboard-check"></i></span><span class="li-body"><div class="li-title">Compliance signal</div><div class="li-sub">Evidence for audits and reviews.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="package"></i></span><span class="li-body"><div class="li-title">Supply-chain visibility</div><div class="li-sub">Known CVEs surfaced.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="repeat"></i></span><span class="li-body"><div class="li-title">Repeatable evidence</div><div class="li-sub">Deterministic, re-runnable artifacts.</div></span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 8 — DIVIDER: What Changed Architecturally ========== -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
+        <div class="slide-pad">
+          <i data-lucide="workflow" class="icon-xl divider-icon"></i>
+          <div class="divider-index">Section 03</div>
+          <h2>What Changed Architecturally</h2>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 9 — AUDIT PIPELINE (mermaid) — beat c ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="workflow"></i> Audit Pipeline — Component View</div>
+          <h2>A deterministic, read-only pipeline</h2>
+<pre class="mermaid">
+flowchart LR
+A["A. Acquire and Configure"] --> BE["B-E. Four Layer Scans"]
+BE --> F["F. Normalize"]
+F --> G["G. Merge"]
+G --> H["H. Document"]
+H --> I["I. Verify Gate"]
+</pre>
+          <ul class="bullets">
+            <li>Application source is consumed read-only; only deliverables are written.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 10 — DATA FLOW (mermaid) — beat c ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="git-branch"></i> Data Flow — Inputs to Artifacts</div>
+          <h2>From read-only inputs to one merged report</h2>
+<pre class="mermaid">
+flowchart LR
+SRC["Read-only inputs"] --> LYR["Four detection layers"]
+LYR --> INT["SARIF / OSV intermediates"]
+INT --> NORM["Normalized layer files"]
+LYR --> NORM
+NORM --> MERGED["findings-merged.json"]
+MERGED --> DOC["Decision log and deck"]
+</pre>
+          <ul class="bullets">
+            <li>The merged report leads with a <code>_summary</code> header.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 11 — FIVE SECURITY ZONES (table) — beat c ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="shield"></i> Coverage</div>
+          <h2>Five zones, mapped to weakness families</h2>
+          <div class="blitzy-table-wrap">
+            <table class="blitzy-table">
+              <thead><tr><th>Security zone</th><th>Representative CWE families</th></tr></thead>
+              <tbody>
+                <tr><td><span class="zone-name">Application source</span></td><td>CWE-327 / 326, 1021 / 79, 601, 918, 117, 338</td></tr>
+                <tr><td><span class="zone-name">Configuration &amp; secrets</span></td><td>CWE-798 hardcoded credentials</td></tr>
+                <tr><td><span class="zone-name">Container images</span></td><td>CWE-250 / 552, 798 / 1188</td></tr>
+                <tr><td><span class="zone-name">CI / CD pipelines</span></td><td>CWE-1357 / 829, 78</td></tr>
+                <tr><td><span class="zone-name">Dependencies</span></td><td>Known transitive CVEs (OSV)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 12 — DIVIDER: Risks & Mitigations ========== -->
+      <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
+        <div class="slide-pad">
+          <i data-lucide="alert-triangle" class="icon-xl divider-icon"></i>
+          <div class="divider-index">Section 04</div>
+          <h2>Risks &amp; Mitigations</h2>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 13 — FINDINGS BY SEVERITY & LAYER (KPI + chips) — beat d ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="bar-chart-3"></i> Findings Profile</div>
+          <h2>400 findings by severity and layer</h2>
+          <div class="pill-row" style="gap:18px; margin-top:26px;">
+            <span class="chip chip-critical"><span class="chip-count">19</span> Critical</span>
+            <span class="chip chip-high"><span class="chip-count">113</span> High</span>
+            <span class="chip chip-medium"><span class="chip-count">157</span> Medium</span>
+            <span class="chip chip-low"><span class="chip-count">111</span> Low</span>
+          </div>
+          <div class="kpi-grid" style="margin-top:32px;">
+            <div class="kpi-card"><div class="kpi-num">153</div><div class="kpi-label">Layer 1 — Architectural</div></div>
+            <div class="kpi-card"><div class="kpi-num">34</div><div class="kpi-label">Layer 2 — Semgrep</div></div>
+            <div class="kpi-card"><div class="kpi-num">49</div><div class="kpi-label">Layer 3 — Taint</div></div>
+            <div class="kpi-card"><div class="kpi-num">164</div><div class="kpi-label">Layer 4 — OSV</div></div>
+          </div>
+          <ul class="bullets" style="margin-top:26px;">
+            <li>7 findings cross-layer corroborated; 5 composite escalations.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 14 — TOP RISK THEMES AND MITIGATIONS (table) — beat d ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="alert-triangle"></i> Top Risk Themes</div>
+          <h2>Representative risks and recommended fixes</h2>
+          <div class="lead-sub">The audit recommends; remediation remains the team's decision.</div>
+          <div class="blitzy-table-wrap">
+            <table class="blitzy-table">
+              <thead><tr><th>Risk theme</th><th>CWE</th><th>Recommended mitigation</th></tr></thead>
+              <tbody>
+                <tr><td>Default secrets baked into image</td><td><code>CWE-798</code></td><td>Externalize secrets to runtime</td></tr>
+                <tr><td>CSP allows unsafe-inline / unsafe-eval</td><td><code>CWE-1021 / 79</code></td><td>Tighten Content-Security-Policy</td></tr>
+                <tr><td>Containers run as root</td><td><code>CWE-250</code></td><td>Add a non-root <code>USER</code></td></tr>
+                <tr><td>Weak AES-CBC and key reuse</td><td><code>CWE-327 / 323</code></td><td>Authenticated encryption, key separation</td></tr>
+                <tr><td>Mutable CI action tags</td><td><code>CWE-1357</code></td><td>Pin actions to commit SHAs</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 15 — ONBOARDING & CONTINUATION (icon list) — beat e ========== -->
+      <section class="slide-content" data-background-color="#FBFAFF">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="compass"></i> Onboarding &amp; Continuation</div>
+          <h2>How the team picks this up</h2>
+          <ul class="icon-list">
+            <li><span class="li-icon"><i data-lucide="folder"></i></span><span class="li-body"><div class="li-title">Where artifacts live</div><div class="li-sub"><code>findings-*.json</code>, <code>decision-log.md</code>, this deck</div></span></li>
+            <li><span class="li-icon"><i data-lucide="refresh-cw"></i></span><span class="li-body"><div class="li-title">Re-run any time</div><div class="li-sub">Semgrep and OSV-Scanner, metrics off</div></span></li>
+            <li><span class="li-icon"><i data-lucide="file-json"></i></span><span class="li-body"><div class="li-title">Single source of truth</div><div class="li-sub"><code>findings-merged.json</code> drives KPIs</div></span></li>
+            <li><span class="li-icon"><i data-lucide="flag"></i></span><span class="li-body"><div class="li-title">Next phase</div><div class="li-sub">Remediation is the team's work</div></span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 16 — CLOSING ========== -->
+      <section class="slide-closing" data-background-gradient="linear-gradient(135deg, #1A105F 0%, #2D1C77 55%, #4101DB 100%)">
+        <div class="slide-pad">
+          <div class="eyebrow"><i data-lucide="flag"></i> Next Steps</div>
+          <h2>Measurement complete. Remediation begins.</h2>
+          <div class="accent-rule"></div>
+          <div class="lead">Triage the highest-severity, corroborated, and composite findings first, then work down the severity ladder.</div>
+          <div class="cta"><i data-lucide="arrow-right"></i> Start with the 19 critical and 7 corroborated findings</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <!-- reveal.js 5.1.0 (UMD -> window.Reveal) -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <!-- Lucide 0.460.0 (UMD -> window.lucide) -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <!-- Mermaid 11.4.0 (ESM) + reveal init + visual wiring -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs';
+    // Expose so any non-module context could reach it if needed.
+    window.mermaid = mermaid;
+
+    // startOnLoad:false is REQUIRED; themeVariables include the exact brand-mandated values.
+    // fontFamily is set to Inter so Mermaid MEASURES node boxes with the same font it
+    // RENDERS with (prevents label clipping); flowchart padding/spacing improves legibility.
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      htmlLabels: false,
+      flowchart: { htmlLabels: false, useMaxWidth: true, padding: 18, nodeSpacing: 60, rankSpacing: 75 },
+      themeVariables: {
+        primaryColor: '#F2F0FE',
+        primaryTextColor: '#333333',
+        primaryBorderColor: '#5B39F3',
+        lineColor: '#999999',
+        secondaryColor: '#F4EFF6',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '17px'
+      }
+    });
+
+    // Resolve when web fonts are loaded so Mermaid text measurement is accurate.
+    var fontsReady = Promise.resolve();
+    if (document.fonts?.ready) {
+      fontsReady = document.fonts.ready;
+    }
+
+    // Materialize Lucide icons document-wide (icons do not require layout dimensions).
+    function renderIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    // Render only unprocessed Mermaid diagrams within the given scope (a visible slide),
+    // avoiding the "already processed" no-op and zero-size renders in hidden slides.
+    function renderMermaid(scope) {
+      var root = scope || document;
+      var nodes = root.querySelectorAll('pre.mermaid:not([data-processed])');
+      if (nodes.length) {
+        try {
+          mermaid.run({ nodes: Array.prototype.slice.call(nodes) });
+        } catch (err) {
+          console.warn('Mermaid render warning:', err);
+        }
+      }
+    }
+
+    function refreshVisuals(scope) {
+      // Icons need no layout metrics; render immediately.
+      renderIcons();
+      // Diagrams need accurate font metrics; render once fonts are ready.
+      fontsReady.then(() => { renderMermaid(scope); });
+    }
+
+    // reveal.js is UMD; guard until window.Reveal is present, then initialize.
+    function initDeck() {
+      if (!window.Reveal) {
+        window.requestAnimationFrame(initDeck);
+        return;
+      }
+      Reveal.initialize({
+        hash: true,
+        transition: 'slide',
+        controlsTutorial: false,
+        width: 1920,
+        height: 1080,
+        center: false,
+        margin: 0,
+        slideNumber: 'c/t',
+        viewDistance: 5
+      });
+
+      // Render visuals after reveal is ready AND on every slide change so that
+      // diagrams/icons on lazily-shown slides are always materialized.
+      Reveal.on('ready', () => {
+        refreshVisuals(Reveal.getCurrentSlide() || document);
+      });
+      Reveal.on('slidechanged', (event) => {
+        refreshVisuals(event.currentSlide);
+      });
+    }
+
+    initDeck();
+  </script>
+
+</body>
+</html>

@@ -667,90 +667,6 @@
           "ruleId": "CWE-601",
           "level": "note",
           "message": {
-            "text": "Open-redirect candidate: OAuth2 redirect_uri reaches a 303 redirect via an exception filter; demoted because validateRedirectUri enforces strict equality against the registered client.redirectUri and the attacker-reachable path is currently uncalled."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "apps/api/v2/src/modules/auth/oauth2/filters/oauth2-redirect-exception.filter.ts"
-                },
-                "region": {
-                  "startLine": 12
-                }
-              }
-            }
-          ],
-          "codeFlows": [
-            {
-              "threadFlows": [
-                {
-                  "locations": [
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "apps/api/v2/src/modules/auth/oauth2/services/oauth2-error.service.ts"
-                          },
-                          "region": {
-                            "startLine": 35
-                          }
-                        },
-                        "message": {
-                          "text": "hop: buildErrorRedirectUrl(redirectUri, ...) builds the redirect target from the request redirect_uri"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "apps/api/v2/src/modules/auth/oauth2/services/oauth2-error.service.ts"
-                          },
-                          "region": {
-                            "startLine": 36
-                          }
-                        },
-                        "message": {
-                          "text": "hop: throw new OAuth2RedirectException(redirectUrl)"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "apps/api/v2/src/modules/auth/oauth2/filters/oauth2-redirect-exception.filter.ts"
-                          },
-                          "region": {
-                            "startLine": 12
-                          }
-                        },
-                        "message": {
-                          "text": "sink: response.redirect(303, exception.redirectUrl)"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ],
-          "properties": {
-            "gateBlocking": false,
-            "exploitScenario": "An attacker would pass an arbitrary redirect_uri to an OAuth2 error path. validateRedirectUri compares redirect_uri by strict equality against the registered client.redirectUri (mismatch -> redirect_uri_mismatch, which is non-redirectable), and the handleAuthorizeError path that would carry an attacker redirect_uri to this sink has no caller in the repository.",
-            "confidence": "low",
-            "sanitizersEncountered": [
-              "validateRedirectUri strict-equality check vs registered client.redirectUri [packages/features/oauth/services/OAuthService.ts:204-207]; redirect_uri_mismatch is non-redirectable",
-              "the handleAuthorizeError path reaching this sink with an attacker-controlled redirect_uri has no caller in the repository"
-            ],
-            "intermediateHopsSummary": "request redirect_uri -> buildErrorRedirectUrl (oauth2-error.service.ts L35) -> throw OAuth2RedirectException (L36) -> response.redirect(303) (oauth2-redirect-exception.filter.ts L12)"
-          }
-        },
-        {
-          "ruleId": "CWE-601",
-          "level": "note",
-          "message": {
             "text": "Open-redirect candidate: OIDC authorize-response query params (code/state) flow to NextResponse.redirect; demoted because redirect_url is OIDC connection-derived by saml-jackson."
           },
           "locations": [
@@ -1003,7 +919,7 @@
           "ruleId": "CWE-601",
           "level": "note",
           "message": {
-            "text": "Second-order open-redirect candidate: a return-to cookie written from window.location.href is later used as a redirect target in the web proxy; demoted because the persisted value is same-origin and resolved relative to the request origin."
+            "text": "Second-order open-redirect candidate: a return-to cookie is later used as a redirect target in the web proxy via new URL(returnTo.value, request.url); demoted because the only observed write leg stores the user's own same-origin window.location.href and no attacker-controlled vector to plant a cross-origin return-to cookie value is proven (the WRITE leg of this second-order flow is therefore not established)."
           },
           "locations": [
             {
@@ -1034,7 +950,7 @@
                           }
                         },
                         "message": {
-                          "text": "WRITE leg: document.cookie = `return-to=${window.location.href};...SameSite=Lax` persists the current URL into the return-to cookie"
+                          "text": "WRITE leg (not attacker-controlled): document.cookie = `return-to=${window.location.href};path=/;max-age=3600;SameSite=Lax` stores the user's own current same-origin URL into the return-to cookie"
                         }
                       }
                     },
@@ -1075,12 +991,10 @@
           ],
           "properties": {
             "gateBlocking": false,
-            "exploitScenario": "An attacker would need to plant a cross-origin value into the return-to cookie. The cookie is written client-side from window.location.href (same-origin) with SameSite=Lax, and new URL(returnTo.value, requestOrigin) resolves relative to the current origin, so an external redirect is not demonstrably achievable.",
+            "exploitScenario": "To achieve an external redirect, an attacker must plant a cross-origin absolute value into the victim's return-to cookie, because new URL(value, base) follows an absolute value and ignores the base (it does NOT enforce same origin), after which the proxy issues NextResponse.redirect(new URL(returnTo.value, request.url)). The only write leg observed in the repository sets the cookie client-side from the user's own window.location.href (a same-origin value), and no injection point is demonstrated by which an attacker could set an arbitrary return-to cookie value in a victim's browser. Because the attacker-controlled write leg is unproven, the second-order flow is incomplete and it is recorded as a non-blocking note \u2014 not because new URL() or SameSite=Lax sanitizes the value (neither provides redirect-target or cookie-value integrity).",
             "confidence": "low",
-            "sanitizersEncountered": [
-              "return-to cookie is written from same-origin window.location.href with SameSite=Lax; new URL(value, requestOrigin) resolves relative to the request origin"
-            ],
-            "intermediateHopsSummary": "WRITE document.cookie return-to (InstallableAppCard.tsx L56) -> READ cookies.get('return-to') (proxy.ts L83) -> NextResponse.redirect(new URL(...)) (proxy.ts L86)"
+            "sanitizersEncountered": [],
+            "intermediateHopsSummary": "WRITE document.cookie return-to from same-origin window.location.href (InstallableAppCard.tsx L56) -> READ cookies.get('return-to') (proxy.ts L83) -> sink NextResponse.redirect(new URL(returnTo.value, request.url)) (proxy.ts L86); attacker-controlled cross-origin write leg not proven"
           }
         },
         {
@@ -1175,7 +1089,7 @@
           "ruleId": "CWE-807",
           "level": "note",
           "message": {
-            "text": "Untrusted-input-in-security-decision candidate: a spoofable X-Forwarded-For header is used as the forgot-password rate-limit identifier; demoted because it gates rate-limiting (not access) and reflects the standard serverless IP-extraction tradeoff."
+            "text": "Untrusted-input-in-security-decision candidate: a spoofable client-IP header (cf-connecting-ip / x-real-ip, read by getIP()) is used as the forgot-password rate-limit identifier; demoted because it gates rate-limiting (not access) and reflects the standard serverless IP-extraction tradeoff behind a trusted proxy/CDN."
           },
           "locations": [
             {
@@ -1199,14 +1113,44 @@
                       "location": {
                         "physicalLocation": {
                           "artifactLocation": {
-                            "uri": "apps/web/app/api/auth/forgot-password/route.ts"
+                            "uri": "packages/lib/getIP.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "source: request.headers.get(\"cf-connecting-ip\") \u2014 client-supplied, spoofable unless overwritten by a trusted proxy"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/getIP.ts"
                           },
                           "region": {
                             "startLine": 21
                           }
                         },
                         "message": {
-                          "text": "source: forwardedFor = req.headers.get('x-forwarded-for') \u2014 client-spoofable"
+                          "text": "hop: fallback to request.headers.get(\"x-real-ip\") \u2014 likewise client-spoofable"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/getIP.ts"
+                          },
+                          "region": {
+                            "startLine": 7
+                          }
+                        },
+                        "message": {
+                          "text": "hop: parseIpFromHeaders(xff) returns the first header value as the client IP (getIP returns it at L24)"
                         }
                       }
                     },
@@ -1217,11 +1161,11 @@
                             "uri": "apps/web/app/api/auth/forgot-password/route.ts"
                           },
                           "region": {
-                            "startLine": 23
+                            "startLine": 20
                           }
                         },
                         "message": {
-                          "text": "hop: ip = forwardedFor.split(',').at(0)"
+                          "text": "hop: ip = getIP(req) ?? email.data \u2014 the spoofable header value becomes the identifier (the ?? fallback is dead because getIP never returns nullish)"
                         }
                       }
                     },
@@ -1236,7 +1180,7 @@
                           }
                         },
                         "message": {
-                          "text": "sink: checkRateLimitAndThrowError({ identifier: `forgotPassword:${piiHasher.hash(ip)}` })"
+                          "text": "sink: checkRateLimitAndThrowError({ identifier: `forgotPassword:${piiHasher.hash(ip)}` }) \u2014 per-identifier rate-limit decision"
                         }
                       }
                     }
@@ -1247,10 +1191,10 @@
           ],
           "properties": {
             "gateBlocking": false,
-            "exploitScenario": "An attacker varies the X-Forwarded-For header to evade per-IP rate limiting on forgot-password. This is a throttle-evasion (DoS-class) issue, not an authentication/authorization bypass; it reflects the standard serverless approach to obtaining client IP behind a proxy/CDN, so it is a non-blocking note.",
+            "exploitScenario": "An attacker varies the cf-connecting-ip / x-real-ip header (the inputs getIP() reads) to evade per-IP rate limiting on forgot-password. This is throttle-evasion (DoS-class), not an authentication/authorization bypass; behind the expected trusted proxy/CDN these headers are overwritten, and the codepath reflects the standard serverless approach to obtaining client IP, so it is recorded as a non-blocking note.",
             "confidence": "low",
             "sanitizersEncountered": [],
-            "intermediateHopsSummary": "x-forwarded-for header (L21) -> split first value (L23) -> rate-limit identifier (L26-29)"
+            "intermediateHopsSummary": "cf-connecting-ip header (getIP.ts L17) -> x-real-ip fallback (getIP.ts L21) -> parseIpFromHeaders first value (getIP.ts L7) -> ip = getIP(req) (forgot-password/route.ts L20) -> rate-limit identifier (forgot-password/route.ts L26-29)"
           }
         },
         {
@@ -1540,86 +1484,20 @@
           }
         },
         {
-          "ruleId": "CWE-862",
-          "level": "note",
-          "message": {
-            "text": "Missing-authorization candidate: markHostAsNoShow is an unauthenticated publicProcedure that marks a host no-show given only a bookingUid; demoted because it is intentionally public by design (gated by knowledge of the high-entropy bookingUid) per the in-code documentation."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
-                },
-                "region": {
-                  "startLine": 11,
-                  "endLine": 19
-                }
-              }
-            }
-          ],
-          "codeFlows": [
-            {
-              "threadFlows": [
-                {
-                  "locations": [
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
-                          },
-                          "region": {
-                            "startLine": 12
-                          }
-                        },
-                        "message": {
-                          "text": "source: input.bookingUid from the unauthenticated publicProcedure (no auth context)"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
-                          },
-                          "region": {
-                            "startLine": 14
-                          }
-                        },
-                        "message": {
-                          "text": "sink: handleMarkHostNoShow({ bookingUid, noShowHost }) \u2014 state change marking the host no-show"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ],
-          "properties": {
-            "gateBlocking": false,
-            "exploitScenario": "Anyone who knows a booking's UID can mark its host as no-show without authentication. The endpoint is intentionally public (attendees who are not Cal users use it via an email link), gated by knowledge of the high-entropy bookingUid (capability-URL pattern), and the state change is low-severity (no-show flag / SMS-credit accounting). The in-code comment explicitly documents this as a known anonymous public endpoint, so it is recorded as a non-blocking note rather than a blocking finding.",
-            "confidence": "low",
-            "sanitizersEncountered": [],
-            "intermediateHopsSummary": "publicProcedure input.bookingUid (markHostAsNoShow.handler.ts L12) -> handleMarkHostNoShow state change (L14)"
-          }
-        },
-        {
           "ruleId": "CWE-918",
-          "level": "note",
+          "level": "error",
           "message": {
-            "text": "SSRF candidate: a user-supplied CalDAV server URL is stored and used for server-side DAV requests; demoted as an authenticated, intentional connect-your-own-server feature with no app-store SSRF allowlist."
+            "text": "SSRF: a user-supplied CalDAV server URL from req.body flows unsanitized into server-side DAV network requests. An authenticated user POSTs an arbitrary `url` to the CalDAV add handler; it is used to build the calendar service and `listCalendars()` is invoked synchronously in the same request, issuing server-side `createAccount` and `fetchCalendars` requests to the attacker-controlled host. No URL allowlist or SSRF validation is applied anywhere on the path."
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "packages/app-store/caldavcalendar/lib/CalendarService.ts"
+                  "uri": "packages/lib/CalendarService.ts"
                 },
                 "region": {
-                  "startLine": 7
+                  "startLine": 1058,
+                  "endLine": 1066
                 }
               }
             }
@@ -1640,7 +1518,7 @@
                           }
                         },
                         "message": {
-                          "text": "source: url = req.body \u2014 user-supplied CalDAV server URL"
+                          "text": "source: const { username, password, url } = req.body \u2014 user-supplied CalDAV server URL"
                         }
                       }
                     },
@@ -1655,7 +1533,22 @@
                           }
                         },
                         "message": {
-                          "text": "WRITE leg: credential persisted with the server URL"
+                          "text": "hop: url is packed into the credential key via symmetricEncrypt(JSON.stringify({ username, password, url }))"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 38
+                          }
+                        },
+                        "message": {
+                          "text": "hop: BuildCalendarService({ ...data }) constructs the CalDAV service from that credential"
                         }
                       }
                     },
@@ -1670,7 +1563,67 @@
                           }
                         },
                         "message": {
-                          "text": "sink: DAVClient performs server-side PROPFIND/REPORT to the stored serverUrl"
+                          "text": "hop: super(credential, \"caldav_calendar\") delegates to BaseCalendarService"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 405
+                          }
+                        },
+                        "message": {
+                          "text": "hop: base constructor decrypts the credential and assigns this.url = url || credentialURL (attacker URL becomes the instance target)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 44
+                          }
+                        },
+                        "message": {
+                          "text": "hop: await dav?.listCalendars() is called in-request, before any persistence and with no allowlist between source and sink"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 1059
+                          }
+                        },
+                        "message": {
+                          "text": "sink: getAccount() -> createAccount({ serverUrl: this.url }) issues a server-side request to the attacker-controlled host"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 859
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetchCalendars({ account, headers }) issues a further server-side request to the attacker-controlled server"
                         }
                       }
                     }
@@ -1680,11 +1633,11 @@
             }
           ],
           "properties": {
-            "gateBlocking": false,
-            "exploitScenario": "An authenticated user connects a CalDAV account with an internal server URL, causing server-side DAV requests to that target. This is the intended connect-your-own-server behaviour where the user controls their own target; responses are not reflected (blind/semi-blind), so it is recorded as a non-blocking note rather than a proven exploit.",
-            "confidence": "low",
+            "gateBlocking": true,
+            "exploitScenario": "An authenticated user (self-signup is available on many deployments) submits a CalDAV `url` pointing at an internal address (e.g. http://169.254.169.254/ or an internal-only service). add.ts builds the CalDAV service from that URL and calls listCalendars() synchronously in the same request, causing getAccount()->createAccount({ serverUrl }) and fetchCalendars() to issue server-side HTTP(S)/DAV requests to the attacker-chosen host. No allowlist constrains the host, enabling SSRF against internal infrastructure. Authentication only gates who can trigger the request and is not an SSRF control.",
+            "confidence": "high",
             "sanitizersEncountered": [],
-            "intermediateHopsSummary": "req.body url (add.ts L12) -> credential persist (add.ts L27) -> DAVClient server-side request (CalendarService.ts L7)"
+            "intermediateHopsSummary": "req.body url (add.ts L12) -> embedded in encrypted credential key (add.ts L27) -> BuildCalendarService (add.ts L38) -> super() wrapper ctor (caldavcalendar/lib/CalendarService.ts L7) -> base ctor this.url = url (packages/lib/CalendarService.ts L405) -> listCalendars() in-request (add.ts L44) -> createAccount({ serverUrl: this.url }) (packages/lib/CalendarService.ts L1059) and fetchCalendars() (L859) server-side requests"
           }
         },
         {
@@ -2001,8 +1954,8 @@
             ],
             "candidatesAfterTriage": 46,
             "blockingFindings": 0,
-            "nonBlockingNotes": 5,
-            "ruledOut": 41,
+            "nonBlockingNotes": 4,
+            "ruledOut": 42,
             "ruledOutReasons": [
               "payment-redirect routes resolve origin to a fixed WEBAPP_URL via new URL(fixedPath, WEBAPP_URL)",
               "avatar/[uuid] uses AVATAR_FALLBACK + WEBAPP_URL constants",
@@ -2010,7 +1963,8 @@
               "teams/create and teams/[team]/upgrade use WEBAPP_URL + server-derived ids",
               "googleworkspace/callback passes through the getSafeRedirectUrl allowlist sanitizer",
               "verify-booking-token and link routes use new URL('/booking/'+uid, request.url) forcing a same-origin path",
-              "20 client-side window.location navigation writes carry no inline untrusted query param; post-install redirects pass through getSafeRedirectUrl (68 app-store callers)"
+              "20 client-side window.location navigation writes carry no inline untrusted query param; post-install redirects pass through getSafeRedirectUrl (68 app-store callers)",
+              "OAuth2 error-redirect path (oauth2-error.service.ts handleAuthorizeError -> OAuthService.buildErrorRedirectUrl -> OAuth2RedirectException -> oauth2-redirect-exception.filter.ts response.redirect(303)) is unreachable: handleAuthorizeError has no caller in the repository and is the sole throw site of OAuth2RedirectException, so no request-controlled redirect_uri reaches the 303 redirect sink. The reachable OAuth2 authorize/token paths validate redirect_uri via validateRedirectUri strict-equality against the registered client.redirectUri (mismatch -> non-redirectable redirect_uri_mismatch), and the controller invokes only handleTokenError (which throws OAuth2HttpException, not a redirect)."
             ],
             "status": "complete"
           },
@@ -2045,8 +1999,8 @@
               "packages/prisma"
             ],
             "candidatesAfterTriage": 45,
-            "blockingFindings": 0,
-            "nonBlockingNotes": 3,
+            "blockingFindings": 1,
+            "nonBlockingNotes": 2,
             "ruledOut": 42,
             "ruledOutReasons": [
               "163 fetch() calls use hardcoded literal/template provider API base URLs (not untrusted)",
@@ -2446,14 +2400,15 @@
             ],
             "candidatesAfterTriage": 33,
             "blockingFindings": 0,
-            "nonBlockingNotes": 1,
-            "ruledOut": 32,
+            "nonBlockingNotes": 0,
+            "ruledOut": 33,
             "ruledOutReasons": [
               "v1 routes enforce auth via the global verifyApiKey middleware plus per-resource _auth-middleware ownership checks and isSystemWideAdmin gating",
               "73 of 78 v2 controllers apply @UseGuards (ApiAuthGuard/PermissionsGuard/RolesGuard + ownership guards)",
               "the 5 unguarded v2 controllers are intentionally public (slots reserve/available, routing-form submit, OAuth2 authorize, timezones, health)",
               "all 37 publicProcedure usages are intentionally-public surfaces (public booking-page slots, signup/email verification, i18n, timezones, public profiles, feature flags)",
-              "v1 index.ts (welcome message) and docs.ts (OpenAPI spec) are intentionally public; event-types/_utils/* are authorization helper functions, not resource endpoints"
+              "v1 index.ts (welcome message) and docs.ts (OpenAPI spec) are intentionally public; event-types/_utils/* are authorization helper functions, not resource endpoints",
+              "markHostAsNoShow (packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts) is an intentionally-public anonymous publicProcedure: the in-code comment (L9-L10) explicitly documents it as a 'completely anonymous and public endpoint' used by non-Cal attendees via an email link, gated by knowledge of the high-entropy bookingUid (capability-URL pattern). Per the CWE-862 misclassification guard, intentionally-public endpoints are recorded in ruledOut rather than emitted as findings."
             ],
             "status": "complete"
           }

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cal.com Security Audit — Executive Summary</title>
-  <!-- Inline data-URI favicon (self-contained; no local file) to avoid a 404 request. -->
+  <!-- Favicon (inline data URI) -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Crect%20width='24'%20height='24'%20rx='5'%20fill='%235B39F3'/%3E%3Cpath%20d='M12%206l4%202v3c0%202.5-1.7%204.3-4%205-2.3-.7-4-2.5-4-5V8z'%20fill='%2394FAD5'/%3E%3C/svg%3E">
 
   <!-- Google Fonts: Inter (body), Space Grotesk (display), Fira Code (mono / eyebrows) -->
@@ -12,16 +12,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- reveal.js core CSS (pinned 5.1.0). No prebuilt reveal theme is loaded; the inline Blitzy theme below must win. -->
+  <!-- reveal.js core CSS (pinned 5.1.0) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 
   <style>
     /* ============================================================
-       BLITZY EXECUTIVE DECK THEME (inlined — self-contained)
-       The canonical Blitzy reveal theme stylesheet is an internal
-       reference that is not present in this repository, so its brand
-       tokens are embedded here directly to honor the self-contained,
-       no-build-step, no-local-dependency requirement (AAP 0.7.2).
+       BLITZY EXECUTIVE DECK THEME (inlined)
        ============================================================ */
     :root {
       /* Brand palette (exact hex) */
@@ -155,7 +151,7 @@
       background: rgba(148,250,213,0.10);
     }
 
-    /* Slide number + nav controls — legible on both light and dark slides */
+    /* Slide number + nav controls */
     .reveal .slide-number {
       background: rgba(26,16,95,0.55);
       color: #FFFFFF;
@@ -339,8 +335,7 @@
       max-width: 1500px;
       font-size: 16px;
     }
-    /* Scale the diagram up to fill the slide; height:auto preserves aspect ratio.
-       !important overrides Mermaid's inline max-width from useMaxWidth. */
+    /* Mermaid SVG sizing */
     .reveal pre.mermaid svg {
       max-width: 100% !important;
       width: auto;
@@ -349,7 +344,7 @@
       display: block;
       margin: 0 auto;
     }
-    /* Render SVG labels in Inter to match the font Mermaid measured with. */
+    /* Mermaid SVG label font */
     .reveal pre.mermaid svg text,
     .reveal pre.mermaid .nodeLabel,
     .reveal pre.mermaid foreignObject div,
@@ -383,6 +378,11 @@
       padding: 6px 14px;
       border-radius: 999px;
     }
+
+    /* Spacing & layout utilities (named, reusable — replace ad-hoc inline styles) */
+    .pill-row.is-wide { gap: 18px; }
+    .mt-26 { margin-top: 26px; }
+    .mt-32 { margin-top: 32px; }
   </style>
 </head>
 <body>
@@ -392,12 +392,12 @@
       <!-- ========== SLIDE 1 — TITLE ========== -->
       <section class="slide-title" data-background-gradient="linear-gradient(135deg, #1A105F 0%, #2D1C77 58%, #4101DB 100%)">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="shield-check"></i> Confidential — Leadership Briefing</div>
+          <div class="eyebrow"><i data-lucide="shield-check" aria-hidden="true"></i> Confidential — Leadership Briefing</div>
           <h1>Cal.com Security Audit</h1>
           <div class="subtitle">Four-Layer Assessment — read-only architectural and automated measurement</div>
           <div class="accent-rule"></div>
           <div class="meta">
-            <span class="hero-badge"><i data-lucide="file-check"></i> 0 application files modified</span>
+            <span class="hero-badge"><i data-lucide="file-check" aria-hidden="true"></i> 0 application files modified</span>
             <span>Semgrep 1.164.0</span>
             <span>OSV-Scanner 2.3.8</span>
             <span>Blitzy native L1 / L3</span>
@@ -408,13 +408,13 @@
       <!-- ========== SLIDE 2 — AT A GLANCE (KPI) — beat a ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="gauge"></i> Executive Summary — At a Glance</div>
+          <div class="eyebrow"><i data-lucide="gauge" aria-hidden="true"></i> Executive Summary — At a Glance</div>
           <h2>A complete, read-only security measurement</h2>
           <div class="kpi-grid">
-            <div class="kpi-card"><i data-lucide="layers" class="icon-lg kpi-icon"></i><div class="kpi-num">4</div><div class="kpi-label">Detection layers</div></div>
-            <div class="kpi-card"><i data-lucide="file-json" class="icon-lg kpi-icon"></i><div class="kpi-num">9</div><div class="kpi-label">Net-new deliverables</div></div>
-            <div class="kpi-card"><i data-lucide="file-check" class="icon-lg kpi-icon"></i><div class="kpi-num accent">0</div><div class="kpi-label">Application files modified</div></div>
-            <div class="kpi-card"><i data-lucide="search-check" class="icon-lg kpi-icon"></i><div class="kpi-num">400</div><div class="kpi-label">Findings catalogued</div></div>
+            <div class="kpi-card"><i data-lucide="layers" class="icon-lg kpi-icon" aria-hidden="true"></i><div class="kpi-num">4</div><div class="kpi-label">Detection layers</div></div>
+            <div class="kpi-card"><i data-lucide="file-json" class="icon-lg kpi-icon" aria-hidden="true"></i><div class="kpi-num">9</div><div class="kpi-label">Net-new deliverables</div></div>
+            <div class="kpi-card"><i data-lucide="file-check" class="icon-lg kpi-icon" aria-hidden="true"></i><div class="kpi-num accent">0</div><div class="kpi-label">Application files modified</div></div>
+            <div class="kpi-card"><i data-lucide="search-check" class="icon-lg kpi-icon" aria-hidden="true"></i><div class="kpi-num">400</div><div class="kpi-label">Findings catalogued</div></div>
           </div>
           <ul class="bullets">
             <li>Layers measure architecture, patterns, dataflow, and dependencies.</li>
@@ -426,7 +426,7 @@
       <!-- ========== SLIDE 3 — DIVIDER: What We Did ========== -->
       <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
         <div class="slide-pad">
-          <i data-lucide="search-check" class="icon-xl divider-icon"></i>
+          <i data-lucide="search-check" class="icon-xl divider-icon" aria-hidden="true"></i>
           <div class="divider-index">Section 01</div>
           <h2>What We Did</h2>
         </div>
@@ -435,17 +435,17 @@
       <!-- ========== SLIDE 4 — AUDIT SCOPE (table) — beat a ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="scan-line"></i> Scope</div>
-          <h2>Five security zones, one monorepo</h2>
+          <div class="eyebrow"><i data-lucide="scan-line" aria-hidden="true"></i> Scope</div>
+          <h2>Five zones, one monorepo</h2>
           <div class="blitzy-table-wrap">
             <table class="blitzy-table">
-              <thead><tr><th>Security zone</th><th>Audit surface</th><th>Scale</th></tr></thead>
+              <thead><tr><th scope="col">Security zone</th><th scope="col">Scale</th></tr></thead>
               <tbody>
-                <tr><td><span class="zone-name">Application source</span></td><td><code>apps/**</code> + <code>packages/**</code> TS / JS</td><td>~7,440 files</td></tr>
-                <tr><td><span class="zone-name">Configuration &amp; secrets</span></td><td><code>.env*.example</code> + <code>.yarnrc.yml</code></td><td>8 templates</td></tr>
-                <tr><td><span class="zone-name">Container images</span></td><td>root + API v2 <code>Dockerfile</code></td><td>2 images</td></tr>
-                <tr><td><span class="zone-name">CI / CD pipelines</span></td><td><code>.github/workflows</code></td><td>59 workflows</td></tr>
-                <tr><td><span class="zone-name">Dependencies</span></td><td><code>yarn.lock</code> supply chain</td><td>1 lockfile</td></tr>
+                <tr><td><span class="zone-name">Application source</span></td><td>~7,440 files</td></tr>
+                <tr><td><span class="zone-name">Configuration &amp; secrets</span></td><td>8 templates</td></tr>
+                <tr><td><span class="zone-name">Container images</span></td><td>2 images</td></tr>
+                <tr><td><span class="zone-name">CI / CD pipelines</span></td><td>59 workflows</td></tr>
+                <tr><td><span class="zone-name">Dependencies</span></td><td>1 lockfile</td></tr>
               </tbody>
             </table>
           </div>
@@ -455,17 +455,17 @@
       <!-- ========== SLIDE 5 — FOUR-LAYER METHODOLOGY (mermaid) — beat a ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="layers"></i> Methodology</div>
+          <div class="eyebrow"><i data-lucide="layers" aria-hidden="true"></i> Methodology</div>
           <h2>Four complementary detection layers</h2>
 <pre class="mermaid">
 flowchart LR
-L1["L1 Blitzy Architectural"] --> F1["findings-layer-1-blitzy.json"]
-L2["L2 Semgrep SAST"] --> F2["findings-layer-2-semgrep.json"]
-L3["L3 Blitzy Taint"] --> F3["findings-layer-3-blitzy-taint.json"]
-L4["L4 OSV-Scanner SCA"] --> F4["findings-layer-4-osv.json"]
+L1["L1 Architectural"] --> M["Normalize + Merge"]
+L2["L2 Semgrep"] --> M
+L3["L3 Taint"] --> M
+L4["L4 OSV"] --> M
 </pre>
           <ul class="bullets">
-            <li>L1 and L3 are native Blitzy reasoning; L2 Semgrep; L4 OSV-Scanner.</li>
+            <li>L1 / L3 native reasoning; L2 Semgrep, L4 OSV are CLI scanners.</li>
           </ul>
         </div>
       </section>
@@ -473,7 +473,7 @@ L4["L4 OSV-Scanner SCA"] --> F4["findings-layer-4-osv.json"]
       <!-- ========== SLIDE 6 — DIVIDER: Why It Matters ========== -->
       <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
         <div class="slide-pad">
-          <i data-lucide="target" class="icon-xl divider-icon"></i>
+          <i data-lucide="target" class="icon-xl divider-icon" aria-hidden="true"></i>
           <div class="divider-index">Section 02</div>
           <h2>Why It Matters</h2>
         </div>
@@ -482,13 +482,13 @@ L4["L4 OSV-Scanner SCA"] --> F4["findings-layer-4-osv.json"]
       <!-- ========== SLIDE 7 — BUSINESS VALUE (icon list) — beat b ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="trending-up"></i> Business Value</div>
+          <div class="eyebrow"><i data-lucide="trending-up" aria-hidden="true"></i> Business Value</div>
           <h2>Assurance that compounds</h2>
           <ul class="icon-list">
-            <li><span class="li-icon"><i data-lucide="shield-check"></i></span><span class="li-body"><div class="li-title">Risk reduction</div><div class="li-sub">Exposure quantified, not assumed.</div></span></li>
-            <li><span class="li-icon"><i data-lucide="clipboard-check"></i></span><span class="li-body"><div class="li-title">Compliance signal</div><div class="li-sub">Evidence for audits and reviews.</div></span></li>
-            <li><span class="li-icon"><i data-lucide="package"></i></span><span class="li-body"><div class="li-title">Supply-chain visibility</div><div class="li-sub">Known CVEs surfaced.</div></span></li>
-            <li><span class="li-icon"><i data-lucide="repeat"></i></span><span class="li-body"><div class="li-title">Repeatable evidence</div><div class="li-sub">Deterministic, re-runnable artifacts.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="shield-check" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Risk reduction</div><div class="li-sub">Exposure quantified, not assumed.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="clipboard-check" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Compliance signal</div><div class="li-sub">Evidence for audits and reviews.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="package" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Supply-chain visibility</div><div class="li-sub">Known CVEs surfaced.</div></span></li>
+            <li><span class="li-icon"><i data-lucide="repeat" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Repeatable evidence</div><div class="li-sub">Deterministic, re-runnable artifacts.</div></span></li>
           </ul>
         </div>
       </section>
@@ -496,7 +496,7 @@ L4["L4 OSV-Scanner SCA"] --> F4["findings-layer-4-osv.json"]
       <!-- ========== SLIDE 8 — DIVIDER: What Changed Architecturally ========== -->
       <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
         <div class="slide-pad">
-          <i data-lucide="workflow" class="icon-xl divider-icon"></i>
+          <i data-lucide="workflow" class="icon-xl divider-icon" aria-hidden="true"></i>
           <div class="divider-index">Section 03</div>
           <h2>What Changed Architecturally</h2>
         </div>
@@ -505,18 +505,18 @@ L4["L4 OSV-Scanner SCA"] --> F4["findings-layer-4-osv.json"]
       <!-- ========== SLIDE 9 — AUDIT PIPELINE (mermaid) — beat c ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="workflow"></i> Audit Pipeline — Component View</div>
+          <div class="eyebrow"><i data-lucide="workflow" aria-hidden="true"></i> Audit Pipeline</div>
           <h2>A deterministic, read-only pipeline</h2>
 <pre class="mermaid">
 flowchart LR
-A["A. Acquire and Configure"] --> BE["B-E. Four Layer Scans"]
-BE --> F["F. Normalize"]
-F --> G["G. Merge"]
-G --> H["H. Document"]
-H --> I["I. Verify Gate"]
+A["Configure"] --> BE["Four Scans"]
+BE --> F["Normalize"]
+F --> G["Merge"]
+G --> H["Document"]
+H --> V["Verify"]
 </pre>
           <ul class="bullets">
-            <li>Application source is consumed read-only; only deliverables are written.</li>
+            <li>Source is read-only; only deliverables are written.</li>
           </ul>
         </div>
       </section>
@@ -524,16 +524,15 @@ H --> I["I. Verify Gate"]
       <!-- ========== SLIDE 10 — DATA FLOW (mermaid) — beat c ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="git-branch"></i> Data Flow — Inputs to Artifacts</div>
-          <h2>From read-only inputs to one merged report</h2>
+          <div class="eyebrow"><i data-lucide="git-branch" aria-hidden="true"></i> Data Flow</div>
+          <h2>Inputs to one merged report</h2>
 <pre class="mermaid">
 flowchart LR
-SRC["Read-only inputs"] --> LYR["Four detection layers"]
-LYR --> INT["SARIF / OSV intermediates"]
-INT --> NORM["Normalized layer files"]
+SRC["Inputs"] --> LYR["Four layers"]
+LYR --> INT["SARIF / OSV"]
+INT --> NORM["Normalized"]
 LYR --> NORM
-NORM --> MERGED["findings-merged.json"]
-MERGED --> DOC["Decision log and deck"]
+NORM --> MERGED["Merged report"]
 </pre>
           <ul class="bullets">
             <li>The merged report leads with a <code>_summary</code> header.</li>
@@ -544,17 +543,17 @@ MERGED --> DOC["Decision log and deck"]
       <!-- ========== SLIDE 11 — FIVE SECURITY ZONES (table) — beat c ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="shield"></i> Coverage</div>
-          <h2>Five zones, mapped to weakness families</h2>
+          <div class="eyebrow"><i data-lucide="shield" aria-hidden="true"></i> Coverage</div>
+          <h2>Zones mapped to weakness families</h2>
           <div class="blitzy-table-wrap">
             <table class="blitzy-table">
-              <thead><tr><th>Security zone</th><th>Representative CWE families</th></tr></thead>
+              <thead><tr><th scope="col">Security zone</th><th scope="col">Example CWE family</th></tr></thead>
               <tbody>
-                <tr><td><span class="zone-name">Application source</span></td><td>CWE-327 / 326, 1021 / 79, 601, 918, 117, 338</td></tr>
-                <tr><td><span class="zone-name">Configuration &amp; secrets</span></td><td>CWE-798 hardcoded credentials</td></tr>
-                <tr><td><span class="zone-name">Container images</span></td><td>CWE-250 / 552, 798 / 1188</td></tr>
-                <tr><td><span class="zone-name">CI / CD pipelines</span></td><td>CWE-1357 / 829, 78</td></tr>
-                <tr><td><span class="zone-name">Dependencies</span></td><td>Known transitive CVEs (OSV)</td></tr>
+                <tr><td><span class="zone-name">Application source</span></td><td>CWE-327, 601, 918</td></tr>
+                <tr><td><span class="zone-name">Configuration &amp; secrets</span></td><td>CWE-798</td></tr>
+                <tr><td><span class="zone-name">Container images</span></td><td>CWE-250, 798</td></tr>
+                <tr><td><span class="zone-name">CI / CD pipelines</span></td><td>CWE-1357</td></tr>
+                <tr><td><span class="zone-name">Dependencies</span></td><td>Transitive CVEs</td></tr>
               </tbody>
             </table>
           </div>
@@ -564,7 +563,7 @@ MERGED --> DOC["Decision log and deck"]
       <!-- ========== SLIDE 12 — DIVIDER: Risks & Mitigations ========== -->
       <section class="slide-divider" data-background-gradient="linear-gradient(120deg, #5B39F3 0%, #4101DB 100%)">
         <div class="slide-pad">
-          <i data-lucide="alert-triangle" class="icon-xl divider-icon"></i>
+          <i data-lucide="alert-triangle" class="icon-xl divider-icon" aria-hidden="true"></i>
           <div class="divider-index">Section 04</div>
           <h2>Risks &amp; Mitigations</h2>
         </div>
@@ -573,21 +572,21 @@ MERGED --> DOC["Decision log and deck"]
       <!-- ========== SLIDE 13 — FINDINGS BY SEVERITY & LAYER (KPI + chips) — beat d ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="bar-chart-3"></i> Findings Profile</div>
+          <div class="eyebrow"><i data-lucide="bar-chart-3" aria-hidden="true"></i> Findings Profile</div>
           <h2>400 findings by severity and layer</h2>
-          <div class="pill-row" style="gap:18px; margin-top:26px;">
+          <div class="pill-row is-wide mt-26">
             <span class="chip chip-critical"><span class="chip-count">19</span> Critical</span>
             <span class="chip chip-high"><span class="chip-count">113</span> High</span>
             <span class="chip chip-medium"><span class="chip-count">157</span> Medium</span>
             <span class="chip chip-low"><span class="chip-count">111</span> Low</span>
           </div>
-          <div class="kpi-grid" style="margin-top:32px;">
+          <div class="kpi-grid mt-32">
             <div class="kpi-card"><div class="kpi-num">153</div><div class="kpi-label">Layer 1 — Architectural</div></div>
             <div class="kpi-card"><div class="kpi-num">34</div><div class="kpi-label">Layer 2 — Semgrep</div></div>
             <div class="kpi-card"><div class="kpi-num">49</div><div class="kpi-label">Layer 3 — Taint</div></div>
             <div class="kpi-card"><div class="kpi-num">164</div><div class="kpi-label">Layer 4 — OSV</div></div>
           </div>
-          <ul class="bullets" style="margin-top:26px;">
+          <ul class="bullets mt-26">
             <li>7 findings cross-layer corroborated; 5 composite escalations.</li>
           </ul>
         </div>
@@ -596,18 +595,17 @@ MERGED --> DOC["Decision log and deck"]
       <!-- ========== SLIDE 14 — TOP RISK THEMES AND MITIGATIONS (table) — beat d ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="alert-triangle"></i> Top Risk Themes</div>
-          <h2>Representative risks and recommended fixes</h2>
-          <div class="lead-sub">The audit recommends; remediation remains the team's decision.</div>
+          <div class="eyebrow"><i data-lucide="alert-triangle" aria-hidden="true"></i> Risk Themes</div>
+          <h2>Top risks and fixes</h2>
           <div class="blitzy-table-wrap">
             <table class="blitzy-table">
-              <thead><tr><th>Risk theme</th><th>CWE</th><th>Recommended mitigation</th></tr></thead>
+              <thead><tr><th scope="col">Risk</th><th scope="col">CWE</th><th scope="col">Fix</th></tr></thead>
               <tbody>
-                <tr><td>Default secrets baked into image</td><td><code>CWE-798</code></td><td>Externalize secrets to runtime</td></tr>
-                <tr><td>CSP allows unsafe-inline / unsafe-eval</td><td><code>CWE-1021 / 79</code></td><td>Tighten Content-Security-Policy</td></tr>
-                <tr><td>Containers run as root</td><td><code>CWE-250</code></td><td>Add a non-root <code>USER</code></td></tr>
-                <tr><td>Weak AES-CBC and key reuse</td><td><code>CWE-327 / 323</code></td><td>Authenticated encryption, key separation</td></tr>
-                <tr><td>Mutable CI action tags</td><td><code>CWE-1357</code></td><td>Pin actions to commit SHAs</td></tr>
+                <tr><td>Image secrets</td><td><code>CWE-798</code></td><td>Externalize</td></tr>
+                <tr><td>CSP unsafe-inline</td><td><code>CWE-1021</code></td><td>Tighten</td></tr>
+                <tr><td>Root containers</td><td><code>CWE-250</code></td><td>Add USER</td></tr>
+                <tr><td>Weak AES-CBC</td><td><code>CWE-327</code></td><td>Authenticated crypto</td></tr>
+                <tr><td>Mutable CI tags</td><td><code>CWE-1357</code></td><td>Pin SHAs</td></tr>
               </tbody>
             </table>
           </div>
@@ -617,13 +615,13 @@ MERGED --> DOC["Decision log and deck"]
       <!-- ========== SLIDE 15 — ONBOARDING & CONTINUATION (icon list) — beat e ========== -->
       <section class="slide-content" data-background-color="#FBFAFF">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="compass"></i> Onboarding &amp; Continuation</div>
+          <div class="eyebrow"><i data-lucide="compass" aria-hidden="true"></i> Onboarding &amp; Continuation</div>
           <h2>How the team picks this up</h2>
           <ul class="icon-list">
-            <li><span class="li-icon"><i data-lucide="folder"></i></span><span class="li-body"><div class="li-title">Where artifacts live</div><div class="li-sub"><code>findings-*.json</code>, <code>decision-log.md</code>, this deck</div></span></li>
-            <li><span class="li-icon"><i data-lucide="refresh-cw"></i></span><span class="li-body"><div class="li-title">Re-run any time</div><div class="li-sub">Semgrep and OSV-Scanner, metrics off</div></span></li>
-            <li><span class="li-icon"><i data-lucide="file-json"></i></span><span class="li-body"><div class="li-title">Single source of truth</div><div class="li-sub"><code>findings-merged.json</code> drives KPIs</div></span></li>
-            <li><span class="li-icon"><i data-lucide="flag"></i></span><span class="li-body"><div class="li-title">Next phase</div><div class="li-sub">Remediation is the team's work</div></span></li>
+            <li><span class="li-icon"><i data-lucide="folder" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Where artifacts live</div><div class="li-sub"><code>findings-*.json</code>, <code>decision-log.md</code>, this deck</div></span></li>
+            <li><span class="li-icon"><i data-lucide="refresh-cw" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Re-run any time</div><div class="li-sub">Semgrep and OSV-Scanner, metrics off</div></span></li>
+            <li><span class="li-icon"><i data-lucide="file-json" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Single source of truth</div><div class="li-sub"><code>findings-merged.json</code> drives KPIs</div></span></li>
+            <li><span class="li-icon"><i data-lucide="flag" aria-hidden="true"></i></span><span class="li-body"><div class="li-title">Next phase</div><div class="li-sub">Remediation is the team's work</div></span></li>
           </ul>
         </div>
       </section>
@@ -631,11 +629,11 @@ MERGED --> DOC["Decision log and deck"]
       <!-- ========== SLIDE 16 — CLOSING ========== -->
       <section class="slide-closing" data-background-gradient="linear-gradient(135deg, #1A105F 0%, #2D1C77 55%, #4101DB 100%)">
         <div class="slide-pad">
-          <div class="eyebrow"><i data-lucide="flag"></i> Next Steps</div>
+          <div class="eyebrow"><i data-lucide="flag" aria-hidden="true"></i> Next Steps</div>
           <h2>Measurement complete. Remediation begins.</h2>
           <div class="accent-rule"></div>
           <div class="lead">Triage the highest-severity, corroborated, and composite findings first, then work down the severity ladder.</div>
-          <div class="cta"><i data-lucide="arrow-right"></i> Start with the 19 critical and 7 corroborated findings</div>
+          <div class="cta"><i data-lucide="arrow-right" aria-hidden="true"></i> Start with the 19 critical and 7 corroborated findings</div>
         </div>
       </section>
 
@@ -649,12 +647,10 @@ MERGED --> DOC["Decision log and deck"]
   <!-- Mermaid 11.4.0 (ESM) + reveal init + visual wiring -->
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs';
-    // Expose so any non-module context could reach it if needed.
+    // Expose mermaid on window.
     window.mermaid = mermaid;
 
-    // startOnLoad:false is REQUIRED; themeVariables include the exact brand-mandated values.
-    // fontFamily is set to Inter so Mermaid MEASURES node boxes with the same font it
-    // RENDERS with (prevents label clipping); flowchart padding/spacing improves legibility.
+    // Mermaid initialization (brand theme variables).
     mermaid.initialize({
       startOnLoad: false,
       theme: 'base',
@@ -672,21 +668,20 @@ MERGED --> DOC["Decision log and deck"]
       }
     });
 
-    // Resolve when web fonts are loaded so Mermaid text measurement is accurate.
+    // Web font readiness.
     var fontsReady = Promise.resolve();
     if (document.fonts?.ready) {
       fontsReady = document.fonts.ready;
     }
 
-    // Materialize Lucide icons document-wide (icons do not require layout dimensions).
+    // Render Lucide icons.
     function renderIcons() {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
       }
     }
 
-    // Render only unprocessed Mermaid diagrams within the given scope (a visible slide),
-    // avoiding the "already processed" no-op and zero-size renders in hidden slides.
+    // Render unprocessed Mermaid diagrams in scope.
     function renderMermaid(scope) {
       var root = scope || document;
       var nodes = root.querySelectorAll('pre.mermaid:not([data-processed])');
@@ -700,13 +695,13 @@ MERGED --> DOC["Decision log and deck"]
     }
 
     function refreshVisuals(scope) {
-      // Icons need no layout metrics; render immediately.
+      // Render icons.
       renderIcons();
-      // Diagrams need accurate font metrics; render once fonts are ready.
+      // Render diagrams after fonts are ready.
       fontsReady.then(() => { renderMermaid(scope); });
     }
 
-    // reveal.js is UMD; guard until window.Reveal is present, then initialize.
+    // Initialize reveal.js once available.
     function initDeck() {
       if (!window.Reveal) {
         window.requestAnimationFrame(initDeck);
@@ -724,8 +719,7 @@ MERGED --> DOC["Decision log and deck"]
         viewDistance: 5
       });
 
-      // Render visuals after reveal is ready AND on every slide change so that
-      // diagrams/icons on lazily-shown slides are always materialized.
+      // Refresh visuals on ready and slidechanged.
       Reveal.on('ready', () => {
         refreshVisuals(Reveal.getCurrentSlide() || document);
       });

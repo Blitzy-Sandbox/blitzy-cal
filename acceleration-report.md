@@ -208,7 +208,7 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 - **Strict result:** `Insufficient signal — no time-tracking source`. Git does not record active working time.
 - **Proxy (reported):** median interval between consecutive commits by the same period population within an 8-hour session window. **Before:** 28.1 min. **After:** 28.6 min. **AI actor (Blitzy Agent):** 7.0 min. **Multiplier (before→after):** 1.02×.
 - **Confidence:** Low (inter-commit-interval proxy).
-- **Provenance.** Requirement: active time per actor before vs after → Command: extract commit author epochs, gate by the pivot epoch, compute consecutive gaps ≤ 8 h, take the median (§11.8) → Raw output: 11,365 intra-session gaps (before), 3,957 (after), 577 (AI actor) → Derived medians: 28.1 min; 28.6 min; 7.0 min → Reported: 28.1 → 28.6 min.
+- **Provenance.** Requirement: active time per actor before vs after → Command: extract commit author epochs, gate by the pivot epoch, compute consecutive gaps ≤ 8 h, take the median (§11.8) → Raw output: 11,363 intra-session gaps (before), 3,959 (after), 577 (AI actor) → Derived medians: 28.1 min; 28.6 min; 7.0 min → Reported: 28.1 → 28.6 min.
 - **Caveat (Low).** Inter-commit interval is a cadence proxy, not active coding time; commits do not bracket continuous work, and the 8-hour session threshold is a chosen heuristic. The AI actor's shorter median interval (7.0 min) reflects more frequent commits within sessions, not a direct measurement of effort.
 
 ### §5.5 M5 — Flow Efficiency
@@ -218,7 +218,7 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 - **Proxy (reported):** active-day density = distinct calendar days with at least one commit ÷ total days in the period (pivot-partition convention, §4.2). **Before:** 88.5% (1,318 ÷ 1,490). **After:** 80.6% (324 ÷ 402). **Multiplier:** 0.91×.
 - **Confidence:** Low (activity-density proxy).
 - **Provenance.** Requirement: ratio of active to elapsed time → Command: count distinct commit dates per range (epoch-gated), divide by the pivot-partition day count (§11.9, §4.2) → Raw output: 1,318 active days / 1,490 (before); 324 active days / 402 (after) → Derived: 88.5%; 80.6% → Reported: 88.5% → 80.6%.
-- **Actor framing (actor-perspective).** Computed from the AI actor's perspective, the Blitzy Agent has 23 distinct active days across its own 51-day participation span (first commit 2026-02-25 to last 2026-04-16), an active-day density of **45.1%** (23 ÷ 51). The AI actor's density is measured over its own participation span rather than the full Accelerated period, because the actor entered partway through the period; the figure is the actor-row counterpart to the period-wide densities above (§11.9).
+- **Actor framing (actor-perspective).** Computed from the AI actor's perspective, the Blitzy Agent has 23 distinct active days across its own 50-day participation span (first commit 2026-02-25 to last 2026-04-16; span = last − first = 50 days, the same date-difference convention used for the period durations in §4.2), an active-day density of **46.0%** (23 ÷ 50). The AI actor's density is measured over its own participation span rather than the full Accelerated period, because the actor entered partway through the period; the figure is the actor-row counterpart to the period-wide densities above (§11.9).
 - **Caveat (Low).** Active-day density measures how many days saw any commit, not the active-to-wait ratio of work items; it is not the strict definition. `.github/CODEOWNERS` (lines 41–47) exempts test files (`*.spec.*`, `*.test.*`, `*.test-suite.*`, `*.integration-test.*`) from review, which would affect any review-based "ready-for-review" timing were the PR API available.
 
 ### §5.6 M6 — Flow Distribution
@@ -461,7 +461,7 @@ No metric in this report carries a High confidence tag, because no direct issue-
 
 ### §9.1 Executive-presentation dependency exposure (CDN-pinned Mermaid)
 
-The sibling deliverable (`acceleration-report-executive-presentation.html`) loads three CDN-pinned libraries: reveal.js 5.1.0, Lucide 0.460.0, and Mermaid 11.4.0. The Mermaid pin `mermaid@11.4.0` (presentation line 735) falls within the affected version range of several GitHub-reviewed advisories. Each advisory, its fixed version, the diagram type whose code path it affects, and whether that code path is present in this deck are listed below.
+The sibling deliverable (`acceleration-report-executive-presentation.html`) loads three CDN-pinned libraries: reveal.js 5.1.0, Lucide 0.460.0, and Mermaid 11.4.0. The Mermaid pin `mermaid@11.4.0` (presentation line 744) falls within the affected version range of several GitHub-reviewed advisories. Each advisory, its fixed version, the diagram type whose code path it affects, and whether that code path is present in this deck are listed below.
 
 | Advisory | Type / sink | Severity | Affected → Fixed | Affected diagram type | Present in deck |
 |----------|-------------|----------|------------------|-----------------------|-----------------|
@@ -471,7 +471,7 @@ The sibling deliverable (`acceleration-report-executive-presentation.html`) load
 | CVE-2026-41148, CVE-2026-41159 | CSS injection — `classDefs` and configuration keys (`fontFamily`, `themeCSS`) | Moderate | < 11.15.0 → 11.15.0 | untrusted `classDef` / configuration input | No |
 | CVE-2026-41150 (GHSA-6m6c-36f7-fhxh) | Denial of service — Gantt `excludes` parsing loop (advisory maturity: no known exploit; not listed in CISA KEV) | Moderate | ≤ 11.14.0 → 11.15.0 | `gantt` `excludes` | No |
 
-The latest Mermaid release not subject to any of the above advisories is 11.15.0. None of the affected code paths is present in this deliverable. The deck contains two `pre.mermaid` blocks — a `flowchart LR` (presentation line 478) and an `xychart-beta` (presentation line 611) — and contains no `sequenceDiagram`, `architecture-beta`, `stateDiagram`, `gantt`, `classDef`, or KaTeX syntax. The `mermaid.initialize` call (presentation line 755) does not set `securityLevel`, so the default `strict` level applies, and it sets `htmlLabels: false`; the diagram source and the theme configuration are author-authored static content, and the file exposes no user-input channel. The absence of the affected code paths holds independent of each advisory's severity rating.
+The latest Mermaid release not subject to any of the above advisories is 11.15.0. None of the affected code paths is present in this deliverable. The deck contains two `pre.mermaid` blocks — a `flowchart LR` (presentation line 487) and an `xychart-beta` (presentation line 620) — and contains no `sequenceDiagram`, `architecture-beta`, `stateDiagram`, `gantt`, `classDef`, or KaTeX syntax. The `mermaid.initialize` call (presentation line 764) does not set `securityLevel`, so the default `strict` level applies, and it sets `htmlLabels: false`; the diagram source and the theme configuration are author-authored static content, and the file exposes no user-input channel. The absence of the affected code paths holds independent of each advisory's severity rating.
 
 The pin is retained at 11.4.0 because the Agent Action Plan specifies that exact version in §0.4.1 (Dependency Inventory) and in the Executive-Presentation rule (§0.8.2), and the no-dependency-change constraint (§0.4) applies; a change to 11.15.0 would require an Agent Action Plan revision and is outside the scope of this measurement (§0.3.2). Under that precedence (D1: explicit Agent Action Plan rules outrank a suggested resolution), the version is retained and this exposure is recorded here. The verification commands and advisory sources are in §11.15.
 
@@ -716,6 +716,10 @@ PY
 git log main --date=short --format='%at|%ad' | awk -v p=$P -F'|' '$1<p {print $2}'  | sort -u | wc -l   # 1318
 git log main --date=short --format='%at|%ad' | awk -v p=$P -F'|' '$1>=p {print $2}' | sort -u | wc -l   # 324
 # density = active_days / period_span_days : 1318/1490=88.5% ; 324/402=80.6%
+# Actor-perspective (AI actor, Blitzy Agent): distinct active days over the actor's own participation span
+git log main --author='agent@blitzy.com' --date=short --format='%ad' | sort -u | wc -l                 # 23 active days
+git log main --author='agent@blitzy.com' --date=short --format='%ad' | sort -u | sed -n '1p;$p'         # 2026-02-25 (first) ; 2026-04-16 (last)
+# actor span = last - first = 2026-04-16 - 2026-02-25 = 50 days (date-difference, §4.2 convention); density 23/50=46.0%
 ```
 
 ### §11.10 M7 — Flow Time proxy (§5.7)
@@ -852,18 +856,18 @@ The Mermaid version pinned in the presentation, the diagram types it renders, an
 ```bash
 # (1) CDN library versions referenced by the presentation
 grep -nE "(reveal\.js|lucide|mermaid)@[0-9]" acceleration-report-executive-presentation.html
-#   reveal.js@5.1.0 (lines 26, 27, 731); lucide@0.460.0 (line 732); mermaid@11.4.0 (line 735)
+#   reveal.js@5.1.0 (lines 26, 27, 740); lucide@0.460.0 (line 741); mermaid@11.4.0 (line 744)
 
 # (2) Mermaid diagram declarations present (first line of each pre.mermaid block)
 grep -nA1 '<pre class="mermaid">' acceleration-report-executive-presentation.html
-#   line 478: flowchart LR ; line 611: xychart-beta
+#   line 487: flowchart LR ; line 620: xychart-beta
 
 # (2b) Advisory-affected diagram types and KaTeX — absent (no matches; grep exit status 1)
 grep -nE "sequenceDiagram|stateDiagram|architecture-beta|gantt|classDef|katex|KaTeX" acceleration-report-executive-presentation.html
 
 # (3) Mermaid security configuration: default strict level; HTML labels disabled
 grep -nE "securityLevel|htmlLabels" acceleration-report-executive-presentation.html
-#   htmlLabels: false (lines 761, 762); securityLevel not set -> default 'strict'
+#   htmlLabels: false (lines 770, 771); securityLevel not set -> default 'strict'
 ```
 
 ```text

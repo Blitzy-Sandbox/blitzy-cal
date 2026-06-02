@@ -1,0 +1,2464 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Blitzy-Taint-Layer3",
+          "informationUri": "https://cwe.mitre.org/",
+          "version": "1.0.0",
+          "rules": [
+            {
+              "id": "CWE-117",
+              "name": "LogInjection",
+              "shortDescription": {
+                "text": "Improper Output Neutralization for Logs (Log Injection)"
+              },
+              "fullDescription": {
+                "text": "Untrusted input is written to logs without neutralizing CR/LF and other control characters, allowing log forging or downstream log-processing injection."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/117.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-117"
+                ]
+              }
+            },
+            {
+              "id": "CWE-338",
+              "name": "WeakPRNG",
+              "shortDescription": {
+                "text": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+              },
+              "fullDescription": {
+                "text": "A non-cryptographic PRNG (e.g. Math.random) is used to generate a security-sensitive value such as a token, secret, nonce, or reset code."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/338.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-338"
+                ]
+              }
+            },
+            {
+              "id": "CWE-601",
+              "name": "OpenRedirect",
+              "shortDescription": {
+                "text": "URL Redirection to Untrusted Site (Open Redirect)"
+              },
+              "fullDescription": {
+                "text": "A web application redirects to a URL derived from untrusted input without validating it against an allowlist, enabling phishing or token leakage."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/601.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-601"
+                ]
+              }
+            },
+            {
+              "id": "CWE-807",
+              "name": "UntrustedInputInSecurityDecision",
+              "shortDescription": {
+                "text": "Reliance on Untrusted Inputs in a Security Decision"
+              },
+              "fullDescription": {
+                "text": "A security decision (authentication, authorization, rate limiting) is made based on an input the attacker can control without adequate verification."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/807.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-807"
+                ]
+              }
+            },
+            {
+              "id": "CWE-843",
+              "name": "TypeConfusion",
+              "shortDescription": {
+                "text": "Access of Resource Using Incompatible Type (Type Confusion)"
+              },
+              "fullDescription": {
+                "text": "A value is accessed assuming one type when an incompatible type is possible (e.g. string vs string[] from req.query), reaching a security- or correctness-sensitive operation."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/843.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-843"
+                ]
+              }
+            },
+            {
+              "id": "CWE-862",
+              "name": "MissingAuthorization",
+              "shortDescription": {
+                "text": "Missing Authorization"
+              },
+              "fullDescription": {
+                "text": "A resource or state-changing operation is exposed without an authorization check, allowing actors to perform actions they should not be permitted to."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/862.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-862"
+                ]
+              }
+            },
+            {
+              "id": "CWE-918",
+              "name": "SSRF",
+              "shortDescription": {
+                "text": "Server-Side Request Forgery (SSRF)"
+              },
+              "fullDescription": {
+                "text": "The server is induced to make a request to a URL derived from untrusted input, potentially reaching internal services or cloud metadata endpoints."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html",
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-918"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Log-injection candidate: exception.message interpolated into a NestJS error log in the HTTP exception filter; demoted (Winston JSON serialization; headers filtered; body/url in a structured object)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/api/v2/src/filters/http-exception.filter.ts"
+                },
+                "region": {
+                  "startLine": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/filters/http-exception.filter.ts"
+                          },
+                          "region": {
+                            "startLine": 21
+                          }
+                        },
+                        "message": {
+                          "text": "source: exception?.message (may echo user-supplied input)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/filters/http-exception.filter.ts"
+                          },
+                          "region": {
+                            "startLine": 21
+                          }
+                        },
+                        "message": {
+                          "text": "sink: this.logger.error(`Http Exception Filter: ${exception?.message}`, { body, url, headers: filterReqHeaders(...) })"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker triggers an exception whose message echoes attacker input containing newlines. The v2 Winston logger uses format.json() in production (newlines escaped), filterReqHeaders sanitizes headers, and body/url are passed as a structured object that is JSON-serialized, demoting this to a note.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "v2 Winston format.json escapes newlines in production [apps/api/v2/src/lib/logger.ts]",
+              "filterReqHeaders sanitizes headers; body/url placed in a structured object that is JSON-serialized"
+            ],
+            "intermediateHopsSummary": "exception.message (L21) -> this.logger.error template (L21)"
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Log-injection candidate: request originalUrl and User-Agent are interpolated into a NestJS log line; demoted because the HTTP parser rejects raw CRLF and production JSON log serialization escapes newlines."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/api/v2/src/middleware/app.logger.middleware.ts"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/middleware/app.logger.middleware.ts"
+                          },
+                          "region": {
+                            "startLine": 11
+                          }
+                        },
+                        "message": {
+                          "text": "source: { originalUrl } = request"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/middleware/app.logger.middleware.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "hop: userAgent = request.get('user-agent')"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/middleware/app.logger.middleware.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "sink: this.logger.log(`${method} ${originalUrl} ${statusCode} ${contentLength} - ${userAgent} ${ip}`)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker tries to forge log entries by embedding CRLF in the URL or User-Agent. The Node HTTP parser rejects raw CR/LF in the request target and header values, and in production the log message is JSON-serialized (newlines escaped), so a forged multi-line entry is not achievable.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "Node HTTP (llhttp) parser rejects raw CR/LF in the request target and header values",
+              "production JSON log serialization (tslog type:json / Winston format.json) escapes embedded newlines"
+            ],
+            "intermediateHopsSummary": "request originalUrl (L11) + user-agent header (L12) -> this.logger.log template (L17)"
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Log-injection candidate: OIDC 'tenant' query param interpolated into an error log; demoted (production JSON serialization)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/oidc/route.ts"
+                },
+                "region": {
+                  "startLine": 36
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/oidc/route.ts"
+                          },
+                          "region": {
+                            "startLine": 16
+                          }
+                        },
+                        "message": {
+                          "text": "source: tenant = searchParams.get('tenant')"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/oidc/route.ts"
+                          },
+                          "region": {
+                            "startLine": 36
+                          }
+                        },
+                        "message": {
+                          "text": "sink: log.error(`Error authorizing tenant ${tenant}...`)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "A decoded tenant query value containing a newline could forge a log line. Production tslog JSON serialization escapes newlines, demoting this to a note.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "production tslog json serialization escapes newlines [packages/lib/logger.ts:17]; only dev pretty mode renders them"
+            ],
+            "intermediateHopsSummary": "searchParams tenant (L16) -> log.error template (L36)"
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Log-injection candidate: decoded SAML authorize query param 'tenant' interpolated into a log line; demoted because production tslog JSON serialization escapes newlines."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                },
+                "region": {
+                  "startLine": 21
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "source: oAuthReq = Object.fromEntries(req.nextUrl.searchParams) \u2014 DECODED query params may contain newlines"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                          },
+                          "region": {
+                            "startLine": 21
+                          }
+                        },
+                        "message": {
+                          "text": "sink: log.error(`...tenant ${oAuthReq?.tenant}...`)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "Because searchParams are URL-decoded, a tenant value like 'a%0afake-log' decodes to a newline. In production tslog serializes the message as JSON (newlines escaped); only the non-production pretty logger would render the injected newline, so this is a non-blocking note.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "production tslog json serialization escapes newlines [packages/lib/logger.ts:17]; only dev pretty mode renders them"
+            ],
+            "intermediateHopsSummary": "decoded searchParams tenant (L14) -> log.error template (L21)"
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Log-injection candidate: SAML callback POST body 'RelayState' interpolated into an error log; demoted (production JSON serialization)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                },
+                "region": {
+                  "startLine": 27
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                          },
+                          "region": {
+                            "startLine": 16
+                          }
+                        },
+                        "message": {
+                          "text": "source: requestData = parseRequestData(req) \u2014 POST body including RelayState"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "sink: log.error(`...relayState ${requestData?.RelayState}`)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker submits a RelayState containing newline characters to forge log lines. Production tslog JSON serialization escapes the newlines, demoting this to a note.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "production tslog json serialization escapes newlines [packages/lib/logger.ts:17]; only dev pretty mode renders them"
+            ],
+            "intermediateHopsSummary": "POST body RelayState (L16) -> log.error template (L27)"
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Log-injection candidate: User-Agent header interpolated into a bot-detection log line; demoted (parser CRLF constraint + production JSON serialization)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/server/lib/router/getServerSideProps.ts"
+                },
+                "region": {
+                  "startLine": 22
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/server/lib/router/getServerSideProps.ts"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "source: userAgent read from the request User-Agent header"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/server/lib/router/getServerSideProps.ts"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "sink: log.info(`[BOT] ... user agent: ${userAgent}`)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker sets a crafted User-Agent hoping to forge log lines. The header cannot carry raw CRLF (HTTP parser), and production logs are JSON-serialized, so newline injection is neutralized.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "Node HTTP (llhttp) parser rejects raw CR/LF in the request target and header values",
+              "production JSON log serialization (tslog type:json / Winston format.json) escapes embedded newlines"
+            ],
+            "intermediateHopsSummary": "user-agent header -> log.info template (L22)"
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Second-order log-injection candidate: a stored webhook subscriberUrl is interpolated into a console.error; demoted because the URL is format/SSRF-validated (no raw CRLF) and production logs are JSON-serialized."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                },
+                "region": {
+                  "startLine": 74
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 91
+                          }
+                        },
+                        "message": {
+                          "text": "WRITE leg: prisma.webhook.create persists the user-supplied subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "READ leg: findMany selects subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 74
+                          }
+                        },
+                        "message": {
+                          "text": "sink: console.error(`...subscriber url ${job.subscriberUrl}...`)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker stores a subscriberUrl hoping it is logged with embedded CRLF. The value passes z.string().url()/validateUrlForSSRFSync (and new URL()), so it cannot carry raw CRLF, and production logs are JSON-serialized.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "subscriberUrl is URL-validated (z.string().url() + validateUrlForSSRFSync) so it cannot carry raw CRLF",
+              "production JSON log serialization escapes newlines"
+            ],
+            "intermediateHopsSummary": "WRITE prisma.webhook.create (create.handler.ts L91) -> READ findMany (handleWebhookScheduledTriggers.ts L27) -> console.error (L74)"
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "Open-redirect candidate: OAuth2 redirect_uri reaches a 303 redirect via an exception filter; demoted because validateRedirectUri enforces strict equality against the registered client.redirectUri and the attacker-reachable path is currently uncalled."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/api/v2/src/modules/auth/oauth2/filters/oauth2-redirect-exception.filter.ts"
+                },
+                "region": {
+                  "startLine": 12
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/oauth2/services/oauth2-error.service.ts"
+                          },
+                          "region": {
+                            "startLine": 35
+                          }
+                        },
+                        "message": {
+                          "text": "hop: buildErrorRedirectUrl(redirectUri, ...) builds the redirect target from the request redirect_uri"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/oauth2/services/oauth2-error.service.ts"
+                          },
+                          "region": {
+                            "startLine": 36
+                          }
+                        },
+                        "message": {
+                          "text": "hop: throw new OAuth2RedirectException(redirectUrl)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/oauth2/filters/oauth2-redirect-exception.filter.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "sink: response.redirect(303, exception.redirectUrl)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker would pass an arbitrary redirect_uri to an OAuth2 error path. validateRedirectUri compares redirect_uri by strict equality against the registered client.redirectUri (mismatch -> redirect_uri_mismatch, which is non-redirectable), and the handleAuthorizeError path that would carry an attacker redirect_uri to this sink has no caller in the repository.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "validateRedirectUri strict-equality check vs registered client.redirectUri [packages/features/oauth/services/OAuthService.ts:204-207]; redirect_uri_mismatch is non-redirectable",
+              "the handleAuthorizeError path reaching this sink with an attacker-controlled redirect_uri has no caller in the repository"
+            ],
+            "intermediateHopsSummary": "request redirect_uri -> buildErrorRedirectUrl (oauth2-error.service.ts L35) -> throw OAuth2RedirectException (L36) -> response.redirect(303) (oauth2-redirect-exception.filter.ts L12)"
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "Open-redirect candidate: OIDC authorize-response query params (code/state) flow to NextResponse.redirect; demoted because redirect_url is OIDC connection-derived by saml-jackson."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/oidc/route.ts"
+                },
+                "region": {
+                  "startLine": 25,
+                  "endLine": 34
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/oidc/route.ts"
+                          },
+                          "region": {
+                            "startLine": 13
+                          }
+                        },
+                        "message": {
+                          "text": "source: code/state read from req.nextUrl.searchParams"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/oidc/route.ts"
+                          },
+                          "region": {
+                            "startLine": 25
+                          }
+                        },
+                        "message": {
+                          "text": "hop: redirect_url from oauthController.oidcAuthzResponse({code,state})"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/oidc/route.ts"
+                          },
+                          "region": {
+                            "startLine": 34
+                          }
+                        },
+                        "message": {
+                          "text": "sink: NextResponse.redirect(redirect_url)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker supplies code/state to the OIDC callback hoping to control the post-auth redirect. The redirect_url is produced by saml-jackson from the OIDC connection configuration, not from attacker input.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "BoxyHQ saml-jackson derives the OIDC redirect_url from the stored connection configuration"
+            ],
+            "intermediateHopsSummary": "searchParams code/state (L13) -> oauthController.oidcAuthzResponse() (L25) -> NextResponse.redirect (L34)"
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "Open-redirect candidate: user-controlled SAML authorize query params flow to NextResponse.redirect; demoted because BoxyHQ saml-jackson validates the redirect target against the stored SAML connection config."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                },
+                "region": {
+                  "startLine": 14,
+                  "endLine": 19
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "source: oAuthReq = Object.fromEntries(req.nextUrl.searchParams) \u2014 user-controlled SAML authorize query params"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "hop: redirect_url produced by oauthController.authorize(oAuthReq) [BoxyHQ saml-jackson]"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                          },
+                          "region": {
+                            "startLine": 19
+                          }
+                        },
+                        "message": {
+                          "text": "sink: NextResponse.redirect(redirect_url, 302)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker crafts a SAML authorize request hoping to control redirect_url. In practice saml-jackson validates the supplied redirect_uri against the connection's configured allowlist and returns the IdP SSO URL derived from stored config, so an arbitrary external origin cannot be injected.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "BoxyHQ saml-jackson validates the user-supplied redirect_uri against the SAML connection's configured redirectUrl allowlist; the returned redirect_url is the IdP SSO URL derived from stored connection config"
+            ],
+            "intermediateHopsSummary": "req.nextUrl.searchParams (L14) -> oauthController.authorize() jackson library (L17) -> NextResponse.redirect (L19)"
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "Open-redirect candidate: SAML callback POST body (incl. RelayState) flows to NextResponse.redirect; demoted because the redirect_url is session/connection-derived by saml-jackson."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                },
+                "region": {
+                  "startLine": 19,
+                  "endLine": 22
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                          },
+                          "region": {
+                            "startLine": 16
+                          }
+                        },
+                        "message": {
+                          "text": "source: requestData = parseRequestData(req) including SAMLResponse and RelayState (POST body)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                          },
+                          "region": {
+                            "startLine": 19
+                          }
+                        },
+                        "message": {
+                          "text": "hop: redirect_url from oauthController.samlResponse(requestData)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/saml/callback/route.ts"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "sink: NextResponse.redirect(redirect_url)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker posts a crafted SAMLResponse/RelayState aiming to redirect the victim off-site. saml-jackson derives redirect_url from the validated SAML session/connection, so the value is not an attacker-chosen external origin.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "BoxyHQ saml-jackson derives redirect_url from the validated SAML session/connection configuration rather than from raw RelayState"
+            ],
+            "intermediateHopsSummary": "parseRequestData POST body incl RelayState (L16) -> oauthController.samlResponse() (L19) -> NextResponse.redirect (L22)"
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "Second-order open-redirect candidate: a return-to cookie written from window.location.href is later used as a redirect target in the web proxy; demoted because the persisted value is same-origin and resolved relative to the request origin."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/proxy.ts"
+                },
+                "region": {
+                  "startLine": 83,
+                  "endLine": 90
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/modules/onboarding/personal/_components/InstallableAppCard.tsx"
+                          },
+                          "region": {
+                            "startLine": 56
+                          }
+                        },
+                        "message": {
+                          "text": "WRITE leg: document.cookie = `return-to=${window.location.href};...SameSite=Lax` persists the current URL into the return-to cookie"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/proxy.ts"
+                          },
+                          "region": {
+                            "startLine": 83
+                          }
+                        },
+                        "message": {
+                          "text": "READ leg: returnTo = reqWithEnrichedHeaders.cookies.get('return-to')"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/proxy.ts"
+                          },
+                          "region": {
+                            "startLine": 86
+                          }
+                        },
+                        "message": {
+                          "text": "sink: NextResponse.redirect(new URL(returnTo.value, reqWithEnrichedHeaders.url))"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker would need to plant a cross-origin value into the return-to cookie. The cookie is written client-side from window.location.href (same-origin) with SameSite=Lax, and new URL(returnTo.value, requestOrigin) resolves relative to the current origin, so an external redirect is not demonstrably achievable.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "return-to cookie is written from same-origin window.location.href with SameSite=Lax; new URL(value, requestOrigin) resolves relative to the request origin"
+            ],
+            "intermediateHopsSummary": "WRITE document.cookie return-to (InstallableAppCard.tsx L56) -> READ cookies.get('return-to') (proxy.ts L83) -> NextResponse.redirect(new URL(...)) (proxy.ts L86)"
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "Untrusted-input-in-security-decision candidate: request headers select the API auth method; demoted because every auth branch cryptographically verifies the credential before granting access."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                },
+                "region": {
+                  "startLine": 74,
+                  "endLine": 119
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                          },
+                          "region": {
+                            "startLine": 60
+                          }
+                        },
+                        "message": {
+                          "text": "source: oAuthClientSecret/oAuthClientId/bearerToken read from request headers (X-Cal-Secret-Key, X-Cal-Client-Id, Authorization)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                          },
+                          "region": {
+                            "startLine": 66
+                          }
+                        },
+                        "message": {
+                          "text": "hop: allowedMethods gating of which auth branch may execute"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                          },
+                          "region": {
+                            "startLine": 74
+                          }
+                        },
+                        "message": {
+                          "text": "sink: auth-method branch selection driven by the untrusted header values"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker controls which authentication branch runs by setting headers. Every branch then cryptographically verifies the credential (OAuth client.secret equality, API-key sha256 hash + DB lookup, access-token validation, NextAuth/third-party JWT signature verification), so branch selection alone cannot bypass authentication.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "OAuth client.secret strict-equality verification [api-auth.strategy.ts:186]",
+              "API-key sha256Hash + DB hash lookup [api-auth.strategy.ts:246]",
+              "access-token validateAccessToken [api-auth.strategy.ts:270]",
+              "NextAuth getToken JWT signature verification [api-auth.strategy.ts:116]",
+              "third-party access token jwt.verify [apps/api/v2/src/modules/tokens/tokens.service.ts:40]"
+            ],
+            "intermediateHopsSummary": "request auth headers (L60-62) -> allowedMethods gating (L66) -> auth-method branch selection (L74-119), each branch cryptographically verified"
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "Untrusted-input-in-security-decision candidate: a spoofable X-Forwarded-For header is used as the forgot-password rate-limit identifier; demoted because it gates rate-limiting (not access) and reflects the standard serverless IP-extraction tradeoff."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/forgot-password/route.ts"
+                },
+                "region": {
+                  "startLine": 26,
+                  "endLine": 29
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/forgot-password/route.ts"
+                          },
+                          "region": {
+                            "startLine": 21
+                          }
+                        },
+                        "message": {
+                          "text": "source: forwardedFor = req.headers.get('x-forwarded-for') \u2014 client-spoofable"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/forgot-password/route.ts"
+                          },
+                          "region": {
+                            "startLine": 23
+                          }
+                        },
+                        "message": {
+                          "text": "hop: ip = forwardedFor.split(',').at(0)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/app/api/auth/forgot-password/route.ts"
+                          },
+                          "region": {
+                            "startLine": 26
+                          }
+                        },
+                        "message": {
+                          "text": "sink: checkRateLimitAndThrowError({ identifier: `forgotPassword:${piiHasher.hash(ip)}` })"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker varies the X-Forwarded-For header to evade per-IP rate limiting on forgot-password. This is a throttle-evasion (DoS-class) issue, not an authentication/authorization bypass; it reflects the standard serverless approach to obtaining client IP behind a proxy/CDN, so it is a non-blocking note.",
+            "confidence": "low",
+            "sanitizersEncountered": [],
+            "intermediateHopsSummary": "x-forwarded-for header (L21) -> split first value (L23) -> rate-limit identifier (L26-29)"
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "Untrusted-input-in-security-decision candidate: spoofable cf-connecting-ip/x-real-ip headers feed the IP_BANLIST check; demoted because cf-connecting-ip is trustworthy behind the documented CDN and this is deny-list evasion, not an access grant."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/lib/getIP.ts"
+                },
+                "region": {
+                  "startLine": 29,
+                  "endLine": 37
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/getIP.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "source: cf-connecting-ip / x-real-ip request headers (client-spoofable absent a trusted proxy)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/getIP.ts"
+                          },
+                          "region": {
+                            "startLine": 7
+                          }
+                        },
+                        "message": {
+                          "text": "hop: parseIpFromHeaders splits the header value"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/getIP.ts"
+                          },
+                          "region": {
+                            "startLine": 33
+                          }
+                        },
+                        "message": {
+                          "text": "sink: banList.includes(IP) \u2014 IP_BANLIST security decision"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker spoofs the IP headers to evade the IP banlist. When deployed behind Cloudflare (the documented deployment) cf-connecting-ip is set by the edge and is trustworthy; evading a deny-list does not grant access to protected resources, so this is a non-blocking note.",
+            "confidence": "low",
+            "sanitizersEncountered": [],
+            "intermediateHopsSummary": "cf-connecting-ip/x-real-ip headers (L17/L21) -> parseIpFromHeaders (L7) -> IP_BANLIST includes() (L33)"
+          }
+        },
+        {
+          "ruleId": "CWE-843",
+          "level": "note",
+          "message": {
+            "text": "Type-confusion candidate: context.query.totp (string|string[]) is asserted 'as string' and passed to verifyJwt; demoted because an array fails JWT verification (fail-closed)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/server/lib/auth/login/getServerSideProps.tsx"
+                },
+                "region": {
+                  "startLine": 31
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/server/lib/auth/login/getServerSideProps.tsx"
+                          },
+                          "region": {
+                            "startLine": 31
+                          }
+                        },
+                        "message": {
+                          "text": "source: context.query.totp as string (string|string[])"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/server/lib/auth/login/getServerSideProps.tsx"
+                          },
+                          "region": {
+                            "startLine": 31
+                          }
+                        },
+                        "message": {
+                          "text": "sink: verifyJwt(context.query.totp as string) \u2014 TOTP login token verification"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker supplies totp as a repeated query param producing an array. verifyJwt receives a non-string and fails signature verification, so login fails closed; no security check is bypassed.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "fails closed: an array passed to verifyJwt fails signature verification, so login fails"
+            ],
+            "intermediateHopsSummary": "context.query.totp as string (L31) -> verifyJwt (L31)"
+          }
+        },
+        {
+          "ruleId": "CWE-843",
+          "level": "note",
+          "message": {
+            "text": "Type-confusion candidate: req.query.code (string|string[]) is asserted 'as string' and used in the Tandem OAuth callback token exchange; demoted because an array code fails the exchange (fail-closed)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/app-store/tandemvideo/api/callback.ts"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/tandemvideo/api/callback.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "source: const code = req.query.code as string (string|string[])"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/tandemvideo/api/callback.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "sink: code used in the OAuth token-exchange request"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker supplies code as a repeated query param producing an array. The OAuth token exchange receives a non-string code and fails, so no resource is accessed with an incompatible type in an exploitable way (fail-closed).",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "fails closed: an array code causes the OAuth token exchange to fail"
+            ],
+            "intermediateHopsSummary": "req.query.code as string (L17) -> OAuth token exchange (L17)"
+          }
+        },
+        {
+          "ruleId": "CWE-843",
+          "level": "note",
+          "message": {
+            "text": "Type-confusion candidate: req.query.apiKey (typed string|string[]) is asserted 'as string' and used for app-store API-key authentication; demoted because it fails closed (an array key matches no stored hash -> 401)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/app-store/zapier/lib/validateAccountOrApiKey.ts"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/zapier/lib/validateAccountOrApiKey.ts"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "source: const apiKey = req.query.apiKey as string \u2014 req.query.apiKey is string|string[] but asserted string"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/zapier/lib/validateAccountOrApiKey.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "sink: findValidApiKey(apiKey, 'zapier') \u2014 authentication decision"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker passes apiKey as a repeated query param so req.query.apiKey is an array. The 'as string' assertion is then false at runtime, but findValidApiKey hashes/looks up the value and an array will not match any stored key, yielding 401. No authentication bypass results (fail-closed). The same pattern appears in zapier/make subscription endpoints.",
+            "confidence": "low",
+            "sanitizersEncountered": [
+              "fails closed: an array apiKey does not match any stored hashed key, yielding HTTP 401"
+            ],
+            "intermediateHopsSummary": "req.query.apiKey as string (L8) -> findValidApiKey authentication (L17)"
+          }
+        },
+        {
+          "ruleId": "CWE-862",
+          "level": "note",
+          "message": {
+            "text": "Missing-authorization candidate: markHostAsNoShow is an unauthenticated publicProcedure that marks a host no-show given only a bookingUid; demoted because it is intentionally public by design (gated by knowledge of the high-entropy bookingUid) per the in-code documentation."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
+                },
+                "region": {
+                  "startLine": 11,
+                  "endLine": 19
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "source: input.bookingUid from the unauthenticated publicProcedure (no auth context)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "sink: handleMarkHostNoShow({ bookingUid, noShowHost }) \u2014 state change marking the host no-show"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "Anyone who knows a booking's UID can mark its host as no-show without authentication. The endpoint is intentionally public (attendees who are not Cal users use it via an email link), gated by knowledge of the high-entropy bookingUid (capability-URL pattern), and the state change is low-severity (no-show flag / SMS-credit accounting). The in-code comment explicitly documents this as a known anonymous public endpoint, so it is recorded as a non-blocking note rather than a blocking finding.",
+            "confidence": "low",
+            "sanitizersEncountered": [],
+            "intermediateHopsSummary": "publicProcedure input.bookingUid (markHostAsNoShow.handler.ts L12) -> handleMarkHostNoShow state change (L14)"
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "note",
+          "message": {
+            "text": "SSRF candidate: a user-supplied CalDAV server URL is stored and used for server-side DAV requests; demoted as an authenticated, intentional connect-your-own-server feature with no app-store SSRF allowlist."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/app-store/caldavcalendar/lib/CalendarService.ts"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "source: url = req.body \u2014 user-supplied CalDAV server URL"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "WRITE leg: credential persisted with the server URL"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 7
+                          }
+                        },
+                        "message": {
+                          "text": "sink: DAVClient performs server-side PROPFIND/REPORT to the stored serverUrl"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An authenticated user connects a CalDAV account with an internal server URL, causing server-side DAV requests to that target. This is the intended connect-your-own-server behaviour where the user controls their own target; responses are not reflected (blind/semi-blind), so it is recorded as a non-blocking note rather than a proven exploit.",
+            "confidence": "low",
+            "sanitizersEncountered": [],
+            "intermediateHopsSummary": "req.body url (add.ts L12) -> credential persist (add.ts L27) -> DAVClient server-side request (CalendarService.ts L7)"
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "note",
+          "message": {
+            "text": "Second-order SSRF candidate: persisted webhook subscriberUrl copied into a scheduled-trigger row and later fetched by the scheduled dispatcher; demoted because validateUrlForSSRFSync is applied on the originating write leg."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                },
+                "region": {
+                  "startLine": 67,
+                  "endLine": 76
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.schema.ts"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "source: subscriberUrl: z.string().url()"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "hop: validateUrlForSSRFSync(input.subscriberUrl)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 91
+                          }
+                        },
+                        "message": {
+                          "text": "WRITE leg: prisma.webhook.create persists subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/scheduleTrigger.ts"
+                          },
+                          "region": {
+                            "startLine": 299
+                          }
+                        },
+                        "message": {
+                          "text": "hop: webhookScheduledTriggers.create copies subscriberUrl into the scheduled-trigger row"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "READ leg: prisma.webhookScheduledTriggers.findMany selects subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 67
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetch(job.subscriberUrl, {redirect:'manual'})"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker creating a scheduled webhook supplies an internal subscriberUrl. The same validateUrlForSSRFSync control on the originating write leg blocks metadata/localhost/private targets before the value is copied to the scheduled-trigger row and fetched.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "validateUrlForSSRFSync [packages/lib/ssrfProtection.ts] at create.handler.ts:28 guards the originating write leg"
+            ],
+            "intermediateHopsSummary": "z.string().url() (create.schema.ts L10) -> validateUrlForSSRFSync (create.handler.ts L28) -> WRITE prisma.webhook.create (create.handler.ts L91) -> copy webhookScheduledTriggers.create (scheduleTrigger.ts L299) -> READ findMany (handleWebhookScheduledTriggers.ts L27) -> fetch (L67)"
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "note",
+          "message": {
+            "text": "Second-order SSRF candidate: a user-supplied webhook subscriberUrl is persisted then fetched by the real-time dispatcher; demoted because validateUrlForSSRFSync is applied on the write leg."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                },
+                "region": {
+                  "startLine": 373,
+                  "endLine": 378
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.schema.ts"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "source: subscriberUrl: z.string().url() \u2014 format-only validation of the user-supplied webhook URL"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "hop: validateUrlForSSRFSync(input.subscriberUrl) SSRF allowlist/denylist check"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 91
+                          }
+                        },
+                        "message": {
+                          "text": "WRITE leg: prisma.webhook.create persists subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                          },
+                          "region": {
+                            "startLine": 358
+                          }
+                        },
+                        "message": {
+                          "text": "READ leg: const { subscriberUrl } = webhook"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                          },
+                          "region": {
+                            "startLine": 373
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetch(subscriberUrl, {method:'POST', redirect:'manual'})"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "exploitScenario": "An attacker creating a webhook supplies an internal subscriberUrl (e.g. http://169.254.169.254/...) to reach internal services. validateUrlForSSRFSync at the write leg blocks cloud-metadata endpoints always and, on SaaS, requires HTTPS and blocks localhost/private IPs, preventing the stored value from targeting internal hosts.",
+            "confidence": "medium",
+            "sanitizersEncountered": [
+              "validateUrlForSSRFSync [packages/lib/ssrfProtection.ts] at create.handler.ts:28 (and edit.handler.ts:38); v2 REST uses validateWebhookUrl. Blocks cloud-metadata IPs always; on SaaS requires HTTPS and blocks localhost/private IPs"
+            ],
+            "intermediateHopsSummary": "z.string().url() format check (create.schema.ts L10) -> validateUrlForSSRFSync (create.handler.ts L28) -> WRITE prisma.webhook.create (create.handler.ts L91) -> READ subscriberUrl (sendPayload.ts L358) -> fetch (sendPayload.ts L373)"
+          }
+        }
+      ],
+      "properties": {
+        "coverage": {
+          "CWE-601": {
+            "searchPatterns": [
+              {
+                "pattern": "NextResponse.redirect(",
+                "rawHits": 25
+              },
+              {
+                "pattern": "res.redirect(",
+                "rawHits": 66
+              },
+              {
+                "pattern": "response.redirect(",
+                "rawHits": 1
+              },
+              {
+                "pattern": ".redirect(",
+                "rawHits": 92
+              },
+              {
+                "pattern": "window.location",
+                "rawHits": 68
+              },
+              {
+                "pattern": "location.href",
+                "rawHits": 43
+              },
+              {
+                "pattern": "location.assign(",
+                "rawHits": 0
+              },
+              {
+                "pattern": "location.replace(",
+                "rawHits": 2
+              },
+              {
+                "pattern": "getSafeRedirectUrl",
+                "rawHits": 77
+              },
+              {
+                "pattern": "redirect_uri",
+                "rawHits": 152
+              },
+              {
+                "pattern": "callbackUrl",
+                "rawHits": 101
+              },
+              {
+                "pattern": "returnTo",
+                "rawHits": 154
+              },
+              {
+                "pattern": "RelayState",
+                "rawHits": 1
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 46,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 5,
+            "ruledOut": 41,
+            "ruledOutReasons": [
+              "payment-redirect routes resolve origin to a fixed WEBAPP_URL via new URL(fixedPath, WEBAPP_URL)",
+              "avatar/[uuid] uses AVATAR_FALLBACK + WEBAPP_URL constants",
+              "compliance/download and video/recording targets are gated (B2 API config / verifyVideoToken)",
+              "teams/create and teams/[team]/upgrade use WEBAPP_URL + server-derived ids",
+              "googleworkspace/callback passes through the getSafeRedirectUrl allowlist sanitizer",
+              "verify-booking-token and link routes use new URL('/booking/'+uid, request.url) forcing a same-origin path",
+              "20 client-side window.location navigation writes carry no inline untrusted query param; post-install redirects pass through getSafeRedirectUrl (68 app-store callers)"
+            ],
+            "status": "complete"
+          },
+          "CWE-918": {
+            "searchPatterns": [
+              {
+                "pattern": "fetch(",
+                "rawHits": 262
+              },
+              {
+                "pattern": "axios",
+                "rawHits": 36
+              },
+              {
+                "pattern": "node-fetch",
+                "rawHits": 2
+              },
+              {
+                "pattern": "subscriberUrl",
+                "rawHits": 565
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 45,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 3,
+            "ruledOut": 42,
+            "ruledOutReasons": [
+              "163 fetch() calls use hardcoded literal/template provider API base URLs (not untrusted)",
+              "Office365 subscribeToChanges fetches hardcoded https://graph.microsoft.com with notificationUrl from server env (OUTLOOK_GRAPH_NOTIFICATION_URL)",
+              "apps/web/app/api/logo/route.ts is SSRF-protected",
+              "apps/web/pages/api/router/index.ts routes internally with no external fetch",
+              "webhook subscriberUrl write legs are guarded by validateUrlForSSRFSync / validateWebhookUrl (recorded as notes due to residual sync/self-hosted gaps)"
+            ],
+            "status": "complete"
+          },
+          "CWE-117": {
+            "searchPatterns": [
+              {
+                "pattern": "console.log(",
+                "rawHits": 633
+              },
+              {
+                "pattern": "console.error(",
+                "rawHits": 296
+              },
+              {
+                "pattern": "console.warn(",
+                "rawHits": 68
+              },
+              {
+                "pattern": "console.info(",
+                "rawHits": 20
+              },
+              {
+                "pattern": "console.debug(",
+                "rawHits": 2
+              },
+              {
+                "pattern": "logger.error(",
+                "rawHits": 258
+              },
+              {
+                "pattern": "logger.info(",
+                "rawHits": 113
+              },
+              {
+                "pattern": "logger.warn(",
+                "rawHits": 69
+              },
+              {
+                "pattern": "logger.debug(",
+                "rawHits": 59
+              },
+              {
+                "pattern": "logger.log(",
+                "rawHits": 63
+              },
+              {
+                "pattern": "log.error(",
+                "rawHits": 502
+              },
+              {
+                "pattern": "log.info(",
+                "rawHits": 243
+              },
+              {
+                "pattern": "log.warn(",
+                "rawHits": 257
+              },
+              {
+                "pattern": "log.debug(",
+                "rawHits": 420
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 18,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 7,
+            "ruledOut": 11,
+            "ruledOutReasons": [
+              "parseRequestData logs re-encode req.nextUrl via URL.toString() and log server-generated errors",
+              "throttler-guard logs request.url which is URL-encoded",
+              "handleWebhookScheduledTriggers L53 logs subscriberId/appId derived from an internal jobName.split (not user input)",
+              "BookingAuditTaskerProducerService logs a server-side enum action",
+              "embed-core utils.ts L100 is a client-side browser console, not a server log",
+              "playwright fixture is test-only"
+            ],
+            "status": "complete"
+          },
+          "CWE-807": {
+            "searchPatterns": [
+              {
+                "pattern": "X-Cal-Signature-256",
+                "rawHits": 7
+              },
+              {
+                "pattern": "createHmac(",
+                "rawHits": 16
+              },
+              {
+                "pattern": "timingSafeEqual(",
+                "rawHits": 3
+              },
+              {
+                "pattern": "X_CAL_SECRET_KEY",
+                "rawHits": 108
+              },
+              {
+                "pattern": "X_CAL_CLIENT_ID",
+                "rawHits": 118
+              },
+              {
+                "pattern": "isApiKey(",
+                "rawHits": 6
+              },
+              {
+                "pattern": "sha256Hash(",
+                "rawHits": 10
+              },
+              {
+                "pattern": "getToken(",
+                "rawHits": 32
+              },
+              {
+                "pattern": "stripe-signature",
+                "rawHits": 19
+              },
+              {
+                "pattern": "x-vercel-signature",
+                "rawHits": 7
+              },
+              {
+                "pattern": "x-forwarded-for",
+                "rawHits": 3
+              },
+              {
+                "pattern": "x-real-ip",
+                "rawHits": 1
+              },
+              {
+                "pattern": "jwt.decode(",
+                "rawHits": 0
+              },
+              {
+                "pattern": "req.query.apiKey",
+                "rawHits": 9
+              },
+              {
+                "pattern": "CRON_API_KEY",
+                "rawHits": 19
+              },
+              {
+                "pattern": "process.env.CRON_API_KEY !==",
+                "rawHits": 10
+              },
+              {
+                "pattern": "constructEvent(",
+                "rawHits": 3
+              },
+              {
+                "pattern": "jwt.verify(",
+                "rawHits": 3
+              },
+              {
+                "pattern": "isAdminGuard",
+                "rawHits": 15
+              },
+              {
+                "pattern": "isSystemWideAdmin",
+                "rawHits": 203
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 40,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 3,
+            "ruledOut": 37,
+            "ruledOutReasons": [
+              "incoming webhook signature verifications (Stripe constructEvent, Vercel/BTCPay HMAC+timingSafeEqual, Twilio SDK, Daily/HelpScout/HitPay HMAC, decodeOAuthState, videoTokens) are cryptographically sound effective controls",
+              "cron CRON_API_KEY comparisons use a correct shared secret; non-timing-safe equality is CWE-208 (out of scope) and not network-exploitable",
+              "v1 query.userId/body.userId handlers honor request ids only for the server-derived isSystemWideAdmin flag; non-admins are rejected or restricted to their own id",
+              "PBAC permissions.guard loads permissions from the DB keyed by the verified client",
+              "v1 verifyApiKey hashes the key and looks it up in the DB",
+              "JwtService.decode (unverified) is used only in e2e test files, with no production caller"
+            ],
+            "status": "complete"
+          },
+          "CWE-338": {
+            "searchPatterns": [
+              {
+                "pattern": "Math.random(",
+                "rawHits": 76
+              },
+              {
+                "pattern": "crypto.randomBytes(",
+                "rawHits": 7
+              },
+              {
+                "pattern": "randomBytes(",
+                "rawHits": 29
+              },
+              {
+                "pattern": "randomUUID(",
+                "rawHits": 34
+              },
+              {
+                "pattern": "randomInt(",
+                "rawHits": 0
+              },
+              {
+                "pattern": "nanoid(",
+                "rawHits": 16
+              },
+              {
+                "pattern": "uuidv4",
+                "rawHits": 195
+              },
+              {
+                "pattern": "getRandomValues(",
+                "rawHits": 1
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 76,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 0,
+            "ruledOut": 76,
+            "ruledOutReasons": [
+              "60 of 76 Math.random sites are in test/mock files (test data generation)",
+              "UI cosmetics: React key/row-id fallbacks, skeleton loading-bar heights/counts, internal translation-interpolation placeholder tokens",
+              "public username/team-slug disambiguators (random.ts randomString -> next-auth usernameSlug, username.ts suggestion suffix, teams/create fallback name/slug) are public identifiers, not secrets",
+              "office365 Graph API retry-after backoff jitter",
+              "RegularBookingService anti-spam decoy display-name selection from a 4-item public constant array",
+              "embed playground dev-only random color",
+              "all genuinely security-sensitive random values use crypto.randomBytes (email verification tokens, API keys, AES IV, GCM nonce)"
+            ],
+            "status": "complete"
+          },
+          "CWE-843": {
+            "searchPatterns": [
+              {
+                "pattern": "req.query",
+                "rawHits": 140
+              },
+              {
+                "pattern": "req.query (apps/api/v1)",
+                "rawHits": 75
+              },
+              {
+                "pattern": "Array.isArray(",
+                "rawHits": 250
+              },
+              {
+                "pattern": "Array.isArray( (apps/api/v1)",
+                "rawHits": 22
+              },
+              {
+                "pattern": "query.X as string",
+                "rawHits": 17
+              },
+              {
+                "pattern": ".query[",
+                "rawHits": 3
+              },
+              {
+                "pattern": "schemaQuery (apps/api/v1)",
+                "rawHits": 166
+              },
+              {
+                "pattern": ".parse(req.query) (apps/api/v1)",
+                "rawHits": 37
+              },
+              {
+                "pattern": "safeParse (apps/api/v1)",
+                "rawHits": 4
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 17,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 3,
+            "ruledOut": 14,
+            "ruledOutReasons": [
+              "the apps/api/v1 string|string[] seed surface is fully narrowed: req.query is parsed through zod schemas (stringOrNumber / z.coerce.number reject arrays; schemaQuerySingleOrMultiple + Array.isArray narrows multi-value), and no raw req.query reaches a prisma query",
+              "the 14 remaining 'as string' assertions are display/correctness-only (getServerSideProps user/uid/orgSlug/embed) or fail-closed duplicates (intercom url, stripepayment teamId/returnTo) that crash or no-match rather than enabling an exploitable incompatible-type access"
+            ],
+            "status": "complete"
+          },
+          "CWE-862": {
+            "searchPatterns": [
+              {
+                "pattern": "@UseGuards(",
+                "rawHits": 223
+              },
+              {
+                "pattern": "ApiAuthGuard",
+                "rawHits": 360
+              },
+              {
+                "pattern": "PermissionsGuard",
+                "rawHits": 146
+              },
+              {
+                "pattern": "RolesGuard",
+                "rawHits": 145
+              },
+              {
+                "pattern": "@Roles(",
+                "rawHits": 166
+              },
+              {
+                "pattern": "publicProcedure",
+                "rawHits": 37
+              },
+              {
+                "pattern": "authedProcedure",
+                "rawHits": 336
+              },
+              {
+                "pattern": "authedAdminProcedure",
+                "rawHits": 58
+              },
+              {
+                "pattern": "authedOrgAdminProcedure",
+                "rawHits": 30
+              },
+              {
+                "pattern": "v1 _get.ts handlers",
+                "rawHits": 36
+              },
+              {
+                "pattern": "v1 _post.ts handlers",
+                "rawHits": 16
+              },
+              {
+                "pattern": "v1 _patch.ts handlers",
+                "rawHits": 15
+              },
+              {
+                "pattern": "v1 _delete.ts handlers",
+                "rawHits": 15
+              },
+              {
+                "pattern": "v1 files using withMiddleware",
+                "rawHits": 46
+              },
+              {
+                "pattern": "v2 controllers without @UseGuards",
+                "rawHits": 5
+              }
+            ],
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 33,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 1,
+            "ruledOut": 32,
+            "ruledOutReasons": [
+              "v1 routes enforce auth via the global verifyApiKey middleware plus per-resource _auth-middleware ownership checks and isSystemWideAdmin gating",
+              "73 of 78 v2 controllers apply @UseGuards (ApiAuthGuard/PermissionsGuard/RolesGuard + ownership guards)",
+              "the 5 unguarded v2 controllers are intentionally public (slots reserve/available, routing-form submit, OAuth2 authorize, timezones, health)",
+              "all 37 publicProcedure usages are intentionally-public surfaces (public booking-page slots, signup/email verification, i18n, timezones, public profiles, feature flags)",
+              "v1 index.ts (welcome message) and docs.ts (OpenAPI spec) are intentionally public; event-types/_utils/* are authorization helper functions, not resource endpoints"
+            ],
+            "status": "complete"
+          }
+        }
+      }
+    }
+  ]
+}

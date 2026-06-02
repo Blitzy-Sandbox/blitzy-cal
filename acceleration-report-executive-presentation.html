@@ -413,6 +413,15 @@
     .reveal .controls { color: var(--blitzy-primary); }
     .reveal .slide-number { background: var(--blitzy-border-soft); color: var(--blitzy-text-invert); font-family: var(--ff-mono); }
 
+    /* Accessibility — touch-target hygiene: the default reveal navigation arrows render
+       ~36x36px (.controls-arrow is 3.6em at a 10px button font-size). Enlarge the sized
+       arrow element and its button to at least the 44x44px threshold; the em-based arrow
+       glyph (drawn via :before/:after) stays centered within the larger box. The pause
+       overlay's resume button is likewise raised to a 44px-tall hit area. */
+    .reveal .controls button { min-width: 44px; min-height: 44px; }
+    .reveal .controls .controls-arrow { width: 44px; height: 44px; }
+    .reveal .pause-overlay .resume-button { min-height: 44px; padding: 12px 20px; }
+
     /* Lucide icons inherit currentColor by default; default sizing for bare <i> */
     [data-lucide] { display: inline-flex; }
     svg.lucide { vertical-align: middle; }
@@ -795,11 +804,24 @@ xychart-beta
     });
 
     /* Hydrate every Lucide <i data-lucide> in the document (idempotent: lucide
-       replaces each <i> with an <svg>, so re-invocation is a no-op for done icons). */
+       replaces each <i> with an <svg>, so re-invocation is a no-op for done icons).
+       Every icon in this deck is decorative — each is paired with visible text (a
+       heading, KPI value/label, icon caption, eyebrow label, or brand word) — so each
+       hydrated SVG is marked aria-hidden="true" and focusable="false" to hide it from
+       assistive technologies and keep it out of the keyboard tab order. */
     function hydrateIcons() {
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
+        /* Primary path: pass the accessibility attributes through createIcons so every
+           generated <svg.lucide> carries them. The attrs option is additive and does
+           not override Lucide's default 'lucide lucide-<name>' class (relied on by CSS). */
+        window.lucide.createIcons({ attrs: { 'aria-hidden': 'true', 'focusable': 'false' } });
       }
+      /* Safety net (idempotent): guarantee the attributes are present on every hydrated
+         icon, independent of the createIcons attrs behavior in this Lucide build. */
+      document.querySelectorAll('svg.lucide').forEach(function (svg) {
+        if (svg.getAttribute('aria-hidden') !== 'true') { svg.setAttribute('aria-hidden', 'true'); }
+        if (svg.getAttribute('focusable') !== 'false') { svg.setAttribute('focusable', 'false'); }
+      });
     }
 
     /* Web fonts must be loaded before Mermaid measures label widths; otherwise

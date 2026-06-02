@@ -43,28 +43,38 @@ The highest sustained windowed commit velocity occurs in the Steady State phase 
 
 ## §2 Environment Verification
 
-This section documents the execution environment and repository identity before any metric is presented (Rule 6). All values are produced by the commands in §11.1 and were captured at the extraction timestamp below.
+This section documents the repository identity and the execution environment before any metric is presented (Rule 6). The facts are split into two groups so that each reproduces exactly when its command is re-run (Rules 1 and 5): **analyzed-repository facts** are properties of the subject history (`main`) and are stable across re-runs; **execution-environment facts** describe the machine and moment at which the extraction was performed. All values are produced by the commands in §11.1.
 
-| Property | Value |
-|----------|-------|
-| Repository | `blitzy-cal` (Cal.com-derived scheduling monorepo) |
-| `origin` URL (redacted) | `https://github.com/Blitzy-Sandbox/blitzy-cal.git` |
-| git version | 2.43.0 |
-| Analysis runtime | python3 3.12.3 |
-| Total commits (`HEAD` = `main`) | 16,880 |
-| Active remote branches (excluding `HEAD` alias) | 25 |
-| Git tags | 0 |
-| Submodules | None (`.gitmodules` absent) |
-| Commit date range | 2021-03-10 → 2026-05-15 (≈5.2 years) |
-| `HEAD` commit | `93564a4708687f942c06df1c7b540ffc47cd9317` |
-| Extraction timestamp (UTC) | 2026-06-01T15:30:42Z |
+**Analyzed-repository facts** (immutable properties of the measured history; stable across re-runs):
+
+| Property | Value | Producing command (§11.1) |
+|----------|-------|---------------------------|
+| Repository | `blitzy-cal` (Cal.com-derived scheduling monorepo) | — |
+| `origin` URL (redacted) | `https://github.com/Blitzy-Sandbox/blitzy-cal.git` | `git remote get-url origin` (redacted) |
+| Analyzed branch | `main` | — |
+| Analyzed-history tip commit | `a116e152e4215cd97822ebd8ee435da8913887e6` | `git rev-parse main` |
+| Total commits on `main` | 16,880 | `git rev-list --count main` |
+| Git tags | 0 | `git tag \| wc -l` |
+| Submodules | None (`.gitmodules` absent) | `test -f .gitmodules` |
+| Commit date range | 2021-03-10 → 2026-05-15 (≈5.2 years) | `git log --reverse … \| head -1`; `git log -1 …` |
+
+**Execution-environment facts** (describe this extraction run; vary by environment and over time):
+
+| Property | Value | Producing command (§11.1) |
+|----------|-------|---------------------------|
+| git version | 2.51.0 | `git --version` |
+| Analysis runtime | python3 3.13.7 | `python3 --version` |
+| Working branch (deliverables authored on) | `blitzy-66a0cf37-b099-41af-ab48-6833a9b7ef1c` | `git rev-parse --abbrev-ref HEAD` |
+| Active remote branches (excluding `HEAD` alias) | 26 | `git branch -r \| grep -v HEAD \| wc -l` |
+| Extraction timestamp (UTC) | 2026-06-02T00:16:54Z | `date -u +"%Y-%m-%dT%H:%M:%SZ"` |
 
 Notes on the environment facts:
 
-- **Credential redaction.** The live `origin` URL embeds an access credential. It is redacted to `https://github.com/Blitzy-Sandbox/blitzy-cal.git` everywhere it appears. The appendix lists the command `git remote get-url origin`, not its raw output; no credential string is reproduced in this report.
-- **Branch count.** The command `git branch -r | grep -v HEAD | wc -l` returns 25 at the extraction timestamp. This count varies over time and by counting method: it includes ephemeral working branches (`blitzy-*`, `config-*`) that are created and removed during automated runs, and it excludes the `origin/HEAD` alias and local-only branches. A figure of 27 appears in the source Agent Action Plan, and a transient count of 26 was observed at a later live extraction while ephemeral branches were present; the value reported here (25) is the stable count, with both alternative figures noted for transparency. The branch count is environment context only and is not an input to any of the twelve metrics.
+- **Analyzed history versus working branch.** The twelve metrics are computed over the `main` branch, whose tip commit is `a116e152e4215cd97822ebd8ee435da8913887e6` (`git rev-parse main`) and whose commit count is 16,880 (`git rev-list --count main`). These two facts are stable: the two deliverables are authored on the working branch `blitzy-66a0cf37-b099-41af-ab48-6833a9b7ef1c`, which branches from the `main` tip and accumulates the deliverable-building commits, so its own `HEAD` advances with each deliverable commit and is therefore reported as a branch name rather than a fixed hash. A working-branch `HEAD` hash is not pinned here precisely because it would be invalidated by the act of committing this report; the analyzed-history tip (`git rev-parse main`) is the stable identity and is unaffected by working-branch commits.
+- **Credential redaction.** The live `origin` URL embeds an access credential. It is redacted to `https://github.com/Blitzy-Sandbox/blitzy-cal.git` everywhere it appears. The appendix lists the command `git remote get-url origin` piped through a `sed` filter (`s#https://[^@/]*@#https://#`) that strips the `credential@` segment; that command's output equals the redacted URL reported above, and no credential string is reproduced in this report.
+- **Branch count.** The command `git branch -r | grep -v HEAD | wc -l` returns 26 at the extraction timestamp. This count varies over time and by counting method: it includes ephemeral working branches (`blitzy-*`, `config-*`) that are created and removed during automated runs, and it excludes the `origin/HEAD` alias and local-only branches. Alternative counts of the same refs at this extraction are 27 (`git branch -r | wc -l`, including the `origin/HEAD` alias) and 29 (`git branch -a | wc -l`, adding the 2 local branches); a figure of 27 also appears in the source Agent Action Plan, captured at an earlier time. The value reported here (26) is the output of the single documented command above. The branch count is environment context only and is not an input to any of the twelve metrics.
 - **Tags and releases.** The repository has 0 git tags. Releases are changeset-driven rather than tag-driven (see §3 and §5.9), so the absence of tags is expected and is not a gap.
-- **Runtime versions.** The git and python3 versions above (git 2.43.0, python3 3.12.3) are the analysis-environment baseline established in the project environment specification (Agent Action Plan §0.1.1). The §11 extraction commands use only long-stable git porcelain/plumbing (`log`, `rev-list`, `shortstat`, `branch`, `grep`) and python3 standard-library features whose output is identical across git 2.4x–2.5x point releases and python 3.1x; the reported metrics are therefore independent of the exact runtime point version.
+- **Runtime versions.** The execution-environment versions are git 2.51.0 and python3 3.13.7 (the Agent Action Plan §0.1.1 records an earlier baseline of git 2.43.0 / python3 3.12.3; the live values above supersede it for this run). The §11 extraction commands use only long-stable git porcelain/plumbing (`log`, `rev-list`, `shortstat`, `branch`, `grep`) and python3 standard-library features whose output is identical across git 2.4x–2.5x point releases and python 3.1x; the reported metrics are therefore independent of the exact runtime point version, and the metric figures hold under both the baseline and the live runtime versions.
 
 ---
 
@@ -87,12 +97,12 @@ Every system consulted for this measurement is listed below with its access meth
 | `package.json` (`workspaces`) | File read | Available | Per-module workspace globs (§4.5) |
 | `vitest.workspace.ts`, `playwright.config.ts` | File read | Available | Test-discovery / skip convention (M11) |
 | `blitzy-docs/project-guide.md` | File read | Available | Accelerated-period narrative context |
-| GitHub REST API — releases, pulls, issues, reviews | `gh` / `curl` + token | **Unavailable** — `gh`/`glab`/`jq` not installed and no read token configured | Higher-confidence M6 (labels), M9 (releases), M10 (approvals), M11 (CI history), M12 (SLA) |
+| GitHub REST API — releases, pulls, issues, reviews | `gh` / `curl` + token | **Unavailable** — `gh` (2.46.0) and `jq` (1.8.1) are installed but no authenticated read token/session is configured (`gh auth status`: not logged in); `glab` is absent | Higher-confidence M6 (labels), M9 (releases), M10 (approvals), M11 (CI history), M12 (SLA) |
 | SLA / severity policy / runbook file | Repository file search | **Not found** — no such file exists | M12 |
 
 Access-attempt notes:
 
-- The GitHub REST API was treated as the preferred higher-confidence source for label-based distribution, release counts, PR approvals, historical CI results, and SLA timestamps. The API client tooling is not installed in the analysis environment and no read-only token is configured, so the API was not reachable. Each affected metric falls back to the documented git proxy at the confidence stated in §5, or is marked `Insufficient signal`.
+- The GitHub REST API was treated as the preferred higher-confidence source for label-based distribution, release counts, PR approvals, historical CI results, and SLA timestamps. The GitHub CLI `gh` (version 2.46.0) and `jq` (version 1.8.1) are present in the analysis environment, but no authenticated read token or session is configured (`gh auth status` reports "not logged into any GitHub hosts"), so authenticated REST calls were not possible; `glab` is absent. The API was therefore not usable for extraction. Each affected metric falls back to the documented git proxy at the confidence stated in §5, or is marked `Insufficient signal`.
 - A repository-wide search for an SLA policy, a severity-classification policy, or an incident runbook returned no matching file. M12 is therefore reported as `Insufficient signal` (§5.12).
 - Historical CI test-result artifacts (blob reports and JUnit XML) are produced by the test workflows but are retained only for a bounded window (the e2e workflow sets `retention-days: 30`; the API v2 e2e and atoms workflows set 7; the merged-reports workflow sets 14). A before/after split of actual test pass/fail counts across the ≈5.2-year history is therefore not derivable; M11 is reported as a current snapshot at Low confidence (§5.11).
 
@@ -252,7 +262,7 @@ All twelve metrics in the frozen set are presented below. For each metric: the b
 - **Definition.** Count of releases, proxied by changeset "Version Packages" commits.
 - **Before:** 0. **After:** 22. **Ratio:** `0 → 22` (new capability).
 - **Confidence:** Medium-Low (changeset-commit proxy).
-- **Provenance.** Requirement: release count before vs after → Command: `git log <range> -i --grep='Version Packages'` counted; `ls .changeset/*.md` (§11.6) → Raw output: 0 (before), 22 (after); 1 pending changeset (`.changeset/tender-birds-think.md`) → Reported: 0 → 22.
+- **Provenance.** Requirement: release count before vs after → Command: `git log <range> -i --grep='Version Packages'` counted; pending changesets via `find .changeset -maxdepth 1 -name '*.md' ! -name README.md -print` (which excludes the `.changeset/README.md` helper doc; §11.6) → Raw output: 0 (before), 22 (after); 1 pending changeset (`.changeset/tender-birds-think.md`) → Reported: 0 → 22.
 - **Context.** `.changeset/config.json` configures `@changesets/changelog-github` against `calcom/cal.com`, `baseBranch: main`, and `privatePackages.tag: false`. The pending changeset `tender-birds-think.md` declares a `@calcom/atoms` patch ("fix: unlocked fields not saved for managed event type"). The repository carries 0 git tags throughout.
 - **Caveat (Low component).** Because the release model is changeset-driven with `tag: false`, git tags are not the release signal; "Version Packages" commits are the proxy. A higher-confidence count would require the GitHub Releases API (`GET /repos/{owner}/{repo}/releases`), which is unavailable (§3).
 
@@ -290,7 +300,7 @@ Each user requirement is mapped to the report section that satisfies it, the app
 
 | Requirement | Section | Appendix command(s) | Derived value / status |
 |-------------|---------|---------------------|------------------------|
-| Repository discovery (redacted) | §2 | §11.1 (`git remote get-url origin`, redacted) | `https://github.com/Blitzy-Sandbox/blitzy-cal.git`; 16,880 commits; 25 branches; 0 tags |
+| Repository discovery (redacted) | §2 | §11.1 (`git remote get-url origin`, redacted) | `https://github.com/Blitzy-Sandbox/blitzy-cal.git`; `main` tip `a116e152…`; 16,880 commits; 26 branches; 0 tags |
 | Tool Introduction Date detection | §4.1 | §11.2 | 2025-04-08 (commit `76a820f3…`) |
 | Period split | §4.2 | §11.4 | Before 12,699 / 1,490 d; After 4,181 / 402 d |
 | M1 Flow Load | §5.1 | §11.7 | 6.17 → 7.25 (1.18×); AI actor 1.55 — Medium |
@@ -465,6 +475,15 @@ The latest Mermaid release not subject to any of the above advisories is 11.15.0
 
 The pin is retained at 11.4.0 because the Agent Action Plan specifies that exact version in §0.4.1 (Dependency Inventory) and in the Executive-Presentation rule (§0.8.2), and the no-dependency-change constraint (§0.4) applies; a change to 11.15.0 would require an Agent Action Plan revision and is outside the scope of this measurement (§0.3.2). Under that precedence (D1: explicit Agent Action Plan rules outrank a suggested resolution), the version is retained and this exposure is recorded here. The verification commands and advisory sources are in §11.15.
 
+**Formal risk acceptance.** The exposure is recorded and accepted on the following terms:
+
+- **Decision.** Retain `mermaid@11.4.0` as pinned; do not upgrade within this measurement. The decision is mandated by the Agent Action Plan version specification (§0.4.1, §0.8.2) and its no-dependency-change constraint (§0.4); revising the pin is explicitly out of scope (§0.3.2).
+- **Inherent risk.** Six advisories (CVE-2025-54880, CVE-2025-54881, CVE-2026-41148, CVE-2026-41149, CVE-2026-41150, CVE-2026-41159) rate the affected code paths at Moderate severity (no Critical or High advisory applies to this version; none is listed in the CISA Known Exploited Vulnerabilities catalog).
+- **Compensating controls in place.** (1) None of the affected diagram types (`sequenceDiagram`, `architecture-beta`, `stateDiagram`, `gantt`, `classDef`) or KaTeX is used; the deck renders only a `flowchart` and an `xychart`. (2) `securityLevel` is the default `strict`. (3) `htmlLabels` is `false`. (4) Both diagram sources and the theme configuration are author-authored static content. (5) The file exposes no user-input channel, so none of the advisory sinks (which require attacker-controlled diagram text or configuration) is reachable.
+- **Residual risk.** With every affected sink absent and no untrusted-input path into the renderer, the residual exploitability of these advisories in this specific deliverable is assessed as negligible. The classification holds independent of each advisory's severity rating, because reachability — not severity — governs exploitability here.
+- **Re-evaluation trigger.** This acceptance is revisited if (a) the Agent Action Plan is revised to permit a version change — in which case the pin moves to 11.15.0, the latest release not subject to any listed advisory — or (b) the deck is later modified to introduce any affected diagram type, a non-`strict` `securityLevel`, `htmlLabels: true`, or any user-input channel into the diagram source.
+- **Verification.** The reachability analysis is reproducible from the read-only commands in §11.15 (CDN version, diagram-type grep returning no matches for the affected types, and the security-configuration grep).
+
 ---
 
 ## §10 Limitations
@@ -474,9 +493,9 @@ The pin is retained at 11.4.0 because the Agent Action Plan specifies that exact
 - **Insufficient-signal metrics.** M10 (Approved Exceptions) is reported as `Insufficient signal — no PR-review/approval API access` and M12 (Defects Out of SLA) as `Insufficient signal — no SLA data source`; neither has an available source. The strict definitions of M3, M4, M5, and M7 are likewise `Insufficient signal` (each with its own stated reason in §5); only Low-confidence proxies are provided for those four.
 - **M11 is a snapshot.** Escaped-defect data is a `HEAD` snapshot (46 files / 95 call sites); CI artifact retention (7–30 days per the workflow settings) precludes a historical before/after split.
 - **M1 Baseline value — source reconciliation.** All three M1 figures reported here — Baseline 6.17 files/commit, Accelerated 7.25, and AI actor 1.55 — are produced by a single extraction method: the `--shortstat` files-per-commit average (§11.7) applied identically to the Baseline range, the Accelerated range, and the AI-actor subset, as required by the identical-before/after-methodology constraint (Agent Action Plan §0.9.1). On this one method the period-wide average rises 1.18× (6.17 → 7.25), while the AI actor's per-commit footprint (1.55 files) sits below both period averages. A candidate Baseline reference of 8.39 files/commit was noted during discovery. It is not adopted, for two compounding reasons that the data-integrity rules make binding. First, 8.39 is not reproducible under the method that yields the reported Accelerated and AI-actor values: across every files-per-commit variant tested for the Baseline (all-files, source-path-filtered, and merge-inclusive versus merge-excluded), the Baseline lands in the 6.0–7.5 files/commit band and never reaches 8.39, so there is no §11.7-consistent command whose raw output is 8.39 — adopting it would either break the single-method provenance chain that Rules 1 and 5 require or demand a different extraction method for the Baseline alone than for the Accelerated period and the actor, which §0.9.1 forbids. Second, substituting a value that no documented command reproduces would constitute estimation of a metric, which the no-fabrication constraint (§0.9; §0.3.2) prohibits. The Agent Action Plan further specifies (§0.3.2) that final numeric results are produced in this report and that figures gathered during discovery are command-validation inputs rather than fixed findings. Under that precedence (D1: explicit Agent Action Plan rules outrank a suggested resolution), the report retains the method-consistent, fully reproducible Baseline of 6.17, for which §11.7 supplies a complete Requirement → Command → Raw output → Derived value → Reported number chain, and this reconciliation is disclosed here so the 8.39 discovery note and the reported 6.17 are both visible to the reader.
-- **Branch-count figure.** The branch count reported is 25 (§2); a figure of 27 appears in the Agent Action Plan and a transient count of 26 was observed at a later live extraction. These differ because ephemeral working branches change over time; 25 is the stable count at the extraction timestamp. The branch count is environment context only and feeds no metric.
+- **Branch-count figure.** The branch count reported is 26 (§2), the output of `git branch -r | grep -v HEAD | wc -l` at the extraction timestamp; the same refs count as 27 with the `origin/HEAD` alias included and 29 with the 2 local branches added (`git branch -a`), and a figure of 27 appears in the Agent Action Plan from an earlier capture. These differ because ephemeral working branches change over time and the counting methods include different ref classes. The branch count is environment context only and feeds no metric.
 - **Day-count convention.** Period duration uses the pivot date as the shared partition point (§4.2): the Baseline duration is 1,490 days (pivot − first commit) and the Accelerated duration is 402 days (last commit − pivot), and the two sum to the full 1,892-day history span. Commit velocity (M2) is computed on these exact durations.
-- **Runtime versions.** Metrics are reported under the analysis-environment baseline of git 2.43.0 and python3 3.12.3 (Agent Action Plan §0.1.1; §2). The extraction commands (§11) are version-independent across the git 2.4x–2.5x and python 3.1x ranges because they use only stable `git log`/`rev-list` plumbing and Python standard-library text processing, so the derived counts do not depend on the exact runtime point version.
+- **Runtime versions.** Metrics are reported under the live execution-environment runtimes of git 2.51.0 and python3 3.13.7 (§2); the Agent Action Plan §0.1.1 records an earlier baseline of git 2.43.0 / python3 3.12.3. The extraction commands (§11) are version-independent across the git 2.4x–2.5x and python 3.1x ranges because they use only stable `git log`/`rev-list` plumbing and Python standard-library text processing, so the derived counts do not depend on the exact runtime point version and are identical under both runtimes.
 - **Source-document reference.** The retention and testing-topology figures attributed in the Agent Action Plan to `blitzy-docs/technical-specifications.md` §6.6 are not present in that file as it exists in this repository; the workflow `retention-days` settings are cited instead (§3).
 - **Executive-presentation Mermaid pin.** The presentation pins `mermaid@11.4.0`, the version specified by Agent Action Plan §0.4.1 and the Executive-Presentation rule (§0.8.2). That version falls within the affected range of several Moderate-severity Mermaid advisories fixed in 11.10.0 and 11.15.0 (the latest release not subject to any of them is 11.15.0). The affected diagram types — sequence, architecture, state, and Gantt — and KaTeX are not used by the deck, which renders only a `flowchart` and an `xychart`; `securityLevel` is the default `strict`, `htmlLabels` is `false`, and the file has no user-input channel. The pin is retained per the version specification and the no-dependency-change constraint (§0.4); a change to 11.15.0 would require an Agent Action Plan revision (§0.3.2). The exposure, reachability analysis, and mitigations are recorded in §9.1, and the verification commands in §11.15.
 
@@ -484,7 +503,7 @@ The pin is retained at 11.4.0 because the Agent Action Plan specifies that exact
 
 ## §11 Reproducibility Appendix
 
-The commands below are ordered, read-only, and reference only this repository and documented sources (Rule 5). They are version-independent across the git 2.4x–2.5x and python 3.1x ranges (stable `git log`/`rev-list` plumbing and Python standard-library text processing only); the reported values correspond to the analysis-environment baseline of git 2.43.0 and python3 3.12.3 (Agent Action Plan §0.1.1; §2). Each command's output backs a value in §5/§6.
+The commands below are ordered, read-only, and reference only this repository and documented sources (Rule 5). They are version-independent across the git 2.4x–2.5x and python 3.1x ranges (stable `git log`/`rev-list` plumbing and Python standard-library text processing only); the reported values were produced under the live execution-environment runtimes of git 2.51.0 and python3 3.13.7 (§2) and are identical under the Agent Action Plan §0.1.1 baseline of git 2.43.0 / python3 3.12.3. Each command's output backs a value in §5/§6.
 
 **Deterministic period split.** Every period-scoped command partitions history at the **pivot epoch** `1744125961` (the author timestamp of the partition-boundary commit `4753bd785ae1307eb62a72de4fe3c7e5d81f0ed8`, the earliest Devin-authored commit of the Tool Introduction Date, 2025-04-08 15:26:01 UTC; §4.1, §4.2). A commit belongs to the Baseline period when its author epoch is `< 1744125961` and to the Accelerated period when it is `>= 1744125961`. This integer-epoch comparison is used in place of the calendar filters `--before`/`--since=2025-04-08`, which are not deterministic at the pivot-day boundary (they place the pivot-day commits on either side depending on the local-time interpretation of the bare date, and were observed to return counts varying by ±2 commits and the Devin actor count by ±1 across runs). The pivot epoch is exported once and reused by every command:
 
@@ -497,17 +516,26 @@ P=1744125961   # pivot author epoch (2025-04-08 15:26:01 UTC), commit 4753bd785a
 ### §11.1 Environment verification (§2)
 
 ```bash
-git --version
-python3 --version
-git rev-list --count main
-git branch -r | grep -v HEAD | wc -l
-git tag | wc -l
-test -f .gitmodules && cat .gitmodules || echo "none"
-git log --reverse --date=short --format='%ad' main | head -1   # earliest commit date
-git log -1 --date=short --format='%ad' main                    # latest commit date
-git rev-parse HEAD
-git remote get-url origin | sed -E 's#(https://)[^@]*@#\1***REDACTED***@#'   # redact credential
-date -u +"%Y-%m-%dT%H:%M:%SZ"                                  # extraction timestamp
+# --- Execution-environment facts (vary by environment / over time) ---
+git --version                                                  # git version 2.51.0
+python3 --version                                              # Python 3.13.7
+git rev-parse --abbrev-ref HEAD                                # blitzy-66a0cf37-b099-41af-ab48-6833a9b7ef1c (working branch)
+git branch -r | grep -v HEAD | wc -l                           # 26 (excludes origin/HEAD alias and local-only branches)
+date -u +"%Y-%m-%dT%H:%M:%SZ"                                  # 2026-06-02T00:16:54Z (extraction timestamp)
+
+# --- Analyzed-repository facts (immutable properties of the measured history; stable across re-runs) ---
+git rev-parse main                                             # a116e152e4215cd97822ebd8ee435da8913887e6 (analyzed-history tip)
+git rev-list --count main                                      # 16880
+git tag | wc -l                                                # 0
+test -f .gitmodules && cat .gitmodules || echo "none"          # none
+git log --reverse --date=short --format='%ad' main | head -1   # 2021-03-10 (earliest commit date)
+git log -1 --date=short --format='%ad' main                    # 2026-05-15 (latest commit date)
+git remote get-url origin | sed -E 's#https://[^@/]*@#https://#'   # strip credential -> https://github.com/Blitzy-Sandbox/blitzy-cal.git
+
+# The working-branch HEAD (git rev-parse HEAD) is intentionally not pinned in §2: it advances
+# with each deliverable commit and so is not a fixed analyzed-history fact. The stable identity
+# of the measured history is `git rev-parse main` above (unaffected by working-branch commits).
+git rev-parse HEAD                                             # working-branch tip; advances per deliverable commit (not pinned in §2)
 ```
 
 ### §11.2 Tool Introduction Date (§4.1)
@@ -629,7 +657,9 @@ git log main --format='%at|%s' | awk -v p=$P -F'|' '$1>=p {print $2}' \
 # Releases (changeset "Version Packages" commits) and pending changesets
 git log main -i --grep='Version Packages' --format='%at' | awk -v p=$P '$1<p'  | wc -l   # 0
 git log main -i --grep='Version Packages' --format='%at' | awk -v p=$P '$1>=p' | wc -l   # 22
-ls .changeset/*.md
+# Pending changesets only: exclude the .changeset/README.md helper doc so the command
+# produces the reported single pending entry directly (not README.md).
+find .changeset -maxdepth 1 -name '*.md' ! -name README.md -print   # .changeset/tender-birds-think.md (1 pending changeset)
 cat .changeset/config.json
 ```
 
@@ -763,7 +793,7 @@ for i in sorted(counts):
 
 ### §11.13 API-dependent metrics (attempted, unavailable) (§5.10, §5.12, §3)
 
-The following read-only GitHub REST endpoints would raise confidence for the API-dependent metrics. The API client (`gh`/`glab`/`jq`) is not installed and no read token is configured, so these were not reachable; the metrics fall back to git proxies or the exact insufficient-signal phrases stated in §5.
+The following read-only GitHub REST endpoints would raise confidence for the API-dependent metrics. The GitHub CLI `gh` (2.46.0) and `jq` (1.8.1) are installed, but no authenticated read token or session is configured (`gh auth status`: not logged in) and `glab` is absent, so authenticated calls to these endpoints were not possible; the metrics fall back to git proxies or the exact insufficient-signal phrases stated in §5. The availability check is `command -v gh jq glab` together with `gh auth status`.
 
 ```bash
 # Releases (M9, higher confidence than the changeset-commit proxy)

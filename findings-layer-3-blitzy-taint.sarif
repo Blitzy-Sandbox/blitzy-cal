@@ -20,7 +20,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/117.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -40,7 +40,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/338.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -60,7 +60,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/601.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -80,7 +80,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/807.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -100,7 +100,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/843.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -120,7 +120,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/862.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -140,7 +140,7 @@
               },
               "helpUri": "https://cwe.mitre.org/data/definitions/918.html",
               "defaultConfiguration": {
-                "level": "warning"
+                "level": "note"
               },
               "properties": {
                 "tags": [
@@ -1485,163 +1485,6 @@
         },
         {
           "ruleId": "CWE-918",
-          "level": "error",
-          "message": {
-            "text": "SSRF: a user-supplied CalDAV server URL from req.body flows unsanitized into server-side DAV network requests. An authenticated user POSTs an arbitrary `url` to the CalDAV add handler; it is used to build the calendar service and `listCalendars()` is invoked synchronously in the same request, issuing server-side `createAccount` and `fetchCalendars` requests to the attacker-controlled host. No URL allowlist or SSRF validation is applied anywhere on the path."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "packages/lib/CalendarService.ts"
-                },
-                "region": {
-                  "startLine": 1058,
-                  "endLine": 1066
-                }
-              }
-            }
-          ],
-          "codeFlows": [
-            {
-              "threadFlows": [
-                {
-                  "locations": [
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
-                          },
-                          "region": {
-                            "startLine": 12
-                          }
-                        },
-                        "message": {
-                          "text": "source: const { username, password, url } = req.body \u2014 user-supplied CalDAV server URL"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
-                          },
-                          "region": {
-                            "startLine": 27
-                          }
-                        },
-                        "message": {
-                          "text": "hop: url is packed into the credential key via symmetricEncrypt(JSON.stringify({ username, password, url }))"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
-                          },
-                          "region": {
-                            "startLine": 38
-                          }
-                        },
-                        "message": {
-                          "text": "hop: BuildCalendarService({ ...data }) constructs the CalDAV service from that credential"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/app-store/caldavcalendar/lib/CalendarService.ts"
-                          },
-                          "region": {
-                            "startLine": 7
-                          }
-                        },
-                        "message": {
-                          "text": "hop: super(credential, \"caldav_calendar\") delegates to BaseCalendarService"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/lib/CalendarService.ts"
-                          },
-                          "region": {
-                            "startLine": 405
-                          }
-                        },
-                        "message": {
-                          "text": "hop: base constructor decrypts the credential and assigns this.url = url || credentialURL (attacker URL becomes the instance target)"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
-                          },
-                          "region": {
-                            "startLine": 44
-                          }
-                        },
-                        "message": {
-                          "text": "hop: await dav?.listCalendars() is called in-request, before any persistence and with no allowlist between source and sink"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/lib/CalendarService.ts"
-                          },
-                          "region": {
-                            "startLine": 1059
-                          }
-                        },
-                        "message": {
-                          "text": "sink: getAccount() -> createAccount({ serverUrl: this.url }) issues a server-side request to the attacker-controlled host"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/lib/CalendarService.ts"
-                          },
-                          "region": {
-                            "startLine": 859
-                          }
-                        },
-                        "message": {
-                          "text": "sink: fetchCalendars({ account, headers }) issues a further server-side request to the attacker-controlled server"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ],
-          "properties": {
-            "gateBlocking": true,
-            "exploitScenario": "An authenticated user (self-signup is available on many deployments) submits a CalDAV `url` pointing at an internal address (e.g. http://169.254.169.254/ or an internal-only service). add.ts builds the CalDAV service from that URL and calls listCalendars() synchronously in the same request, causing getAccount()->createAccount({ serverUrl }) and fetchCalendars() to issue server-side HTTP(S)/DAV requests to the attacker-chosen host. No allowlist constrains the host, enabling SSRF against internal infrastructure. Authentication only gates who can trigger the request and is not an SSRF control.",
-            "confidence": "high",
-            "sanitizersEncountered": [],
-            "intermediateHopsSummary": "req.body url (add.ts L12) -> embedded in encrypted credential key (add.ts L27) -> BuildCalendarService (add.ts L38) -> super() wrapper ctor (caldavcalendar/lib/CalendarService.ts L7) -> base ctor this.url = url (packages/lib/CalendarService.ts L405) -> listCalendars() in-request (add.ts L44) -> createAccount({ serverUrl: this.url }) (packages/lib/CalendarService.ts L1059) and fetchCalendars() (L859) server-side requests"
-          }
-        },
-        {
-          "ruleId": "CWE-918",
           "level": "note",
           "message": {
             "text": "Second-order SSRF candidate: persisted webhook subscriberUrl copied into a scheduled-trigger row and later fetched by the scheduled dispatcher; demoted because validateUrlForSSRFSync is applied on the originating write leg."
@@ -1881,6 +1724,163 @@
               "validateUrlForSSRFSync [packages/lib/ssrfProtection.ts] at create.handler.ts:28 (and edit.handler.ts:38); v2 REST uses validateWebhookUrl. Blocks cloud-metadata IPs always; on SaaS requires HTTPS and blocks localhost/private IPs"
             ],
             "intermediateHopsSummary": "z.string().url() format check (create.schema.ts L10) -> validateUrlForSSRFSync (create.handler.ts L28) -> WRITE prisma.webhook.create (create.handler.ts L91) -> READ subscriberUrl (sendPayload.ts L358) -> fetch (sendPayload.ts L373)"
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "error",
+          "message": {
+            "text": "SSRF: a user-supplied CalDAV server URL from req.body flows unsanitized into server-side DAV network requests. An authenticated user POSTs an arbitrary `url` to the CalDAV add handler; it is used to build the calendar service and `listCalendars()` is invoked synchronously in the same request, issuing server-side `createAccount` and `fetchCalendars` requests to the attacker-controlled host. No URL allowlist or SSRF validation is applied anywhere on the path."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/lib/CalendarService.ts"
+                },
+                "region": {
+                  "startLine": 1058,
+                  "endLine": 1066
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "source: const { username, password, url } = req.body \u2014 user-supplied CalDAV server URL"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "hop: url is packed into the credential key via symmetricEncrypt(JSON.stringify({ username, password, url }))"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 38
+                          }
+                        },
+                        "message": {
+                          "text": "hop: BuildCalendarService({ ...data }) constructs the CalDAV service from that credential"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 7
+                          }
+                        },
+                        "message": {
+                          "text": "hop: super(credential, \"caldav_calendar\") delegates to BaseCalendarService"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 405
+                          }
+                        },
+                        "message": {
+                          "text": "hop: base constructor decrypts the credential and assigns this.url = url || credentialURL (attacker URL becomes the instance target)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 44
+                          }
+                        },
+                        "message": {
+                          "text": "hop: await dav?.listCalendars() is called in-request, before any persistence and with no allowlist between source and sink"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 1059
+                          }
+                        },
+                        "message": {
+                          "text": "sink: getAccount() -> createAccount({ serverUrl: this.url }) issues a server-side request to the attacker-controlled host"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/lib/CalendarService.ts"
+                          },
+                          "region": {
+                            "startLine": 859
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetchCalendars({ account, headers }) issues a further server-side request to the attacker-controlled server"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": true,
+            "exploitScenario": "An authenticated user (self-signup is available on many deployments) submits a CalDAV `url` pointing at an internal address (e.g. http://169.254.169.254/ or an internal-only service). add.ts builds the CalDAV service from that URL and calls listCalendars() synchronously in the same request, causing getAccount()->createAccount({ serverUrl }) and fetchCalendars() to issue server-side HTTP(S)/DAV requests to the attacker-chosen host. No allowlist constrains the host, enabling SSRF against internal infrastructure. Authentication only gates who can trigger the request and is not an SSRF control.",
+            "confidence": "high",
+            "sanitizersEncountered": [],
+            "intermediateHopsSummary": "req.body url (add.ts L12) -> embedded in encrypted credential key (add.ts L27) -> BuildCalendarService (add.ts L38) -> super() wrapper ctor (caldavcalendar/lib/CalendarService.ts L7) -> base ctor this.url = url (packages/lib/CalendarService.ts L405) -> listCalendars() in-request (add.ts L44) -> createAccount({ serverUrl: this.url }) (packages/lib/CalendarService.ts L1059) and fetchCalendars() (L859) server-side requests"
           }
         }
       ],

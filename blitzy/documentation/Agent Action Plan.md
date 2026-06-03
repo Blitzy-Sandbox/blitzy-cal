@@ -4,430 +4,313 @@
 
 ## 0.1 Intent Clarification
 
-This section restates the user's request in precise technical language, surfaces the implicit requirements that the request entails, and translates each objective into a concrete action. The work described here is a **read-only Development Acceleration Measurement** performed against the repository resolved by `git remote get-url origin`, which is the Cal.com‑derived scheduling monorepo `blitzy-cal` `[git remote:origin]`. The repository is a Yarn Berry + Turborepo monorepo `[package.json:workspaces]` with approximately 16,880 commits on `main` spanning 2021‑03‑10 to 2026‑05‑15 `[git history:rev-list main]`.
-
 ### 0.1.1 Core Objective
 
-Based on the provided requirements, the Blitzy platform understands that the objective is to **quantify the development‑velocity acceleration attributable to the introduction of AI engineering tooling** in the `blitzy-cal` repository, by extracting twelve flow and operational metrics from version‑control history and ancillary engineering data sources, computing each metric as an *after ÷ before* ratio split at a detected **Tool Introduction Date**, and publishing the results as two deliverables: a traceable technical report (`acceleration-report.md`) and a self‑contained executive presentation (a reveal.js HTML file).
+Based on the provided requirements, the Blitzy platform understands that the objective is to perform an exhaustive, cross-file, source-to-sink **taint analysis** over the `blitzy-cal` repository — a Cal.com monorepo built on Yarn Berry and Turborepo — across **seven fixed CWE vulnerability classes**, and to emit the results as a single machine-readable artifact, `findings-layer-3-blitzy-taint.sarif` (valid SARIF 2.1.0), **without modifying any source file**.
 
-The explicit requirements, restated with enhanced clarity:
+This is a **read-only detection task**, not a remediation task. The deliverable is a static-analysis report that gates a downstream automated process; the platform reasons over the codebase to prove or disprove the reachability of untrusted input to dangerous sinks, and records the result. The seven in-scope vulnerability classes are fixed by the directive:
 
-- **Repository discovery** — Identify the subject repository through `git remote get-url origin` and analyze the entire commit window (earliest commit through most recent) `[git history:rev-list main]`.
-- **Tool Introduction Date detection** — Determine the pivot date that separates the *baseline* (before) period from the *accelerated* (after) period using the earliest `Co-authored-by:` AI trailer in commit history, corroborated by the sharpest sustained commit‑velocity inflection.
-- **Twelve‑metric extraction** — Compute the following frozen metric set, each as an after‑vs‑before comparison: (1) Flow Load, (2) Flow Velocity, (3) Flow Predictability, (4) Flow Active Time, (5) Flow Efficiency, (6) Flow Distribution, (7) Flow Time, (8) Problem Records in Release (revert commits), (9) Releases, (10) Approved Exceptions, (11) Escaped Defects (newly skipped/failed tests), and (12) Defects Out of SLA.
-- **Engineering‑actor framing** — In the after period, the AI tool is treated as an engineering *actor* that authors code on pull requests while humans review; working‑time metrics (4, 5) are computed from the actor's perspective, and actor‑aggregated metrics (2, 4, 5, 6, 10) include the AI actor as one row. Identical extraction logic is applied to both periods with only the date range and actor substituted.
-- **Temporal phase analysis** — Segment the after period into *Ramp‑Up* (first 90 days post‑introduction) and *Steady State* (90+ days), against the *Baseline*; bucket all time series into two‑week windows aligned to Monday starts.
-- **Confidence model** — Tag every derived metric High (direct issue‑tracker counts), Medium (git commit patterns), or Low (indirect proxies), per the actual data source used.
-- **Multi‑module analysis** — Run extraction per workspace/module and aggregate weighted by commit volume, because the subject is a multi‑workspace monorepo `[package.json:workspaces]`.
-- **Two deliverables** — Produce `acceleration-report.md` (eleven mandated sections including per‑metric before/after multipliers, per‑engineer breakdowns, a requirements traceability matrix, an acceleration curve, and a reproducibility appendix) and, per the user‑specified rule, a standalone reveal.js executive presentation.
+- **CWE-601** — URL Redirection to Untrusted Site (Open Redirect)
+- **CWE-918** — Server-Side Request Forgery (SSRF)
+- **CWE-117** — Improper Output Neutralization for Logs (Log Injection)
+- **CWE-807** — Reliance on Untrusted Inputs in a Security Decision
+- **CWE-338** — Use of Cryptographically Weak PRNG (in a security context)
+- **CWE-843** — Access of Resource Using Incompatible Type (Type Confusion)
+- **CWE-862** — Missing Authorization
 
-Implicit requirements surfaced from the request:
+The platform restates the requirement set with enhanced clarity below. Each requirement is assigned a stable identifier (R1–R9) and is traced to a concrete technical action in §0.3.
 
-- **Credential redaction** — The `origin` URL embeds an access credential; it must be scrubbed everywhere it is reported `[git remote:origin]`.
-- **Actor identity resolution** — The per‑engineer breakdown requires mapping commit author identities to real engineers and de‑duplicating aliases and bot accounts before aggregation.
-- **Tool‑attribution reconciliation** — Two AI signals coexist in the history: Devin (earliest co‑author trailer, 2025‑04‑08) and Blitzy (`agent@blitzy.com`, first appearing 2026‑02‑25). The pivot uses the earliest AI trailer; the after‑period actor population is the full AI cohort with Blitzy as one actor row. This ambiguity must be disclosed in the report's Limitations.
-- **Deterministic windowing** — A single Monday‑aligned two‑week windowing function must be reused identically across both periods and all metrics to keep comparisons valid.
-- **Graceful gap handling** — Where a data source is unavailable, the value must be reported as "Insufficient signal — [reason]" rather than estimated.
-- **Cross‑deliverable consistency** — Every number on the presentation must equal the corresponding number in the report.
+- **R1 — Detection-only / read-only:** No source file may be modified, created, or deleted; no refactoring, patching, or fixing is permitted. The only write operation is the production of `findings-layer-3-blitzy-taint.sarif`.
+- **R2 — Coverage:** Every one of the nine required directories must be searched for each category; if a directory is intentionally skipped for a category, the reason must be stated in that category's coverage block.
+- **R3 — Two-phase method:** Phase A enumerates every candidate call site via literal search and records exact patterns and raw hit counts; Phase B traces each candidate backward to a tainted source, naming every intermediate hop.
+- **R4 — Precision gate:** Only fully-substantiated, high-confidence findings with a complete code flow are emitted as gate-blocking (`level: error`, `gateBlocking: true`); everything else is emitted as `level: note`, `gateBlocking: false`. A false positive is treated as worse than a miss.
+- **R5 — Sanitizer-aware:** An effective sanitizer or validator on the path demotes a finding to a non-blocking note.
+- **R6 — Second-order taint:** Database-laundered values (for example `subscriberUrl`, stored redirect/return URLs, routing-form field values) must be proven on **both** legs — the tainted write and the read-to-sink — or the finding is demoted.
+- **R7 — Output contract:** The SARIF document must conform to the directive's structural contract (one run, one tool named `Blitzy-Taint-Layer3`, one result per finding, rule defined once per CWE, code-flow path locations, and the mandated `properties` on every result plus the per-category coverage block).
+- **R8 — Self-audit before writing:** A five-point self-audit (missing-hop, sanitizer, sampling, misclassification, second-order) must run before the artifact is written, downgrading any insufficiently-proven finding.
+- **R9 — Rule discipline:** Work proceeds strictly category-by-category; Phase A must be completed and the coverage block filled before Phase B begins for that category, and no category may begin until the previous one's coverage block is complete.
 
-Dependencies and prerequisites: a working `git` toolchain and a numeric/scripting runtime are required for extraction and windowing math; both are present in the analysis environment (`git` 2.43.0, `python3` 3.12.3) `[analysis-environment:toolchain]`. Optional GitHub API tooling (`gh`/`jq`) is absent and, if needed for higher‑confidence metrics, would require installation plus an authentication token.
+> **IMPORTANT — Scope of this section:** This document is the **Agent Action Plan** that interprets and plans the directive. Producing the SARIF artifact and executing the actual taint analysis is the downstream implementation activity; this section documents *how* that activity will be carried out, not the findings themselves.
 
 ### 0.1.2 Task Categorization
 
-- **Primary task type:** Documentation / Reporting — the deliverables are an analytics report and an executive presentation, not application code.
-- **Secondary aspects:** Data analysis and metrics engineering (git‑history mining and ratio derivation); data visualization (an acceleration curve plus KPI and Mermaid slides); and design‑system‑compliant front‑end authoring (a reveal.js HTML deck).
-- **Scope classification:** Additive, output‑only change — two net‑new files are created and **zero** existing repository files are modified or deleted. The change draws on **cross‑cutting, read‑only analysis** that spans the full ~5.2‑year history and every workspace, but its write footprint is isolated to the two deliverables.
+- **Primary task type:** Security enhancement — specifically a **security audit / static taint-analysis detection** task that is strictly read-only.
+- **Secondary aspects:** Tooling / automation output — the deliverable is a SARIF artifact consumed by an automated **precision gate** that runs without human triage.
+- **Scope classification:** **Cross-cutting**, repository-wide read-only analysis that produces exactly **one** new artifact file. It is explicitly *not* an infrastructure change and *not* a feature change; zero source code is modified.
 
 ### 0.1.3 Special Instructions and Constraints
 
-The request carries several non‑negotiable directives, captured here and formalized in §0.8 (Rules) and §0.9 (Special Instructions):
+The directive carries several non-negotiable directives that the platform captures verbatim in intent:
 
-- **Read‑only on the analyzed system** — The repository, its git history, and all external systems must not be modified.
-- **No fabrication** — Values may not be estimated, extrapolated, or invented; missing data is reported as "Insufficient signal."
-- **Frozen metric set** — Exactly the twelve metrics above; no additional metrics are introduced.
-- **Identical methodology** — The same window alignment and extraction logic are used for the before and after periods, differing only in date range.
-- **Factual‑neutral report tone** — The report body must contain zero subjective qualifiers.
-- **Dual‑deliverable mandate** — The reveal.js executive presentation is always included, independent of any other documentation.
-- **Web search requirement** — Methodology research (flow‑metric definitions and extraction conventions) was conducted to ground the approach; see §0.2.
+- **"Do not modify, create, or delete any source files in the repository. Do not refactor, patch, or fix anything you find. Your only write operation is producing the output file `findings-layer-3-blitzy-taint.sarif`."** — This is the controlling read-only constraint.
+- **Precision-gate posture:** the output gates an automated process without human review, so only fully-substantiated, high-confidence findings may be gate-blocking; suspected-but-unproven candidates are recorded as non-blocking notes. **Under-reporting blocking findings is the intended failure mode.**
+- **Anti-sampling rule:** phrases such as *"and similar patterns elsewhere"* or *"representative example"* are forbidden — Phase A must record every hit, not a sample.
+- **Hard structural rule:** a result with an empty `codeFlows` array must never be `level: error` or `gateBlocking: true`.
 
-User‑provided examples are preserved where they constrain implementation. The twelve metric names and their intended data signals (listed in §0.1.1) are preserved exactly as specified, as is the temporal‑phase definition (Ramp‑Up = first 90 days; Steady State = 90+ days) and the two‑week Monday‑aligned windowing requirement.
+These methodological requirements (two-phase per category, sanitizer-aware tracing, second-order both-legs proof, self-audit before write) are documented in full in §0.3 and §0.7.
 
 ### 0.1.4 Technical Interpretation
 
-These requirements translate to the following technical implementation strategy. Each requirement is mapped to a concrete action using cause‑and‑effect language (HOW, not WHEN):
+These requirements translate to the following technical implementation strategy. The mapping uses cause-and-effect language to connect each requirement to a concrete action.
 
-| Requirement | Technical Action |
-|-------------|------------------|
-| Discover the subject repository | To identify the subject, we will run `git remote get-url origin`, redact the embedded credential, and capture repository identity facts `[git remote:origin]` |
-| Establish a verifiable environment | To satisfy Environment‑First provenance, we will capture git version, commit/branch/tag counts, submodule state, date range, and an extraction timestamp before any metric is computed `[git history:rev-list/branch/tag]` |
-| Detect the Tool Introduction Date | To split before/after, we will extract the earliest AI `Co-authored-by:` trailer (2025‑04‑08, Devin) and corroborate with the commit‑velocity inflection `[git log:Co-authored-by]` |
-| Bucket time consistently | To keep comparisons valid, we will create a deterministic Monday‑aligned two‑week windowing function and classify after‑period windows into Ramp‑Up / Steady State |
-| Extract each of the 12 metrics | To populate the metric set, we will run identical per‑module extraction commands over the before and after ranges and tag each result with a confidence level |
-| Frame the AI actor | To honor actor framing, we will substitute the actor (human in baseline, AI cohort in after) in actor‑aggregated and working‑time metrics |
-| Aggregate the monorepo | To reflect the multi‑module layout, we will compute per‑workspace results and aggregate weighted by commit volume `[package.json:workspaces]` |
-| Assemble the report | To deliver `acceleration-report.md`, we will compose the eleven mandated sections and enforce the six report‑internal rules |
-| Build the presentation | To deliver the executive deck, we will create a self‑contained reveal.js HTML file whose KPI values are drawn from the report's verified numbers |
+- To **detect each CWE class** without sampling, the platform will run literal sink-pattern searches across the nine required directories (Phase A), recording the exact patterns and raw hit counts into the category's coverage block.
+- To **prove exploitability**, the platform will trace each enumerated hit backward to an untrusted source (Phase B), naming every intermediate hop in a SARIF code flow.
+- To **honor the precision gate**, the platform will record every sanitizer encountered and demote any path that passes through an effective control (for example, the open-redirect allowlist in `getSafeRedirectUrl` [packages/lib/getSafeRedirectUrl.ts:L5-L23]).
+- To **classify each candidate**, the platform will assign it to one of three buckets — blocking `error`, non-blocking `note`, or `ruledOut` (with reasons) — and enforce the hard rule that empty code flows can never block.
+- To **emit a gate-consumable artifact**, the platform will serialize all results and per-category coverage into SARIF 2.1.0, then run the five-point self-audit and downgrade insufficiently-proven findings before writing `findings-layer-3-blitzy-taint.sarif` at the repository root — the sole filesystem mutation.
+
 
 ## 0.2 Repository Scope Discovery
 
-This section documents the exhaustive discovery of every data source the measurement will read, the research conducted to ground the methodology, and an assessment of the existing engineering infrastructure that shapes confidence levels and proxy selection. All paths below were validated to exist in the working tree; no source listed here is modified by the task (every entry is a read‑only input).
-
 ### 0.2.1 Comprehensive File Analysis
 
-The data sources required to populate the twelve metrics were located by category. Each source is annotated with the metric(s) it feeds.
+The directive mandates that **nine directories** be searched for every category. All nine were confirmed to exist in the monorepo, which is rooted at `apps/` and `packages/`. The table below records each required directory, its confirmed source-file count (`.ts`/`.tsx`/`.js`, excluding `node_modules`), and its role in the analysis. These counts establish the scale of the candidate surface and ground the per-category coverage blocks; they are illustrative of the search scope, while the implementing agent's exhaustive Phase A produces the authoritative raw-hit numbers.
 
-**Primary source — Git history (feeds metrics 1–9, 11):**
+| Required Directory | Source Files | Role in Analysis |
+|--------------------|-------------:|------------------|
+| `apps/web/` | 1,646 | Next.js front end and App/Pages route handlers — open-redirect, log-injection, and missing-authorization surface [apps/web/package.json:L110] |
+| `apps/api/v1/` | 232 | Deprecated Next.js Pages API (port 3003) — type-confusion (`req.query`) and missing-authorization verb handlers [apps/api/v1/pages/api/] |
+| `apps/api/v2/` | 954 | Active NestJS API (port 3004) — auth strategies, guard stack, loggers, filters [apps/api/v2/package.json:L53-L55] |
+| `packages/features/` | 1,604 | Webhooks, routing forms, bookings — SSRF (`sendPayload`) and second-order taint surface |
+| `packages/app-store/` | 850 | 111 top-level adapter directories — SSRF via provider callbacks and root URLs |
+| `packages/embeds/` | 70 | Embed runtime and `postMessage` surface — open-redirect resource loads |
+| `packages/trpc/` | 829 | tRPC routers and procedures — missing-authorization on mutations |
+| `packages/lib/` | 286 | Shared utilities including the redirect sanitizer and the application logger [packages/lib/getSafeRedirectUrl.ts], [packages/lib/logger.ts] |
+| `packages/prisma/` | 23 | Prisma schema and client — the persistence boundary for second-order taint |
 
-- The full commit DAG of `main` — 16,880 commits, 27 branches, **0 tags**, 2021‑03‑10 → 2026‑05‑15, no submodules `[git history:rev-list/branch/tag]`. Co‑author trailers, conventional‑commit subjects, author identities, timestamps, and revert markers are all extractable directly.
+The combined required surface is approximately **6,594 source files**. The per-category literal-search patterns, the raw hit counts that establish the candidate surface, and the specific seed locations are detailed in §0.3.2 (Category Impact Analysis).
 
-**Release / changelog sources (feed metrics 8, 9):**
-
-- `.changeset/config.json` — declares the changelog generator `@changesets/changelog-github` pointing at `calcom/cal.com`, `baseBranch: main`, and `privatePackages.tag: false` `[.changeset/config.json:changelog]` `[.changeset/config.json:privatePackages]`. The `tag: false` setting, combined with the observed **0 git tags**, confirms releases in this fork are not tag‑driven.
-- `.changeset/tender-birds-think.md` — a pending changeset entry `[.changeset/tender-birds-think.md]`.
-- No root `CHANGELOG` file exists `[repo-root:CHANGELOG(absent)]`.
-- Release workflows: `.github/workflows/draft-release.yml`, `re-draft.yml`, `post-release.yml`, `release-docker.yaml`, and `changesets.yml` `[.github/workflows/draft-release.yml]`.
-
-**Test / CI sources (feed metric 11 and confidence assessment):**
-
-- Workflows: `all-checks.yml`, `unit-tests.yml`, `api-v2-unit-tests.yml`, `integration-tests.yml`, `e2e.yml`, `e2e-api-v2.yml`, `e2e-app-store.yml`, `e2e-atoms.yml`, `e2e-embed.yml`, `e2e-embed-react.yml`, `e2e-report.yml`, `performance-tests.yml`, `security-audit.yml` `[.github/workflows/all-checks.yml]`.
-- Test configuration: `vitest.workspace.ts`, `playwright.config.ts`, `apps/api/v2/jest.config.ts`, `apps/api/v2/jest-e2e.ts` `[vitest.workspace.ts]` `[playwright.config.ts]`.
-- CI emits JUnit XML (`./test-results/junit.xml` for Jest, `./test-results/reports/results.xml` for Playwright), but blob report artifacts are retained only ~30 days `[blitzy-docs/technical-specifications.md:§6.6]`, so historical CI test results are unavailable across the multi‑year window.
-
-**Tool‑introduction corroboration — Devin AI workflows:**
-
-- `cubic-devin-review.yml`, `cubic-devin-review-trigger.yml`, `devin-conflict-resolver.yml`, `stale-pr-devin-completion.yml`, `sync-agents-to-devin.yml` `[.github/workflows/cubic-devin-review.yml]`. The technical specification independently classifies these as a dedicated "Devin AI Integration Workflows" category `[blitzy-docs/technical-specifications.md:§3.6.7.2]`.
-
-**Distribution / label / actor sources (feed metrics 6, 10, and per‑engineer view):**
-
-- `.github/labeler.yml` (auto‑labeling), `.github/ISSUE_TEMPLATE/{bug_report.md, feature_request.md, config.yml}`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS` `[.github/labeler.yml]` `[.github/CODEOWNERS]`. Note: `CODEOWNERS` exempts test files from review `[blitzy-docs/technical-specifications.md:§6.6]`, which affects "ready‑for‑review" detection in working‑time metrics.
-
-**SLA / severity source (feeds metric 12):**
-
-- **None found.** No dedicated SLA, severity‑policy, or runbook file exists in the repository; severity/SLA timestamps would require an issue‑tracker API. Metric 12 is therefore expected to resolve to "Insufficient signal — no SLA data source."
-
-**Project‑context documents (interpretive context, not metric data):**
-
-- `blitzy-docs/project-guide.md` (the Cal.com Calendly‑Parity project guide), `blitzy-docs/technical-specifications.md` (this specification), and `AGENTS.md` (engineering conventions, including a 5–7 file / 500‑line PR‑size guideline) `[AGENTS.md]` `[blitzy-docs/project-guide.md]`.
+A repository-wide search confirmed that **no `.blitzyignore` files exist**, so no path-pattern exclusions apply beyond the standard exclusion of `node_modules`. The output artifact `findings-layer-3-blitzy-taint.sarif` does **not** currently exist; it will be the sole file created.
 
 ### 0.2.2 Web Search Research Conducted
 
-Research was performed to validate the metric methodology and to confirm the standard definitions used by the report's Methodology section:
+Because the deliverable must be consumed by an automated gate, the platform validated the **SARIF 2.1.0 output contract** against the authoritative OASIS specification before designing the serialization approach. The research confirmed:
 
-- **Flow‑metric definitions and conventions** — Metrics 1–7 align to the Flow Framework, formalized by Mik Kersten in *Project to Product* (2018), which defines Flow Velocity, Flow Time, Flow Efficiency, Flow Load, and Flow Distribution; the Scaled Agile Framework (SAFe) adds a sixth metric, Flow Predictability. Confirmed definitions: Velocity = completed items per period; Time = start→finish including wait; Efficiency = active ÷ total time; Load = work‑in‑progress; Distribution = mix of features/defects/risk/debt; Predictability = consistency of meeting commitments. Sources consulted: flowframework.org, scaledagile.com, and engineering‑metrics vendor documentation (LinearB, getDX, Multitudes).
-- **Operational/compliance measures** — Metrics 8–12 (problem records, releases, approved exceptions, escaped defects, defects out of SLA) align to DORA‑adjacent operational and change‑management measures.
-- **Extraction command validity** — Rather than relying solely on documentation, the candidate `git` extraction commands were validated empirically against the live repository (co‑author trailer dates, before/after commit counts, revert counts, changeset version‑bump counts, conventional‑commit distribution). GitHub REST endpoints for releases/PRs/issues are stable, well‑established knowledge; empirical validation provides stronger evidence for the reproducibility appendix.
+- The top-level document shape is `{ $schema, version: "2.1.0", runs[] }`, where the authoritative schema is published at `docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json`.
+- Rule metadata lives once in `run.tool.driver.rules[]` as `reportingDescriptor` objects, and each `result` references its rule by `ruleId` — exactly the directive's "rule defined once per CWE" contract.
+- A taint path is encoded as `result.codeFlows[].threadFlows[].locations[]`, a temporally ordered list of `threadFlowLocation` objects (source → hops → sink), each carrying a `location.physicalLocation` with an `artifactLocation.uri` and a `region`.
+- The `level` enumeration is `error | warning | note | none`; the directive deliberately uses only `error` (blocking) and `note` (non-blocking), with no `warning` tier.
+- Arbitrary `properties` bags are permitted on both `result` and `run`, which is where the mandated `gateBlocking`, `confidence`, `sanitizersEncountered`, `exploitScenario`, `intermediateHopsSummary`, and the per-category `coverage` block are carried.
+
+This confirms the directive's field mapping is schema-valid and that a single-run, single-tool document with code-flow-backed results is the correct structure.
 
 ### 0.2.3 Existing Infrastructure Assessment
 
-- **Project structure** — A Yarn Berry (4.12.0) + Turborepo (2.7.1) monorepo with 20+ workspaces under `apps/*`, `apps/api/*`, `packages/*`, `packages/embeds/*`, `packages/features/*`, `packages/platform/*`, and `example-apps/*` `[package.json:workspaces]` `[blitzy-docs/technical-specifications.md:§3.6.2]`. This multi‑module layout mandates per‑module extraction aggregated by commit volume.
-- **Languages** — Overwhelmingly TypeScript (≈5,718 `.ts` + 1,678 `.tsx`), with Prisma SQL, YAML workflows, and Markdown docs `[git ls-files:extensions]`.
-- **Conventions** — Conventional‑commit subjects (feat/fix/chore/refactor/docs/perf/test/ci/build) are used consistently, enabling Flow Distribution classification from commit subjects `[git log:%s]`. Releases are changeset‑driven (`@changesets/cli` 2.29.4) rather than tag‑driven `[blitzy-docs/technical-specifications.md:§3.6.9.1]`.
-- **Build / deploy** — 50+ GitHub Actions workflows orchestrated by `all-checks.yml`, with deployment to Heroku/Vercel/Docker `[blitzy-docs/technical-specifications.md:§3.6.7]`. These are context only; the measurement does not run them.
-- **Testing infrastructure** — A six‑tier topology (Vitest 4.0.16, Jest 29.7.0, Playwright 1.57.0, k6, Checkly, Snyk) with a 253/253 in‑scope pass‑rate quality gate and a `test.skip`‑with‑TODO convention `[blitzy-docs/technical-specifications.md:§6.6]`. The skip convention is the most viable signal for metric 11 given the limited CI artifact retention.
-- **Documentation system** — Product and specification docs live under `docs/`, `blitzy/`, and `blitzy-docs/`; these directories are not the home for this task's deliverables, which are placed at the repository root to match the prompt's bare filename.
+The codebase already implements several security controls that are decisive for sanitizer-aware classification. Recognizing them is what allows the platform to demote sanitized paths to non-blocking notes rather than over-reporting them as blocking.
 
-## 0.3 Scope Boundaries
+- **Open-redirect sanitizer.** `getSafeRedirectUrl` [packages/lib/getSafeRedirectUrl.ts:L5-L23] throws if the URL is not an absolute `http(s)` URL, parses it, and overwrites it to `` `${WEBAPP_URL}/` `` when the origin is not in the `[CONSOLE_URL, WEBAPP_URL, WEBSITE_URL]` allowlist — an effective control. A companion, `isSafeUrlToLoadResourceFrom` [packages/lib/getSafeRedirectUrl.ts:L26-L50], enforces an `http/https` + TLD+1 allowlist for embed resource loads and is intentionally duplicated at `packages/embeds/embed-core/src/preview.ts`.
+- **Log masking.** The shared tslog logger configures `maskValuesOfKeys` for `password`/`credentials` keys only [packages/lib/logger.ts:L7]; CRLF/newline injection into *other* logged fields is therefore not neutralized and remains the CWE-117 target. The NestJS API additionally uses a Winston logger [apps/api/v2/src/lib/logger.ts] and an HTTP logging middleware [apps/api/v2/src/middleware/app.logger.middleware.ts], with exception filters under `apps/api/v2/src/filters/`.
+- **Authorization stack (CWE-807/862).** The NestJS API centralizes credential evaluation in a composite auth strategy [apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts] and enforces access via a guard stack — `api-auth`, `pbac`, `roles`, `optional-api-auth`, `organization-roles`, and webhook-specific guards (`is-user-webhook`, `is-team-event-type-webhook`, `is-oauth-client-webhook`, `is-user-event-type-webhook`), plus `apps/api/v2/src/vercel-webhook.guard.ts` and `apps/api/v2/src/ee/bookings/2024-08-13/guards/booking-pbac.guard.ts`. Presence of an appropriate guard is the primary signal that demotes a CWE-862 candidate.
+- **Webhook signing (CWE-807/918).** HMAC-SHA256 signing using the `X-Cal-Signature-256` header is implemented in the webhook dispatcher [packages/features/webhooks/lib/sendPayload.ts]; the same dispatcher's `subscriberUrl` handling is the primary second-order SSRF surface.
+- **Secure PRNG baseline (CWE-338).** `crypto.randomBytes` is present in the codebase and represents the correct secure-random pattern against which `Math.random` uses are contrasted; a `Math.random` call is only a finding when it feeds a security-sensitive value.
 
-This section draws the precise boundary between what the task will and will not touch. Because the work is an additive, read‑only measurement, the **write** scope is limited to two new files while the **read** scope spans the entire repository history.
+These controls, the directory inventory, and the SARIF research collectively confirm that the directive's two-phase precision-gate methodology is well-matched to the codebase and can be executed without any environment build or dependency installation.
 
-### 0.3.1 Exhaustively In Scope
 
-**Deliverables to create (write scope):**
+## 0.3 Implementation Design
 
-- `acceleration-report.md` — the eleven‑section measurement report at the repository root.
-- `acceleration-report-executive-presentation.html` — the rule‑mandated self‑contained reveal.js executive presentation at the repository root.
+### 0.3.1 Technical Approach
 
-**Read‑only analysis inputs (read scope — never written):**
+The platform will execute a **per-category, two-phase loop**, processing exactly one CWE class at a time in obedience to the rule discipline (R9). The logical flow — which is an order of operations, not a schedule — is:
 
-- Git history — the full `main` DAG and all reachable refs `[git history:rev-list]`.
-- Release sources — `.changeset/config.json`, `.changeset/*.md`, `.github/workflows/{draft-release,re-draft,post-release,release-docker,changesets}.y*ml` `[.changeset/config.json]`.
-- Test / CI sources — `.github/workflows/{all-checks,unit-tests,api-v2-unit-tests,integration-tests,e2e*,performance-tests,security-audit}.yml`, `vitest.workspace.ts`, `playwright.config.ts`, `apps/api/v2/jest*.ts` `[.github/workflows/all-checks.yml]`.
-- AI‑tooling corroboration — `.github/workflows/{cubic-devin-review,cubic-devin-review-trigger,devin-conflict-resolver,stale-pr-devin-completion,sync-agents-to-devin}.yml` `[.github/workflows/cubic-devin-review.yml]`.
-- Distribution / actor sources — `.github/labeler.yml`, `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS` `[.github/labeler.yml]`.
-- Context docs — `AGENTS.md`, `blitzy-docs/project-guide.md`, `blitzy-docs/technical-specifications.md` `[AGENTS.md]`.
-
-**Design reference (read‑only, inline‑embedded into the presentation):**
-
-- `blitzy-deck/references/blitzy-reveal-theme.css` — the canonical Blitzy reveal.js theme (see §0.5).
-
-**Analytical work products contained within the deliverables:** the Tool Introduction Date determination; the Monday‑aligned two‑week windowing; per‑metric before/after multipliers for all twelve metrics (or "Insufficient signal"); temporal‑phase segmentation; the per‑engineer breakdown; the requirements traceability matrix; the graphical acceleration curve; and the reproducibility appendix.
-
-### 0.3.2 Explicitly Out of Scope
-
-- **Any modification to existing repository files** — no `UPDATE` or `DELETE` of source, configuration, workflow, or documentation files; the analyzed codebase is strictly read‑only.
-- **Git history alteration** — no rebases, amends, force‑pushes, or tag creation.
-- **External‑system changes** — no writes to GitHub, CI/CD systems, or project‑management tools; API access (if used) is read‑only.
-- **Data fabrication** — no estimating, extrapolating, or inventing values; unavailable measurements are reported as "Insufficient signal — [reason]" (anticipated for metric 12, and potentially metrics 8/9/11 where only proxies exist).
-- **Metric expansion** — no metrics beyond the frozen set of twelve.
-- **Runtime performance, customer satisfaction (CSAT), and revenue‑impact analysis** — explicitly excluded by the user request.
-- **Building or running the Cal.com application** — the measurement reads history; it does not compile, deploy, or execute the product.
-- **Repository dependency changes** — no edits to `package.json` or `yarn.lock`; the presentation's libraries are external CDN references, not installed packages (see §0.4).
-- **Final metric computation inside this Agent Action Plan** — this plan defines the approach; the numeric results are produced in `acceleration-report.md`. (Proxy figures gathered during discovery were command‑validation only and are not reported here as findings.)
-- **Unrelated refactoring, tooling, or future enhancements** not required to produce the two deliverables.
-
-## 0.4 Dependency Inventory
-
-This task makes **no changes to the repository's dependency manifests** (`package.json`, `yarn.lock`). The analyzed product's stack (Node.js 20.20.2, Yarn 4.12.0, TypeScript 5.9.3, Next.js 16.1.5, Prisma 6.16.1, etc. `[blitzy-docs/technical-specifications.md:§1.2.2.3]`) is interpretive context only and is neither installed nor modified. The dependencies below are the libraries the **deliverables themselves** require: external CDN‑pinned runtime libraries for the presentation, and host‑level tooling for the analysis.
-
-### 0.4.1 Key Private and Public Packages
-
-| Registry | Package Name | Version | Purpose |
-|----------|--------------|---------|---------|
-| CDN (npm) | reveal.js | 5.1.0 | Presentation framework for the executive deck (self‑contained HTML) |
-| CDN (npm) | mermaid | 11.4.0 | Architecture and data‑flow diagrams rendered inside slides |
-| CDN (npm) | lucide | 0.460.0 | SVG icon set (replaces emoji) for slide visuals |
-| Google Fonts | Inter | n/a (web font) | Body typography for the presentation |
-| Google Fonts | Space Grotesk | n/a (web font) | Display/heading typography for the presentation |
-| Google Fonts | Fira Code | n/a (web font) | Monospace/eyebrow typography for the presentation |
-| System (apt) | git | 2.43.0 | Primary extraction tool for commit‑history mining `[analysis-environment:git]` |
-| System (apt) | python3 | 3.12.3 | Windowing math, ratio derivation, and chart generation `[analysis-environment:python3]` |
-| System (apt) | gh / glab / jq | not installed (optional) | Higher‑confidence API extraction for label/release/SLA metrics; absent → git‑proxy fallback `[analysis-environment:toolchain]` |
-
-### 0.4.2 Dependency Updates
-
-- **New dependencies to add (repository manifests):** None. No package is added to `package.json` or `yarn.lock`.
-- **New external references introduced (within the new presentation file only):** reveal.js 5.1.0, Mermaid 11.4.0, and Lucide 0.460.0 are loaded via pinned CDN URLs, and the three Google Fonts via a `<link>` tag, keeping the HTML self‑contained with no build step and no local file dependencies.
-- **Dependencies to update:** None.
-- **Dependencies to remove:** None.
-- **Import / reference updates:** None — no repository source code is authored that imports internal modules, so there are no import‑transformation rules to apply.
-
-The optional `gh`/`glab`/`jq` tooling is the only dependency whose presence would materially change outcomes: installing it (plus providing a read‑only API token) would raise confidence for the API‑dependent metrics (6 labels, 9 releases, 10 approved exceptions, 11 CI test history, 12 SLA). Absent it, those metrics fall back to git‑history proxies at lower confidence or "Insufficient signal," as documented in §0.6 and the report's Limitations.
-
-## 0.5 Design System Compliance
-
-The executive presentation must comply with the **Blitzy reveal.js brand theme**, a proprietary design system specified in the user's "Executive Presentation" rule. Because no public component library (Ant Design, MUI, etc.) is involved and no Figma source was provided, compliance is expressed as adherence to the theme's CSS custom properties, slide‑type classes, and component classes rather than to a third‑party component API.
-
-### 0.5.1 System Identification
-
-- **Library:** Blitzy reveal.js Brand Theme (proprietary). **Status:** to‑be‑embedded — the canonical theme file is not present in the analyzed repository and is inline‑embedded into the deliverable.
-- **Runtime libraries (CDN‑pinned):** reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0.
-- **Canonical source:** `blitzy-deck/references/blitzy-reveal-theme.css` (Blitzy‑internal reference; not in `blitzy-cal`). The complete token set and class list are also specified verbatim in the user rule and are reproduced in §0.5.3.
-- **Verification target:** the HTML opens in a browser with no build step, renders all Mermaid diagrams and Lucide icons, contains 12–18 `<section>` elements, and every `<section>` includes at least one non‑text visual.
-
-### 0.5.2 Component Mapping
-
-Each presentation UI element maps to a theme slide‑type or component class (cited by class name), not to raw HTML:
-
-| UI Element | Theme Component | Class / Selector | Variant / Usage | Notes |
-|------------|-----------------|------------------|-----------------|-------|
-| Title slide | Title type | `section.slide-title` | hero gradient, white text | Eyebrow in Fira Code teal |
-| Section divider | Divider type | `section.slide-divider` | dark `#2D1C77` or gradient | Large centered heading + thematic Lucide icon |
-| Closing slide | Closing type | `section.slide-closing` | navy `#1A105F` | 3–6 word takeaway, ≤3 bullets, brand lockup, accent bar |
-| Content slide | Default | `section` | ≤4 bullets / ≤40 words | Must contain ≥1 non‑text visual |
-| KPI metric card | KPI card | `.kpi-card` in `.kpi-grid` | `.kpi-value` + `.kpi-label` + `.kpi-icon` | Used for before/after multipliers |
-| Eyebrow label | Eyebrow | `.eyebrow` | Fira Code | Section context line |
-| Accent bar | Accent bar | `.accent-bar` | `--gradient-accent-bar` | Closing/title accent |
-| Brand lockup | Brand lockup | `.brand-lockup` | — | Closing slide branding |
-| Hero icon | Hero icon | `.hero-icon` | Lucide SVG | Title/divider focal icon |
-| Icon row | Icon row | `.icon-row` | Lucide SVG set | Multi‑icon content rows |
-| Architecture / data‑flow diagram | Mermaid container | `pre.mermaid` | raw Mermaid syntax | `mermaid.run()` on ready + `slidechanged` |
-| All icons | Lucide | `<i data-lucide="name">` | — | `lucide.createIcons()` on ready + `slidechanged`; zero emoji |
-
-### 0.5.3 Token Catalog
-
-No Figma source exists, so there are no design‑pixel values to resolve; instead the deck draws exclusively from the brand token set below (zero hardcoded values). All `<style>` declarations resolve to these custom properties.
-
-| Category | Token | Value |
-|----------|-------|-------|
-| Color | `--blitzy-primary` | `#5B39F3` |
-| Color | `--blitzy-primary-dark` | `#2D1C77` |
-| Color | `--blitzy-primary-navy` | `#1A105F` |
-| Color | `--blitzy-primary-light` | `#7A6DEC` |
-| Color | `--blitzy-primary-deep` | `#4101DB` |
-| Color | `--blitzy-accent-teal` | `#94FAD5` |
-| Surface | `--blitzy-surface-0…3` | `#FFFFFF` / `#F4EFF6` / `#F2F0FE` / `#F5F5F5` |
-| Border | `--blitzy-border` / `--blitzy-border-soft` | `#D9D9D9` / `rgba(91,57,243,0.18)` |
-| Text | `--blitzy-text` / `--blitzy-text-muted` / `--blitzy-text-invert` | `#333333` / `#999999` / `#FFFFFF` |
-| Typography | `--ff-body` / `--ff-display` / `--ff-mono` | Inter / Space Grotesk / Fira Code |
-| Gradient | `--gradient-hero` | `linear-gradient(68deg, #7A6DEC 15.56%, #5B39F3 62.74%, #4101DB 84.44%)` |
-| Gradient | `--gradient-divider` | `linear-gradient(135deg, #2D1C77 0%, #5B39F3 100%)` |
-| Gradient | `--gradient-accent-bar` | `linear-gradient(90deg, #5B39F3 0%, #94FAD5 100%)` |
-| Mermaid theme | primary / text / border / line / secondary | `#F2F0FE` / `#333333` / `#5B39F3` / `#999999` / `#F4EFF6` |
-
-### 0.5.4 Gaps Inventory
-
-- **Canonical theme file absent from repo** — Resolution: inline‑embed the full `:root` block, slide‑type classes, and component classes (specified in the user rule) directly in the HTML `<style>` tag. No external CSS dependency.
-- **No native chart primitive for the acceleration curve** — The theme provides KPI cards and a Mermaid container but no dedicated line‑chart component. Resolution (graceful degradation): render the acceleration curve as a Mermaid `xychart` or as an inline SVG/styled table built from brand tokens, placed in the default content slide type.
-- **No Figma token source** — Not a true gap for a data‑presentation deck; tokens are taken directly from the brand specification, so there is no design‑to‑token reconciliation required.
-
-### 0.5.5 Compliance Summary
-
-The Blitzy reveal.js theme fully covers the presentation's needs: title/divider/closing slide types, KPI cards for before/after multipliers, a Mermaid container for architecture and data‑flow diagrams, and Lucide icons for all non‑text visuals (satisfying the "≥1 visual per slide, zero emoji" constraint). One graceful‑degradation decision is required — rendering the acceleration curve via Mermaid `xychart` or token‑styled SVG, as the theme has no dedicated chart component. The only dependencies introduced are the three CDN‑pinned libraries (reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0) and three Google Fonts; no repository dependency is added. With the theme inline‑embedded, the deck is fully brand‑compliant and self‑contained.
-
-## 0.6 Implementation Design
-
-This section describes how the two deliverables are produced — the technical approach and logical flow, the component impact, the presentation's UI design, how the user's examples map to implementation, and the critical implementation details that govern correctness.
-
-### 0.6.1 Technical Approach
-
-The primary objective — quantifying AI‑attributable acceleration — is achieved by extracting twelve metrics over two date ranges and expressing each as an after÷before ratio, then communicating the results through a factual report and an executive deck. The implementation proceeds as a logical pipeline (this is an ordering of dependencies, not a schedule):
-
-- **First, establish the foundation** by capturing the execution environment — resolve `git remote get-url origin` (with the embedded credential redacted), and record git version, commit count, branch count, tag count, submodule state, the commit date range, and an extraction timestamp `[git history:rev-list/branch/tag]`. This satisfies the report's Environment Verification section and the Environment‑First rule before any metric is computed.
-- **Next, detect the Tool Introduction Date** by extracting the earliest AI `Co-authored-by:` trailer (2025‑04‑08, Devin) and corroborating it with the commit‑velocity inflection and the institutionalized Devin workflows `[.github/workflows/cubic-devin-review.yml]` `[blitzy-docs/technical-specifications.md:§3.6.7.2]`. This pivot defines the before/after split for every metric.
-- **Then, build a deterministic windowing function** that buckets commits into two‑week windows aligned to Monday starts and classifies after‑period windows into Ramp‑Up (first 90 days) and Steady State (90+ days). The ~13‑month after period guarantees all three temporal phases populate.
-- **Then, enumerate data sources** with access methods and availability, falling back to documented proxies where API tooling is absent (§0.2).
-- **Then, extract each metric** by running identical per‑module commands over both ranges, assigning a confidence tag to the actual source, and marking gaps as "Insufficient signal."
-- **Then, resolve actor identities** (alias/bot de‑duplication) and compute the per‑engineer breakdown, including the AI actor as one row in the after period.
-- **Then, aggregate** per‑module results weighted by commit volume and build the acceleration time series.
-- **Finally, ensure quality and communication** by assembling the eleven report sections under the six report‑internal rules, then building the presentation strictly from the report's verified numbers.
+- **First**, establish coverage for the current category by running every literal sink-pattern search across the nine required directories (Phase A), recording the exact `searchPatterns` and `rawHits` into that category's coverage block. No sampling is permitted.
+- **Next**, prove reachability by tracing each enumerated candidate backward to an untrusted source (Phase B), naming every intermediate hop and recording every sanitizer encountered along the way.
+- **Then**, classify each surviving candidate into one of three buckets — blocking `error`, non-blocking `note`, or `ruledOut` (with explicit reasons).
+- **Only after** the current category's coverage block is complete does the loop advance to the next CWE class.
+- **Finally**, once all seven categories are processed, serialize all results plus the per-category coverage into a single SARIF 2.1.0 document, run the five-point self-audit, downgrade any insufficiently-proven finding, and write `findings-layer-3-blitzy-taint.sarif` at the repository root — the only filesystem mutation.
 
 ```mermaid
-flowchart TB
-    A["git remote get-url origin<br/>(redact credential)"] --> B["Environment Verification<br/>counts, dates, timestamp"]
-    B --> C["Detect Tool Introduction Date<br/>earliest AI co-author trailer 2025-04-08"]
-    C --> D["Monday-aligned 2-week windowing<br/>Baseline / Ramp-Up / Steady State"]
-    D --> E["Data Source Inventory<br/>git primary + optional API + proxies"]
-    E --> F["Per-metric extraction x12<br/>identical logic, before vs after, per module"]
-    F --> G["Confidence tagging<br/>High / Medium / Low / Insufficient"]
-    G --> H["Actor resolution<br/>alias dedupe, AI actor row"]
-    H --> I["Weighted aggregation<br/>by commit volume"]
-    I --> J["acceleration-report.md<br/>11 sections, Rules 1-6"]
-    J --> K["Executive presentation HTML<br/>values sourced from report"]
-%% Read-only on the analyzed codebase; only J and K are written
+flowchart TD
+    Start([Start: 7 CWE categories]) --> Pick[Select next CWE category]
+    Pick --> A[Phase A: literal search across 9 dirs<br/>record searchPatterns + rawHits<br/>NO sampling]
+    A --> Cov[Fill category coverage block]
+    Cov --> B[Phase B: trace each candidate<br/>backward to a tainted source<br/>name every hop, record sanitizers]
+    B --> Class{Complete codeFlow<br/>AND high confidence<br/>AND no effective sanitizer?}
+    Class -- Yes --> Block[level: error, gateBlocking: true]
+    Class -- Partial / sanitized / low conf --> Note[level: note, gateBlocking: false]
+    Class -- Not reachable / public / non-security --> Ruled[ruledOut + ruledOutReasons]
+    Block --> More{More categories?}
+    Note --> More
+    Ruled --> More
+    More -- Yes --> Pick
+    More -- No --> Serialize[Serialize SARIF 2.1.0<br/>one run, one tool, results + coverage]
+    Serialize --> Audit[Section 5 self-audit:<br/>missing-hop, sanitizer, sampling,<br/>misclassification, second-order]
+    Audit --> Downgrade[Downgrade any unproven finding]
+    Downgrade --> Write([Write findings-layer-3-blitzy-taint.sarif<br/>sole filesystem write])
+%% Detection-only: no source file is ever modified
 ```
 
-### 0.6.2 Component Impact Analysis
+### 0.3.2 Category Impact Analysis
 
-- **Direct modifications to existing components:** None. The analyzed codebase is read‑only; existing files serve only as data inputs.
-- **New components (created within the deliverables):** the report's eleven sections (Executive Summary, Environment Verification, Data Source Inventory, Methodology, twelve Metric Deep‑Dives, Requirements Traceability Matrix, Per‑Engineer Acceleration, Acceleration Curve, Risk Assessment, Limitations, Reproducibility Appendix) and the presentation's ~16 slides. The extraction logic lives as ordered commands in the reproducibility appendix rather than as separately committed scripts, keeping the write footprint to two files.
-- **Indirect impacts and dependencies:** None on existing code. The sole dependency is cross‑deliverable: the presentation must be built after the report's numbers are finalized, and every KPI on a slide must equal its report counterpart.
+Each CWE class has a distinct source set, sink seed locations, known controls, and second-order considerations. The table maps all seven. "Sink seeds" are the verified starting points for Phase A; "Controls / sanitizers" are the existing mitigations that, when present on a path, demote a finding per R5.
 
-### 0.6.3 User Interface Design
+| CWE | Untrusted Sources | Sink Seed Locations | Controls / Sanitizers (demote) | Second-Order Leg |
+|-----|-------------------|---------------------|--------------------------------|------------------|
+| **601 Open Redirect** | redirect / `callbackUrl` / `returnTo` query params, OAuth callback params, SAML `RelayState`/assertion fields | `res.redirect`, `NextResponse.redirect`, `window.location`, `getSafeRedirectUrl` callers, [apps/web/app/api/auth/oauth/token/route.ts], [apps/web/app/api/auth/saml/authorize/route.ts], [apps/api/v2/src/modules/auth/oauth2/], booking/post-login return URLs | `getSafeRedirectUrl` allowlist [packages/lib/getSafeRedirectUrl.ts:L5-L23] | stored redirect/return URLs |
+| **918 SSRF** | `subscriberUrl`, user-supplied URLs, app-store adapter root URLs, `/api/router` proxy target, embed prerender URL | `fetch` / `axios` / `node-fetch` callers, [packages/features/webhooks/lib/sendPayload.ts], [packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts], app-store adapters (Office365 subscribe, Google callback, CalDAV root URL), Trigger.dev/Vercel webhook | URL validation/allowlist where present | `subscriberUrl` persisted then read-to-`fetch` (both legs) |
+| **117 Log Injection** | HTTP params/headers/body logged unsanitized | `console.*` / `logger.*` calls, [apps/api/v2/src/middleware/app.logger.middleware.ts], `RequestIdMiddleware`, [apps/api/v2/src/filters/], `sendPayload` logging | tslog `maskValuesOfKeys` — password/credentials only [packages/lib/logger.ts:L7] | stored values later logged |
+| **807 Auth Decision on Input** | API key header, `X-Cal-Signature-256` header, body fields driving auth | [apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts] (5 auth-method branches, `isApiKey`/`cal_` prefix), webhook HMAC verify, Vercel/BTCPay guards, PBAC checks | HMAC-SHA256 signature verification | n/a |
+| **338 Weak PRNG** | n/a (misuse of `Math.random`) | `Math.random` feeding tokens/secrets/nonces/reset codes; contrast `crypto.randomBytes` | use of `crypto.randomBytes` is the secure baseline | n/a |
+| **843 Type Confusion** | `apps/api/v1` `req.query.*` (`string \| string[]`) | API v1 Pages handlers mishandling array-vs-string [apps/api/v1/pages/api/] | explicit narrowing/`Array.isArray` checks | n/a |
+| **862 Missing Authz** | n/a (absence of a check) | v1 verb handlers (`_post`/`_patch`/`_delete`/`_get`), v2 endpoints missing `@UseGuards`, tRPC mutations missing `authedProcedure` | presence of an appropriate guard / authed procedure | n/a |
 
-The reveal.js presentation is the task's only user‑facing UI. Its design goals, derived from the user rule: serve **non‑technical leadership** by communicating business value, risk, and operational readiness without requiring code literacy. Key requirements and actions:
+Two categories carry explicit **misclassification guards** flagged by the directive's self-audit: for **CWE-338**, a `Math.random` call used for non-security purposes (UI jitter, sampling, animation) must be recorded in `ruledOut`, not flagged; for **CWE-862**, intentionally-public endpoints must be recorded in `ruledOut` with a reason, not flagged as missing authorization.
 
-- Scope the deck to the work performed: what was done, why (business value), what changed architecturally (diagrams), what risks exist and their mitigations, and how the team onboards.
-- 12–18 slides (target 16) across four slide types (Title, Divider, Content, Closing), each with at least one non‑text visual; content slides capped at 4 bullets / 40 words.
-- Lead with a KPI summary slide (before/after multipliers as `kpi-card`s) and an architecture slide (Mermaid), then alternate dividers and content for metric groups, per‑engineer acceleration, risks, and onboarding, closing with a 3–6 word takeaway.
-- Brand‑compliant throughout (Blitzy tokens, Lucide icons, zero emoji); all numbers traceable to the report.
+### 0.3.3 User-Provided Examples Integration
 
-### 0.6.4 User‑Provided Examples Integration
+The directive supplies concrete seed locations that anchor the analysis. These are preserved verbatim and mapped to their role:
 
-The user's specifications map directly to implementation artifacts, preserving fidelity to intent:
+- **User-provided seed (CWE-601):** `getSafeRedirectUrl` and its callers, the OAuth token route, the SAML authorize route, and the v2 `oauth2` module → these become the first Phase-A targets for open-redirect, with `getSafeRedirectUrl` recognized as the demoting sanitizer.
+- **User-provided seed (CWE-918):** `sendPayload.ts` (`subscriberUrl`), `handleWebhookScheduledTriggers.ts`, the `/api/router` proxy, embed prerender, and named app-store adapters (Office365 `subscribeToChanges`, Google callback, CalDAV root URL) → these define the SSRF sink frontier, including the second-order `subscriberUrl` flow.
+- **User-provided seed (CWE-807):** the composite `ApiAuthStrategy` with its five auth-method branches and the `isApiKey` / `cal_` prefix check → the focal point for security-decision-on-input analysis.
+- **User-provided seed (CWE-862):** the v1 verb handlers and the v2 guard stack (`ApiAuthGuard`, `PbacGuard`, `RolesGuard`, `IsUserWebhookGuard`) plus tRPC mutations → the missing-authorization candidate surface.
 
-- The **twelve metric definitions** map one‑to‑one to the twelve Metric Deep‑Dive subsections in report §5; each retains the user's intended data signal (e.g., metric 8 → revert commits, metric 11 → newly skipped/failed tests).
-- The **temporal‑phase definition** (Ramp‑Up = first 90 days; Steady State = 90+ days) is implemented verbatim in the windowing classifier.
-- The **confidence model** (High = issue‑tracker direct counts; Medium = git patterns; Low = proxies) is applied as the tagging rule on every derived value.
-- The **engineering‑actor framing** (AI as actor in the after period; identical logic with actor substituted) governs metrics 2, 4, 5, 6, and 10.
+### 0.3.4 Critical Implementation Details
 
-### 0.6.5 Critical Implementation Details
+- **Classification logic (the precision gate).** A candidate is emitted as `level: error` / `gateBlocking: true` **only** when it has a complete, proven `codeFlow` from a §1 source to a sink, `confidence: high`, and no effective sanitizer on the path. Any incomplete hop, any effective sanitizer, or any confidence below `high` forces `level: note` / `gateBlocking: false`. The **hard rule** is enforced structurally: a result whose `codeFlows` is empty can never be `error`/`gateBlocking: true`.
+- **Required result properties.** Every `result` object carries `gateBlocking`, `exploitScenario`, `confidence` (`high|medium|low`), `sanitizersEncountered` (an array that is never omitted — empty when none), and `intermediateHopsSummary`.
+- **Per-category coverage block.** `run.properties.coverage` records, for each CWE, the `searchPatterns` with `rawHits`, the `directoriesSearched`, `candidatesAfterTriage`, `blockingFindings`, `nonBlockingNotes`, `ruledOut`, and `ruledOutReasons` — the auditable evidence that Phase A was exhaustive.
+- **Second-order proof obligation.** For DB-laundered values, both the tainted-write leg and the read-to-sink leg must appear as ordered locations in the same code flow; if either leg is missing, the finding is demoted.
+- **Self-audit before write.** The five-point pass (missing-hop, sanitizer, sampling, misclassification with emphasis on CWE-338/862, and second-order) runs against the assembled result set, and any finding that fails a check is downgraded prior to serialization.
+- **Determinism.** The artifact is a single SARIF run with one tool (`Blitzy-Taint-Layer3`) and one result per finding, with each CWE rule defined exactly once in `tool.driver.rules`, producing a stable, gate-consumable document.
 
-- **Design patterns:** a *template‑method* extraction (one routine per metric, parameterized by date range and actor) guarantees the "identical methodology" rule; a *provenance chain* (Requirement → Extraction Command → Raw Output → Derived Value → Reported Number) backs every figure; a *confidence‑tag* annotation accompanies each derived value.
-- **Key algorithms:** Monday‑aligned two‑week bucketing (normalize each commit timestamp to its ISO‑week Monday, integer‑divide into 14‑day buckets); velocity‑inflection corroboration (compare rolling commit rates around the pivot); ratio computation with explicit handling when the baseline value is zero; commit‑volume‑weighted aggregation across modules; and author‑alias de‑duplication for the per‑engineer view.
-- **Integration strategy:** git is the primary integration; GitHub's read‑only REST API is used opportunistically where `gh`/`jq` and a token are available, otherwise documented git proxies are substituted. The presentation integrates with the report by consuming its finalized values.
-- **Data‑flow modifications:** none to the system; the only data flow created is extraction → derivation → report → presentation (diagram in §0.6.1).
-- **Error handling and edge cases:** unavailable sources yield "Insufficient signal — [reason]" (anticipated for metric 12); a baseline of zero is reported without a misleading infinite ratio; if the after period had fewer than 90 days the design falls back to Baseline‑vs‑Post‑Introduction (not triggered here, since the after period is ~13 months); credential strings are redacted before any output is written.
-- **Performance and security:** history traversal uses targeted `git log` filters rather than full checkouts; no secrets are written to either deliverable (the `origin` credential is scrubbed); the operation performs zero writes to the analyzed repository or any external system.
 
-## 0.7 File Transformation Mapping
+## 0.4 File Transformation Mapping
 
-This section enumerates every file the task touches, with the target file listed first. Transformation modes are **CREATE** (new file), **UPDATE** (modify existing), **DELETE** (remove), and **REFERENCE** (read‑only input — either a style/pattern source or a data source that is never written). Nothing is left pending or "to be discovered."
+### 0.4.1 File-by-File Execution Plan
 
-### 0.7.1 File‑by‑File Execution Plan
+Because this is a read-only detection task, the transformation map is deliberately asymmetric: there is exactly **one** `CREATE` (the SARIF artifact) and **no** `UPDATE` or `DELETE` anywhere. Every directory and file listed below is consumed as a **`REFERENCE`** (read-only analysis input). The transformation modes used are:
+
+- **CREATE** — create a new file
+- **REFERENCE** — read and analyze as an input; never modified
 
 | Target File | Transformation | Source File / Reference | Purpose / Changes |
 |-------------|----------------|-------------------------|-------------------|
-| `acceleration-report.md` | CREATE | git history + data sources below | The eleven‑section Development Acceleration Measurement report at repo root |
-| `acceleration-report-executive-presentation.html` | CREATE | `blitzy-deck/references/blitzy-reveal-theme.css` | Self‑contained Blitzy reveal.js executive deck (12–18 slides) at repo root |
-| `blitzy-deck/references/blitzy-reveal-theme.css` | REFERENCE | (canonical Blitzy theme; not in repo) | Style source — inline‑embedded `:root` tokens + slide/component classes |
-| git history (`main` DAG) | REFERENCE | — | Primary data input: metrics 1–9, 11; actor identities; windowing |
-| `.changeset/config.json` | REFERENCE | — | Release model context (changeset‑driven; no tags) — metrics 8, 9 |
-| `.github/workflows/draft-release.yml` (+ `re-draft`, `post-release`, `release-docker`, `changesets`) | REFERENCE | — | Release detection inputs — metric 9 |
-| `.github/workflows/{unit-tests,api-v2-unit-tests,integration-tests,e2e*,all-checks}.yml` | REFERENCE | — | Test/CI context — metric 11 |
-| `.github/workflows/{cubic-devin-review,cubic-devin-review-trigger,devin-conflict-resolver,stale-pr-devin-completion,sync-agents-to-devin}.yml` | REFERENCE | — | Tool Introduction Date corroboration |
-| `.github/labeler.yml` | REFERENCE | — | Work‑type labeling — metric 6 (Distribution) |
-| `.github/ISSUE_TEMPLATE/{bug_report.md,feature_request.md,config.yml}` | REFERENCE | — | Issue taxonomy — metrics 6, 10, 12 |
-| `.github/PULL_REQUEST_TEMPLATE.md` | REFERENCE | — | PR metadata context — metrics 1, 4, 5 |
-| `.github/CODEOWNERS` | REFERENCE | — | Review‑exemption context (test files) — metrics 4, 5 |
-| `vitest.workspace.ts`, `playwright.config.ts`, `apps/api/v2/jest.config.ts` | REFERENCE | — | Test discovery/skip convention — metric 11 |
-| `AGENTS.md` | REFERENCE | — | PR‑size convention (5–7 files / 500 lines) — metric 1 (Flow Load) |
-| `blitzy-docs/project-guide.md` | REFERENCE | — | Project context for the report's narrative (after‑period scope) |
+| `findings-layer-3-blitzy-taint.sarif` | CREATE | — (assembled from the analysis of all referenced inputs) | The sole deliverable: a valid SARIF 2.1.0 document with one run, one tool (`Blitzy-Taint-Layer3`), one result per finding, seven CWE rules, code-flow paths, required result properties, and the per-category `run.properties.coverage` block |
+| `apps/web/` | REFERENCE | `apps/web/` | Analyze route handlers and client code for CWE-601, CWE-117, CWE-862 |
+| `apps/api/v1/` | REFERENCE | `apps/api/v1/pages/api/` | Analyze deprecated Pages API verb handlers for CWE-843 (`req.query` typing) and CWE-862 |
+| `apps/api/v2/` | REFERENCE | `apps/api/v2/` | Analyze NestJS auth strategy, guard stack, loggers, and filters for CWE-807, CWE-862, CWE-117 |
+| `packages/features/` | REFERENCE | `packages/features/webhooks/lib/sendPayload.ts`, `handleWebhookScheduledTriggers.ts` | Analyze webhooks/routing-forms for CWE-918 (incl. second-order `subscriberUrl`) and CWE-117 |
+| `packages/app-store/` | REFERENCE | `packages/app-store/` (111 adapters) | Analyze provider adapters for CWE-918 (callback URLs, root URLs) |
+| `packages/embeds/` | REFERENCE | `packages/embeds/embed-core/src/preview.ts` | Analyze embed runtime / `postMessage` for CWE-601 resource loads |
+| `packages/trpc/` | REFERENCE | `packages/trpc/` | Analyze tRPC mutations for CWE-862 |
+| `packages/lib/` | REFERENCE | `packages/lib/getSafeRedirectUrl.ts`, `packages/lib/logger.ts` | Recognize the redirect-allowlist sanitizer and the log-masking control |
+| `packages/prisma/` | REFERENCE | `packages/prisma/` | Establish the persistence boundary for second-order taint (write/read legs) |
+| `apps/web/app/api/auth/oauth/token/route.ts` | REFERENCE | same | CWE-601 seed — OAuth token redirect handling |
+| `apps/web/app/api/auth/saml/authorize/route.ts` | REFERENCE | same | CWE-601 seed — SAML authorize redirect / `RelayState` |
+| `apps/api/v2/src/modules/auth/oauth2/` | REFERENCE | same | CWE-601 seed — v2 OAuth2 redirect handling |
+| `apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts` | REFERENCE | same | CWE-807 seed — composite credential evaluation |
+| `apps/api/v2/src/middleware/app.logger.middleware.ts` | REFERENCE | same | CWE-117 seed — HTTP request logging |
+| `apps/api/v2/src/filters/` | REFERENCE | same | CWE-117 seed — exception-filter logging |
+| `apps/api/v2/src/lib/logger.ts` | REFERENCE | same | CWE-117 seed — Winston logger configuration |
 
-### 0.7.2 New Files Detail
+> Wildcard note: a directory row (for example `apps/api/v2/`) denotes recursive read-only analysis of all source files beneath it; the named file rows below it call out the specific seed locations that anchor Phase A. No file under any referenced directory is modified.
 
-- **`acceleration-report.md`** — Detailed purpose: the primary measurement deliverable.
-  - Content type: documentation (Markdown report).
-  - Based on: data derived from git history and the REFERENCE data sources above.
-  - Key sections: (1) Executive Summary, (2) Environment Verification, (3) Data Source Inventory, (4) Methodology, (5) twelve Metric Deep‑Dives, (6) Requirements Traceability Matrix, (7) Per‑Engineer Acceleration, (8) Acceleration Curve (graphical), (9) Risk Assessment, (10) Limitations, (11) Reproducibility Appendix.
-- **`acceleration-report-executive-presentation.html`** — Detailed purpose: the rule‑mandated executive deck.
-  - Content type: self‑contained HTML (reveal.js).
-  - Based on: `blitzy-deck/references/blitzy-reveal-theme.css` (inline‑embedded) and the finalized numbers in `acceleration-report.md`.
-  - Key sections: Title slide; KPI headline; architecture/data‑flow Mermaid; alternating Divider + Content slides for metric groups, per‑engineer acceleration, and risk/onboarding; Closing slide. CDN‑pinned reveal.js 5.1.0 / Mermaid 11.4.0 / Lucide 0.460.0.
+### 0.4.2 New Files Detail
 
-### 0.7.3 Files to Modify Detail
+- **`findings-layer-3-blitzy-taint.sarif`** — the single new file, written at the repository root.
+  - Content type: machine-readable static-analysis report (JSON, SARIF 2.1.0).
+  - Based on: the OASIS SARIF 2.1.0 schema (`docs.oasis-open.org/sarif/sarif/v2.1.0/.../sarif-schema-2.1.0.json`) and the directive's output contract.
+  - Key sections: `$schema` + `version`; `runs[0].tool.driver` (name `Blitzy-Taint-Layer3` + seven CWE `rules`); `runs[0].results[]` (one per finding, each with `ruleId`, `level`, `message`, `locations`, `codeFlows`, and required `properties`); `runs[0].properties.coverage` (one block per CWE category).
 
-**None.** No existing file is modified. The task performs zero `UPDATE` and zero `DELETE` operations, in keeping with the read‑only‑on‑codebase constraint (§0.3).
+### 0.4.3 Files to Modify and Cross-File Dependencies
 
-### 0.7.4 Configuration and Documentation Updates
+- **Files to modify:** none. The read-only mandate (R1) prohibits any `UPDATE` or `DELETE`. No source file, manifest, lockfile, configuration, or test is altered.
+- **Cross-file dependencies:** none introduced. No imports, references, or configuration are added or rewired. The only cross-file relationship that matters is *analytical* — second-order taint requires correlating a write site and a read site (for example, the `subscriberUrl` persistence in `packages/prisma/` with the `fetch` in [packages/features/webhooks/lib/sendPayload.ts]) — but this correlation is recorded in the SARIF code flow, not by changing any file.
 
-- **Configuration changes:** None. No workflow, changeset, lint, or build configuration is altered; configuration files appear only as REFERENCE inputs.
-- **Documentation updates:** No existing documentation is edited. The two new files are themselves the documentation output and are added without cross‑referencing or modifying existing docs under `docs/`, `blitzy/`, or `blitzy-docs/`.
 
-### 0.7.5 Cross‑File Dependencies
+## 0.5 Scope Boundaries
 
-- The presentation depends on `acceleration-report.md`: every KPI and figure on a slide must equal the corresponding value in the report (internal‑consistency requirement).
-- The presentation depends on the theme REFERENCE: its `<style>` block inline‑embeds the brand tokens and classes from `blitzy-deck/references/blitzy-reveal-theme.css`.
-- The report depends on the git history and the REFERENCE data sources for every derived value, each backed by a reproducibility‑appendix command.
-- No import or reference updates are required anywhere, since no repository source code is authored.
+### 0.5.1 Exhaustively In Scope
 
-## 0.8 Rules
+- **Analysis surface — the nine required directories** (each searched for every category):
+    - `apps/web/**`
+    - `apps/api/v1/**`
+    - `apps/api/v2/**`
+    - `packages/features/**`
+    - `packages/app-store/**` (all 111 adapter directories)
+    - `packages/embeds/**`
+    - `packages/trpc/**`
+    - `packages/lib/**`
+    - `packages/prisma/**`
+- **All named seed locations** per CWE: `getSafeRedirectUrl` and its callers, the OAuth token and SAML authorize routes, the v2 `oauth2` module, `sendPayload.ts` / `handleWebhookScheduledTriggers.ts`, the `/api/router` proxy, the named app-store adapters, the loggers / logging middleware / exception filters, `api-auth.strategy.ts` and the guard stack, the v1 verb handlers, the tRPC mutations, and the `Math.random` vs `crypto.randomBytes` sites.
+- **The seven CWE classes only:** CWE-601, CWE-918, CWE-117, CWE-807, CWE-338, CWE-843, CWE-862.
+- **Both taint orders:** first-order (request → sink) and second-order (DB-laundered: `subscriberUrl`, stored redirect/return URLs, routing-form field values), with both legs required for the latter.
+- **The single output artifact:** `findings-layer-3-blitzy-taint.sarif` (CREATE), including its per-category coverage blocks and `ruledOut` documentation.
 
-Two explicit rule sets govern this task: the six report‑internal rules that constrain the content and integrity of `acceleration-report.md`, and the user‑specified "Executive Presentation" rule that mandates and constrains the reveal.js deliverable. Both are binding.
+### 0.5.2 Explicitly Out of Scope
 
-### 0.8.1 Report‑Internal Data‑Integrity Rules
+- **Any source-code change:** refactoring, patching, fixing, remediation, or creating/deleting source files. Detection only — no fixes are produced (R1).
+- **CWE classes outside the seven listed.** Other weakness types are not analyzed or reported, even if incidentally observed.
+- **Build, compile, run, test, or deploy steps**, and **dependency installation** — none are required to produce the SARIF, and none are performed.
+- **`node_modules` and other vendored/generated artifacts** (standard analysis exclusion). No `.blitzyignore` exists, so no additional path exclusions apply.
+- **Emitting unproven findings as blocking.** Per the hard rule, a result with empty `codeFlows` is never `error`/`gateBlocking: true`; such candidates are demoted to notes, not dropped silently.
+- **Flagging intentionally-public endpoints (CWE-862)** or **non-security `Math.random` uses (CWE-338).** These are recorded in `ruledOut` with reasons rather than reported as findings.
+- **Modifying the technical specification or any document other than the SARIF artifact** as part of the detection task itself.
 
-- **Rule 1 — Data Provenance:** Every numeric value must trace a full chain (Requirement → Extraction Command → Raw Output → Derived Value → Reported Number); every figure in the Executive Summary must have a matching appendix entry and traceability‑matrix row.
-- **Rule 2 — Factual‑Neutral Tone:** The report body must contain zero subjective qualifiers (e.g., "impressive," "significant," "remarkable," "unfortunately"); a grep for such terms must return no matches.
-- **Rule 3 — Confidence Transparency:** Every derived metric carries a High/Medium/Low tag, and Low‑confidence metrics require an explicit caveat.
-- **Rule 4 — Internal Consistency:** A given metric value must be identical across the Executive Summary, the Metric Deep‑Dives, the Traceability Matrix, and the Acceleration Curve.
-- **Rule 5 — Reproducibility:** The appendix must contain the complete, ordered, syntactically valid commands/API calls needed to re‑derive every metric, referencing only the target repository and documented sources.
-- **Rule 6 — Environment First:** The execution environment (repository URL, git version, total commit count, active branch count, submodule state, commit date range, extraction timestamp) must be documented before any metric is extracted.
 
-### 0.8.2 User‑Specified "Executive Presentation" Rule
+## 0.6 Dependency Inventory
 
-Every deliverable must include an executive summary as a single self‑contained reveal.js HTML file, always included independent of any other documentation, addressed to non‑technical leadership. The presentation must cover: what was done (scope/deliverables), why (business value), what changed architecturally (component/data‑flow diagrams), what risks exist and how they are mitigated, and how the team onboards and continues development.
+### 0.6.1 Dependency Changes
 
-- **Slide constraints:** 12–18 slides (target 16); four slide types — Title (`slide-title`), Section Divider (`slide-divider`), Content (default), Closing (`slide-closing`); every slide includes at least one non‑text visual (Mermaid diagram, KPI card, styled table, or Lucide SVG icon) — no text‑only slides; content slides ≤4 bullets and ≤40 words body; zero emoji (Lucide SVG via `<i data-lucide="icon-name"></i>` only); no fenced code blocks in slides (inline Fira Code for short expressions only).
-- **Visual identity:** the Blitzy brand palette, typography (Inter / Space Grotesk / Fira Code via Google Fonts), and gradients enumerated in §0.5.3; Title hero gradient, dark/gradient dividers, navy closing.
-- **Mermaid:** embed as `<pre class="mermaid">` with raw syntax; initialize `startOnLoad: false`; call `mermaid.run()` after reveal.js `ready` and on every `slidechanged`; apply the theme variables in §0.5.3.
-- **Technical delivery:** a single self‑contained HTML file with no build steps and no local file dependencies; CDN versions pinned to reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0; reveal.js config `hash: true`, `transition: 'slide'`, `controlsTutorial: false`, `width: 1920`, `height: 1080`; call `lucide.createIcons()` after `ready` and on every `slidechanged`.
-- **Inline CSS:** embed the full Blitzy reveal.js theme inline in a `<style>` tag with the required custom properties and the full set of slide‑type, component, and mermaid container classes (canonical source: `blitzy-deck/references/blitzy-reveal-theme.css`).
-- **Slide ordering:** Title → Content (headline/KPI) → Content (architecture Mermaid) → alternating Section Dividers + Content for each major topic → Closing (key takeaway, next steps, brand lockup).
-- **Verification:** the file opens in a browser, renders all Mermaid diagrams and Lucide icons, contains 12–18 `<section>` elements, and every `<section>` contains at least one non‑text visual element.
+There are **no dependency changes** of any kind. This is a read-only detection task whose sole artifact is a SARIF file: **no packages are added, updated, or removed**, and no manifest or lockfile (for example `package.json` or `yarn.lock`) is touched. There are correspondingly no new dependencies, no version bumps, no removals, and no import/reference rewrites.
 
-### 0.8.3 Rule Interaction
+### 0.6.2 Runtime and Tooling Context (Reference Only)
 
-Rule 2 (Factual‑Neutral Tone) scopes to the `acceleration-report.md` body; the presentation may frame business value for leadership but remains data‑grounded and free of fabrication (the no‑fabrication boundary applies everywhere). Rule 4 (Internal Consistency) is extended across deliverables: presentation values must equal report values.
+The following versions are documented purely to ground the analysis and the citations in this plan; **none of them is installed, modified, or required** to perform the detection or to emit the SARIF output.
 
-## 0.9 Special Instructions
+| Registry | Package / Runtime | Version | Role (context only) |
+|----------|-------------------|---------|---------------------|
+| — | Node.js | 20.20.2 (engines ≥18.x) | Monorepo runtime [package.json:L170] |
+| npm | yarn (Berry) | 4.12.0 | Package manager [package.json:L178] |
+| npm | turbo (Turborepo) | 2.7.1 | Monorepo task runner |
+| npm | typescript | 5.9.3 (strict) | Language / type system [package.json:L115] |
+| npm | next | 16.1.7 | `apps/web` framework [apps/web/package.json:L110] |
+| npm | @nestjs/core | 10.4.20 | `apps/api/v2` framework [apps/api/v2/package.json:L53-L55] |
+| npm | @prisma/client / prisma | 6.16.1 | ORM / persistence boundary [packages/prisma/package.json:L27-L30] |
+| npm | zod | 3.25.76 | Validation library (relevant to sanitizer recognition) |
 
-This section captures execution‑level directives and constraints that govern *how* the work is carried out, complementing the formal rule sets in §0.8 and the scope boundaries in §0.3.
+No additional tooling or runtime is installed to perform the analysis. The implementing agent reasons over the source files directly and serializes findings; it does not execute the application or a separate analysis engine.
 
-### 0.9.1 Special Execution Instructions
 
-- **Output is documentation only** — the task produces two artifacts (a Markdown report and an HTML presentation) and writes nothing else; no application code, configuration, or test is generated or changed.
-- **Read‑only execution** — all repository and external‑system access is read‑only; no deployment, rollout, or release action is performed.
-- **Credential redaction** — the access credential embedded in the `origin` URL must be scrubbed from every output before writing `[git remote:origin]`.
-- **Tool‑gap handling** — `gh`/`glab`/`jq` are absent; where an API metric cannot be obtained, document the access attempt and fall back to the best documented git proxy at the appropriate (lower) confidence, or mark "Insufficient signal — [reason]."
-- **Identical before/after methodology** — apply the same windowing and extraction logic to both periods, changing only the date range and the actor.
-- **Per‑module execution** — run extraction per workspace and aggregate weighted by commit volume `[package.json:workspaces]`.
-- **Quality gates** — satisfy all eleven report quality gates (every metric populated or "Insufficient signal"; no numeric claim without an appendix + traceability entry; Environment Verification complete and timestamped before the first deep‑dive; confidence tags present; per‑engineer view with real names where applicable; temporal phases populated or justified N/A; risk assessment covering every Low‑confidence and insufficient‑signal gap; no value differing across sections; appendix commands valid and ordered; Rules 1–6 satisfied; Data Source Inventory listing every system accessed and every one unavailable).
+## 0.7 Rules and Special Instructions
 
-### 0.9.2 Constraints and Boundaries
+### 0.7.1 User-Specified Rule (Verbatim)
 
-- **Technical constraints:** git is the primary and always‑available source; higher‑confidence sources require optional tooling plus a read‑only token; the ~5.2‑year history is fully traversable; releases are changeset‑driven with **0 git tags**, constraining metrics 8 and 9 `[.changeset/config.json:privatePackages]`; CI artifact retention (~30 days) constrains historical test‑result availability for metric 11 `[blitzy-docs/technical-specifications.md:§6.6]`; no SLA source exists, constraining metric 12.
-- **Process constraints:** do not modify the repository, rewrite history, or alter external systems; do not fabricate or extrapolate; do not add metrics beyond the twelve; do not present Low‑confidence values as equal to High‑confidence ones; do not selectively omit contradicting data.
-- **Output constraints:** the report body must be factual‑neutral (Rule 2); the presentation must be self‑contained, brand‑compliant, 12–18 slides, with ≥1 non‑text visual per slide and zero emoji (Rule set §0.8.2).
-- **Dependency constraints:** introduce no repository dependencies; the presentation references CDN‑pinned libraries only (§0.4).
-- **Compatibility constraints:** the presentation must open and render in a standard browser with no build step; the report must be valid Markdown.
-- **Disclosure constraint:** the Devin‑vs‑Blitzy attribution ambiguity (the pivot uses the earliest AI trailer at 2025‑04‑08, while the prompt names Blitzy as the after‑period actor) must be disclosed in the report's Limitations, with the after‑period actor population framed as the full AI cohort and Blitzy as one actor row.
+One implementation rule was supplied for this project. It is preserved exactly as given:
 
-## 0.10 Attachments
+> **CAL Layer 3 Project Rule:** "Work category by category. For each of the 7 CWE categories, complete Phase A (search + record every hit) fully before starting Phase B. Do not move to the next category until the current one's coverage block is filled. If you cannot complete a category, say so explicitly rather than summarizing or sampling. Produce only the SARIF file - change no source code."
 
-No attachments were provided with this request.
+This rule is fully consistent with the directive and tightens it in three ways, all of which govern execution:
 
-- **Uploaded files:** None. The project contains no PDF or image attachments.
-- **Figma frames:** None. No Figma screens, frames, or URLs were provided; consequently there is no design‑to‑token mapping and no Figma‑derived UI specification for the presentation.
+- **Sequential, category-by-category execution** is mandatory — categories are not processed in parallel. Phase A must be complete and the coverage block filled before Phase B begins for that category, and the next category cannot start until the current coverage block is filled.
+- **Honesty over completeness** — if a category cannot be completed, that fact is stated explicitly; the work is never summarized or sampled to appear complete.
+- **Read-only / SARIF-only output** — the only artifact produced is `findings-layer-3-blitzy-taint.sarif`; no source code is changed. This restates the directive's read-only constraint with no conflict.
 
-For completeness, the only externally referenced asset cited in the inputs is the canonical Blitzy reveal.js theme at `blitzy-deck/references/blitzy-reveal-theme.css`, named in the user's "Executive Presentation" rule. This is a referenced path (a style source to be inline‑embedded into the presentation per §0.5 and §0.7), not an uploaded attachment, and it is not present in the analyzed repository.
+### 0.7.2 Methodological Requirements (from the Directive)
+
+- **Two-phase per category (R3):** Phase A enumerates every call site via literal search and records exact patterns and raw hit counts (no sampling); Phase B traces each candidate backward to a source, names every hop, and records every sanitizer.
+- **Precision-gate posture (R4):** only fully-substantiated, high-confidence findings with a complete code flow are `error`/`gateBlocking: true`; everything else is `note`/`gateBlocking: false`. A false positive is worse than a miss; under-reporting blocking findings is the intended failure mode.
+- **Sanitizer-aware (R5):** an effective control on the path (for example, `getSafeRedirectUrl` [packages/lib/getSafeRedirectUrl.ts:L5-L23]) demotes a finding.
+- **Second-order both-legs proof (R6):** DB-laundered taint must show both the write and the read-to-sink in the same code flow, or it is demoted.
+- **Self-audit before write (R8):** the five checks — missing-hop, sanitizer, sampling, misclassification (with emphasis on CWE-338 and CWE-862), and second-order — run before serialization, downgrading any finding that fails.
+
+### 0.7.3 Output and Process Constraints
+
+- **Documentation-of-detection only:** the task generates a detection report; it does not generate fixes, tests, configuration, or any other code.
+- **Output contract (R7):** SARIF 2.1.0; one run; one tool (`Blitzy-Taint-Layer3`); one result per finding; `ruleId` = CWE; each rule defined once in `tool.driver.rules`; `level` limited to `error` and `note` (no `warning` tier); required `properties` on every result (`gateBlocking`, `exploitScenario`, `confidence`, `sanitizersEncountered[]`, `intermediateHopsSummary`); per-category `run.properties.coverage` block.
+- **Hard structural rule:** a result with an empty `codeFlows` array must never be `error` or `gateBlocking: true`.
+- **No environment side effects:** no build, run, test, deploy, or dependency install is performed.
+
+
+## 0.8 Attachments
+
+### 0.8.1 Provided Attachments
+
+- **`blitzy-layer-3-taint-prompt.md.pdf`** (application/pdf, 527,212 bytes, 7 pages) — the Layer 3 security-audit directive, titled *"Directive: Execute Layer 3 — Taint Analysis (Blitzy)."* Its content is the PDF rendering of the user's prompt and is **identical** to it; it introduces no new or conflicting information. The document specifies: the read-only, detection-only mandate; the precision-gate posture; the seven CWE classes (601, 918, 117, 807, 338, 843, 862); the untrusted-source taxonomy (§1, including second-order DB-laundered taint); the mandatory two-phase methodology (§2, Phase A enumerate / Phase B trace, with the anti-sampling rule); the nine required directories and the per-category sink seed locations (§3); the SARIF 2.1.0 output contract (§4, including the required result properties and the per-category coverage block); and the five-point self-audit to run before writing (§5).
+
+### 0.8.2 Figma Screens
+
+- None provided. No Figma frames or design-system references accompany this task, so no design-to-system mapping or UI design analysis applies.
+
 

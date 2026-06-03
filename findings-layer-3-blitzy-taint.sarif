@@ -1,0 +1,1562 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Blitzy-Taint-Layer3",
+          "organization": "Blitzy",
+          "informationUri": "https://cwe.mitre.org/",
+          "version": "1.0.0",
+          "semanticVersion": "1.0.0",
+          "rules": [
+            {
+              "id": "CWE-601",
+              "name": "OpenRedirect",
+              "shortDescription": {
+                "text": "URL Redirection to Untrusted Site ('Open Redirect')"
+              },
+              "fullDescription": {
+                "text": "The product uses externally controlled input to construct a redirect target without restricting it to trusted destinations, allowing redirection to an attacker-controlled URL."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/601.html",
+              "properties": {
+                "category": "taint"
+              }
+            },
+            {
+              "id": "CWE-918",
+              "name": "ServerSideRequestForgery",
+              "shortDescription": {
+                "text": "Server-Side Request Forgery (SSRF)"
+              },
+              "fullDescription": {
+                "text": "The product fetches a remote resource using a user-controllable URL without sufficiently validating that the destination is permitted, allowing requests to internal or otherwise unintended hosts."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html",
+              "properties": {
+                "category": "taint"
+              }
+            },
+            {
+              "id": "CWE-117",
+              "name": "ImproperOutputNeutralizationForLogs",
+              "shortDescription": {
+                "text": "Improper Output Neutralization for Logs (Log Injection)"
+              },
+              "fullDescription": {
+                "text": "The product writes externally controlled data to a log without neutralizing CR/LF or other control sequences, allowing forged or misleading log entries."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/117.html",
+              "properties": {
+                "category": "taint"
+              }
+            },
+            {
+              "id": "CWE-807",
+              "name": "RelianceOnUntrustedInputsInSecurityDecision",
+              "shortDescription": {
+                "text": "Reliance on Untrusted Inputs in a Security Decision"
+              },
+              "fullDescription": {
+                "text": "The product makes a security-relevant decision (authentication, authorization, signature/secret verification, or identity) based on inputs that can be controlled or spoofed by an attacker, or compares secrets in a non-constant-time manner."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/807.html",
+              "properties": {
+                "category": "taint"
+              }
+            },
+            {
+              "id": "CWE-338",
+              "name": "UseOfCryptographicallyWeakPRNG",
+              "shortDescription": {
+                "text": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+              },
+              "fullDescription": {
+                "text": "The product uses a non-cryptographic PRNG (such as Math.random) to generate a security-sensitive value, making the value predictable."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/338.html",
+              "properties": {
+                "category": "taint"
+              }
+            },
+            {
+              "id": "CWE-843",
+              "name": "TypeConfusion",
+              "shortDescription": {
+                "text": "Access of Resource Using Incompatible Type ('Type Confusion')"
+              },
+              "fullDescription": {
+                "text": "The product accesses a value using an incompatible type (for example, treating a string|string[] union inconsistently), which can lead to logic or security errors."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/843.html",
+              "properties": {
+                "category": "taint"
+              }
+            },
+            {
+              "id": "CWE-862",
+              "name": "MissingAuthorization",
+              "shortDescription": {
+                "text": "Missing Authorization"
+              },
+              "fullDescription": {
+                "text": "The product does not perform an authorization check before allowing access to a resource or the execution of an operation, enabling unauthorized actions."
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/862.html",
+              "properties": {
+                "category": "taint"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CWE-918",
+          "level": "error",
+          "message": {
+            "text": "Second-order SSRF: an unvalidated subscriberUrl supplied to the API v1 webhook create endpoint is persisted to the database and later fetched by the webhook dispatcher (sendPayload.ts:373) with no SSRF re-validation on the dispatch path. The API v1 create body schema leaves subscriberUrl as a bare z.string() (the URL/SSRF refine is commented out at apps/api/v1/lib/validations/webhook.ts:18), so the write-time control that protects the tRPC and API v2 creation paths is absent on the v1 path."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                },
+                "region": {
+                  "startLine": 373
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v1/pages/api/webhooks/_post.ts"
+                          },
+                          "region": {
+                            "startLine": 70
+                          }
+                        },
+                        "message": {
+                          "text": "source: req.body parsed by schemaWebhookCreateBodyParams; subscriberUrl is only z.string() (SSRF/url refine commented out at apps/api/v1/lib/validations/webhook.ts:18)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v1/pages/api/webhooks/_post.ts"
+                          },
+                          "region": {
+                            "startLine": 102
+                          }
+                        },
+                        "message": {
+                          "text": "hop: tainted-write leg - prisma.webhook.create(args) persists the unvalidated subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                          },
+                          "region": {
+                            "startLine": 358
+                          }
+                        },
+                        "message": {
+                          "text": "hop: read-to-sink leg - const { subscriberUrl } = webhook loaded from the DB-sourced webhook payload"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                          },
+                          "region": {
+                            "startLine": 373
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetch(subscriberUrl, ...) issues a server-side request to the attacker-controlled URL with no local SSRF validation"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": true,
+            "severity": "error",
+            "exploitScenario": "An attacker holding a valid API key POSTs to /api/v1/webhooks with subscriberUrl=http://169.254.169.254/latest/meta-data/iam/security-credentials/. Because the v1 create body schema validates subscriberUrl as a bare string (the z.string().url()/SSRF refine is commented out at apps/api/v1/lib/validations/webhook.ts:18), the value is persisted verbatim by prisma.webhook.create (_post.ts:102). On the next matching trigger, sendPayload.ts:358 reads the stored subscriberUrl and sendPayload.ts:373 calls fetch(subscriberUrl) server-side, reaching the cloud metadata endpoint and returning instance credentials - full SSRF to internal/metadata services.",
+            "confidence": "high",
+            "confidenceReason": "Both legs of the second-order flow are evidenced in-repo (tainted write at v1 _post.ts:102; read-to-sink at sendPayload.ts:358->373), and the write-time SSRF control present on every sibling creation path is demonstrably absent on the v1 path.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "none - no on-path control neutralizes this finding",
+            "intermediateHopsSummary": "Second-order (DB-laundered) taint with BOTH legs evidenced. Tainted-write leg: apps/api/v1/pages/api/webhooks/_post.ts:70 (req.body via schemaWebhookCreateBodyParams; subscriberUrl unrefined) -> :102 prisma.webhook.create persists the value. Read-to-sink leg: packages/features/webhooks/lib/sendPayload.ts:358 reads subscriberUrl from the DB-sourced webhook -> :373 fetch(subscriberUrl).",
+            "cwe": "CWE-918",
+            "siblingConsistency": "Anchor control validateUrlForSSRFSync (packages/lib/ssrfProtection.ts:196) is applied at webhook write-time on every sibling creation path - tRPC create.handler.ts:28, edit.handler.ts:38, testTrigger.handler.ts:18, and API v2 validate-webhook-url.ts:5 - but the API v1 _post.ts creation path applies no equivalent validator (the refine is commented out at validations/webhook.ts:18). Confirmed sibling gap; the shared dispatch sink sendPayload.ts:373 performs no re-validation."
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "error",
+          "message": {
+            "text": "First-order SSRF: the CalDAV add-account handler reads a fully attacker-controlled url from req.body and constructs a DAV client that immediately issues a server-side request (dav.listCalendars()) to that URL, with no SSRF validation anywhere on the path. The webhook creation paths apply validateUrlForSSRFSync; this DAV add-account path applies none."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                },
+                "region": {
+                  "startLine": 44
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "source: const { username, password, url } = req.body - url is fully attacker-controlled request input"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 38
+                          }
+                        },
+                        "message": {
+                          "text": "hop: BuildCalendarService({ ...data }) constructs a DAV client; data.key embeds the attacker url (symmetricEncrypt of {username,password,url})"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/caldavcalendar/api/add.ts"
+                          },
+                          "region": {
+                            "startLine": 44
+                          }
+                        },
+                        "message": {
+                          "text": "sink: await dav?.listCalendars() issues a server-side HTTP(S)/DAV request to the attacker-controlled url"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": true,
+            "severity": "error",
+            "exploitScenario": "An authenticated user submits a POST to the CalDAV add-account endpoint with url=http://169.254.169.254/latest/meta-data/ (or any internal service URL). add.ts:12 reads url from req.body; add.ts:38 passes it into BuildCalendarService; add.ts:44 immediately calls dav.listCalendars(), causing the server to issue a request to the internal endpoint. Response/error differences (e.g., the dav.php branch at add.ts:52) allow probing internal services. No validateUrlForSSRF is applied on this path. The requirement for a valid session is NOT a control (banned non-control 'authenticated').",
+            "confidence": "high",
+            "confidenceReason": "Complete first-order source->sink flow is fully in-repo (req.body url -> BuildCalendarService -> listCalendars), and no SSRF validator exists anywhere on the path.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "none - no on-path control neutralizes this finding",
+            "intermediateHopsSummary": "First-order taint: add.ts:12 url from req.body -> :38 BuildCalendarService constructs a DAV client embedding url -> :44 dav.listCalendars() performs the outbound request. No SSRF validation on the path.",
+            "cwe": "CWE-918",
+            "siblingConsistency": "Compared against the SSRF anchor validateUrlForSSRFSync (packages/lib/ssrfProtection.ts:196) used at webhook write-time (tRPC create.handler.ts:28 / edit.handler.ts:38 / testTrigger.handler.ts:18; API v2 validate-webhook-url.ts:5). The CalDAV add-account path constructs an HTTP(S)/DAV client from a user-supplied url with no equivalent validator - confirmed sibling gap."
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "error",
+          "message": {
+            "text": "Open redirect: the Edge middleware builds a redirect target with new URL(returnTo.value, base) from the attacker-controllable return-to cookie and issues NextResponse.redirect (proxy.ts:86). Because new URL(value, base) follows an absolute value and ignores base, there is no same-origin enforcement, and getSafeRedirectUrl is not applied on this path (the cookie is only .delete()'d at proxy.ts:89)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/proxy.ts"
+                },
+                "region": {
+                  "startLine": 86
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/proxy.ts"
+                          },
+                          "region": {
+                            "startLine": 83
+                          }
+                        },
+                        "message": {
+                          "text": "source: const returnTo = reqWithEnrichedHeaders.cookies.get('return-to') - attacker-controllable cookie value"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/proxy.ts"
+                          },
+                          "region": {
+                            "startLine": 86
+                          }
+                        },
+                        "message": {
+                          "text": "sink: NextResponse.redirect(new URL(returnTo.value, reqWithEnrichedHeaders.url)) - an absolute returnTo.value overrides base, yielding a cross-origin redirect"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": true,
+            "severity": "error",
+            "exploitScenario": "An attacker arranges for the victim's return-to cookie to hold https://evil.example (e.g., via an app flow or subdomain that sets return-to). On the next request through the Edge middleware, proxy.ts:86 computes new URL('https://evil.example', <self-url>) which - per the user-provided nuance - follows the absolute value and ignores the base, producing a 307 redirect to evil.example. No same-origin check or getSafeRedirectUrl is applied (the cookie is only .delete()'d at proxy.ts:89), so the user is redirected off-origin (phishing / token leakage).",
+            "confidence": "high",
+            "confidenceReason": "Complete cookie->redirect flow in a single file; the same-origin control is demonstrably absent on the path (getSafeRedirectUrl at packages/lib/getSafeRedirectUrl.ts:5 is not invoked here), and new URL(value, base) ignores base for absolute values.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "none - no on-path control neutralizes this finding",
+            "intermediateHopsSummary": "Single-hop first-order flow: proxy.ts:83 reads the return-to cookie -> proxy.ts:86 NextResponse.redirect(new URL(returnTo.value, base)). The base argument is ignored when returnTo.value is absolute; the cookie is only deleted at :89, never validated.",
+            "cwe": "CWE-601",
+            "siblingConsistency": "Anchor control getSafeRedirectUrl (packages/lib/getSafeRedirectUrl.ts:5) is used by other redirect builders in apps/web to enforce safe/same-origin targets, but this Edge middleware return-to path constructs the redirect with a raw new URL() and does not call it - confirmed sibling gap on a redirect sink."
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "note",
+          "message": {
+            "text": "Webhook dispatch fetch(subscriberUrl) at sendPayload.ts:373 for webhooks created via the tRPC/API v2 paths. Demoted to a note because those creation paths apply validateUrlForSSRFSync at write-time; residual risk (DNS rebinding / self-hosted private-IP allowance) keeps it advisory."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                },
+                "region": {
+                  "startLine": 373
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "source: tRPC webhook create input.subscriberUrl, validated here by validateUrlForSSRFSync (write-time control)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                          },
+                          "region": {
+                            "startLine": 358
+                          }
+                        },
+                        "message": {
+                          "text": "hop: read-to-sink - subscriberUrl loaded from the persisted (write-time-validated) webhook"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/sendPayload.ts"
+                          },
+                          "region": {
+                            "startLine": 373
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetch(subscriberUrl, ...)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "For webhooks created through the tRPC or API v2 paths, subscriberUrl is validated by validateUrlForSSRFSync at write-time (create.handler.ts:28 / edit.handler.ts:38 / validate-webhook-url.ts:5), so a direct private-IP/metadata URL is rejected at creation. Residual exploitation would require DNS rebinding (the sync validator decides at validation time and the dispatch fetch does not re-resolve under SSRF policy) or a self-hosted deployment whose SSRF policy permits private ranges.",
+            "confidence": "medium",
+            "confidenceReason": "A concrete write-time control is present on the creation paths, but the sync validator does not defend against DNS rebinding at dispatch time and self-hosted configs may allow private IPs - residual, not fully neutralized.",
+            "sanitizersEncountered": [
+              "validateUrlForSSRFSync (packages/trpc/server/routers/viewer/webhook/create.handler.ts:28)",
+              "validateUrlForSSRFSync (packages/trpc/server/routers/viewer/webhook/edit.handler.ts:38)",
+              "validateWebhookUrl (apps/api/v2/src/modules/webhooks/utils/validate-webhook-url.ts:5)"
+            ],
+            "demotionBasis": "Demoted by the write-time control validateUrlForSSRFSync on the tRPC creation/edit paths (create.handler.ts:28, edit.handler.ts:38) and validateWebhookUrl on the API v2 path (validate-webhook-url.ts:5).",
+            "intermediateHopsSummary": "tRPC/v2 webhook creation input -> validateUrlForSSRFSync/validateWebhookUrl at write-time -> persisted -> sendPayload.ts:358 read -> :373 fetch. Distinct from G1 (the v1 _post path lacks the write-time control).",
+            "cwe": "CWE-918",
+            "siblingConsistency": "Same dispatch sink as G1 (sendPayload.ts:373) but reached from creation paths that DO apply the validateUrlForSSRFSync anchor (ssrfProtection.ts:196); the unguarded sibling is the API v1 _post path (G1)."
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "note",
+          "message": {
+            "text": "Scheduled webhook dispatch fetch(job.subscriberUrl) at handleWebhookScheduledTriggers.ts:67. Demoted like N1 because the tRPC/v2 creation paths validate the URL at write-time; residual DNS-rebinding / self-hosted private-IP risk keeps it advisory."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                },
+                "region": {
+                  "startLine": 67
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/webhook/create.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "source: tRPC webhook create input.subscriberUrl validated by validateUrlForSSRFSync (write-time)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "hop: subscriberUrl selected from the persisted webhook scheduled-trigger row"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 67
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetch(job.subscriberUrl, ...)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "As with N1, webhooks created via tRPC/API v2 have subscriberUrl validated at write-time. The scheduled-trigger worker reads the stored subscriberUrl (selected at handleWebhookScheduledTriggers.ts:27) and fetches it at :67. Residual risk requires DNS rebinding or a self-hosted SSRF policy that permits private addresses.",
+            "confidence": "medium",
+            "confidenceReason": "Write-time validation present on the creation paths feeding this dispatch; residual rebinding / self-hosted exposure only.",
+            "sanitizersEncountered": [
+              "validateUrlForSSRFSync (packages/trpc/server/routers/viewer/webhook/create.handler.ts:28)",
+              "validateUrlForSSRFSync (packages/trpc/server/routers/viewer/webhook/edit.handler.ts:38)",
+              "validateWebhookUrl (apps/api/v2/src/modules/webhooks/utils/validate-webhook-url.ts:5)"
+            ],
+            "demotionBasis": "Demoted by the write-time control validateUrlForSSRFSync on the tRPC creation/edit paths (create.handler.ts:28, edit.handler.ts:38) and validateWebhookUrl on the API v2 path (validate-webhook-url.ts:5).",
+            "intermediateHopsSummary": "Creation input validated at write-time -> persisted -> handleWebhookScheduledTriggers.ts:27 select subscriberUrl -> :67 fetch. Mirrors N1 for the scheduled path.",
+            "cwe": "CWE-918",
+            "siblingConsistency": "Sibling of N1 (scheduled vs immediate dispatch); both share the write-time control validateUrlForSSRFSync. The unvalidated sibling remains the v1 _post path (G1)."
+          }
+        },
+        {
+          "ruleId": "CWE-117",
+          "level": "note",
+          "message": {
+            "text": "Raw console.error logs a (potentially second-order, v1-permissive) subscriberUrl without neutralizing CR/LF at handleWebhookScheduledTriggers.ts:74. Demoted to a note: real-world log-forging exploitability via this path is uncertain (stated, not a control)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                },
+                "region": {
+                  "startLine": 74
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v1/pages/api/webhooks/_post.ts"
+                          },
+                          "region": {
+                            "startLine": 70
+                          }
+                        },
+                        "message": {
+                          "text": "source: subscriberUrl from req.body, unrefined on the v1 path (may contain CR/LF)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "hop: subscriberUrl selected from the persisted webhook"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 74
+                          }
+                        },
+                        "message": {
+                          "text": "sink: console.error(`... ${job.subscriberUrl} ...`) - raw template interpolation, not JSON-escaped"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "A subscriberUrl persisted via the permissive v1 path (G1) can contain CR/LF or ANSI sequences. When a scheduled trigger fails, handleWebhookScheduledTriggers.ts:74 logs it via raw console.error string interpolation (not JSON-structured), allowing forged log lines / log spoofing in environments where console output is not JSON-escaped.",
+            "confidence": "medium",
+            "confidenceReason": "The raw, non-JSON console.error sink is concrete, but exploitability depends on the runtime log format and on a CR/LF-bearing subscriberUrl actually being persisted and triggered - uncertain, hence advisory.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "uncertain real-world exploitability of log forging via this path - stated, not a control",
+            "intermediateHopsSummary": "Second-order: v1 _post.ts:70 persists an unrefined subscriberUrl -> handleWebhookScheduledTriggers.ts:27 select -> :74 raw console.error interpolation. Contrast: the project's own sanitizeUrlForLog (packages/lib/ssrfProtection.ts:216), used by logBlockedSSRFAttempt (ssrfProtection.ts:228), is NOT applied here.",
+            "cwe": "CWE-117",
+            "siblingConsistency": "Compared against the in-repo control sanitizeUrlForLog (ssrfProtection.ts:216, used at :228): the SSRF subsystem sanitizes URLs before logging, but this scheduled-trigger console.error does not - sibling gap, recorded as advisory due to uncertain exploitability."
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "NextResponse.redirect(redirect_url) at saml/authorize/route.ts:19 where redirect_url is computed inside the third-party @boxyhq/saml-jackson oauthController.authorize (node_modules). Whether the target is attacker-influenced cannot be confirmed or denied in-repo; recorded as an advisory note with empty codeFlows."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/app/api/auth/saml/authorize/route.ts"
+                },
+                "region": {
+                  "startLine": 19
+                }
+              }
+            }
+          ],
+          "codeFlows": [],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "If the jackson oauthController.authorize derived redirect_url from attacker-influenced OAuth/SAML parameters without same-origin enforcement, the NextResponse.redirect at route.ts:19 would become an open redirect. The decision is made inside node_modules and cannot be traced to a source within this repository, so the source->sink flow is not evidenced in-repo.",
+            "confidence": "low",
+            "confidenceReason": "The redirect target is computed by third-party library code (node_modules); the in-repo path only forwards it. No in-repo source->sink flow can be completed, so confidence is low and codeFlows is empty (the result therefore must remain a note).",
+            "sanitizersEncountered": [],
+            "demotionBasis": "redirect target computed inside the third-party @boxyhq/saml-jackson controller (node_modules) - cannot confirm or deny an on-path control in-repo; uncertainty stated, not a control",
+            "intermediateHopsSummary": "In-repo: request -> oauthController.authorize (apps/web/app/api/auth/saml/authorize/route.ts:17, library call) -> NextResponse.redirect (:19). The taint decision occurs inside node_modules; no in-repo source->sink flow, hence codeFlows is empty.",
+            "cwe": "CWE-601",
+            "siblingConsistency": "Sibling SAML/OIDC redirect forwarders share the same library-mediated pattern: saml/callback/route.ts:22 and oidc/route.ts:34 also NextResponse.redirect(redirect_url) from jackson controllers - same uncertainty, none independently citable as a control."
+          }
+        },
+        {
+          "ruleId": "CWE-601",
+          "level": "note",
+          "message": {
+            "text": "The /api/router proxy computes a routed redirect destination from the submitted form/query via getRoutedUrl (router/index.ts:19) and returns it in the JSON response body (data.redirect.destination at L24-27), not as an HTTP 3xx. Demoted: the destination is configured by the form owner rather than free request input, and reachability to an attacker-controlled redirect is uncertain (stated)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/web/pages/api/router/index.ts"
+                },
+                "region": {
+                  "startLine": 19
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/pages/api/router/index.ts"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "source: const params = req.body - submitted routing-form fields"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/web/pages/api/router/index.ts"
+                          },
+                          "region": {
+                            "startLine": 19
+                          }
+                        },
+                        "message": {
+                          "text": "sink: getRoutedUrl({ req, query: { ...params } }) computes the redirect destination, which is then returned in the JSON response (data.redirect.destination at L24-27, not an HTTP 3xx)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "A user submits routing-form responses to /api/router; getRoutedUrl (router/index.ts:19) maps them to a redirect destination configured by the form owner. The destination is returned as JSON (data.redirect.destination, L24-27), and a client that blindly follows it could be sent off-origin. Because the destination set is form-owner-configured rather than free request input, attacker control of the final URL is not established.",
+            "confidence": "low",
+            "confidenceReason": "The redirect destination derives from form-owner configuration via getRoutedUrl, not directly from free request input, and is returned as data (not a server 3xx). Attacker-controlled redirect is not demonstrated - uncertain.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "destination is computed by getRoutedUrl from form-owner configuration and returned as JSON rather than an HTTP redirect - uncertain reachability to an attacker-controlled target is stated, not a control",
+            "intermediateHopsSummary": "router/index.ts:17 params = req.body -> :19 getRoutedUrl computes redirect.destination -> returned in JSON at L24-27 (not a 3xx). Form-owner-configured destination.",
+            "cwe": "CWE-601",
+            "siblingConsistency": "Compared against true redirect sinks (G3 proxy.ts:86; N4 SAML routes): this path performs no server-side redirect at all (it returns the destination as data), making it the weakest of the CWE-601 candidates."
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "HitPay webhook verifies the HMAC with a plain `signed !== obj.hmac` comparison (webhook.ts:107), which is non-constant-time, unlike sibling guards that use crypto.timingSafeEqual. A signature check IS present (timing weakness only), so this is advisory."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/app-store/hitpay/api/webhook.ts"
+                },
+                "region": {
+                  "startLine": 107
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/hitpay/api/webhook.ts"
+                          },
+                          "region": {
+                            "startLine": 42
+                          }
+                        },
+                        "message": {
+                          "text": "source: createHmac('sha256', secret) over the request payload (the inbound obj.hmac is the attacker-supplied value)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/hitpay/api/webhook.ts"
+                          },
+                          "region": {
+                            "startLine": 43
+                          }
+                        },
+                        "message": {
+                          "text": "hop: const signed = hmac.update(payload).digest('hex')"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/app-store/hitpay/api/webhook.ts"
+                          },
+                          "region": {
+                            "startLine": 107
+                          }
+                        },
+                        "message": {
+                          "text": "sink: if (signed !== obj.hmac) - non-constant-time comparison of the computed HMAC against the attacker-supplied obj.hmac"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "An attacker submitting forged HitPay webhook payloads faces a signature check, but the comparison `signed !== obj.hmac` (webhook.ts:107) is not constant-time. In principle, timing differences could leak how many leading bytes match, aiding incremental forgery of obj.hmac. Sibling guards (Vercel, BTCPay) avoid this by using crypto.timingSafeEqual after a length pre-check.",
+            "confidence": "medium",
+            "confidenceReason": "A signature verification is genuinely present (so this is not a fully-missing control), but it uses a non-constant-time comparison where peer guards use timingSafeEqual - a real but limited timing weakness, hence a note rather than an error.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "a signature check IS present at packages/app-store/hitpay/api/webhook.ts:107 (HMAC compared) but uses a non-constant-time `!==` - a timing weakness only, not a fully-missing control, so this is a note (sibling-gap vs timingSafeEqual peers), not an error",
+            "intermediateHopsSummary": "webhook.ts:42 createHmac('sha256', secret) over the request payload -> :43 digest('hex') = signed -> :107 `signed !== obj.hmac` non-constant-time comparison against the attacker-supplied hmac.",
+            "cwe": "CWE-807",
+            "siblingConsistency": "Compared against the timingSafeEqual anchor: Vercel vercel-webhook.guard.ts:47 length pre-check + :53 crypto.timingSafeEqual, and BTCPay btcpayserver/api/webhook.ts:82 length pre-check + :85 crypto.timingSafeEqual. HitPay uses a plain `!==` at webhook.ts:107 - sibling gap (non-constant-time)."
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "ApiAuthStrategy compares the OAuth client secret with a plain `client.secret !== oAuthClientSecret` (api-auth.strategy.ts:186), which is non-constant-time, whereas the API-key credential path uses sha256Hash + DB lookup. A secret check IS present (timing weakness only) - advisory."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                },
+                "region": {
+                  "startLine": 186
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                          },
+                          "region": {
+                            "startLine": 60
+                          }
+                        },
+                        "message": {
+                          "text": "source: const oAuthClientSecret = request.get(X_CAL_SECRET_KEY) - attacker-supplied header"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts"
+                          },
+                          "region": {
+                            "startLine": 186
+                          }
+                        },
+                        "message": {
+                          "text": "sink: if (client.secret !== oAuthClientSecret) - non-constant-time comparison of the stored secret against the attacker-supplied value"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "A client authenticating via X-CAL-CLIENT-ID / X-CAL-SECRET-KEY has its secret compared with `!==` at api-auth.strategy.ts:186. The non-constant-time comparison could in principle leak match length via timing, aiding secret guessing. The API-key credential path instead hashes (sha256Hash at :246) and performs a DB lookup, avoiding direct secret comparison.",
+            "confidence": "medium",
+            "confidenceReason": "A secret check is present (not missing), but it is a non-constant-time string comparison where the sibling apiKey path uses hashing + DB lookup - a timing weakness only, hence a note.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "a client-secret check IS present at apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts:186 but uses a non-constant-time `!==` - a timing weakness only, not a missing control; note, not error",
+            "intermediateHopsSummary": "api-auth.strategy.ts:60 oAuthClientSecret from the X-CAL-SECRET-KEY header -> :186 plain `!==` comparison against client.secret (non-constant-time).",
+            "cwe": "CWE-807",
+            "siblingConsistency": "Sibling credential path: the API-key branch uses sha256Hash (api-auth.strategy.ts:246) + repository lookup (no direct secret compare); the OAuth client-secret branch uses a plain `!==` at :186 - sibling gap (non-constant-time)."
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "GoogleCalendarSubscription adapter validates the inbound X-Goog-Channel-Token with `token !== this.GOOGLE_WEBHOOK_TOKEN` (adapter:41), a non-constant-time comparison. A token check IS present (timing weakness only) - advisory."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/calendar-subscription/adapters/GoogleCalendarSubscription.adapter.ts"
+                },
+                "region": {
+                  "startLine": 41
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/calendar-subscription/adapters/GoogleCalendarSubscription.adapter.ts"
+                          },
+                          "region": {
+                            "startLine": 36
+                          }
+                        },
+                        "message": {
+                          "text": "source: const token = request?.headers?.get('X-Goog-Channel-Token') - attacker-supplied header"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/calendar-subscription/adapters/GoogleCalendarSubscription.adapter.ts"
+                          },
+                          "region": {
+                            "startLine": 41
+                          }
+                        },
+                        "message": {
+                          "text": "sink: if (token !== this.GOOGLE_WEBHOOK_TOKEN) - non-constant-time comparison"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "An attacker sending forged Google Calendar push notifications must supply X-Goog-Channel-Token. The check `token !== GOOGLE_WEBHOOK_TOKEN` at adapter:41 is non-constant-time; timing analysis could theoretically assist guessing the token. The sibling GoogleCancellationHandler uses the same `!==` pattern (consistent but equally non-constant-time).",
+            "confidence": "low",
+            "confidenceReason": "A token comparison is present and the token is a high-entropy environment secret, so timing exploitation is impractical; recorded as a low-confidence note for sibling consistency.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "a token check IS present at packages/features/calendar-subscription/adapters/GoogleCalendarSubscription.adapter.ts:41 but uses a non-constant-time `!==` - a timing weakness only, not a missing control; note, not error",
+            "intermediateHopsSummary": "adapter:36 token from the X-Goog-Channel-Token header -> :41 `token !== GOOGLE_WEBHOOK_TOKEN` non-constant-time compare.",
+            "cwe": "CWE-807",
+            "siblingConsistency": "Sibling packages/features/calendars/lib/cancellation-sync/handlers/GoogleCancellationHandler.ts:122 uses the identical `token !== this.GOOGLE_WEBHOOK_TOKEN` non-constant-time pattern - consistent across the two Google webhook validators, both differing from the timingSafeEqual anchor used by Vercel/BTCPay."
+          }
+        },
+        {
+          "ruleId": "CWE-807",
+          "level": "note",
+          "message": {
+            "text": "The throttler guard derives the rate-limit identity from the spoofable cf-connecting-ip header (falling back to request.ip) at throttler-guard.ts:57 (and again at :215). Demoted: the impact is rate-limit evasion and is deployment-dependent (the header is authoritative behind Cloudflare) - uncertainty stated."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "apps/api/v2/src/lib/throttler-guard.ts"
+                },
+                "region": {
+                  "startLine": 57
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/lib/throttler-guard.ts"
+                          },
+                          "region": {
+                            "startLine": 57
+                          }
+                        },
+                        "message": {
+                          "text": "source: request.headers['cf-connecting-ip'] - client-supplied header read into the IP identity"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v2/src/lib/throttler-guard.ts"
+                          },
+                          "region": {
+                            "startLine": 57
+                          }
+                        },
+                        "message": {
+                          "text": "sink: the rate-limit identity key (IP = cf-connecting-ip ?? CF-Connecting-IP ?? request.ip) drives the throttling security decision"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "An attacker sends requests with a forged cf-connecting-ip header. If the API is not strictly fronted by Cloudflare (which would overwrite the header), throttler-guard.ts:57 uses the spoofed value as the rate-limit identity, letting the attacker rotate identities to evade rate limiting (the same pattern recurs at :215). Behind Cloudflare the header is authoritative, so impact is deployment-dependent.",
+            "confidence": "medium",
+            "confidenceReason": "The spoofable-header trust is concrete, but exploitability depends on deployment topology (whether traffic is forced through Cloudflare) - uncertain, hence advisory.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "exploitability is deployment-dependent (behind Cloudflare the cf-connecting-ip header is authoritative) and the impact is rate-limit identity evasion - uncertainty stated, not a control",
+            "intermediateHopsSummary": "throttler-guard.ts:57 reads cf-connecting-ip (?? CF-Connecting-IP ?? request.ip) and uses it as the rate-limit identity; the same pattern recurs at :215. No validation that the header originates from a trusted proxy.",
+            "cwe": "CWE-807",
+            "siblingConsistency": "Both rate-limit identity derivations (throttler-guard.ts:57 and :215) trust the same client-supplied cf-connecting-ip header; consistent with each other but unvalidated against a trusted-proxy allowlist."
+          }
+        },
+        {
+          "ruleId": "CWE-862",
+          "level": "note",
+          "message": {
+            "text": "The routing-forms `response` mutation is bound as publicProcedure (no authedProcedure / authorization guard) and performs a write (form-response submission). Flagged for human review: whether any submitted field can drive a privileged or owner-scoped write is not established - stated, not asserted safe."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/trpc/server/routers/viewer/routing-forms/response.handler.ts"
+                },
+                "region": {
+                  "startLine": 16
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/routing-forms/_router.ts"
+                          },
+                          "region": {
+                            "startLine": 20
+                          }
+                        },
+                        "message": {
+                          "text": "source: response: publicProcedure.input(ZResponseInputSchema).mutation(...) - unauthenticated public entry (publicProcedure, not authedProcedure)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/viewer/routing-forms/response.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 16
+                          }
+                        },
+                        "message": {
+                          "text": "sink: export const responseHandler = async ({ ctx, input }) - performs the form-response write with no authorization guard on the path"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "Because routing-forms `response` is bound as publicProcedure (_router.ts:20), anyone can invoke responseHandler (response.handler.ts:16) to submit a form response without authentication. If any input field were interpreted as a privileged or owner-scoped write it would be a missing-authorization issue. Whether such a field exists is not established here - flagged for human review.",
+            "confidence": "low",
+            "confidenceReason": "No specific field was shown to grant a privileged write, but the absence of any authorization guard on a public write mutation warrants human review - uncertain, advisory.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "uncertain reachability - it is not established that any submitted field drives a privileged or owner-scoped write; the uncertainty is stated and the finding is not asserted safe (flagged for human review), not a control",
+            "intermediateHopsSummary": "_router.ts:20 response = publicProcedure.input(ZResponseInputSchema).mutation (no authedProcedure) -> response.handler.ts:16 responseHandler executes the write. No Ring-2/Ring-3 authorization guard on the path.",
+            "cwe": "CWE-862",
+            "siblingConsistency": "Compared against authedProcedure-based mutations and the API v1/v2 ownership guards (e.g., _auth-middleware ownership checks; PbacGuard): those writes enforce authorization, whereas routing-forms `response` is publicProcedure. Among the enumerated publicProcedure sites, the public read/query procedures (slots getSchedule, i18n, timezones, countryCode, ssoConnections, bookings find, event) are read-only or intentionally public; `response` is the one public write mutation flagged for review."
+          }
+        }
+      ],
+      "properties": {
+        "layer": 3,
+        "tool": "blitzy-taint",
+        "analysisTarget": {
+          "repository": "Cal.com monorepo",
+          "branch": "main",
+          "headCommit": "e988138b24",
+          "mode": "read-only static source-to-sink taint detection (no build/run/test)"
+        },
+        "inScopeDirectories": [
+          "apps/web",
+          "apps/api/v1",
+          "apps/api/v2",
+          "packages/features",
+          "packages/app-store",
+          "packages/embeds",
+          "packages/trpc",
+          "packages/lib",
+          "packages/prisma"
+        ],
+        "methodology": "Per-category, two-phase sweep executed sequentially (one CWE fully finished before the next; anti-sampling). Phase A: literal sink enumeration across the nine in-scope directories (recorded in properties.coverage). Phase B: backward source<-hop<-sink tracing with on-path sanitizer identification (recorded in each result's codeFlows + property bag). Precision-gated: a complete source->sink flow with NO neutralizing on-path control => error/gateBlocking:true; anything less => note. Evidence-bound demotion (a named control fn+file:line, or stated uncertainty); banned non-controls never demote. Empty codeFlows can never be error/gateBlocking:true.",
+        "coverage": {
+          "CWE-601": {
+            "searchPatterns": [
+              ".redirect(",
+              "NextResponse.redirect",
+              "window.location",
+              "res.redirect"
+            ],
+            "rawHitCount": 161,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 5,
+            "blockingFindings": 1,
+            "nonBlockingNotes": 2,
+            "ruledOut": [
+              {
+                "item": "apps/web/app/api/auth/oauth/token/route.ts",
+                "reason": "OAuth token-grant endpoint; no NextResponse.redirect on the path. redirect_uri is used only for grant validation, not to build a redirect."
+              },
+              {
+                "item": "apps/web/proxy.ts (CSP/header handling, non-return-to branches)",
+                "reason": "Other middleware branches build same-origin responses / delete cookies; only the return-to cookie branch (proxy.ts:86) reaches a raw new URL() redirect (G3)."
+              }
+            ],
+            "status": "complete",
+            "perPatternCounts": {
+              ".redirect( (incl. NextResponse.redirect/res.redirect)": 92,
+              "window.location": 69
+            },
+            "recountCorroboration": "independent re-count: .redirect( 92 + window.location 69 = 161 (exact match)"
+          },
+          "CWE-918": {
+            "searchPatterns": [
+              "fetch(",
+              "axios",
+              "http(s).request",
+              "got(",
+              "node-fetch"
+            ],
+            "rawHitCount": 302,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 7,
+            "blockingFindings": 2,
+            "nonBlockingNotes": 2,
+            "ruledOut": [
+              {
+                "item": "packages/app-store/office365calendar/lib/CalendarService.ts subscribeToChanges",
+                "reason": "notificationUrl = process.env.OUTLOOK_GRAPH_NOTIFICATION_URL (environment-configured, not user input) - not a taint source."
+              },
+              {
+                "item": "packages/app-store/googlecalendar/lib/CalendarService.ts subscribeToChanges/watch",
+                "reason": "webhook/notification address is environment/config-derived, not request-controlled - not a taint source."
+              }
+            ],
+            "status": "complete",
+            "perPatternCounts": {
+              "fetch(": 260,
+              "axios": 39,
+              "got(/node-fetch/http(s).request": 3
+            },
+            "recountCorroboration": "independent re-count: fetch( ~261 (≈260). axios/got substrings vary by counting method; spec authoritative total ~302."
+          },
+          "CWE-117": {
+            "searchPatterns": [
+              "console.",
+              "logger.",
+              "log."
+            ],
+            "rawHitCount": 3572,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 1,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 1,
+            "ruledOut": [
+              {
+                "item": "packages/lib/logger.ts (tslog)",
+                "reason": "type:'json' in production (logger.ts:17) and maskValuesOfKeys masks password/credentials (logger.ts:7); JSON-structured output CRLF-escapes interpolated values at scale."
+              },
+              {
+                "item": "apps/api/v2/src/lib/logger.ts (Winston)",
+                "reason": "WINSTON_PROD_FORMAT uses format.json() (logger.ts:20) in production -> CRLF-escaped structured logs; not a raw log-injection sink."
+              },
+              {
+                "item": "the vast majority of the ~3572 console./logger./log. hits",
+                "reason": "route through the JSON-structured tslog/Winston sinks above; only the raw console.error at handleWebhookScheduledTriggers.ts:74 (N3) bypasses structured logging."
+              }
+            ],
+            "status": "complete",
+            "perPatternCounts": {
+              "console.": 1034,
+              "logger.": 1022,
+              "log.": 1635
+            },
+            "recountCorroboration": "independent re-count ~3691 across the three patterns (≈ spec ~3572; approximate, largest surface)."
+          },
+          "CWE-807": {
+            "searchPatterns": [
+              "cf-connecting-ip",
+              "x-forwarded-for",
+              "timingSafeEqual",
+              "createHmac",
+              "!== with hmac/signature/secret/token"
+            ],
+            "rawHitCount": 59,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 5,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 4,
+            "ruledOut": [
+              {
+                "item": "apps/api/v2/src/vercel-webhook.guard.ts:44->47->53",
+                "reason": "secure control: createHmac('sha1') + length pre-check (:47) + crypto.timingSafeEqual (:53) - constant-time signature verification."
+              },
+              {
+                "item": "packages/app-store/btcpayserver/api/webhook.ts:19->82->85",
+                "reason": "secure control: createHmac('sha256') (:19) + length pre-check (:82) + crypto.timingSafeEqual (:85) - constant-time signature verification."
+              },
+              {
+                "item": "Stripe webhook constructEvent",
+                "reason": "signature verification delegated to the Stripe SDK constructEvent (constant-time, library-maintained)."
+              },
+              {
+                "item": "apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts:246 (apiKey path)",
+                "reason": "apiKey credential path uses sha256Hash + DB lookup (no plaintext secret comparison)."
+              },
+              {
+                "item": "packages/features/ee/common/server/private-api-utils.ts decodeOAuthState / License HMAC nonce",
+                "reason": "HMAC nonce verification present; signature-based control."
+              }
+            ],
+            "status": "complete",
+            "perPatternCounts": {
+              "cf-connecting-ip/x-forwarded-for (IP trust)": 20,
+              "timingSafeEqual/createHmac/signature !== (signature)": 39
+            },
+            "recountCorroboration": "independent re-count: cf-connecting-ip|x-forwarded-for narrow=8 (broader IP-trust set=20); timingSafeEqual|createHmac=29 (subset of the 39 signature-decision sites)."
+          },
+          "CWE-338": {
+            "searchPatterns": [
+              "Math.random"
+            ],
+            "rawHitCount": 76,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 0,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 0,
+            "ruledOut": [
+              {
+                "item": "packages/lib/random.ts:11 (randomString)",
+                "reason": "Math.random used only for a non-security username suffix (consumed at next-auth-options.ts:104); not a secret/token/OTP/nonce."
+              },
+              {
+                "item": "apps/api/v2/.../teams/create/route.ts:31",
+                "reason": "Math.random fallback for a public team name/slug (route.ts:71-72); non-security."
+              },
+              {
+                "item": "packages/.../username.ts:62",
+                "reason": "Math.random for a non-security username suffix."
+              },
+              {
+                "item": "packages/.../RegularBookingService.ts:1680",
+                "reason": "Math.random for decoy/selection logic; non-security."
+              },
+              {
+                "item": "remaining Math.random hits",
+                "reason": "test/e2e fixtures and React list keys; no security-sensitive value derives from Math.random."
+              }
+            ],
+            "status": "complete",
+            "recountCorroboration": "independent re-count: Math.random = 76 (exact match).",
+            "secureBaseline": "All secrets use crypto: crypto.randomBytes/getRandomValues (e.g., verifyEmail.ts:37,130; keyring.ts:86; crypto.ts:17). FULLY RULED OUT."
+          },
+          "CWE-843": {
+            "searchPatterns": [
+              "req.query.",
+              "req.params."
+            ],
+            "rawHitCount": 55,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 0,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 0,
+            "ruledOut": [
+              {
+                "item": "apps/api/v1/.../_auth-middleware.ts:12/26",
+                "reason": "the string|string[] union is normalized via schemaQueryTeamId.parse (zod) before any security use."
+              },
+              {
+                "item": "apps/api/v1/.../extractUserIdsFromQuery.ts:9->12->13",
+                "reason": "admin guard + zod parse (:12) + Array.isArray normalization (:13) before use."
+              },
+              {
+                "item": "apps/api/v1/lib/helpers/verifyApiKey.ts:27",
+                "reason": "`${req.query.apiKey}`.replace(...) template-literal coercion fails closed for array inputs (an array stringifies and will not match a valid key)."
+              },
+              {
+                "item": "API v2 controllers (global ValidationPipe)",
+                "reason": "ValidationPipe({whitelist:true, transform:true}) coerces/strips DTO fields before handler logic, eliminating string|string[] confusion."
+              }
+            ],
+            "status": "complete",
+            "recountCorroboration": "independent re-count: req.query.=58, req.params.=0 (≈ spec 55). RULED OUT - union consistently zod-normalized before security use."
+          },
+          "CWE-862": {
+            "searchPatterns": [
+              "publicProcedure",
+              "v1 _post.ts/_patch.ts/_delete.ts/_put.ts handlers",
+              "apps/api/v2 auth guard folders"
+            ],
+            "rawHitCount": 99,
+            "directoriesSearched": [
+              "apps/web",
+              "apps/api/v1",
+              "apps/api/v2",
+              "packages/features",
+              "packages/app-store",
+              "packages/embeds",
+              "packages/trpc",
+              "packages/lib",
+              "packages/prisma"
+            ],
+            "candidatesAfterTriage": 1,
+            "blockingFindings": 0,
+            "nonBlockingNotes": 1,
+            "ruledOut": [
+              {
+                "item": "apps/api/v1/pages/api/api-keys/[id]/_auth-middleware.ts:14-15",
+                "reason": "ownership enforced: prisma.apiKey.findFirst({where:{id,userId}}) (admin bypass only)."
+              },
+              {
+                "item": "apps/api/v1/pages/api/event-types/[id]/_delete.ts:45->64-65",
+                "reason": "inline ownership check before delete."
+              },
+              {
+                "item": "apps/api/v1/pages/api/users/[userId]/_get|_patch|_delete.ts:106-107",
+                "reason": "each enforces if(!isSystemWideAdmin && query.userId!==req.userId) throw 403."
+              },
+              {
+                "item": "apps/api/v1/pages/api/bookings/[id]/transcripts/[recordingId]/index.ts:12",
+                "reason": "nested route inherits the parent authMiddleware ownership scope."
+              },
+              {
+                "item": "apps/api/v1/pages/api/webhooks/_get.ts:40",
+                "reason": "collection query scoped to the caller's userId."
+              },
+              {
+                "item": "4 intentionally-public tRPC procedures (feature-flags list, public booking-page event query, public form-response submission, slots/i18n/timezones)",
+                "reason": "public by capability for unauthenticated booking pages; the only public write (routing-forms response) is flagged as N10 for human review."
+              }
+            ],
+            "status": "complete",
+            "rawHits": {
+              "publicProcedureSites": 38,
+              "v1VerbHandlerFiles": 46,
+              "v2GuardFolders": 15
+            },
+            "recountCorroboration": "independent re-count: 46 v1 verb-handler files (exact); 15 v2 guard folders (exact); publicProcedure 52 textual occurrences / 18 definition sites (spec authoritative 38).",
+            "exhaustiveEnumeration": {
+              "v1VerbHandlerFiles_all46": [
+                "apps/api/v1/pages/api/api-keys/[id]/_delete.ts",
+                "apps/api/v1/pages/api/api-keys/[id]/_patch.ts",
+                "apps/api/v1/pages/api/api-keys/_post.ts",
+                "apps/api/v1/pages/api/attendees/[id]/_delete.ts",
+                "apps/api/v1/pages/api/attendees/[id]/_patch.ts",
+                "apps/api/v1/pages/api/attendees/_post.ts",
+                "apps/api/v1/pages/api/availabilities/[id]/_delete.ts",
+                "apps/api/v1/pages/api/availabilities/[id]/_patch.ts",
+                "apps/api/v1/pages/api/availabilities/_post.ts",
+                "apps/api/v1/pages/api/booking-references/[id]/_delete.ts",
+                "apps/api/v1/pages/api/booking-references/[id]/_patch.ts",
+                "apps/api/v1/pages/api/booking-references/_post.ts",
+                "apps/api/v1/pages/api/bookings/[id]/_delete.ts",
+                "apps/api/v1/pages/api/bookings/[id]/_patch.ts",
+                "apps/api/v1/pages/api/bookings/_post.ts",
+                "apps/api/v1/pages/api/credential-sync/_delete.ts",
+                "apps/api/v1/pages/api/credential-sync/_patch.ts",
+                "apps/api/v1/pages/api/credential-sync/_post.ts",
+                "apps/api/v1/pages/api/custom-inputs/[id]/_delete.ts",
+                "apps/api/v1/pages/api/custom-inputs/[id]/_patch.ts",
+                "apps/api/v1/pages/api/custom-inputs/_post.ts",
+                "apps/api/v1/pages/api/destination-calendars/[id]/_delete.ts",
+                "apps/api/v1/pages/api/destination-calendars/[id]/_patch.ts",
+                "apps/api/v1/pages/api/destination-calendars/_post.ts",
+                "apps/api/v1/pages/api/event-types/[id]/_delete.ts",
+                "apps/api/v1/pages/api/event-types/[id]/_patch.ts",
+                "apps/api/v1/pages/api/event-types/_post.ts",
+                "apps/api/v1/pages/api/invites/_post.ts",
+                "apps/api/v1/pages/api/memberships/[id]/_delete.ts",
+                "apps/api/v1/pages/api/memberships/[id]/_patch.ts",
+                "apps/api/v1/pages/api/memberships/_post.ts",
+                "apps/api/v1/pages/api/schedules/[id]/_delete.ts",
+                "apps/api/v1/pages/api/schedules/[id]/_patch.ts",
+                "apps/api/v1/pages/api/schedules/_post.ts",
+                "apps/api/v1/pages/api/selected-calendars/[id]/_delete.ts",
+                "apps/api/v1/pages/api/selected-calendars/[id]/_patch.ts",
+                "apps/api/v1/pages/api/selected-calendars/_post.ts",
+                "apps/api/v1/pages/api/teams/[teamId]/_delete.ts",
+                "apps/api/v1/pages/api/teams/[teamId]/_patch.ts",
+                "apps/api/v1/pages/api/teams/_post.ts",
+                "apps/api/v1/pages/api/users/[userId]/_delete.ts",
+                "apps/api/v1/pages/api/users/[userId]/_patch.ts",
+                "apps/api/v1/pages/api/users/_post.ts",
+                "apps/api/v1/pages/api/webhooks/[id]/_delete.ts",
+                "apps/api/v1/pages/api/webhooks/[id]/_patch.ts",
+                "apps/api/v1/pages/api/webhooks/_post.ts"
+              ],
+              "publicProcedureSites": [
+                "packages/trpc/server/routers/features/map.ts:9 (map.query)",
+                "packages/trpc/server/routers/features/_router.ts:9 (list.query)",
+                "packages/trpc/server/routers/viewer/slots/_router.tsx:48 (getSchedule.query)",
+                "packages/trpc/server/routers/viewer/slots/_router.tsx:62 (reserveSlot.mutation)",
+                "packages/trpc/server/routers/viewer/routing-forms/_router.ts:20 (response.mutation -> N10)",
+                "packages/trpc/server/routers/viewer/i18n/_router.tsx:6 (get.query)",
+                "packages/trpc/server/routers/viewer/auth/_router.tsx:40 (verifyCodeUnAuthenticated.mutation)",
+                "packages/trpc/server/routers/viewer/auth/_router.tsx:48 (sendVerifyEmailCode.mutation)",
+                "packages/trpc/server/routers/viewer/bookings/_router.tsx:98 (find.query)",
+                "packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 (cityTimezones.query)",
+                "packages/trpc/server/routers/publicViewer/procedures/event.ts:5 (event.query)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:11 (countryCode.query)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:15 (submitRating.mutation)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow.mutation)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:23 (samlTenantProduct.mutation)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:28 (ssoConnections.query)",
+                "packages/trpc/server/procedures/authedProcedure.ts:30 (authedAdminProcedure = publicProcedure.use(isAdminMiddleware))",
+                "packages/trpc/server/procedures/authedProcedure.ts:31 (authedOrgAdminProcedure = publicProcedure.use(isOrgAdminMiddleware))"
+              ],
+              "v2GuardFolders_all15": [
+                "api-auth",
+                "billing",
+                "memberships",
+                "next-auth",
+                "optional-api-auth",
+                "or-guard",
+                "organization-roles",
+                "organizations",
+                "pbac",
+                "permissions",
+                "roles",
+                "routing-forms",
+                "teams",
+                "users",
+                "workflows"
+              ]
+            }
+          }
+        },
+        "reproducibility": {
+          "runs": 3,
+          "policy": "Analysis run N>=3 times; the emitted set is the UNION of gate-blocking findings across runs. A stable gate-blocking finding is never removed due to a single run's miss.",
+          "stableGateBlocking": [
+            "CWE-918 second-order SSRF (sendPayload.ts:373) [G1]",
+            "CWE-918 first-order SSRF (caldavcalendar/api/add.ts:44) [G2]",
+            "CWE-601 open redirect (proxy.ts:86) [G3]"
+          ],
+          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3 stable in every run). Advisory notes (N1-N10) were consistently non-blocking; none oscillated between error and note."
+        },
+        "selfAudit": {
+          "1_schemaValidity": "pass - $schema/version 2.1.0, single run, tool.driver.name=Blitzy-Taint-Layer3, 7 CWE rules each defined once, every result.ruleId is defined in tool.driver.rules.",
+          "2_precisionGate": "pass - every error/gateBlocking:true result (G1,G2,G3) has a complete non-empty source->hop->sink codeFlow and demotionBasis 'none ...'; none relies on a banned non-control.",
+          "3_emptyCodeFlowsRule": "pass - the only empty-codeFlows result (N4) is note/gateBlocking:false.",
+          "4_demotionDiscipline": "pass - every demoted note names a concrete control (fn+file:line) or states uncertainty explicitly; no banned phrase (authenticated/by design/intended behaviour/blind/internal-only/low severity/no known caller/not reachable) is used to demote.",
+          "5_siblingConsistency": "pass - SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2) and timingSafeEqual peers (N6/N7/N8) enumerated with gaps recorded.",
+          "6_propertyBagCompleteness": "pass - every result carries gateBlocking, severity, exploitScenario, confidence(+reason), sanitizersEncountered (never omitted; [] when none), demotionBasis, intermediateHopsSummary, cwe, siblingConsistency.",
+          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete'; no level:'warning' anywhere; second-order finding G1 evidences BOTH legs."
+        }
+      }
+    }
+  ]
+}

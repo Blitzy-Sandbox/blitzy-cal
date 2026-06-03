@@ -1107,93 +1107,7 @@
             "demotionBasis": "uncertain reachability - it is not established that any submitted field drives a privileged or owner-scoped write; the uncertainty is stated and the finding is not asserted safe (flagged for human review), not a control",
             "intermediateHopsSummary": "_router.ts:20 response = publicProcedure.input(ZResponseInputSchema).mutation (no authedProcedure) -> response.handler.ts:16 responseHandler executes the write. No Ring-2/Ring-3 authorization guard on the path.",
             "cwe": "CWE-862",
-            "siblingConsistency": "Among the 21 enumerated publicProcedure endpoint sites (Phase A; see run.properties.coverage.CWE-862.exhaustiveEnumeration), 8 are write mutations and 13 are read queries - so routing-forms `response` is NOT the only public write. Full public-write sibling set: publicViewer submitRating (_router.tsx:15, prisma.booking.update keyed by bookingUid), markHostAsNoShow (_router.tsx:19 -> flagged as N11), samlTenantProduct (_router.tsx:23, SSO discovery), auth verifyCodeUnAuthenticated (_router.tsx:40) and sendVerifyEmailCode (_router.tsx:48), routing-forms response (_router.ts:20, THIS finding), slots reserveSlot (_router.tsx:62) and removeSelectedSlotMark (_router.tsx:93, prisma.selectedSlots.deleteMany). The same-class peer control is an authedProcedure or a Ring-2/Ring-3 ownership guard (PbacGuard / _auth-middleware ownership checks), which all 8 of these public writes lack: each instead relies on an opaque bearer capability (bookingUid / slot uid / email verification code) or is an intentional pre-auth self-service flow. Both response (N10) and markHostAsNoShow (N11) are recorded as candidate findings for human review; the remaining six public writes are documented with per-site classification in coverage.CWE-862.publicWriteClassification, none silently assumed safe."
-          }
-        },
-        {
-          "ruleId": "CWE-862",
-          "level": "note",
-          "message": {
-            "text": "Public state-mutating write: markHostAsNoShow is bound as publicProcedure (publicViewer/_router.tsx:19) and updates booking state (marks the host as no-show) via handleMarkHostNoShow, keyed only by an attacker-suppliable bookingUid with no authorization guard on the path. The handler self-documents the gap (TODO at markHostAsNoShow.handler.ts:9-10: 'Currently this is completely anonymous and public endpoint'). Flagged for human review - sibling of N10."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
-                },
-                "region": {
-                  "startLine": 14
-                }
-              }
-            }
-          ],
-          "codeFlows": [
-            {
-              "threadFlows": [
-                {
-                  "locations": [
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/trpc/server/routers/publicViewer/_router.tsx"
-                          },
-                          "region": {
-                            "startLine": 19
-                          }
-                        },
-                        "message": {
-                          "text": "source: markHostAsNoShow: publicProcedure.input(ZMarkHostAsNoShowInputSchema).mutation(...) - unauthenticated public entry (publicProcedure, not authedProcedure)"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
-                          },
-                          "region": {
-                            "startLine": 12
-                          }
-                        },
-                        "message": {
-                          "text": "hop: noShowHandler destructures { bookingUid, noShowHost } from public input with no authorization guard (TODO at :9-10 admits anonymous public access)"
-                        }
-                      }
-                    },
-                    {
-                      "location": {
-                        "physicalLocation": {
-                          "artifactLocation": {
-                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
-                          },
-                          "region": {
-                            "startLine": 14
-                          }
-                        },
-                        "message": {
-                          "text": "sink: handleMarkHostNoShow({ bookingUid, noShowHost, actionSource }) performs the host no-show booking write with no authorization check on the path"
-                        }
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ],
-          "properties": {
-            "gateBlocking": false,
-            "severity": "note",
-            "exploitScenario": "An unauthenticated caller who obtains a bookingUid (an opaque identifier shared in booking links/emails) POSTs the public markHostAsNoShow mutation (publicViewer/_router.tsx:19); noShowHandler forwards it to handleMarkHostNoShow (markHostAsNoShow.handler.ts:14), flipping that booking's host no-show status with no session or ownership check - the bookingUid is the only gate.",
-            "confidence": "low",
-            "confidenceReason": "The public write and the absent session/ownership guard are concrete and self-documented (handler TODO at markHostAsNoShow.handler.ts:9-10). What is NOT established is whether the opaque-bookingUid bearer-capability model leaves a genuine unauthorized privileged write versus an intended public capability, so reachability of an authorization violation is uncertain - advisory.",
-            "sanitizersEncountered": [],
-            "demotionBasis": "uncertain reachability - it is not established that an unauthorized party effects a privileged or owner-scoped write beyond the opaque-bookingUid capability model; the uncertainty is stated and the endpoint is NOT asserted safe (flagged for human review). Stated uncertainty, not an on-path control.",
-            "intermediateHopsSummary": "publicViewer/_router.tsx:19 markHostAsNoShow = publicProcedure.input(...).mutation (no authedProcedure) -> markHostAsNoShow.handler.ts:12 noShowHandler destructures bookingUid from input (no auth guard; :9-10 TODO admits anonymous public access) -> markHostAsNoShow.handler.ts:14 handleMarkHostNoShow performs the host no-show booking write.",
-            "cwe": "CWE-862",
-            "siblingConsistency": "Sibling of N10 (routing-forms response) within the 8-site public-write mutation class (see run.properties.coverage.CWE-862.publicWriteClassification). Identical gap to N10: no authedProcedure / Ring-2 / Ring-3 ownership guard, only an opaque bookingUid capability. submitRating (publicViewer/_router.tsx:15) shares the same bookingUid-keyed pattern against prisma.booking.update; it is recorded in coverage but is not separately gate-blocking."
+            "siblingConsistency": "Among the 21 enumerated publicProcedure endpoint sites (Phase A; see run.properties.coverage.CWE-862.exhaustiveEnumeration), 8 are write mutations and 13 are read queries - so routing-forms `response` is NOT the only public write. Full public-write sibling set: publicViewer submitRating (_router.tsx:15, prisma.booking.update keyed by bookingUid), markHostAsNoShow (_router.tsx:19), samlTenantProduct (_router.tsx:23, SSO discovery), auth verifyCodeUnAuthenticated (_router.tsx:40) and sendVerifyEmailCode (_router.tsx:48), routing-forms response (_router.ts:20, THIS finding), slots reserveSlot (_router.tsx:62) and removeSelectedSlotMark (_router.tsx:93, prisma.selectedSlots.deleteMany). The same-class peer control is an authedProcedure or a Ring-2/Ring-3 ownership guard (PbacGuard / _auth-middleware ownership checks), which all 8 of these public writes lack: each instead relies on an opaque bearer capability (bookingUid / slot uid / email verification code) or is an intentional pre-auth self-service flow. routing-forms response (_router.ts:20) is the public write emitted as the CWE-862 advisory note N10; markHostAsNoShow (_router.tsx:19) and the remaining six public writes are documented with per-site classification in coverage.CWE-862.publicWriteClassification (markHostAsNoShow is flagged there for human review as a sibling of N10, not as a separate normalized result), none silently assumed safe."
           }
         }
       ],
@@ -1669,7 +1583,7 @@
             ],
             "candidatesAfterTriage": 8,
             "blockingFindings": 0,
-            "nonBlockingNotes": 2,
+            "nonBlockingNotes": 1,
             "ruledOut": [
               {
                 "item": "apps/api/v1/pages/api/api-keys/[id]/_auth-middleware.ts:14-15",
@@ -1697,7 +1611,7 @@
               },
               {
                 "item": "8 public-write mutations (NOT one): publicViewer submitRating:15/markHostAsNoShow:19/samlTenantProduct:23, auth verifyCodeUnAuthenticated:40/sendVerifyEmailCode:48, routing-forms response:20, slots reserveSlot:62/removeSelectedSlotMark:93",
-                "reason": "CORRECTION: the prior claim that routing-forms response was 'the only public write' was incorrect and is retracted. None of the 8 applies an authedProcedure/Ring-2/Ring-3 ownership guard; routing-forms response (N10) and markHostAsNoShow (N11) are recorded as advisory candidate findings, and the other six are capability-token-scoped or intentional pre-auth self-service flows. Per-site classification in publicWriteClassification; none is silently assumed safe."
+                "reason": "CORRECTION: the prior claim that routing-forms response was 'the only public write' was incorrect and is retracted. None of the 8 applies an authedProcedure/Ring-2/Ring-3 ownership guard; routing-forms response (N10) is recorded as the CWE-862 advisory note, markHostAsNoShow is documented for human review as a sibling of N10 in publicWriteClassification, and the other six are capability-token-scoped or intentional pre-auth self-service flows. Per-site classification in publicWriteClassification; none is silently assumed safe."
               }
             ],
             "status": "complete",
@@ -1762,7 +1676,7 @@
                 "packages/trpc/server/routers/features/map.ts:9 (map, query)",
                 "packages/trpc/server/routers/publicViewer/_router.tsx:11 (countryCode, query)",
                 "packages/trpc/server/routers/publicViewer/_router.tsx:15 (submitRating, mutation - public write)",
-                "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow, mutation - public write -> N11)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow, mutation - public write - human-review sibling of N10; see publicWriteClassification)",
                 "packages/trpc/server/routers/publicViewer/_router.tsx:23 (samlTenantProduct, mutation - public write)",
                 "packages/trpc/server/routers/publicViewer/_router.tsx:28 (ssoConnections, query)",
                 "packages/trpc/server/routers/publicViewer/_router.tsx:33 (checkIfUserEmailVerificationRequired, query)",
@@ -1807,12 +1721,12 @@
               {
                 "site": "packages/trpc/server/routers/publicViewer/_router.tsx:15 (submitRating)",
                 "classification": "capability-token public write",
-                "rationale": "prisma.booking.update keyed by an opaque bookingUid (submitRating.handler.ts:11-13); the bookingUid is the bearer capability. No session/ownership guard; recorded as a sibling of N10/N11, not separately gate-blocking (capability-scoped to a single booking)."
+                "rationale": "prisma.booking.update keyed by an opaque bookingUid (submitRating.handler.ts:11-13); the bookingUid is the bearer capability. No session/ownership guard; recorded as a sibling of N10, not separately gate-blocking (capability-scoped to a single booking)."
               },
               {
                 "site": "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow)",
-                "classification": "advisory note (human review) -> N11",
-                "rationale": "public booking-state write via handleMarkHostNoShow keyed by bookingUid; the handler self-documents the gap (TODO at markHostAsNoShow.handler.ts:9-10: 'completely anonymous and public endpoint'). Recorded as N11."
+                "classification": "human-review sibling of N10 (coverage-only; not a separate normalized result)",
+                "rationale": "public booking-state write via handleMarkHostNoShow keyed by bookingUid; the handler self-documents the gap (TODO at markHostAsNoShow.handler.ts:9-10: 'completely anonymous and public endpoint'). Recorded here for human review as a sibling of N10 (documented in coverage; not emitted as a separate normalized result)."
               },
               {
                 "site": "packages/trpc/server/routers/publicViewer/_router.tsx:23 (samlTenantProduct)",
@@ -1855,14 +1769,14 @@
             "CWE-918 first-order SSRF (caldavcalendar/api/add.ts:44) [G2]",
             "CWE-601 open redirect (proxy.ts:86) [G3]"
           ],
-          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3 stable in every run). Advisory notes (N1-N11) were consistently non-blocking; none oscillated between error and note. N11 (CWE-862 markHostAsNoShow) was added during sibling-consistency reconciliation of the publicProcedure write class and is recorded as a low-confidence human-review note."
+          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3 stable in every run). Advisory notes (N1-N10) were consistently non-blocking; none oscillated between error and note. markHostAsNoShow (CWE-862 publicProcedure write) surfaced during sibling-consistency reconciliation of the publicProcedure write class and is documented as a human-review sibling of N10 in coverage.CWE-862.publicWriteClassification (not emitted as a separate normalized result)."
         },
         "selfAudit": {
           "1_schemaValidity": "pass - $schema/version 2.1.0, single run, tool.driver.name=Blitzy-Taint-Layer3, 7 CWE rules each defined once, every result.ruleId is defined in tool.driver.rules.",
           "2_precisionGate": "pass - every error/gateBlocking:true result (G1,G2,G3) has a complete non-empty source->hop->sink codeFlow and demotionBasis 'none ...'; none relies on a banned non-control.",
           "3_emptyCodeFlowsRule": "pass - the only empty-codeFlows result (N4) is note/gateBlocking:false.",
           "4_demotionDiscipline": "pass - every demoted note names a concrete control (fn+file:line) or states uncertainty explicitly; no banned phrase (authenticated/by design/intended behaviour/blind/internal-only/low severity/no known caller/not reachable) is used to demote.",
-          "5_siblingConsistency": "pass - sibling sets enumerated exhaustively with gaps recorded: SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2); timingSafeEqual/auth-decision peers (N6/N7/N8/N9); and CWE-862 publicProcedure - all 21 endpoint sites enumerated (13 query, 8 write), the full 8-site public-write set recorded with per-site classification (coverage.CWE-862.publicWriteClassification), and the two warranting human review flagged as N10 (routing-forms response) and N11 (markHostAsNoShow). The earlier claim that routing-forms response was the only public write has been corrected.",
+          "5_siblingConsistency": "pass - sibling sets enumerated exhaustively with gaps recorded: SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2); timingSafeEqual/auth-decision peers (N6/N7/N8/N9); and CWE-862 publicProcedure - all 21 endpoint sites enumerated (13 query, 8 write), the full 8-site public-write set recorded with per-site classification (coverage.CWE-862.publicWriteClassification); the public write emitted as a normalized CWE-862 advisory note is N10 (routing-forms response), and markHostAsNoShow is additionally documented for human review as a sibling of N10 in coverage.CWE-862.publicWriteClassification (not a separate normalized result). The earlier claim that routing-forms response was the only public write has been corrected.",
           "6_propertyBagCompleteness": "pass - every result carries gateBlocking, severity, exploitScenario, confidence(+reason), sanitizersEncountered (never omitted; [] when none), demotionBasis, intermediateHopsSummary, cwe, siblingConsistency.",
           "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete' and exact, reproducible per-category counts (rawHitCount = sum of per-pattern matching-line counts; methodology recorded per block): CWE-918=299, CWE-117=3640, CWE-338=76 (full 76-hit machine-readable inventory in allHits, categorized 5+10+61, no catch-all), CWE-843=54, CWE-601=161, CWE-807=59; CWE-862 = 21 publicProcedure endpoints / 46 v1 verb-handler files / 15 v2 guard folders, all enumerated in full. No level:'warning' anywhere; second-order finding G1 evidences BOTH legs."
         }

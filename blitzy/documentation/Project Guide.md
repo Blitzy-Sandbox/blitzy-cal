@@ -1,4 +1,7 @@
-# Blitzy Project Guide — Development Acceleration Measurement (`blitzy-cal`)
+# Blitzy Project Guide — Layer 3 Taint-Analysis SARIF (`blitzy-cal`)
+
+> **Artifact:** `findings-layer-3-blitzy-taint.sarif` · **Branch:** `blitzy-259cbaf2-207e-4ebc-89df-8e7c8cf2b376` · **HEAD:** `ce8b62e505`
+> **Task type:** Read-only static taint-analysis (detection only) · **Brand colors:** Completed = Dark Blue `#5B39F3`, Remaining = White `#FFFFFF`
 
 ---
 
@@ -6,61 +9,64 @@
 
 ### 1.1 Project Overview
 
-This project delivers a read-only **Development Acceleration Measurement** of the `blitzy-cal` repository — a Cal.com-derived scheduling monorepo (Yarn Berry + Turborepo, ~16,880 commits, 2021-03-10 → 2026-05-15). The objective is to quantify the development-velocity acceleration attributable to AI engineering tooling by extracting twelve flow and operational metrics from version-control history, computing each as an *after ÷ before* ratio split at a detected **Tool Introduction Date (2025-04-08)**, and publishing two deliverables: a traceable eleven-section technical report (`acceleration-report.md`) and a self-contained reveal.js executive presentation. The intended audience is engineering leadership and stakeholders. The change is additive and output-only: two net-new files are created and zero existing repository files are modified or deleted.
+This project performs an exhaustive, cross-file, source-to-sink **taint analysis** over the `blitzy-cal` repository (a Cal.com monorepo on Yarn Berry + Turborepo) across **seven fixed CWE vulnerability classes**, emitting the result as one machine-readable artifact — `findings-layer-3-blitzy-taint.sarif` (valid SARIF 2.1.0). It is a strictly **read-only detection task**: no source file is modified. The report gates a downstream automated **precision gate** that runs without human triage, so only fully-substantiated, high-confidence findings are gate-blocking. Target consumers are platform security/DevOps engineers and the automated gate. Business impact: a deterministic, schema-valid security signal proving (or disproving) reachability of untrusted input to dangerous sinks across ~7,700 in-scope source files.
 
 ### 1.2 Completion Status
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'pie1':'#5B39F3','pie2':'#FFFFFF','pieStrokeColor':'#333333','pieStrokeWidth':'2px','pieOuterStrokeWidth':'2px','pieTitleTextSize':'18px','pieSectionTextColor':'#333333','pieLegendTextColor':'#333333','pieOpacity':'1'}}}%%
-pie showData title Acceleration Measurement — 85.0% Complete (96h of 113h)
-    "Completed Work (AI)" : 96
-    "Remaining Work" : 17
+%%{init: {'theme':'base', 'themeVariables':{ 'pie1':'#5B39F3', 'pie2':'#FFFFFF', 'pieStrokeColor':'#B23AF2', 'pieStrokeWidth':'2px', 'pieOuterStrokeColor':'#B23AF2', 'pieOuterStrokeWidth':'2px', 'pieTitleTextColor':'#B23AF2', 'pieSectionTextColor':'#111111', 'pieLegendTextColor':'#111111'}}}%%
+pie showData title Completion — 86.4% (AAP-scoped)
+    "Completed Work (hrs)" : 101.5
+    "Remaining Work (hrs)" : 16
 ```
 
 | Metric | Value |
-|--------|-------|
-| **Total Hours** | **113** |
-| **Completed Hours (AI + Manual)** | **96** (96 AI autonomous + 0 Manual) |
-| **Remaining Hours** | **17** |
-| **Percent Complete** | **85.0%** |
+|--------|------:|
+| **Total Hours** | **117.5 h** |
+| **Completed Hours (AI + Manual)** | **101.5 h** (AI: 101.5 h · Manual: 0 h) |
+| **Remaining Hours** | **16.0 h** |
+| **Percent Complete** | **86.4 %** |
 
-> Completion is calculated using the AAP-scoped, hours-based methodology: `96 ÷ (96 + 17) = 96 ÷ 113 = 84.96% ≈ 85.0%`. All twelve autonomous deliverable and analytical requirements are complete and validated to production-ready; the remaining 17 hours is entirely the human path-to-production tail (technical review, acceptance, an optional confidence upgrade, risk sign-off, and publish). Per Blitzy honest-assessment policy, completion is never reported at 100% before human review.
+> Completion is computed on AAP-scoped + path-to-production hours only: `101.5 / (101.5 + 16.0) = 86.4%`. The detection deliverable itself is **100% complete and validated (zero defects)**; the remaining 16.0 h is human last-mile (sign-off, gate wiring, triage). The blue slice (`#5B39F3`) is completed work; the white slice (`#FFFFFF`) is remaining.
 
 ### 1.3 Key Accomplishments
 
-- ✅ **Two deliverables created and committed** — `acceleration-report.md` (888 lines) and `acceleration-report-executive-presentation.html` (884 lines) at the repository root; working tree clean.
-- ✅ **Tool Introduction Date detected** — 2025-04-08 (earliest AI `Co-authored-by:` trailer, Devin), with a deterministic pivot epoch (`1744125961`, commit `4753bd785a`) splitting Baseline (12,699 commits) from Accelerated (4,181 commits).
-- ✅ **All twelve metrics populated** — M1–M9 derived with High/Medium/Low confidence tags; M10/M12 and strict M3/M4/M5/M7 correctly reported as "Insufficient signal" per the no-fabrication rule; M11 reported as a snapshot.
-- ✅ **Engineering-actor framing applied** — AI cohort = 700 commits (Blitzy 597 + Devin 103), the single highest-volume author identity in the accelerated period (16.7% of 4,181).
-- ✅ **All six report Data-Integrity Rules satisfied** — provenance, factual-neutral tone (grep = 0 subjective qualifiers), confidence transparency, internal consistency, reproducibility, environment-first.
-- ✅ **Executive presentation rule (§0.8.2) satisfied** — 16 slides, inline Blitzy brand theme, 2 Mermaid diagrams + 29 Lucide icons, zero emoji, CDN pins exact (reveal.js 5.1.0 / Mermaid 11.4.0 / Lucide 0.460.0).
-- ✅ **Cross-deliverable consistency verified** — 106 slide numeric tokens + the 29-element acceleration-curve series match the report exactly.
-- ✅ **Runtime render verified** — deck served over http://, both Mermaid diagrams rendered to SVG, all 29 Lucide icons hydrated, 33 CDN requests HTTP 200, zero console errors.
-- ✅ **Reproducibility appendix independently re-verified** — canonical epoch-pivot commands reproduce 16,880 / 12,699 / 4,181 / 597 / 103 / 147 → 71 exactly against live git.
+- ✅ Single deliverable produced and committed: `findings-layer-3-blitzy-taint.sarif` (114 KB, 2,716 lines) — the **only** filesystem change (+2,716 / −0).
+- ✅ **Read-only mandate honored absolutely** — `git status` clean; zero source files modified, created, or deleted (R1).
+- ✅ **Valid SARIF 2.1.0** — 0 errors against the official OASIS schema; one run, one tool `Blitzy-Taint-Layer3`, 7 CWE rules each defined once.
+- ✅ **All 9 required directories searched for every category** (R2); **Phase A** recorded 83 literal search patterns and **8,028 raw hits with no sampling** (R3).
+- ✅ **275 candidates triaged** → **20 results** (1 gate-blocking error + 19 notes) + **255 ruled out** with explicit reasons.
+- ✅ **One verified true-positive** gate-blocking finding (CWE-918 CalDAV SSRF) backed by a complete 8-hop code flow, `confidence: high`, zero sanitizers.
+- ✅ **Sanitizer-aware demotion** (R5) and **second-order both-legs proof** (R6) applied and verified across notes.
+- ✅ Survived **4 QA/review-fix cycles**; final consolidated 17-check validation and 5-point self-audit (R8) all pass; 84 citations across 22 files verified (0 phantom).
 
 ### 1.4 Critical Unresolved Issues
 
+> For the **detection deliverable itself there are zero unresolved defects**. The items below are project-level, path-to-production hand-offs — they are not artifact defects.
+
 | Issue | Impact | Owner | ETA |
 |-------|--------|-------|-----|
-| None — no autonomous defects remain | No blocking issue. All five autonomous validation gates pass; both deliverables are valid, numerically accurate, rule-compliant, and render cleanly. | — | — |
-
-> There are **no critical unresolved autonomous issues**. The three defects found during validation (M4 gap counts, M5 actor-density span, stale HTML line references) were corrected in commit `5e676c26d0`. All remaining work is human path-to-production (Section 2.2), not unresolved defects.
+| Gate-blocking **CWE-918 CalDAV SSRF** (true positive) awaits human sign-off and a remediation decision | Real, exploitable SSRF; blocks the precision gate by design | Security / Backend | ~3 h (sign-off); remediation tracked separately |
+| Downstream **precision gate not yet wired** to consume the SARIF | No active enforcement until integrated | DevOps / Platform | ~5 h |
+| 19 non-blocking **notes** not yet dispositioned | Residual review backlog; low individual risk | Security | ~5 h |
 
 ### 1.5 Access Issues
 
-| System / Resource | Type of Access | Issue Description | Resolution Status | Owner |
-|-------------------|----------------|-------------------|-------------------|-------|
-| GitHub REST API | Authenticated read (token) | `gh` 2.46.0 and `jq` 1.8.1 are installed but `gh` is not authenticated (no read-only token). Blocks higher-confidence extraction for M6 (labels), M9 (releases), M10 (approved exceptions), M11 (CI test history), M12 (SLA). | Open — optional enhancement; metrics fall back to git proxies / "Insufficient signal" at lower confidence | Human reviewer / DevOps |
-| Issue tracker / PR-review API | Authenticated read | No issue-tracker or PR-review/approval data source is accessible, capping the confidence ceiling at Medium (no metric reaches High). | Open — inherent to the read-only git-only environment | Human reviewer |
-| SLA / severity data source | Any | No SLA, severity-policy, or runbook source exists in the repository or via API. | Open by design — M12 correctly reported "Insufficient signal" | N/A |
+**No access issues identified.** The repository was fully accessible, the branch is clean and up to date with origin, the official OASIS SARIF schema was fetched successfully, and all validation tooling (Python 3.13, `jsonschema` 4.26.0, `jq`, `git grep`) was available.
+
+| System/Resource | Type of Access | Issue Description | Resolution Status | Owner |
+|-----------------|----------------|-------------------|-------------------|-------|
+| `blitzy-cal` repository | Read/Write (git) | None — branch clean, HEAD `ce8b62e505` | ✅ No issue | — |
+| OASIS SARIF 2.1.0 schema | Network fetch | None — fetched & used for validation | ✅ No issue | — |
+| Validation tooling | Local execution | None — all present | ✅ No issue | — |
 
 ### 1.6 Recommended Next Steps
 
-1. **[High]** Conduct a human technical review and acceptance of `acceleration-report.md` — verify provenance chains, confidence tags, factual-neutral tone, and the twelve-metric derivations against live git (~6h).
-2. **[High]** Present the executive deck to leadership — serve over http://, walk all 16 slides, confirm Mermaid + Lucide render and business messaging (~2h).
-3. **[Medium]** (Optional) Provision a read-only GitHub API token and re-run API-dependent extraction to raise M6/M9/M10/M11/M12 above proxy/Insufficient confidence (~6h). This is the single lever the AAP flags as materially changing outcomes.
-4. **[Medium]** Obtain formal risk-acceptance sign-off for the Mermaid 11.4.0 CDN pin and acknowledge the Devin-vs-Blitzy attribution framing in §10 (~1.5h).
-5. **[Medium]** Merge the pull request and distribute both deliverables to stakeholders (~1.5h).
+1. **[High]** Independently review and sign off the gate-blocking **CWE-918 CalDAV SSRF** true positive (reproduce the 8-hop trace; confirm exploitability; set gate disposition). *(~3 h)*
+2. **[High]** Wire `findings-layer-3-blitzy-taint.sarif` into the **downstream automated precision gate / CI** (parse `properties.gateBlocking` + `level:error`; verify the gate blocks on the one error). *(~5 h)*
+3. **[Medium]** Triage and record disposition for the **19 non-blocking notes**, confirming each demotion rationale (sanitizer / low confidence / incomplete flow). *(~5 h)*
+4. **[Medium]** Open a **remediation ticket** for the confirmed SSRF and assign an owner (the code fix is a separate task, out of scope here). *(~2 h)*
+5. **[Low]** Establish a **periodic / per-PR re-run cadence** for the Layer-3 analysis to prevent staleness. *(~1 h)*
 
 ---
 
@@ -68,295 +74,303 @@ pie showData title Acceleration Measurement — 85.0% Complete (96h of 113h)
 
 ### 2.1 Completed Work Detail
 
+All completed hours are autonomous (AI) work, traced to AAP requirements and verified against the committed artifact.
+
 | Component | Hours | Description |
-|-----------|-------|-------------|
-| Repository discovery & Environment Verification (§2) | 3 | `origin` resolution + credential redaction; git version, commit/branch/tag counts, submodule state, date range, extraction timestamp (Rule 6). |
-| Tool Introduction Date detection & period split (§4.1–4.2) | 4 | Earliest AI `Co-authored-by:` trailer (2025-04-08); deterministic pivot epoch `1744125961`; velocity-inflection corroboration. |
-| Methodology design (§4.3–4.7) | 6 | Monday-aligned two-week windowing; Ramp-Up/Steady/Baseline classifier; actor framing; confidence model; weighted-aggregation and zero-baseline ratio rules. |
-| Twelve-metric extraction engine M1–M12 (§5) | 24 | Identical per-module before/after extraction for all twelve metrics; proxy selection; "Insufficient signal" handling; M11 snapshot. |
-| Actor identity resolution & per-engineer breakdown (§7.1) | 6 | Alias/bot de-duplication (e.g., zomars → Omar López); 735 baseline / 200 accelerated human identities; AI-actor row. |
-| Per-module commit-volume-weighted aggregation (§7.2) | 4 | Σ = 6,179 module-commit incidences; aggregate 3.97 files/commit across 20+ workspaces. |
-| Acceleration curve & 29-window velocity series (§8) | 4 | Baseline 119.0 / Ramp-Up 121.0 / Steady 150.1 commits per two-week window; rendered series. |
-| Data Source Inventory (§3) | 2 | Every system accessed and every system unavailable, with access method and confidence implication. |
-| Executive Summary (§1) | 2 | Headline twelve-metric table with before/after multipliers and confidence tags. |
-| Requirements Traceability Matrix (§6) | 3 | Requirement → command → derived value rows for every metric and methodology element. |
-| Risk Assessment & Limitations incl. Mermaid CVE analysis (§9–§10) | 5 | Per-metric risk register; Mermaid 11.4.0 CVE reachability analysis; Devin-vs-Blitzy attribution disclosure. |
-| Reproducibility Appendix (§11) | 6 | Complete, ordered, syntactically valid commands to re-derive every metric. |
-| Report assembly & Data-Integrity Rules 1–6 enforcement | 4 | Section composition; provenance/consistency/factual-neutral enforcement and grep verification. |
-| Executive presentation (D2) | 13 | 16 slides; inline Blitzy theme tokens; 2 Mermaid diagrams; 30 Lucide icon declarations; KPI cards; reveal config; all values sourced from the report. |
-| Autonomous validation & multi-cycle fixes | 10 | Five production-readiness gates; browser runtime render; three defect corrections (commit `5e676c26d0`). |
-| **Total Completed** | **96** | **Matches Completed Hours in Section 1.2** |
+|-----------|------:|-------------|
+| Scope discovery & existing-control inventory | 4.0 | Confirmed 9 directories (~7,741 files, 110 app-store adapters), `.blitzyignore` absence, and existing sanitizers/controls (AAP §0.2) |
+| SARIF 2.1.0 output-contract research | 2.0 | Validated field mapping against the authoritative OASIS schema (AAP §0.2.2) |
+| CWE-601 Open Redirect analysis | 9.0 | 13 patterns; 46 candidates → 4 notes, 42 ruled out (OIDC/SAML routes, proxy) |
+| CWE-918 SSRF analysis | 14.0 | 4 patterns; 45 candidates → 1 blocking + 2 notes, 42 ruled out; incl. second-order `subscriberUrl` legs and the deep 8-hop CalDAV true positive |
+| CWE-117 Log Injection analysis | 9.0 | 14 patterns; 18 candidates → 7 notes, 11 ruled out (v2 filters/middleware, web auth routes, webhook scheduler) |
+| CWE-807 Auth-decision-on-input analysis | 10.0 | 20 patterns; 40 candidates → 3 notes, 37 ruled out (composite `ApiAuthStrategy`, forgot-password, `getIP`) |
+| CWE-338 Weak-PRNG analysis | 6.0 | 8 patterns; 76 candidates → 0 findings, all ruled out with reasons (test/mock, UI cosmetics, public slugs, retry jitter) |
+| CWE-843 Type-confusion analysis | 6.0 | 9 patterns; 17 candidates → 3 notes, 14 ruled out (v1 `req.query`, adapter callbacks) |
+| CWE-862 Missing-authz analysis | 10.0 | 15 patterns; 33 candidates → 0 findings, all ruled out; 73/78 v2 controllers `@UseGuards` denominator verified |
+| SARIF serialization & output-contract assembly | 8.0 | 20 results with code flows, 7 rules, mandated properties, per-category coverage block (R7) |
+| Five-point self-audit before write | 3.0 | Missing-hop, sanitizer, sampling, misclassification, second-order (R8) |
+| QA / review-fix cycles (4 commits) | 16.5 | Blocking CalDAV SSRF + corrected traces/sanitizer modeling; determinism ordering; citation-region fixes + CWE-862 denominator; QA gate resolution |
+| Final comprehensive validation battery | 4.0 | Schema validation + 17-check consolidated pass + 84-citation substantiation |
+| **Total Completed** | **101.5** | — |
 
 ### 2.2 Remaining Work Detail
 
 | Category | Hours | Priority |
-|----------|-------|----------|
-| Human technical review & acceptance of report findings + methodology | 6 | High |
-| Stakeholder/leadership review of executive presentation | 2 | High |
-| Optional confidence upgrade via read-only GitHub API token (M6/M9/M10/M11/M12) | 6 | Medium |
-| Formal risk-acceptance sign-off (Mermaid 11.4.0 pin + Devin-vs-Blitzy attribution) | 1.5 | Medium |
-| Publish / distribute (merge PR, share with leadership) | 1.5 | Medium |
-| **Total Remaining** | **17** | **Matches Remaining Hours in Section 1.2 and Section 7 pie chart** |
+|----------|------:|----------|
+| Gate-blocking SSRF review & sign-off | 3.0 | High |
+| Downstream CI precision-gate integration | 5.0 | High |
+| Non-blocking notes triage (19) | 5.0 | Medium |
+| SSRF remediation handoff / ticketing | 2.0 | Medium |
+| Periodic re-run cadence setup | 1.0 | Low |
+| **Total Remaining** | **16.0** | — |
 
-### 2.3 Hours Reconciliation
+> All remaining items are path-to-production. Source remediation of the SSRF and the pre-existing broader-repo TypeScript/test issues are **explicitly out of scope** of this read-only directive (R1, §0.5.2) and are excluded from the hours universe.
 
-- **Completed (2.1):** 96h  
-- **Remaining (2.2):** 17h  
-- **Total Project Hours:** 96 + 17 = **113h**  
-- **Completion:** 96 ÷ 113 = **84.96% ≈ 85.0%**  
-- **Cross-section integrity:** Section 2.1 (96h) + Section 2.2 (17h) = Section 1.2 Total (113h) ✓; Remaining hours identical across Sections 1.2, 2.2, and 7 (17h) ✓.
+### 2.3 Hours Reconciliation & Methodology
+
+- **Completion formula (PA1):** `Completed / (Completed + Remaining) = 101.5 / 117.5 = 86.4%`.
+- **Cross-section integrity:**
+  - Rule 1 — Remaining hours identical across §1.2, §2.2 sum, and §7 pie: **16.0 h** ✔
+  - Rule 2 — §2.1 (101.5) + §2.2 (16.0) = **117.5 h** = Total in §1.2 ✔
+- **Confidence:** Completed hours = **High** (artifact independently re-validated). Remaining hours = **Medium** (last-mile depends on the external downstream gate contract).
 
 ---
 
 ## 3. Test Results
 
-All results below originate from Blitzy's autonomous validation logs for this project and were independently re-verified during this assessment. This is a documentation/measurement deliverable, so "tests" are the autonomous validation gates and integrity assertions rather than a conventional unit-test suite — the repository's Vitest/Jest/Playwright suites do not cover root `.md`/`.html` files (the husky `lint-staged` patterns do not match them). Coverage % denotes the share of in-scope assertions that passed.
+For a read-only SARIF artifact, the "test suite" is Blitzy's **autonomous validation battery**. Every check below originates from Blitzy's autonomous validation logs for this project and was re-confirmed during this assessment. ("Coverage %" denotes detection coverage = required directories searched, where applicable.)
 
-| Test Category | Framework | Total Tests | Passed | Failed | Coverage % | Notes |
-|---------------|-----------|-------------|--------|--------|------------|-------|
-| Markdown Structure Validity | Python + grep | 3 | 3 | 0 | 100% | 40 fence markers balanced; 14 tables, 0 column issues; 127 headers; parses clean. |
-| HTML Well-formedness & Structure | Python `html.parser` | 4 | 4 | 0 | 100% | 0 parse errors; exactly one html/head/body; 16 `<section>`; 2 `<pre class="mermaid">`. |
-| Measurement Integrity (12 metrics) | Live `git` re-derivation | 12 | 12 | 0 | 100% | All populated or "Insufficient signal" with confidence tags; figures re-derived from live git and matched. |
-| Report Data-Integrity Rules 1–6 | grep + inspection | 6 | 6 | 0 | 100% | Provenance, factual-neutral (grep = 0 qualifiers), confidence transparency, internal consistency, reproducibility, environment-first. |
-| Presentation Rules (§0.8.2) | Python + browser | 12 | 12 | 0 | 100% | 16 slides; ≥1 visual/slide; 0 emoji; CDN pins exact; reveal config (hash/transition/controlsTutorial/1920×1080); Mermaid startOnLoad:false + run hooks; Lucide createIcons hooks. |
-| Cross-Deliverable Consistency | Token diff | 135 | 135 | 0 | 100% | 106 slide numeric tokens + 29-element acceleration-curve series match the report exactly. |
-| Runtime Render & Console | Chrome browser | 5 | 5 | 0 | 100% | reveal.js ready (16 slides); 2 Mermaid → SVG; 29 Lucide hydrated (0 placeholders); 0 console messages; 33 CDN requests HTTP 200. |
-| **Total** | — | **177** | **177** | **0** | **100%** | All autonomous validation assertions pass. |
+| Test Category | Framework | Total | Passed | Failed | Coverage % | Notes |
+|---------------|-----------|------:|-------:|-------:|-----------:|-------|
+| SARIF Schema Validation (R7) | `jsonschema` 4.26.0 (OASIS 2.1.0) | 1 | 1 | 0 | n/a | 0 errors vs official schema; `version=2.1.0` |
+| Output-Contract Checks (R7) | python3 / `jq` | 17 | 17 | 0 | n/a | Tool name, 7 rules-once, `error|note` only, mandated properties, coverage block |
+| Directive Self-Audit (R8, 5-point) | python3 / manual | 5 | 5 | 0 | n/a | Missing-hop, sanitizer, sampling, misclassification, second-order |
+| Citation / Location Substantiation | python3 | 84 | 84 | 0 | 100% | 84 refs across 22 files; 0 phantom; all regions in-bounds |
+| Coverage Count Reconciliation | python3 / `jq` | 7 | 7 | 0 | 100% (9/9 dirs ea.) | `candidatesAfterTriage == blocking + notes + ruledOut` per CWE |
+| Anti-Sampling raw-Hit Reproduction (R3) | `git grep` | 4 | 4 | 0 | n/a | `Math.random(`=76, `fetch(`=260, `subscriberUrl`=457, `getSafeRedirectUrl`=78 — exact |
+| Determinism & Ordering | python3 | 1 | 1 | 0 | n/a | One result per finding; ascending-contiguous by `ruleId` |
+| **Total** | — | **119** | **119** | **0** | — | 100% pass; zero defects |
+
+> The application itself was **not** built, run, or unit-tested — the AAP forbids it and the deliverable is a static JSON artifact requiring no compilation or execution (§0.5.2, §0.6). The broader repository's pre-existing strict-TypeScript errors and ~68/7,436 unit-test failures are out of scope and do not affect this artifact.
 
 ---
 
 ## 4. Runtime Validation & UI Verification
 
-**Document & deck runtime health:**
+There is no UI and no application runtime in scope. The "runtime" equivalent for this artifact is **gate-consumability** — whether the downstream automated precision gate can deterministically parse and act on the SARIF.
 
-- ✅ **Operational** — `acceleration-report.md` renders as valid Markdown in any viewer (no build, no dependencies).
-- ✅ **Operational** — Presentation served over `http://127.0.0.1:8127/...` returns HTTP 200 (39,399 bytes).
-- ✅ **Operational** — reveal.js 5.1.0 initializes; 16 slides navigable; fonts (Inter / Space Grotesk / Fira Code) loaded.
-- ✅ **Operational** — Mermaid 11.4.0: both diagrams render to SVG (pipeline flowchart on slide 3; acceleration xychart on slide 10).
-- ✅ **Operational** — Lucide 0.460.0: all 29 icons hydrated to `svg.lucide`; 0 un-hydrated placeholders; zero emoji.
-- ✅ **Operational** — Console clean: zero messages (including error/warn/assert) across a full 16-slide walk.
-- ✅ **Operational** — Network: all 33 CDN/runtime requests returned HTTP 200.
-
-**API integration outcomes:**
-
-- ⚠ **Partial** — GitHub REST API not exercised: `gh` is installed (2.46.0) but unauthenticated. Metrics M6/M9/M10/M11/M12 therefore rely on git proxies or are reported "Insufficient signal." Providing a read-only token would raise these to higher confidence.
-
-**Visual evidence:** Screenshots for Title, KPI, Architecture, Flow-Metrics, Curve, and Closing slides were captured by the autonomous validation system under `blitzy/screenshots/` (untracked QA artifacts, by design out of write scope).
+- ✅ **Operational** — File parses as strict JSON (no duplicate keys, no trailing data).
+- ✅ **Operational** — Validates against the official OASIS SARIF 2.1.0 schema (0 errors).
+- ✅ **Operational** — Deterministic structure: 20 results, one result per finding, stable ascending-contiguous ordering by `ruleId`.
+- ✅ **Operational** — Gate-consumption pattern verified: a `jq` selector on `properties.gateBlocking==true` returns exactly the 1 blocking finding; the sample gate script exits non-zero (build-fail) as designed.
+- ✅ **Operational** — All 84 cited source locations exist with in-bounds regions (0 phantom files).
+- ⚠ **Partial** — The downstream precision gate / CI consumer is **not yet wired** to ingest the artifact (planned, §2.2 H-2). Until then, the signal is produced but not enforced.
+- ➖ **Not Applicable** — No front-end, no API endpoint, no service to verify (detection artifact only).
 
 ---
 
 ## 5. Compliance & Quality Review
 
-The following matrix cross-maps AAP deliverables and rules to their validation status. Fixes applied during autonomous validation are noted.
+### 5.1 AAP Requirement Compliance Matrix (R1–R9)
 
-| Deliverable / Rule | Benchmark | Status | Progress | Notes |
-|--------------------|-----------|--------|----------|-------|
-| D1 `acceleration-report.md` | 11 mandated sections, valid Markdown | ✅ Pass | 100% | §1–§11 all present; 40 fences balanced. |
-| D2 executive presentation | 12–18 slides, self-contained, brand-compliant | ✅ Pass | 100% | 16 slides; inline theme; CDN-pinned; renders cleanly. |
-| Repository discovery + credential redaction | `origin` resolved, credential scrubbed | ✅ Pass | 100% | Redacted to `https://github.com/Blitzy-Sandbox/blitzy-cal.git`; 0 credential patterns in outputs. |
-| Tool Introduction Date detection | Earliest AI trailer + corroboration | ✅ Pass | 100% | 2025-04-08; pivot epoch `1744125961`. |
-| Twelve-metric extraction (M1–M12) | All populated or "Insufficient signal" | ✅ Pass | 100% | M1–M9 derived; M10/M12 + strict M3/M4/M5/M7 Insufficient (correct per no-fabrication); M11 snapshot. |
-| Engineering-actor framing | AI as actor in after period | ✅ Pass | 100% | AI cohort 700 = Blitzy 597 + Devin 103. |
-| Temporal phase analysis | Ramp-Up / Steady / Baseline, 2-week Monday windows | ✅ Pass | 100% | 119.0 / 121.0 / 150.1 commits per window. |
-| Confidence model | High/Medium/Low tags | ✅ Pass | 100% | All 12 tagged; ceiling Medium, disclosed. |
-| Multi-module weighted aggregation | Per-workspace, commit-volume weighted | ✅ Pass | 100% | Σ = 6,179 module-commit incidences. |
-| Rule 1 — Data Provenance | Full chain per figure | ✅ Pass | 100% | Fixed M4 gap counts (11363/3959) during validation. |
-| Rule 2 — Factual-Neutral Tone | Zero subjective qualifiers | ✅ Pass | 100% | grep = 0 matches. |
-| Rule 3 — Confidence Transparency | Tag + Low caveats | ✅ Pass | 100% | Caveats present for all Low metrics. |
-| Rule 4 — Internal Consistency | Identical values across sections | ✅ Pass | 100% | Fixed M5 actor-density span (50-day, 46.0%) during validation. |
-| Rule 5 — Reproducibility | Complete ordered commands | ✅ Pass | 100% | Re-verified live; fixed stale HTML line refs during validation. |
-| Rule 6 — Environment First | Env documented before metrics | ✅ Pass | 100% | §2 complete and timestamped. |
-| Presentation rule §0.8.2 | Brand theme, Mermaid, Lucide, 0 emoji, CDN pins | ✅ Pass | 100% | All sub-checks verified. |
-| Cross-deliverable consistency | Slide values = report values | ✅ Pass | 100% | 106 tokens + 29-element series match. |
-| Human technical review & acceptance | Stakeholder verification | ⬜ Outstanding | 0% | Path-to-production (Section 2.2); not an autonomous gap. |
+| Req | Requirement | Status | Evidence |
+|-----|-------------|:------:|----------|
+| R1 | Detection-only / read-only (sole write = SARIF) | ✅ Pass | `git status` clean; diff = 1 file, +2,716/−0; zero source edits |
+| R2 | All 9 directories searched per category | ✅ Pass | Every coverage block has `directoriesSearched` = 9 |
+| R3 | Two-phase, no sampling (record every hit) | ✅ Pass | 83 patterns, 8,028 raw hits; reproduced exactly via `git grep` |
+| R4 | Precision gate (only high-confidence complete flows block) | ✅ Pass | 1 blocking (`confidence:high`, 8 hops); 19 notes |
+| R5 | Sanitizer-aware demotion | ✅ Pass | `sanitizersEncountered[]` on all 20; demotions documented |
+| R6 | Second-order both-legs proof | ✅ Pass | Second-order findings show write-leg + read-to-sink in one flow |
+| R7 | SARIF 2.1.0 output contract | ✅ Pass | 1 run, 1 tool, 7 rules once, mandated properties, coverage block |
+| R8 | Five-point self-audit before write | ✅ Pass | Self-audit all-pass; 0 downgrades required |
+| R9 | Category-by-category rule discipline | ✅ Pass | All 7 per-category coverage blocks complete |
+
+### 5.2 Output-Contract Quality Checks
+
+| Benchmark | Status | Detail |
+|-----------|:------:|--------|
+| Schema validity | ✅ Pass | 0 errors vs official OASIS 2.1.0 schema |
+| Level enumeration discipline | ✅ Pass | Only `error` and `note` used (no `warning` tier) |
+| Hard structural rule | ✅ Pass | No empty-`codeFlows` result is `error`/`gateBlocking` (flows are 2–8 locations) |
+| Rule-once-per-CWE | ✅ Pass | 7 rules, each `ruleId` referenced by results |
+| Mandated result properties | ✅ Pass | `gateBlocking`, `exploitScenario`, `confidence`, `sanitizersEncountered[]`, `intermediateHopsSummary` on all 20 |
+| Count reconciliation | ✅ Pass | `candidates == blocking + notes + ruledOut` for all 7 categories |
+| Misclassification guards | ✅ Pass | CWE-338 (76 ruled out: test/mock, UI, public slugs, jitter) and CWE-862 (intentionally-public endpoints) documented |
+
+### 5.3 Fixes Applied During Autonomous Validation
+
+- **Promoted** the CalDAV SSRF to a gate-blocking true positive after confirming no SSRF guard on the path; corrected traces and sanitizer modeling.
+- **Fixed determinism** ordering (F-1) and the rule default level (I-1).
+- **Corrected** 2 citation-region imprecisions and the CWE-862 denominator (QA Checkpoint B).
+- **Resolved** all QA-gate findings in the final pass.
+- **Outstanding:** none for the artifact; remaining items are human path-to-production (see §2.2).
 
 ---
 
 ## 6. Risk Assessment
 
 | Risk | Category | Severity | Probability | Mitigation | Status |
-|------|----------|----------|-------------|------------|--------|
-| Confidence ceiling at Medium (no issue-tracker / PR API) | Technical | Medium | High | Confidence tags + §10 disclosure; resolvable via API token | Open / Disclosed |
-| Proxy-vs-strict definition gap (M3/M4/M5/M7) | Technical | Medium | Medium | Strict variants marked Insufficient; proxies Low-tagged with caveats | Mitigated |
-| Boundary/cutoff effects on final accelerated windows (M3, §8) | Technical | Low | Medium | Disclosed in §5.3/§8.3; per-day M2 unaffected | Mitigated |
-| M1 baseline reconciliation (6.17 vs 8.39 discovery note) | Technical | Low | Low | Single-method provenance; disclosed in §10 | Mitigated |
-| Mermaid 11.4.0 CDN advisory (6 Moderate CVEs) | Security | Moderate (rating) / Negligible (reachability) | Low | All affected code paths absent; securityLevel strict; htmlLabels false; no user-input channel; formally risk-accepted §9.1 | Accepted |
-| Credential embedded in `origin` URL | Security | High (if leaked) | Low | Redacted in every output; 0 credential patterns found | Resolved |
-| CDN supply-chain dependency (3 libs + 3 fonts at runtime) | Security | Low | Low | Versions pinned; could add SRI hashes / vendor locally for air-gapped use | Open (low) |
-| Presentation requires internet + http:// server to render | Operational | Low–Medium | Medium | Documented run instructions; vendor libs locally for offline use | Mitigated / Documented |
-| Reproducibility depends on stable git history; branch count varies | Operational | Low | Low | Pivot-epoch determinism; analyzed tip pinned (`a116e152e4`); branch-count variance disclosed | Mitigated |
-| No automated CI/regression for docs deliverables | Operational | Low | Low | Manual + autonomous validation performed; outputs are static | Accepted |
-| GitHub REST API unavailable (no token) blocks M6/M9/M10/M11/M12 | Integration | Medium | High | Git proxies / "Insufficient signal" fallback; resolve via read-only token | Open (path-to-production lever) |
-| Devin-vs-Blitzy attribution ambiguity (two AI signals) | Integration | Medium | High | Pivot = earliest trailer; full-cohort framing with per-actor rows; disclosed §10 | Disclosed / Accepted |
-| Source-doc discrepancy (AAP-cited `blitzy-docs` §6.6 figures absent) | Integration | Low | Low | Workflow retention-days cited instead; disclosed §10 | Mitigated |
-
-> Note: the majority of these risks are **disclosed measurement-interpretation limitations**, not open code defects. The single genuinely actionable open lever is the GitHub API token (Integration/Technical), which maps to the 6h optional confidence-upgrade item in Section 2.2.
+|------|----------|:--------:|:-----------:|------------|--------|
+| Confirmed CWE-918 CalDAV SSRF is exploitable until remediated (auth'd `req.body.url` → DAV requests, no guard) | Security | High | Medium | Prioritize remediation (separate task); apply existing `validateUrlForSSRFSync` guard to the CalendarService path | Open (detected & reported; fix pending) |
+| Demoted notes could escalate if a sanitizer is weakened/bypassed | Security | Medium | Low | Track the 19 notes; re-evaluate if controls change | Monitored |
+| False-negative residual — precision gate intentionally under-reports | Technical | Medium | Medium | By-design posture (R4); periodic deeper review of notes/ruled-out | Accepted (by design) |
+| Point-in-time staleness — SARIF reflects HEAD `ce8b62e505` | Technical | Low | High | Schedule re-run cadence / per-PR CI integration | Open |
+| Line-citation drift — 84 regions pinned to exact lines | Technical | Low | Medium | Regenerate analysis when cited files change | Open |
+| Precision gate not yet wired → no active enforcement | Operational | Medium | High | Complete CI integration (§2.2) | Open |
+| Manual edit of SARIF could break determinism / one-result-per-finding | Operational | Low | Low | Treat as a generated artifact; regenerate, never hand-edit | Mitigated |
+| Downstream consumer schema expectations are external to repo | Integration | Medium | Medium | Confirm consumer reads `properties.gateBlocking` + `level`; SARIF is standard-valid | Open |
+| Pre-existing broader-repo TypeScript / unit-test failures | Operational (context) | Low | n/a | Out of scope per R1; tracked separately; no impact on artifact | Out of scope / Noted |
 
 ---
 
 ## 7. Visual Project Status
 
-**Overall completion (hours):**
+### 7.1 Project Hours Breakdown
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'pie1':'#5B39F3','pie2':'#FFFFFF','pieStrokeColor':'#333333','pieStrokeWidth':'2px','pieOuterStrokeWidth':'2px','pieTitleTextSize':'18px','pieSectionTextColor':'#333333','pieLegendTextColor':'#333333','pieOpacity':'1'}}}%%
-pie showData title Project Hours — 85.0% Complete
-    "Completed Work" : 96
-    "Remaining Work" : 17
+%%{init: {'theme':'base', 'themeVariables':{ 'pie1':'#5B39F3', 'pie2':'#FFFFFF', 'pieStrokeColor':'#B23AF2', 'pieStrokeWidth':'2px', 'pieOuterStrokeColor':'#B23AF2', 'pieOuterStrokeWidth':'2px', 'pieTitleTextColor':'#B23AF2', 'pieSectionTextColor':'#111111', 'pieLegendTextColor':'#111111'}}}%%
+pie showData title Project Hours Breakdown (Total 117.5h)
+    "Completed Work" : 101.5
+    "Remaining Work" : 16
 ```
 
-**Remaining hours by task category (Section 2.2 — totals 17h):**
+### 7.2 Remaining Hours by Category
 
 ```mermaid
-xychart-beta
-    title "Remaining Hours by Task (17h total)"
-    x-axis ["Tech Review", "Stakeholder", "API Upgrade", "Sign-off", "Publish"]
-    y-axis "Hours" 0 --> 8
-    bar [6, 2, 6, 1.5, 1.5]
+%%{init: {'theme':'base', 'themeVariables':{ 'pie1':'#5B39F3','pie2':'#7C5CF6','pie3':'#A8FDD9','pie4':'#B23AF2','pie5':'#E0D7FF','pieTitleTextColor':'#B23AF2','pieSectionTextColor':'#111111','pieLegendTextColor':'#111111'}}}%%
+pie showData title Remaining Work — 16.0h
+    "CI precision-gate integration" : 5
+    "Non-blocking notes triage" : 5
+    "Gate-blocking SSRF sign-off" : 3
+    "SSRF remediation handoff" : 2
+    "Re-run cadence setup" : 1
 ```
 
-| Task Category | Hours | Priority |
-|---------------|-------|----------|
-| Human technical review & acceptance | 6 | High |
-| Stakeholder presentation review | 2 | High |
-| Optional API-token confidence upgrade | 6 | Medium |
-| Risk-acceptance sign-off | 1.5 | Medium |
-| Publish / distribute | 1.5 | Medium |
-| **Total** | **17** | — |
+> **Integrity check:** the §7.1 "Remaining Work" value (**16**) equals the §1.2 Remaining Hours (**16.0**) and the sum of the §2.2 Hours column (3 + 5 + 5 + 2 + 1 = **16.0**). Completed (blue `#5B39F3`) vs Remaining (white `#FFFFFF`).
 
-> Integrity: pie "Remaining Work" (17) = Section 1.2 Remaining Hours (17) = Section 2.2 "Hours" sum (17). Completed = Dark Blue `#5B39F3`; Remaining = White `#FFFFFF`.
+### 7.3 Findings Distribution (20 results)
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables':{ 'pie1':'#B23AF2','pie2':'#5B39F3','pie3':'#7C5CF6','pie4':'#A8FDD9','pie5':'#E0D7FF','pieTitleTextColor':'#B23AF2','pieSectionTextColor':'#111111','pieLegendTextColor':'#111111'}}}%%
+pie showData title Results by CWE (1 error + 19 notes)
+    "CWE-117 (notes)" : 7
+    "CWE-601 (notes)" : 4
+    "CWE-918 (1 error + 2 notes)" : 3
+    "CWE-807 (notes)" : 3
+    "CWE-843 (notes)" : 3
+```
 
 ---
 
 ## 8. Summary & Recommendations
 
-**Achievements.** The autonomous work is complete and validated to production-ready. Both deliverables — the eleven-section `acceleration-report.md` and the 16-slide reveal.js executive presentation — exist, are committed (HEAD `5e676c26d0`), and pass all five autonomous validation gates. Every numeric figure traces to a reproducible git command and was re-derived against live history; the report and presentation are numerically consistent with each other (106 slide tokens + the 29-element acceleration curve match).
+### 8.1 Summary
 
-**Remaining gaps.** The project is **85.0% complete** (96 of 113 hours). The remaining 17 hours is exclusively the human path-to-production tail: technical review and acceptance of the findings (6h, High), stakeholder review of the presentation (2h, High), an optional GitHub-API-token confidence upgrade (6h, Medium), risk-acceptance sign-off (1.5h, Medium), and publish/distribute (1.5h, Medium). No autonomous code defects remain.
+The project is **86.4% complete** on an AAP-scoped basis (101.5 h of 117.5 h). The **sole in-scope deliverable — `findings-layer-3-blitzy-taint.sarif` — is 100% complete and independently re-validated with zero defects.** It is a schema-valid SARIF 2.1.0 document with one run, one tool, seven CWE rules, and 20 deterministic results (1 gate-blocking error + 19 notes) drawn from 275 triaged candidates, with 255 ruled out and documented. The read-only mandate was honored without exception (the only filesystem change is the new artifact).
 
-**Critical path to production.** Human technical review → stakeholder presentation → (optional) confidence upgrade → risk sign-off → merge/distribute. Only the first two are strictly required to release the findings; the API-token upgrade is the single lever that would materially raise metric confidence beyond the Medium ceiling.
+The headline security signal is a **verified true-positive CWE-918 SSRF** in the CalDAV adapter: an authenticated user's `req.body.url` reaches server-side DAV network requests through an 8-hop flow with no SSRF guard on that path, while the same control (`validateUrlForSSRFSync`) correctly demotes the webhook SSRF candidates — evidence that the precision gate distinguishes guarded from unguarded paths.
 
-**Production-readiness assessment.** The deliverables are READY for human review. The confidence ceiling (Medium) and the "Insufficient signal" metrics are inherent properties of the read-only, git-only data environment and are fully disclosed — they are correct outputs under the no-fabrication rule, not deficiencies. Recommended success metric for sign-off: a reviewer confirms a sample of provenance chains reproduce against live git (the appendix commands do, as independently verified here).
+### 8.2 Critical Path to Production
 
-| Dimension | Status |
-|-----------|--------|
-| Completion | 85.0% (96h / 113h) |
-| Autonomous defects outstanding | 0 |
-| Validation gates | 5 / 5 pass |
-| Confidence ceiling | Medium (disclosed) |
-| Blocking issues | None |
+1. Security sign-off of the gate-blocking SSRF → 2. Wire the SARIF into the downstream precision gate / CI → 3. Triage the 19 notes → 4. Open the SSRF remediation ticket → 5. Establish a re-run cadence. Total remaining ≈ **16.0 h**.
+
+### 8.3 Success Metrics
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|:------:|
+| Source files modified | 0 | 0 | ✅ |
+| SARIF schema errors | 0 | 0 | ✅ |
+| Categories with full 9-dir coverage | 7/7 | 7/7 | ✅ |
+| Phantom file citations | 0 | 0 (84/84 verified) | ✅ |
+| Hard-rule violations (empty-flow blocking) | 0 | 0 | ✅ |
+| Gate-blocking findings substantiated | 100% | 1/1 (high-confidence) | ✅ |
+
+### 8.4 Production Readiness Assessment
+
+**The deliverable is production-ready** as a gate-consumable artifact. The project is **not yet in production** only because the human last-mile (sign-off + gate wiring) is pending — these are organizational/integration steps, not artifact defects. Recommendation: proceed with the §1.6 next steps; treat the CWE-918 SSRF as a real vulnerability requiring a tracked remediation outside this read-only task.
 
 ---
 
 ## 9. Development Guide
 
-This is a read-only documentation/measurement deliverable — there is no application to build, deploy, or run. "Running" the project means **opening the report**, **rendering the presentation**, and optionally **re-deriving the metrics** from git. All commands below were tested during this assessment.
+> No application build, dependency install, or runtime is required — the deliverable is a static JSON artifact. This guide covers **validating and consuming** the SARIF. All commands below were executed and verified during assessment.
 
 ### 9.1 System Prerequisites
 
-- **git** ≥ 2.43 (verified with 2.51.0) — primary extraction tool.
-- **python3** ≥ 3.12 (verified with 3.13.7) — windowing math and a zero-config static web server.
-- **A modern web browser** (verified with Google Chrome 148) — to render the reveal.js deck.
-- **Internet access** — the presentation loads reveal.js, Mermaid, Lucide, and Google Fonts from pinned CDNs at runtime.
-- **Optional:** `gh` (2.46.0) + `jq` (1.8.1) **and a read-only GitHub token** — only needed to raise API-dependent metric confidence (M6/M9/M10/M11/M12).
+- **OS:** Linux/macOS (any POSIX shell)
+- **Python:** 3.13 (3.8+ works) with `jsonschema` (`4.26.0` verified)
+- **jq:** `1.8.1` verified (`apt-get install -y jq`)
+- **git:** `2.51.0` verified (for raw-hit reproduction)
 
 ### 9.2 Environment Setup
 
 ```bash
-# Clone (use a credential-scrubbed remote) and select the deliverable branch
-git clone <repository-url>
-cd blitzy-cal
-git checkout blitzy-66a0cf37-b099-41af-ab48-6833a9b7ef1c
+# From the repository root
+cd /path/to/blitzy-cal
 
-# Confirm both deliverables are present at the repository root
-ls -l acceleration-report.md acceleration-report-executive-presentation.html
+# (Optional) isolate Python deps — Ubuntu 25 system Python is PEP-668 managed
+python3 -m venv .venv && source .venv/bin/activate
+pip install jsonschema        # in a venv; otherwise: pip install --break-system-packages jsonschema
 ```
 
-> **No dependency installation is required.** This task adds nothing to `package.json` or `yarn.lock` (manifests are pristine). The presentation's runtime libraries are CDN-pinned, and the analysis uses only system `git` and `python3`.
-
-### 9.3 Dependency Notes
-
-- **Repository manifests:** unchanged — `git diff --name-status` for the task shows only two added files.
-- **Presentation runtime (CDN-pinned, no install):** reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0, plus Google Fonts (Inter / Space Grotesk / Fira Code).
-- **Analysis toolchain (system):** `git`, `python3`.
-
-### 9.4 Application Startup (Open & Render)
+### 9.3 Locate & Well-Formedness Check
 
 ```bash
-# 1. Read the report — open in any Markdown viewer (no server needed)
-#    e.g., VS Code preview, or:
-less acceleration-report.md
-
-# 2. Render the presentation — http:// is REQUIRED (Mermaid uses an ESM import
-#    that fails on file://). Start a local static server from the repo root:
-python3 -m http.server 8127 --bind 127.0.0.1 &
-SRV=$!
-
-# 3. Open in a browser:
-#    http://127.0.0.1:8127/acceleration-report-executive-presentation.html
-
-# 4. When finished, stop the server (use the captured PID — never pkill):
-kill "$SRV"
+ls -la findings-layer-3-blitzy-taint.sarif
+python3 -c "import json; json.load(open('findings-layer-3-blitzy-taint.sarif')); print('Valid JSON: OK')"
 ```
 
-### 9.5 Verification Steps
+### 9.4 Validate Against the Official OASIS Schema
 
 ```bash
-# Markdown fence balance (expect an even number => BALANCED)
-grep -c '^```' acceleration-report.md
+# Fetch the authoritative schema (network), then validate
+curl -sSL -o /tmp/sarif-2.1.0.json \
+  https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json
 
-# HTML well-formedness & structure (expect: sections=16, lucide-icons=29, mermaid-blocks=2)
 python3 - <<'PY'
-from html.parser import HTMLParser
-class P(HTMLParser):
-    def __init__(self): super().__init__(); self.s=self.l=self.m=0
-    def handle_starttag(self,t,a):
-        d=dict(a)
-        if t=='section': self.s+=1
-        if t=='i' and d.get('data-lucide'): self.l+=1
-        if t=='pre' and 'mermaid' in (d.get('class') or ''): self.m+=1
-p=P(); p.feed(open('acceleration-report-executive-presentation.html',encoding='utf-8').read())
-print('sections=%d lucide-icons=%d mermaid-blocks=%d'%(p.s,p.l,p.m))
+import json
+from jsonschema import Draft7Validator
+schema = json.load(open('/tmp/sarif-2.1.0.json'))
+doc    = json.load(open('findings-layer-3-blitzy-taint.sarif'))
+errs   = list(Draft7Validator(schema).iter_errors(doc))
+print('Schema errors:', len(errs))      # expected: 0
+print('Valid SARIF 2.1.0' if not errs else 'INVALID')
+PY
+```
+
+### 9.5 Inspect Findings
+
+```bash
+# Summary
+python3 - <<'PY'
+import json
+r = json.load(open('findings-layer-3-blitzy-taint.sarif'))['runs'][0]
+print('tool   :', r['tool']['driver']['name'])      # Blitzy-Taint-Layer3
+print('rules  :', len(r['tool']['driver']['rules'])) # 7
+print('results:', len(r['results']))                 # 20
+print('blocking:', sum(1 for x in r['results'] if x['properties']['gateBlocking']))  # 1
 PY
 
-# CDN pins must be exact
-grep -oE 'reveal\.js@[0-9.]+|mermaid@[0-9.]+|lucide@[0-9.]+' \
-  acceleration-report-executive-presentation.html | sort -u
+# The single gate-blocking finding
+jq -r '.runs[0].results[] | select(.properties.gateBlocking==true) | "\(.ruleId): \(.message.text)"' \
+  findings-layer-3-blitzy-taint.sarif
 
-# Zero emoji (expect: 0)
-python3 -c "import re;t=open('acceleration-report-executive-presentation.html',encoding='utf-8').read();print(len(re.findall(r'[\U0001F000-\U0001FAFF\u2600-\u27BF]',t)))"
+# Breakdown by ruleId + level
+jq -r '.runs[0].results[] | "\(.ruleId)\t\(.level)\tgateBlocking=\(.properties.gateBlocking)"' \
+  findings-layer-3-blitzy-taint.sarif | sort | uniq -c
+
+# Per-category coverage
+jq -r '.runs[0].properties.coverage | to_entries[] | "\(.key): candidates=\(.value.candidatesAfterTriage) blocking=\(.value.blockingFindings) notes=\(.value.nonBlockingNotes) ruledOut=\(.value.ruledOut)"' \
+  findings-layer-3-blitzy-taint.sarif
 ```
 
-In the browser, confirm: 16 slides navigate; slide 3 shows the pipeline flowchart; slide 10 shows the acceleration line chart; all icons render as SVG; the developer console is clean.
-
-### 9.6 Example Usage — Re-deriving Metrics from Git
-
-These canonical, epoch-pivot commands were re-verified live and reproduce the report's figures exactly. Use the report's `git log --since/--until` only where the appendix specifies; otherwise prefer the deterministic epoch partition below.
+### 9.6 Reproduce a Raw-Hit (Anti-Sampling, R3)
 
 ```bash
-P=1744125961   # pivot author epoch (2025-04-08 15:26:01 UTC), commit 4753bd785a
-
-git rev-list --count main                                   # 16880 (total commits)
-git log --reverse --date=short --format='%ad' main | head -1 # 2021-03-10 (earliest)
-git log -1 --date=short --format='%ad' main                  # 2026-05-15 (latest)
-
-git log main --format='%at' | awk -v p=$P '$1<p'  | wc -l    # 12699 (Baseline)
-git log main --format='%at' | awk -v p=$P '$1>=p' | wc -l    # 4181  (Accelerated)
-
-git log main --author='agent@blitzy.com' --format='%at' | awk -v p=$P '$1>=p' | wc -l  # 597 (Blitzy)
-git log main --author='devin' -i --format='%at'        | awk -v p=$P '$1>=p' | wc -l  # 103 (Devin)
-
-git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1<p'  | wc -l  # 147 (M8 baseline)
-git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1>=p' | wc -l  # 71  (M8 accelerated)
+DIRS="apps/web apps/api/v1 apps/api/v2 packages/features packages/app-store packages/embeds packages/trpc packages/lib packages/prisma"
+git grep -I --no-color -c "Math.random(" -- $DIRS ':!*/node_modules/*' | awk -F: '{s+=$2} END{print s}'
+# expected: 76  (matches the coverage block rawHits)
 ```
 
-### 9.7 Troubleshooting
+### 9.7 Gate-Consumption Pattern (downstream CI)
 
-- **Diagrams are blank / Mermaid does not render** — you opened the file via `file://`. Serve it over `http://` (step 9.4).
-- **Icons or diagrams missing, network errors** — no internet access; the CDN libraries/fonts cannot load. Vendor the libraries locally for air-gapped environments.
-- **`Address already in use` on port 8127** — choose another port: `python3 -m http.server 8128 --bind 127.0.0.1 &`.
-- **API-dependent metrics stay "Insufficient signal" / Low** — `gh` is not authenticated. Run `gh auth login` with a read-only token, then re-run the API-dependent extraction (Section 2.2, M-1).
-- **Metric counts drift by a few commits** — you used `--since/--until` date boundaries; prefer the deterministic epoch-pivot commands in §9.6, which match the report exactly.
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+SARIF="${1:-findings-layer-3-blitzy-taint.sarif}"
+BLOCKING=$(jq '[.runs[0].results[] | select(.properties.gateBlocking==true)] | length' "$SARIF")
+echo "gate-blocking findings: $BLOCKING"
+if [ "$BLOCKING" -gt 0 ]; then echo "GATE: FAIL"; exit 1; else echo "GATE: PASS"; exit 0; fi
+# Today this exits 1 (one true-positive SSRF) — expected until the finding is signed off / remediated.
+```
+
+### 9.8 Troubleshooting
+
+- **`error: externally-managed-environment` (pip):** use a `venv`, or `pip install --break-system-packages jsonschema`.
+- **`jq: command not found`:** `DEBIAN_FRONTEND=noninteractive apt-get install -y jq`.
+- **Schema fetch fails offline:** use a vendored copy of `sarif-schema-2.1.0.json`.
+- **Gate exits 1:** this is **expected** while the CWE-918 finding is unresolved; it is the gate working as designed.
+- **Citations look off after editing source:** regions are pinned to line numbers — regenerate the analysis after source changes; **never hand-edit the SARIF** (breaks determinism).
 
 ---
 
@@ -366,70 +380,79 @@ git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1>=p' | wc -l  #
 
 | Purpose | Command |
 |---------|---------|
-| Total commits on `main` | `git rev-list --count main` |
-| Earliest / latest commit date | `git log --reverse --date=short --format='%ad' main \| head -1` / `git log -1 --date=short --format='%ad' main` |
-| Baseline vs Accelerated split | `git log main --format='%at' \| awk -v p=1744125961 '$1<p\|$1>=p' \| wc -l` |
-| AI cohort (Blitzy / Devin) | `git log main --author='agent@blitzy.com'` / `git log main --author='devin' -i` |
-| M8 reverts | `git log main -i --grep='^Revert' --format='%at' \| awk -v p=1744125961 ...` |
-| Task footprint | `git diff --name-status 5cac40c4aa~1 HEAD` |
-| Markdown fence balance | `grep -c '^```' acceleration-report.md` |
-| Serve presentation | `python3 -m http.server 8127 --bind 127.0.0.1 &` |
+| JSON well-formedness | `python3 -c "import json;json.load(open('findings-layer-3-blitzy-taint.sarif'))"` |
+| Schema validation | `Draft7Validator(schema).iter_errors(doc)` (see §9.4) |
+| List blocking findings | `jq -r '.runs[0].results[]\|select(.properties.gateBlocking==true).ruleId' …` |
+| Coverage summary | `jq -r '.runs[0].properties.coverage\|to_entries[]…'` |
+| Reproduce raw hit | `git grep -I -c "<pattern>" -- <9 dirs> ':!*/node_modules/*'` |
+| Verify authorship | `git log --author="agent@blitzy.com" origin/main..HEAD --oneline` |
 
 ### B. Port Reference
 
-| Port | Purpose | Notes |
-|------|---------|-------|
-| 8127 | Local static web server for the presentation | Example only; any free port works. http:// is required for Mermaid ESM import. |
+| Service | Port | Relevance |
+|---------|-----:|-----------|
+| `apps/web` (Next.js) | 3000 | Analyzed (not run) — open-redirect / log-injection / authz surface |
+| `apps/api/v1` (Pages API) | 3003 | Analyzed (not run) — type-confusion / missing-authz |
+| `apps/api/v2` (NestJS) | 3004 | Analyzed (not run) — auth strategy / guards / loggers |
+
+> No service is started by this task; ports are listed for context only.
 
 ### C. Key File Locations
 
 | Path | Role |
 |------|------|
-| `acceleration-report.md` | Deliverable D1 — eleven-section measurement report (888 lines). |
-| `acceleration-report-executive-presentation.html` | Deliverable D2 — self-contained reveal.js deck (884 lines, 16 slides). |
-| `.changeset/config.json` | Release-model context (changeset-driven; 0 git tags) — metrics 8, 9. |
-| `.github/workflows/` | Release, CI, and Devin AI workflows (reference inputs). |
-| `AGENTS.md` | PR-size convention (5–7 files / 500 lines) — metric 1 context. |
-| `blitzy/screenshots/` | Autonomous QA screenshots (untracked; out of write scope). |
+| `findings-layer-3-blitzy-taint.sarif` | **The sole deliverable** (repo root) |
+| `packages/lib/CalendarService.ts` | Sink of the gate-blocking SSRF (`this.url` → DAV requests) |
+| `packages/app-store/caldavcalendar/api/add.ts` | Source of the SSRF (`req.body.url`) |
+| `packages/lib/ssrfProtection.ts` | `validateUrlForSSRFSync` — guard present on webhooks, absent on CalDAV |
+| `packages/lib/getSafeRedirectUrl.ts` | Open-redirect allowlist sanitizer (demotes CWE-601) |
+| `packages/lib/logger.ts` | tslog `maskValuesOfKeys` + JSON serialization (CWE-117 control) |
+| `packages/features/webhooks/lib/sendPayload.ts` | Webhook dispatcher (`subscriberUrl` second-order SSRF) |
+| `apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts` | Composite auth strategy (CWE-807) |
 
-### D. Technology Versions
+### D. Technology Versions (context only — none installed/required)
 
-| Tool | Version |
-|------|---------|
-| git | 2.51.0 |
-| python3 | 3.13.7 |
-| Google Chrome | 148.0.7778.215 |
-| gh (optional) | 2.46.0 |
-| jq (optional) | 1.8.1 |
-| reveal.js (CDN) | 5.1.0 |
-| Mermaid (CDN) | 11.4.0 |
-| Lucide (CDN) | 0.460.0 |
+| Component | Version | Role |
+|-----------|---------|------|
+| Node.js | 20.20.2 | Monorepo runtime |
+| Yarn (Berry) | 4.12.0 | Package manager |
+| Turborepo | 2.7.1 | Task runner |
+| TypeScript | 5.9.3 (strict) | Language |
+| Next.js | 16.1.7 | `apps/web` |
+| @nestjs/core | 10.4.20 | `apps/api/v2` |
+| Prisma | 6.16.1 | Persistence boundary (second-order) |
+| zod | 3.25.76 | Validation (sanitizer recognition) |
+| **Analysis env:** Python | 3.13.7 | SARIF validation |
+| `jsonschema` | 4.26.0 | Schema validation |
+| `jq` | 1.8.1 | SARIF querying |
+| `git` | 2.51.0 | Raw-hit reproduction |
 
 ### E. Environment Variable Reference
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `GITHUB_TOKEN` / `GH_TOKEN` | Read-only GitHub API token to raise M6/M9/M10/M11/M12 confidence | Optional (enhancement only) |
-| `P` (shell convenience) | Pivot author epoch `1744125961` used in re-derivation commands | Convenience only |
-
-> No environment variables are required to read the report or render the presentation.
+No environment variables are required to produce or validate the SARIF. Variables referenced **analytically** in findings (not set by this task): `WEBAPP_URL`, `WEBSITE_URL`, `CONSOLE_URL` (open-redirect allowlist in `getSafeRedirectUrl`).
 
 ### F. Developer Tools Guide
 
-- **Markdown viewer** — any (VS Code preview, `less`, GitHub render). No build step.
-- **Static server** — `python3 -m http.server` is sufficient; required because the deck's Mermaid loads via an ESM import that browsers block on `file://`.
-- **Browser DevTools** — confirm a clean console and that all CDN requests return HTTP 200; inspect rendered `svg.lucide` icons and Mermaid `<svg>` output.
-- **`gh` / `jq`** — only for the optional API-confidence upgrade; authenticate with a read-only token first.
+| Tool | Use in this project |
+|------|---------------------|
+| `python3` + `jsonschema` | Validate the SARIF against the OASIS 2.1.0 schema |
+| `jq` | Query results, coverage, and gate-blocking selectors |
+| `git grep` | Reproduce Phase-A raw-hit counts (anti-sampling proof) |
+| SARIF viewers (e.g., VS Code SARIF Viewer) | Visually browse results & code flows (optional) |
 
 ### G. Glossary
 
 | Term | Definition |
 |------|------------|
-| Tool Introduction Date | The pivot date (2025-04-08) separating Baseline from Accelerated periods, detected from the earliest AI `Co-authored-by:` trailer. |
-| Pivot epoch | Unix author timestamp `1744125961` (commit `4753bd785a`) used for deterministic before/after partitioning. |
-| Baseline / Accelerated | Commit periods before / on-or-after the pivot (12,699 / 4,181 commits). |
-| Ramp-Up / Steady State | Accelerated sub-phases: first 90 days / 90+ days after the pivot. |
-| AI cohort | Combined AI-actor commits in the accelerated period: Blitzy (597) + Devin (103) = 700. |
-| Insufficient signal | The mandated output when a metric's data source is unavailable — a correct result, not a gap. |
-| Confidence (High/Medium/Low) | Tag reflecting the data source: issue-tracker direct counts (High), git patterns (Medium), indirect proxies (Low). |
-| Flow metrics (M1–M7) | Flow Framework / SAFe measures: Load, Velocity, Predictability, Active Time, Efficiency, Distribution, Time. |
+| **SARIF** | Static Analysis Results Interchange Format (OASIS 2.1.0) — the artifact format |
+| **Taint analysis** | Tracing untrusted input (source) to a dangerous operation (sink) |
+| **Phase A / Phase B** | A = enumerate every candidate via literal search (no sampling); B = trace each back to a source |
+| **gateBlocking** | Property marking a fully-substantiated, high-confidence finding that fails the precision gate |
+| **Second-order taint** | Tainted value laundered through persistence (DB); requires proving both the write leg and the read-to-sink leg |
+| **Sanitizer** | An effective control on the path that demotes a finding to a non-blocking note |
+| **ruledOut** | A candidate dismissed with an explicit reason (e.g., intentionally public, non-security PRNG use) |
+| **Precision gate** | The downstream automated consumer that blocks on `gateBlocking: true` findings without human triage |
+
+---
+
+*Generated by the Blitzy Platform. Completion (86.4%) reflects AAP-scoped detection work plus standard path-to-production; source remediation and pre-existing repository issues are out of scope of this read-only directive. Brand colors: Completed `#5B39F3`, Remaining `#FFFFFF`, Headings `#B23AF2`, Accent `#A8FDD9`.*

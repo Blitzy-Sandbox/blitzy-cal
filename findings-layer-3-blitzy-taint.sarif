@@ -1393,7 +1393,7 @@
                             "uri": "packages/app-store/tandemvideo/api/callback.ts"
                           },
                           "region": {
-                            "startLine": 17
+                            "startLine": 36
                           }
                         },
                         "message": {
@@ -1413,7 +1413,7 @@
             "sanitizersEncountered": [
               "fails closed: an array code causes the OAuth token exchange to fail"
             ],
-            "intermediateHopsSummary": "req.query.code as string (L17) -> OAuth token exchange (L17)"
+            "intermediateHopsSummary": "req.query.code as string (L17) -> OAuth token exchange (L36)"
           }
         },
         {
@@ -1886,59 +1886,138 @@
         }
       ],
       "properties": {
+        "searchMethodology": {
+          "tool": "git grep",
+          "commit": "b04597f2151b18da2bc82e2a509ea23af94016f0",
+          "description": "Every rawHits value is the count produced by `git grep` over git-tracked source files at the analyzed commit, restricted to the directory(ies) named in each pattern's `scope`. Because git grep only searches tracked files, the counts are reproducible on a clean checkout and are independent of build state: node_modules and untracked/generated build artifacts (e.g. the gitignored packages/trpc/**/*.d.ts emitted by `yarn build`) are excluded automatically, while committed generated code that is tracked (e.g. packages/prisma/generated/**) is included.",
+          "scopeDirectories": [
+            "apps/web",
+            "apps/api/v1",
+            "apps/api/v2",
+            "packages/features",
+            "packages/app-store",
+            "packages/embeds",
+            "packages/trpc",
+            "packages/lib",
+            "packages/prisma"
+          ],
+          "scopeLabels": {
+            "all-required-directories": "the nine required directories listed in scopeDirectories",
+            "apps/api/v1": "restricted to apps/api/v1",
+            "apps/api/v2": "restricted to apps/api/v2"
+          },
+          "metrics": {
+            "matching-lines": "number of git-tracked lines that match the pattern (git grep -I; one count per matching line)",
+            "matching-files": "number of git-tracked files that match (file-content/file-glob/computed patterns)"
+          },
+          "patternTypes": {
+            "literal": "fixed-string search: git grep -I -F -- \"<pattern>\" <scope> | wc -l",
+            "regex": "POSIX ERE search: git grep -I -E -- \"<pattern>\" <scope> | wc -l",
+            "file-glob": "count tracked files whose path ends with <pattern>: git ls-files <scope> | grep -c \"<pattern>$\"",
+            "file-content": "count tracked files containing <pattern>: git grep -I -l -F -- \"<pattern>\" <scope> | wc -l",
+            "computed-controllers-without-guard": "count tracked *.controller.ts under <scope> whose source does NOT contain @UseGuards"
+          },
+          "exclusions": [
+            "node_modules (all)",
+            "untracked / generated files not committed to git (e.g. packages/trpc generated *.d.ts, build output)"
+          ],
+          "inclusions": [
+            "committed generated code that is git-tracked (e.g. packages/prisma/generated/**)",
+            "documentation and test files that are git-tracked (counts are raw Phase-A hits prior to Phase-B triage)"
+          ]
+        },
         "coverage": {
           "CWE-601": {
             "searchPatterns": [
               {
                 "pattern": "NextResponse.redirect(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 25
               },
               {
                 "pattern": "res.redirect(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 66
               },
               {
                 "pattern": "response.redirect(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 1
               },
               {
                 "pattern": ".redirect(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 92
               },
               {
                 "pattern": "window.location",
-                "rawHits": 68
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 67
               },
               {
                 "pattern": "location.href",
-                "rawHits": 43
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 45
               },
               {
                 "pattern": "location.assign(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 0
               },
               {
                 "pattern": "location.replace(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 2
               },
               {
                 "pattern": "getSafeRedirectUrl",
-                "rawHits": 77
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 78
               },
               {
                 "pattern": "redirect_uri",
-                "rawHits": 152
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 339
               },
               {
                 "pattern": "callbackUrl",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 101
               },
               {
                 "pattern": "returnTo",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 154
               },
               {
                 "pattern": "RelayState",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 1
               }
             ],
@@ -1953,6 +2032,7 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 46,
             "blockingFindings": 0,
             "nonBlockingNotes": 4,
@@ -1964,7 +2044,7 @@
               "teams/create and teams/[team]/upgrade use WEBAPP_URL + server-derived ids",
               "googleworkspace/callback passes through the getSafeRedirectUrl allowlist sanitizer",
               "verify-booking-token and link routes use new URL('/booking/'+uid, request.url) forcing a same-origin path",
-              "20 client-side window.location navigation writes carry no inline untrusted query param; post-install redirects pass through getSafeRedirectUrl (68 app-store callers)",
+              "20 client-side window.location navigation writes carry no inline untrusted query param; post-install redirects pass through getSafeRedirectUrl (69 app-store callers)",
               "OAuth2 error-redirect path (oauth2-error.service.ts handleAuthorizeError -> OAuthService.buildErrorRedirectUrl -> OAuth2RedirectException -> oauth2-redirect-exception.filter.ts response.redirect(303)) is unreachable: handleAuthorizeError has no caller in the repository and is the sole throw site of OAuth2RedirectException, so no request-controlled redirect_uri reaches the 303 redirect sink. The reachable OAuth2 authorize/token paths validate redirect_uri via validateRedirectUri strict-equality against the registered client.redirectUri (mismatch -> non-redirectable redirect_uri_mismatch), and the controller invokes only handleTokenError (which throws OAuth2HttpException, not a redirect)."
             ],
             "status": "complete"
@@ -1973,19 +2053,31 @@
             "searchPatterns": [
               {
                 "pattern": "fetch(",
-                "rawHits": 262
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 260
               },
               {
                 "pattern": "axios",
-                "rawHits": 36
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 39
               },
               {
                 "pattern": "node-fetch",
-                "rawHits": 2
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 3
               },
               {
                 "pattern": "subscriberUrl",
-                "rawHits": 565
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 457
               }
             ],
             "directoriesSearched": [
@@ -1999,6 +2091,7 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 45,
             "blockingFindings": 1,
             "nonBlockingNotes": 2,
@@ -2016,58 +2109,100 @@
             "searchPatterns": [
               {
                 "pattern": "console.log(",
-                "rawHits": 633
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 630
               },
               {
                 "pattern": "console.error(",
-                "rawHits": 296
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 294
               },
               {
                 "pattern": "console.warn(",
-                "rawHits": 68
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 60
               },
               {
                 "pattern": "console.info(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 20
               },
               {
                 "pattern": "console.debug(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 2
               },
               {
                 "pattern": "logger.error(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 258
               },
               {
                 "pattern": "logger.info(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 113
               },
               {
                 "pattern": "logger.warn(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 69
               },
               {
                 "pattern": "logger.debug(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 59
               },
               {
                 "pattern": "logger.log(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 63
               },
               {
                 "pattern": "log.error(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 502
               },
               {
                 "pattern": "log.info(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 243
               },
               {
                 "pattern": "log.warn(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 257
               },
               {
                 "pattern": "log.debug(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 420
               }
             ],
@@ -2082,6 +2217,7 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 18,
             "blockingFindings": 0,
             "nonBlockingNotes": 7,
@@ -2100,83 +2236,143 @@
             "searchPatterns": [
               {
                 "pattern": "X-Cal-Signature-256",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 7
               },
               {
                 "pattern": "createHmac(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 16
               },
               {
                 "pattern": "timingSafeEqual(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 3
               },
               {
                 "pattern": "X_CAL_SECRET_KEY",
-                "rawHits": 108
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 110
               },
               {
                 "pattern": "X_CAL_CLIENT_ID",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 118
               },
               {
                 "pattern": "isApiKey(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 6
               },
               {
                 "pattern": "sha256Hash(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 10
               },
               {
                 "pattern": "getToken(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 32
               },
               {
                 "pattern": "stripe-signature",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 19
               },
               {
                 "pattern": "x-vercel-signature",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 7
               },
               {
                 "pattern": "x-forwarded-for",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 3
               },
               {
                 "pattern": "x-real-ip",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 1
               },
               {
                 "pattern": "jwt.decode(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 0
               },
               {
                 "pattern": "req.query.apiKey",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 9
               },
               {
                 "pattern": "CRON_API_KEY",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 19
               },
               {
                 "pattern": "process.env.CRON_API_KEY !==",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 10
               },
               {
                 "pattern": "constructEvent(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 3
               },
               {
                 "pattern": "jwt.verify(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 3
               },
               {
                 "pattern": "isAdminGuard",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 15
               },
               {
                 "pattern": "isSystemWideAdmin",
-                "rawHits": 203
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 204
               }
             ],
             "directoriesSearched": [
@@ -2190,6 +2386,7 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 40,
             "blockingFindings": 0,
             "nonBlockingNotes": 3,
@@ -2208,34 +2405,58 @@
             "searchPatterns": [
               {
                 "pattern": "Math.random(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 76
               },
               {
                 "pattern": "crypto.randomBytes(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 7
               },
               {
                 "pattern": "randomBytes(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 29
               },
               {
                 "pattern": "randomUUID(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 34
               },
               {
                 "pattern": "randomInt(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 0
               },
               {
                 "pattern": "nanoid(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 16
               },
               {
                 "pattern": "uuidv4",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 195
               },
               {
                 "pattern": "getRandomValues(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 1
               }
             ],
@@ -2250,6 +2471,7 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 76,
             "blockingFindings": 0,
             "nonBlockingNotes": 0,
@@ -2269,38 +2491,65 @@
             "searchPatterns": [
               {
                 "pattern": "req.query",
-                "rawHits": 140
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 141
               },
               {
-                "pattern": "req.query (apps/api/v1)",
-                "rawHits": 75
+                "pattern": "req.query",
+                "patternType": "literal",
+                "scope": "apps/api/v1",
+                "metric": "matching-lines",
+                "rawHits": 76
               },
               {
                 "pattern": "Array.isArray(",
-                "rawHits": 250
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 248
               },
               {
-                "pattern": "Array.isArray( (apps/api/v1)",
+                "pattern": "Array.isArray(",
+                "patternType": "literal",
+                "scope": "apps/api/v1",
+                "metric": "matching-lines",
                 "rawHits": 22
               },
               {
-                "pattern": "query.X as string",
+                "pattern": "query[.\\[][^ ]* as string",
+                "patternType": "regex",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 17
               },
               {
                 "pattern": ".query[",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 3
               },
               {
-                "pattern": "schemaQuery (apps/api/v1)",
+                "pattern": "schemaQuery",
+                "patternType": "literal",
+                "scope": "apps/api/v1",
+                "metric": "matching-lines",
                 "rawHits": 166
               },
               {
-                "pattern": ".parse(req.query) (apps/api/v1)",
+                "pattern": ".parse(req.query)",
+                "patternType": "literal",
+                "scope": "apps/api/v1",
+                "metric": "matching-lines",
                 "rawHits": 37
               },
               {
-                "pattern": "safeParse (apps/api/v1)",
+                "pattern": "safeParse",
+                "patternType": "literal",
+                "scope": "apps/api/v1",
+                "metric": "matching-lines",
                 "rawHits": 4
               }
             ],
@@ -2315,6 +2564,7 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 17,
             "blockingFindings": 0,
             "nonBlockingNotes": 3,
@@ -2329,62 +2579,107 @@
             "searchPatterns": [
               {
                 "pattern": "@UseGuards(",
-                "rawHits": 223
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 224
               },
               {
                 "pattern": "ApiAuthGuard",
-                "rawHits": 360
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 361
               },
               {
                 "pattern": "PermissionsGuard",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 146
               },
               {
                 "pattern": "RolesGuard",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 145
               },
               {
                 "pattern": "@Roles(",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 166
               },
               {
                 "pattern": "publicProcedure",
-                "rawHits": 37
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 38
               },
               {
                 "pattern": "authedProcedure",
-                "rawHits": 336
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
+                "rawHits": 338
               },
               {
                 "pattern": "authedAdminProcedure",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 58
               },
               {
                 "pattern": "authedOrgAdminProcedure",
+                "patternType": "literal",
+                "scope": "all-required-directories",
+                "metric": "matching-lines",
                 "rawHits": 30
               },
               {
-                "pattern": "v1 _get.ts handlers",
+                "pattern": "_get.ts",
+                "patternType": "file-glob",
+                "scope": "apps/api/v1",
+                "metric": "matching-files",
                 "rawHits": 36
               },
               {
-                "pattern": "v1 _post.ts handlers",
+                "pattern": "_post.ts",
+                "patternType": "file-glob",
+                "scope": "apps/api/v1",
+                "metric": "matching-files",
                 "rawHits": 16
               },
               {
-                "pattern": "v1 _patch.ts handlers",
+                "pattern": "_patch.ts",
+                "patternType": "file-glob",
+                "scope": "apps/api/v1",
+                "metric": "matching-files",
                 "rawHits": 15
               },
               {
-                "pattern": "v1 _delete.ts handlers",
+                "pattern": "_delete.ts",
+                "patternType": "file-glob",
+                "scope": "apps/api/v1",
+                "metric": "matching-files",
                 "rawHits": 15
               },
               {
-                "pattern": "v1 files using withMiddleware",
-                "rawHits": 46
+                "pattern": "withMiddleware",
+                "patternType": "file-content",
+                "scope": "apps/api/v1",
+                "metric": "matching-files",
+                "rawHits": 48
               },
               {
-                "pattern": "v2 controllers without @UseGuards",
+                "pattern": "@UseGuards",
+                "patternType": "computed-controllers-without-guard",
+                "scope": "apps/api/v2",
+                "metric": "matching-files",
                 "rawHits": 5
               }
             ],
@@ -2399,15 +2694,16 @@
               "packages/lib",
               "packages/prisma"
             ],
+            "directoriesSkipped": [],
             "candidatesAfterTriage": 33,
             "blockingFindings": 0,
             "nonBlockingNotes": 0,
             "ruledOut": 33,
             "ruledOutReasons": [
               "v1 routes enforce auth via the global verifyApiKey middleware plus per-resource _auth-middleware ownership checks and isSystemWideAdmin gating",
-              "75 of 80 v2 controllers apply @UseGuards (ApiAuthGuard/PermissionsGuard/RolesGuard + ownership guards)",
+              "73 of 78 v2 controllers apply @UseGuards (ApiAuthGuard/PermissionsGuard/RolesGuard + ownership guards)",
               "the 5 unguarded v2 controllers are intentionally public (slots reserve/available, routing-form submit, OAuth2 authorize, timezones, health)",
-              "all 37 publicProcedure usages are intentionally-public surfaces (public booking-page slots, signup/email verification, i18n, timezones, public profiles, feature flags)",
+              "all 38 publicProcedure usages are intentionally-public surfaces (public booking-page slots, signup/email verification, i18n, timezones, public profiles, feature flags)",
               "v1 index.ts (welcome message) and docs.ts (OpenAPI spec) are intentionally public; event-types/_utils/* are authorization helper functions, not resource endpoints",
               "markHostAsNoShow (packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts) is an intentionally-public anonymous publicProcedure: the in-code comment (L9-L10) explicitly documents it as a 'completely anonymous and public endpoint' used by non-Cal attendees via an email link, gated by knowledge of the high-entropy bookingUid (capability-URL pattern). Per the CWE-862 misclassification guard, intentionally-public endpoints are recorded in ruledOut rather than emitted as findings."
             ],

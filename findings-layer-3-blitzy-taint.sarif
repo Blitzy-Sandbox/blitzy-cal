@@ -1107,7 +1107,93 @@
             "demotionBasis": "uncertain reachability - it is not established that any submitted field drives a privileged or owner-scoped write; the uncertainty is stated and the finding is not asserted safe (flagged for human review), not a control",
             "intermediateHopsSummary": "_router.ts:20 response = publicProcedure.input(ZResponseInputSchema).mutation (no authedProcedure) -> response.handler.ts:16 responseHandler executes the write. No Ring-2/Ring-3 authorization guard on the path.",
             "cwe": "CWE-862",
-            "siblingConsistency": "Compared against authedProcedure-based mutations and the API v1/v2 ownership guards (e.g., _auth-middleware ownership checks; PbacGuard): those writes enforce authorization, whereas routing-forms `response` is publicProcedure. Among the enumerated publicProcedure sites, the public read/query procedures (slots getSchedule, i18n, timezones, countryCode, ssoConnections, bookings find, event) are read-only or intentionally public; `response` is the one public write mutation flagged for review."
+            "siblingConsistency": "Among the 21 enumerated publicProcedure endpoint sites (Phase A; see run.properties.coverage.CWE-862.exhaustiveEnumeration), 8 are write mutations and 13 are read queries - so routing-forms `response` is NOT the only public write. Full public-write sibling set: publicViewer submitRating (_router.tsx:15, prisma.booking.update keyed by bookingUid), markHostAsNoShow (_router.tsx:19 -> flagged as N11), samlTenantProduct (_router.tsx:23, SSO discovery), auth verifyCodeUnAuthenticated (_router.tsx:40) and sendVerifyEmailCode (_router.tsx:48), routing-forms response (_router.ts:20, THIS finding), slots reserveSlot (_router.tsx:62) and removeSelectedSlotMark (_router.tsx:93, prisma.selectedSlots.deleteMany). The same-class peer control is an authedProcedure or a Ring-2/Ring-3 ownership guard (PbacGuard / _auth-middleware ownership checks), which all 8 of these public writes lack: each instead relies on an opaque bearer capability (bookingUid / slot uid / email verification code) or is an intentional pre-auth self-service flow. Both response (N10) and markHostAsNoShow (N11) are recorded as candidate findings for human review; the remaining six public writes are documented with per-site classification in coverage.CWE-862.publicWriteClassification, none silently assumed safe."
+          }
+        },
+        {
+          "ruleId": "CWE-862",
+          "level": "note",
+          "message": {
+            "text": "Public state-mutating write: markHostAsNoShow is bound as publicProcedure (publicViewer/_router.tsx:19) and updates booking state (marks the host as no-show) via handleMarkHostNoShow, keyed only by an attacker-suppliable bookingUid with no authorization guard on the path. The handler self-documents the gap (TODO at markHostAsNoShow.handler.ts:9-10: 'Currently this is completely anonymous and public endpoint'). Flagged for human review - sibling of N10."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
+                },
+                "region": {
+                  "startLine": 14
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/publicViewer/_router.tsx"
+                          },
+                          "region": {
+                            "startLine": 19
+                          }
+                        },
+                        "message": {
+                          "text": "source: markHostAsNoShow: publicProcedure.input(ZMarkHostAsNoShowInputSchema).mutation(...) - unauthenticated public entry (publicProcedure, not authedProcedure)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "hop: noShowHandler destructures { bookingUid, noShowHost } from public input with no authorization guard (TODO at :9-10 admits anonymous public access)"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/trpc/server/routers/publicViewer/markHostAsNoShow.handler.ts"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "sink: handleMarkHostNoShow({ bookingUid, noShowHost, actionSource }) performs the host no-show booking write with no authorization check on the path"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": false,
+            "severity": "note",
+            "exploitScenario": "An unauthenticated caller who obtains a bookingUid (an opaque identifier shared in booking links/emails) POSTs the public markHostAsNoShow mutation (publicViewer/_router.tsx:19); noShowHandler forwards it to handleMarkHostNoShow (markHostAsNoShow.handler.ts:14), flipping that booking's host no-show status with no session or ownership check - the bookingUid is the only gate.",
+            "confidence": "low",
+            "confidenceReason": "The public write and the absent session/ownership guard are concrete and self-documented (handler TODO at markHostAsNoShow.handler.ts:9-10). What is NOT established is whether the opaque-bookingUid bearer-capability model leaves a genuine unauthorized privileged write versus an intended public capability, so reachability of an authorization violation is uncertain - advisory.",
+            "sanitizersEncountered": [],
+            "demotionBasis": "uncertain reachability - it is not established that an unauthorized party effects a privileged or owner-scoped write beyond the opaque-bookingUid capability model; the uncertainty is stated and the endpoint is NOT asserted safe (flagged for human review). Stated uncertainty, not an on-path control.",
+            "intermediateHopsSummary": "publicViewer/_router.tsx:19 markHostAsNoShow = publicProcedure.input(...).mutation (no authedProcedure) -> markHostAsNoShow.handler.ts:12 noShowHandler destructures bookingUid from input (no auth guard; :9-10 TODO admits anonymous public access) -> markHostAsNoShow.handler.ts:14 handleMarkHostNoShow performs the host no-show booking write.",
+            "cwe": "CWE-862",
+            "siblingConsistency": "Sibling of N10 (routing-forms response) within the 8-site public-write mutation class (see run.properties.coverage.CWE-862.publicWriteClassification). Identical gap to N10: no authedProcedure / Ring-2 / Ring-3 ownership guard, only an opaque bookingUid capability. submitRating (publicViewer/_router.tsx:15) shares the same bookingUid-keyed pattern against prisma.booking.update; it is recorded in coverage but is not separately gate-blocking."
           }
         }
       ],
@@ -1180,7 +1266,7 @@
               "got(",
               "node-fetch"
             ],
-            "rawHitCount": 302,
+            "rawHitCount": 299,
             "directoriesSearched": [
               "apps/web",
               "apps/api/v1",
@@ -1207,11 +1293,12 @@
             ],
             "status": "complete",
             "perPatternCounts": {
-              "fetch(": 260,
-              "axios": 39,
-              "got(/node-fetch/http(s).request": 3
+              "fetch(": 261,
+              "axios": 36,
+              "got(/node-fetch/http.request/https.request": 2
             },
-            "recountCorroboration": "independent re-count: fetch( ~261 (≈260). axios/got substrings vary by counting method; spec authoritative total ~302."
+            "countingMethodology": "Literal fixed-string line search (grep -rnF) over the nine in-scope directories, excluding node_modules/dist/.next/build, file types .ts/.tsx/.js/.jsx, at HEAD e988138b24. rawHitCount = sum of per-pattern matching-line counts (a line matching N distinct patterns contributes N to the total); test/spec files are included in the raw count and ruled out during triage.",
+            "recountCorroboration": "exact: fetch(=261, axios=36, and the got(/node-fetch/http.request/https.request group=2 (got(=0, node-fetch=2, http.request=0, https.request=0); 261+36+2 = 299 = rawHitCount, equal to the sum of per-pattern matching-line counts."
           },
           "CWE-117": {
             "searchPatterns": [
@@ -1219,7 +1306,7 @@
               "logger.",
               "log."
             ],
-            "rawHitCount": 3572,
+            "rawHitCount": 3640,
             "directoriesSearched": [
               "apps/web",
               "apps/api/v1",
@@ -1244,17 +1331,18 @@
                 "reason": "WINSTON_PROD_FORMAT uses format.json() (logger.ts:20) in production -> CRLF-escaped structured logs; not a raw log-injection sink."
               },
               {
-                "item": "the vast majority of the ~3572 console./logger./log. hits",
+                "item": "the vast majority of the 3640 console./logger./log. hits",
                 "reason": "route through the JSON-structured tslog/Winston sinks above; only the raw console.error at handleWebhookScheduledTriggers.ts:74 (N3) bypasses structured logging."
               }
             ],
             "status": "complete",
             "perPatternCounts": {
-              "console.": 1034,
-              "logger.": 1022,
-              "log.": 1635
+              "console.": 1024,
+              "logger.": 1011,
+              "log.": 1605
             },
-            "recountCorroboration": "independent re-count ~3691 across the three patterns (≈ spec ~3572; approximate, largest surface)."
+            "countingMethodology": "Literal fixed-string line search (grep -rnF) over the nine in-scope directories, excluding node_modules/dist/.next/build, file types .ts/.tsx/.js/.jsx, at HEAD e988138b24. rawHitCount = sum of per-pattern matching-line counts (a line containing more than one distinct pattern is counted once per pattern, so this sum is an upper bound on unique matching lines); this is the largest analysis surface.",
+            "recountCorroboration": "exact: console.=1024, logger.=1011, log.=1605; 1024+1011+1605 = 3640 = rawHitCount, equal to the sum of per-pattern matching-line counts (no approximation; the prior 3572-vs-3691 discrepancy is resolved by defining rawHitCount as this explicit per-pattern sum)."
           },
           "CWE-807": {
             "searchPatterns": [
@@ -1329,36 +1417,198 @@
             "nonBlockingNotes": 0,
             "ruledOut": [
               {
-                "item": "packages/lib/random.ts:11 (randomString)",
-                "reason": "Math.random used only for a non-security username suffix (consumed at next-auth-options.ts:104); not a secret/token/OTP/nonce."
+                "item": "apps/web/app/api/teams/create/route.ts:31",
+                "reason": "non-security team-slug generator (generateRandomString = Math.random().toString(36).substring(2,10)); slug uniqueness is enforced separately and the value is not a secret/token/OTP/nonce."
               },
               {
-                "item": "apps/api/v2/.../teams/create/route.ts:31",
-                "reason": "Math.random fallback for a public team name/slug (route.ts:71-72); non-security."
+                "item": "packages/app-store/office365calendar/lib/CalendarService.ts:676",
+                "reason": "non-security retry backoff jitter (getRandomness = Number(Math.random().toFixed(3))) for Microsoft Graph batch retries; not a secret/token."
               },
               {
-                "item": "packages/.../username.ts:62",
-                "reason": "Math.random for a non-security username suffix."
+                "item": "packages/features/bookings/lib/service/RegularBookingService.ts:1680",
+                "reason": "non-security selection of a decoy organizer display name from a fixed 4-name list; not a secret/token."
               },
               {
-                "item": "packages/.../RegularBookingService.ts:1680",
-                "reason": "Math.random for decoy/selection logic; non-security."
+                "item": "packages/lib/random.ts:11",
+                "reason": "non-security randomString() character pick used for a username suffix (consumed at next-auth-options.ts:104); not a secret/token/OTP/nonce."
               },
               {
-                "item": "remaining Math.random hits",
-                "reason": "test/e2e fixtures and React list keys; no security-sensitive value derives from Math.random."
+                "item": "packages/lib/server/username.ts:62",
+                "reason": "non-security numeric username suffix (Math.ceil(1 + Math.random()*(limit-1))); not a secret/token."
+              },
+              {
+                "item": "React UI rendering (client-side, non-security) - 10 hits",
+                "reason": "Math.random used only for React list keys, skeleton-loader widths, and non-cryptographic display jitter; never used for a secret/token/OTP/nonce.",
+                "members": [
+                  "apps/web/modules/bookings/components/AvailableTimes.tsx:338",
+                  "apps/web/modules/insights/components/UserStatsTable.tsx:33",
+                  "apps/web/modules/insights/components/routing/RoutingFunnelSkeleton.tsx:37",
+                  "apps/web/modules/insights/components/routing/RoutingFunnelSkeleton.tsx:41",
+                  "apps/web/modules/insights/components/routing/RoutingFunnelSkeleton.tsx:45",
+                  "apps/web/modules/insights/views/insights-call-history-view.tsx:95",
+                  "packages/lib/components/ServerTrans.tsx:204",
+                  "packages/lib/components/ServerTrans.tsx:222",
+                  "packages/lib/components/ServerTrans.tsx:313",
+                  "packages/lib/components/ServerTrans.tsx:322"
+                ]
+              },
+              {
+                "item": "test/e2e/integration-test/mock/fixture/playground code (non-runtime) - 61 hits",
+                "reason": "test, e2e-spec, integration-test, mock, fixture, and playground code excluded from the production runtime bundle; no security-sensitive value derives from Math.random.",
+                "members": [
+                  "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:737",
+                  "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:743",
+                  "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:744",
+                  "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:761",
+                  "apps/web/playwright/fixtures/bookings.ts:45",
+                  "apps/web/playwright/fixtures/orgs.ts:7",
+                  "apps/web/playwright/lib/next-server.ts:21",
+                  "apps/web/playwright/signup.e2e.ts:205",
+                  "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:202",
+                  "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:225",
+                  "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:246",
+                  "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:257",
+                  "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:319",
+                  "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:323",
+                  "packages/embeds/embed-core/playground/lib/playground-init.ts:15",
+                  "packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:10",
+                  "packages/features/booking-audit/lib/actions/__tests__/contractVerification.ts:18",
+                  "packages/features/booking-audit/lib/service/__tests__/integration-utils.ts:8",
+                  "packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:7",
+                  "packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:9",
+                  "packages/features/busyTimes/services/getBusyTimes.integration-test.ts:36",
+                  "packages/features/busyTimes/services/getBusyTimes.integration-test.ts:52",
+                  "packages/features/di/containers/FeatureRepository.integration-test.ts:7",
+                  "packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:105",
+                  "packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:155",
+                  "packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:93",
+                  "packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:106",
+                  "packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:109",
+                  "packages/features/ee/teams/services/teamService.integration-test.ts:31",
+                  "packages/features/ee/teams/services/teamService.integration-test.ts:53",
+                  "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:123",
+                  "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:143",
+                  "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:46",
+                  "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:70",
+                  "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:84",
+                  "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:97",
+                  "packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:21",
+                  "packages/features/flags/features.repository.integration-test.ts:9",
+                  "packages/features/handleMarkNoShow.test.ts:247",
+                  "packages/features/insights/__tests__/booking-denormalized.integration-test.ts:10",
+                  "packages/features/insights/__tests__/booking-denormalized.integration-test.ts:151",
+                  "packages/features/insights/__tests__/booking-denormalized.integration-test.ts:182",
+                  "packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:14",
+                  "packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:640",
+                  "packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:13",
+                  "packages/features/insights/services/InsightsBookingService.integration-test.ts:223",
+                  "packages/features/insights/services/InsightsBookingService.integration-test.ts:224",
+                  "packages/features/insights/services/InsightsBookingService.integration-test.ts:27",
+                  "packages/features/insights/services/InsightsBookingService.integration-test.ts:403",
+                  "packages/features/insights/services/InsightsBookingService.integration-test.ts:475",
+                  "packages/features/insights/services/InsightsBookingService.integration-test.ts:696",
+                  "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:24",
+                  "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:478",
+                  "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:559",
+                  "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:724",
+                  "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:850",
+                  "packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:33",
+                  "packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:45",
+                  "packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:57",
+                  "packages/trpc/server/routers/viewer/organizations/createWithPaymentIntent.handler.test.ts:156",
+                  "packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:35"
+                ]
               }
             ],
             "status": "complete",
-            "recountCorroboration": "independent re-count: Math.random = 76 (exact match).",
-            "secureBaseline": "All secrets use crypto: crypto.randomBytes/getRandomValues (e.g., verifyEmail.ts:37,130; keyring.ts:86; crypto.ts:17). FULLY RULED OUT."
+            "recountCorroboration": "exact: Math.random = 76 matching lines (full file:line inventory in allHits, categorized exhaustively in ruledOut: 5 non-security production sites, 10 React UI render sites, 61 test/fixture sites - 5+10+61 = 76, no catch-all).",
+            "secureBaseline": "All secrets use crypto, not Math.random: crypto.randomBytes / crypto.getRandomValues (e.g., verifyEmail.ts:37,130; keyring.ts:86; crypto.ts:17). FULLY RULED OUT - 0 candidates, 0 findings.",
+            "countingMethodology": "Literal fixed-string line search (grep -rnF) over the nine in-scope directories, excluding node_modules/dist/.next/build, file types .ts/.tsx/.js/.jsx, at HEAD e988138b24. rawHitCount = sum of per-pattern matching-line counts (a line matching N distinct patterns contributes N); test/spec files are included in the raw count and ruled out during triage.",
+            "allHits": [
+              "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:737",
+              "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:743",
+              "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:744",
+              "apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:761",
+              "apps/web/app/api/teams/create/route.ts:31",
+              "apps/web/modules/bookings/components/AvailableTimes.tsx:338",
+              "apps/web/modules/insights/components/UserStatsTable.tsx:33",
+              "apps/web/modules/insights/components/routing/RoutingFunnelSkeleton.tsx:37",
+              "apps/web/modules/insights/components/routing/RoutingFunnelSkeleton.tsx:41",
+              "apps/web/modules/insights/components/routing/RoutingFunnelSkeleton.tsx:45",
+              "apps/web/modules/insights/views/insights-call-history-view.tsx:95",
+              "apps/web/playwright/fixtures/bookings.ts:45",
+              "apps/web/playwright/fixtures/orgs.ts:7",
+              "apps/web/playwright/lib/next-server.ts:21",
+              "apps/web/playwright/signup.e2e.ts:205",
+              "packages/app-store/office365calendar/lib/CalendarService.ts:676",
+              "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:202",
+              "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:225",
+              "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:246",
+              "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:257",
+              "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:319",
+              "packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:323",
+              "packages/embeds/embed-core/playground/lib/playground-init.ts:15",
+              "packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:10",
+              "packages/features/booking-audit/lib/actions/__tests__/contractVerification.ts:18",
+              "packages/features/booking-audit/lib/service/__tests__/integration-utils.ts:8",
+              "packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:7",
+              "packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:9",
+              "packages/features/bookings/lib/service/RegularBookingService.ts:1680",
+              "packages/features/busyTimes/services/getBusyTimes.integration-test.ts:36",
+              "packages/features/busyTimes/services/getBusyTimes.integration-test.ts:52",
+              "packages/features/di/containers/FeatureRepository.integration-test.ts:7",
+              "packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:105",
+              "packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:155",
+              "packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:93",
+              "packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:106",
+              "packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:109",
+              "packages/features/ee/teams/services/teamService.integration-test.ts:31",
+              "packages/features/ee/teams/services/teamService.integration-test.ts:53",
+              "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:123",
+              "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:143",
+              "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:46",
+              "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:70",
+              "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:84",
+              "packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:97",
+              "packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:21",
+              "packages/features/flags/features.repository.integration-test.ts:9",
+              "packages/features/handleMarkNoShow.test.ts:247",
+              "packages/features/insights/__tests__/booking-denormalized.integration-test.ts:10",
+              "packages/features/insights/__tests__/booking-denormalized.integration-test.ts:151",
+              "packages/features/insights/__tests__/booking-denormalized.integration-test.ts:182",
+              "packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:14",
+              "packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:640",
+              "packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:13",
+              "packages/features/insights/services/InsightsBookingService.integration-test.ts:223",
+              "packages/features/insights/services/InsightsBookingService.integration-test.ts:224",
+              "packages/features/insights/services/InsightsBookingService.integration-test.ts:27",
+              "packages/features/insights/services/InsightsBookingService.integration-test.ts:403",
+              "packages/features/insights/services/InsightsBookingService.integration-test.ts:475",
+              "packages/features/insights/services/InsightsBookingService.integration-test.ts:696",
+              "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:24",
+              "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:478",
+              "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:559",
+              "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:724",
+              "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:850",
+              "packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:33",
+              "packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:45",
+              "packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:57",
+              "packages/lib/components/ServerTrans.tsx:204",
+              "packages/lib/components/ServerTrans.tsx:222",
+              "packages/lib/components/ServerTrans.tsx:313",
+              "packages/lib/components/ServerTrans.tsx:322",
+              "packages/lib/random.ts:11",
+              "packages/lib/server/username.ts:62",
+              "packages/trpc/server/routers/viewer/organizations/createWithPaymentIntent.handler.test.ts:156",
+              "packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:35"
+            ]
           },
           "CWE-843": {
             "searchPatterns": [
               "req.query.",
               "req.params."
             ],
-            "rawHitCount": 55,
+            "rawHitCount": 54,
             "directoriesSearched": [
               "apps/web",
               "apps/api/v1",
@@ -1375,16 +1625,16 @@
             "nonBlockingNotes": 0,
             "ruledOut": [
               {
-                "item": "apps/api/v1/.../_auth-middleware.ts:12/26",
-                "reason": "the string|string[] union is normalized via schemaQueryTeamId.parse (zod) before any security use."
+                "item": "apps/api/v1/pages/api/teams/[teamId]/_auth-middleware.ts:12,26",
+                "reason": "the string|string[] union is normalized via schemaQueryTeamId.parse (zod) at :12 and :26 before any security use."
               },
               {
-                "item": "apps/api/v1/.../extractUserIdsFromQuery.ts:9->12->13",
-                "reason": "admin guard + zod parse (:12) + Array.isArray normalization (:13) before use."
+                "item": "apps/api/v1/lib/utils/extractUserIdsFromQuery.ts:8-11,12,13",
+                "reason": "admin-only guard (:8-11) + schemaQuerySingleOrMultipleUserIds.parse (:12) + Array.isArray normalization (:13) before use."
               },
               {
                 "item": "apps/api/v1/lib/helpers/verifyApiKey.ts:27",
-                "reason": "`${req.query.apiKey}`.replace(...) template-literal coercion fails closed for array inputs (an array stringifies and will not match a valid key)."
+                "reason": "`${req.query.apiKey}`.replace(process.env.API_KEY_PREFIX || 'cal_', '') template-literal coercion fails closed for array inputs (an array stringifies with commas and cannot match a valid cal_-prefixed key)."
               },
               {
                 "item": "API v2 controllers (global ValidationPipe)",
@@ -1392,7 +1642,12 @@
               }
             ],
             "status": "complete",
-            "recountCorroboration": "independent re-count: req.query.=58, req.params.=0 (≈ spec 55). RULED OUT - union consistently zod-normalized before security use."
+            "recountCorroboration": "exact: req.query.=54, req.params.=0; rawHitCount = 54+0 = 54 = sum of per-pattern matching-line counts. RULED OUT - the string|string[] union is consistently zod-normalized (or fails closed) before any security-relevant use; 0 candidates, 0 findings.",
+            "perPatternCounts": {
+              "req.query.": 54,
+              "req.params.": 0
+            },
+            "countingMethodology": "Literal fixed-string line search (grep -rnF) over the nine in-scope directories, excluding node_modules/dist/.next/build, file types .ts/.tsx/.js/.jsx, at HEAD e988138b24. rawHitCount = sum of per-pattern matching-line counts (a line matching N distinct patterns contributes N); test/spec files are included in the raw count and ruled out during triage."
           },
           "CWE-862": {
             "searchPatterns": [
@@ -1412,9 +1667,9 @@
               "packages/lib",
               "packages/prisma"
             ],
-            "candidatesAfterTriage": 1,
+            "candidatesAfterTriage": 8,
             "blockingFindings": 0,
-            "nonBlockingNotes": 1,
+            "nonBlockingNotes": 2,
             "ruledOut": [
               {
                 "item": "apps/api/v1/pages/api/api-keys/[id]/_auth-middleware.ts:14-15",
@@ -1437,17 +1692,21 @@
                 "reason": "collection query scoped to the caller's userId."
               },
               {
-                "item": "4 intentionally-public tRPC procedures (feature-flags list, public booking-page event query, public form-response submission, slots/i18n/timezones)",
-                "reason": "public by capability for unauthenticated booking pages; the only public write (routing-forms response) is flagged as N10 for human review."
+                "item": "13 intentionally-public read queries (features list:9/checkTeamFeature:13, features/map.ts:9, publicViewer countryCode:11/ssoConnections:28/checkIfUserEmailVerificationRequired:33, publicViewer/procedures/event.ts:5, timezones cityTimezones:11, bookings find:98/getInstantBookingLocation:107, i18n get:6, slots getSchedule:48/isAvailable:76)",
+                "reason": "read-only, no state mutation; public by capability for unauthenticated booking pages and i18n/feature-flag bootstrapping (see slots/_router.tsx:29 design note). Enumerated in full in exhaustiveEnumeration.publicProcedureSites."
+              },
+              {
+                "item": "8 public-write mutations (NOT one): publicViewer submitRating:15/markHostAsNoShow:19/samlTenantProduct:23, auth verifyCodeUnAuthenticated:40/sendVerifyEmailCode:48, routing-forms response:20, slots reserveSlot:62/removeSelectedSlotMark:93",
+                "reason": "CORRECTION: the prior claim that routing-forms response was 'the only public write' was incorrect and is retracted. None of the 8 applies an authedProcedure/Ring-2/Ring-3 ownership guard; routing-forms response (N10) and markHostAsNoShow (N11) are recorded as advisory candidate findings, and the other six are capability-token-scoped or intentional pre-auth self-service flows. Per-site classification in publicWriteClassification; none is silently assumed safe."
               }
             ],
             "status": "complete",
             "rawHits": {
-              "publicProcedureSites": 38,
+              "publicProcedureSites": 21,
               "v1VerbHandlerFiles": 46,
               "v2GuardFolders": 15
             },
-            "recountCorroboration": "independent re-count: 46 v1 verb-handler files (exact); 15 v2 guard folders (exact); publicProcedure 52 textual occurrences / 18 definition sites (spec authoritative 38).",
+            "recountCorroboration": "exact: 21 publicProcedure endpoint definitions (reproducible enumeration; full list in exhaustiveEnumeration.publicProcedureSites), 46 v1 verb-handler files, 15 v2 guard folders - all enumerated in full, no sampling.",
             "exhaustiveEnumeration": {
               "v1VerbHandlerFiles_all46": [
                 "apps/api/v1/pages/api/api-keys/[id]/_delete.ts",
@@ -1498,24 +1757,27 @@
                 "apps/api/v1/pages/api/webhooks/_post.ts"
               ],
               "publicProcedureSites": [
-                "packages/trpc/server/routers/features/map.ts:9 (map.query)",
-                "packages/trpc/server/routers/features/_router.ts:9 (list.query)",
-                "packages/trpc/server/routers/viewer/slots/_router.tsx:48 (getSchedule.query)",
-                "packages/trpc/server/routers/viewer/slots/_router.tsx:62 (reserveSlot.mutation)",
-                "packages/trpc/server/routers/viewer/routing-forms/_router.ts:20 (response.mutation -> N10)",
-                "packages/trpc/server/routers/viewer/i18n/_router.tsx:6 (get.query)",
-                "packages/trpc/server/routers/viewer/auth/_router.tsx:40 (verifyCodeUnAuthenticated.mutation)",
-                "packages/trpc/server/routers/viewer/auth/_router.tsx:48 (sendVerifyEmailCode.mutation)",
-                "packages/trpc/server/routers/viewer/bookings/_router.tsx:98 (find.query)",
-                "packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 (cityTimezones.query)",
-                "packages/trpc/server/routers/publicViewer/procedures/event.ts:5 (event.query)",
-                "packages/trpc/server/routers/publicViewer/_router.tsx:11 (countryCode.query)",
-                "packages/trpc/server/routers/publicViewer/_router.tsx:15 (submitRating.mutation)",
-                "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow.mutation)",
-                "packages/trpc/server/routers/publicViewer/_router.tsx:23 (samlTenantProduct.mutation)",
-                "packages/trpc/server/routers/publicViewer/_router.tsx:28 (ssoConnections.query)",
-                "packages/trpc/server/procedures/authedProcedure.ts:30 (authedAdminProcedure = publicProcedure.use(isAdminMiddleware))",
-                "packages/trpc/server/procedures/authedProcedure.ts:31 (authedOrgAdminProcedure = publicProcedure.use(isOrgAdminMiddleware))"
+                "packages/trpc/server/routers/features/_router.ts:9 (list, query)",
+                "packages/trpc/server/routers/features/_router.ts:13 (checkTeamFeature, query)",
+                "packages/trpc/server/routers/features/map.ts:9 (map, query)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:11 (countryCode, query)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:15 (submitRating, mutation - public write)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow, mutation - public write -> N11)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:23 (samlTenantProduct, mutation - public write)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:28 (ssoConnections, query)",
+                "packages/trpc/server/routers/publicViewer/_router.tsx:33 (checkIfUserEmailVerificationRequired, query)",
+                "packages/trpc/server/routers/publicViewer/procedures/event.ts:5 (event, query)",
+                "packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 (cityTimezones, query)",
+                "packages/trpc/server/routers/viewer/auth/_router.tsx:40 (verifyCodeUnAuthenticated, mutation - public write)",
+                "packages/trpc/server/routers/viewer/auth/_router.tsx:48 (sendVerifyEmailCode, mutation - public write)",
+                "packages/trpc/server/routers/viewer/bookings/_router.tsx:98 (find, query)",
+                "packages/trpc/server/routers/viewer/bookings/_router.tsx:107 (getInstantBookingLocation, query)",
+                "packages/trpc/server/routers/viewer/i18n/_router.tsx:6 (get, query)",
+                "packages/trpc/server/routers/viewer/routing-forms/_router.ts:20 (response, mutation - public write -> N10)",
+                "packages/trpc/server/routers/viewer/slots/_router.tsx:48 (getSchedule, query)",
+                "packages/trpc/server/routers/viewer/slots/_router.tsx:62 (reserveSlot, mutation - public write)",
+                "packages/trpc/server/routers/viewer/slots/_router.tsx:76 (isAvailable, query)",
+                "packages/trpc/server/routers/viewer/slots/_router.tsx:93 (removeSelectedSlotMark, mutation - public write)"
               ],
               "v2GuardFolders_all15": [
                 "api-auth",
@@ -1533,8 +1795,56 @@
                 "teams",
                 "users",
                 "workflows"
+              ],
+              "publicProcedureSites_note": "21 publicProcedure endpoint definitions total: 13 read queries + 8 write mutations. This supersedes the prior 18-entry list, which omitted 5 real endpoints (features checkTeamFeature:13, publicViewer checkIfUserEmailVerificationRequired:33, bookings getInstantBookingLocation:107, slots isAvailable:76, slots removeSelectedSlotMark:93) and incorrectly included the 2 admin-guarded derivations as public.",
+              "derivedButGuardedAdminProcedures": [
+                "packages/trpc/server/procedures/authedProcedure.ts:30 (authedAdminProcedure = publicProcedure.use(isAdminMiddleware) - NOT public; adds isAdminMiddleware)",
+                "packages/trpc/server/procedures/authedProcedure.ts:31 (authedOrgAdminProcedure = publicProcedure.use(isOrgAdminMiddleware) - NOT public; adds isOrgAdminMiddleware)"
               ]
-            }
+            },
+            "countingMethodology": "publicProcedure endpoint sites counted reproducibly via: grep -rnE '([A-Za-z]+: *publicProcedure|export const [A-Za-z]+ = publicProcedure)' packages/trpc/server/routers --include=*.ts --include=*.tsx | grep -v node_modules | grep -vE 'publicProcedure\\.use\\(' => 21 endpoint definitions (13 query + 8 mutation). The 2 publicProcedure.use(...) derivations in procedures/authedProcedure.ts are admin-guarded (NOT public) and listed separately in derivedButGuardedAdminProcedures. v1 verb-handler files: find apps/api/v1/pages/api -name _post.ts|_patch.ts|_delete.ts|_put.ts => 46. v2 guard folders: ls apps/api/v2/src/modules/auth/guards/*/ => 15. The prior publicProcedureSites=38 was a non-reproducible over-count and is corrected to the exact 21 endpoint definitions.",
+            "publicWriteClassification": [
+              {
+                "site": "packages/trpc/server/routers/publicViewer/_router.tsx:15 (submitRating)",
+                "classification": "capability-token public write",
+                "rationale": "prisma.booking.update keyed by an opaque bookingUid (submitRating.handler.ts:11-13); the bookingUid is the bearer capability. No session/ownership guard; recorded as a sibling of N10/N11, not separately gate-blocking (capability-scoped to a single booking)."
+              },
+              {
+                "site": "packages/trpc/server/routers/publicViewer/_router.tsx:19 (markHostAsNoShow)",
+                "classification": "advisory note (human review) -> N11",
+                "rationale": "public booking-state write via handleMarkHostNoShow keyed by bookingUid; the handler self-documents the gap (TODO at markHostAsNoShow.handler.ts:9-10: 'completely anonymous and public endpoint'). Recorded as N11."
+              },
+              {
+                "site": "packages/trpc/server/routers/publicViewer/_router.tsx:23 (samlTenantProduct)",
+                "classification": "intentional pre-auth flow",
+                "rationale": "SSO tenant/product discovery by email (ssoTenantProduct) used during the unauthenticated SAML login flow; effectively a configuration lookup, no owner-scoped write."
+              },
+              {
+                "site": "packages/trpc/server/routers/viewer/auth/_router.tsx:40 (verifyCodeUnAuthenticated)",
+                "classification": "intentional pre-auth flow",
+                "rationale": "email verification-code check; the one-time code itself is the capability. Unauthenticated by construction (pre-account-verification)."
+              },
+              {
+                "site": "packages/trpc/server/routers/viewer/auth/_router.tsx:48 (sendVerifyEmailCode)",
+                "classification": "intentional pre-auth flow",
+                "rationale": "sends a verification code to a caller-provided email; unauthenticated self-service. The relevant control is rate-limiting, not authorization; no owner-scoped write."
+              },
+              {
+                "site": "packages/trpc/server/routers/viewer/routing-forms/_router.ts:20 (response)",
+                "classification": "advisory note (human review) -> N10",
+                "rationale": "public form-response submission; whether any field drives a privileged/owner-scoped write is not established. Recorded as N10."
+              },
+              {
+                "site": "packages/trpc/server/routers/viewer/slots/_router.tsx:62 (reserveSlot)",
+                "classification": "capability-token public write",
+                "rationale": "creates a temporary slot hold for unauthenticated booking pages; self-scoped by the reservation uid. Intentionally public per the router's own documentation (slots/_router.tsx:29)."
+              },
+              {
+                "site": "packages/trpc/server/routers/viewer/slots/_router.tsx:93 (removeSelectedSlotMark)",
+                "classification": "capability-token public write",
+                "rationale": "prisma.selectedSlots.deleteMany keyed by a uid taken from the caller's own cookie or input (slots/_router.tsx:95-98); self-scoped cleanup of the caller's own temporary hold."
+              }
+            ]
           }
         },
         "reproducibility": {
@@ -1545,16 +1855,16 @@
             "CWE-918 first-order SSRF (caldavcalendar/api/add.ts:44) [G2]",
             "CWE-601 open redirect (proxy.ts:86) [G3]"
           ],
-          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3 stable in every run). Advisory notes (N1-N10) were consistently non-blocking; none oscillated between error and note."
+          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3 stable in every run). Advisory notes (N1-N11) were consistently non-blocking; none oscillated between error and note. N11 (CWE-862 markHostAsNoShow) was added during sibling-consistency reconciliation of the publicProcedure write class and is recorded as a low-confidence human-review note."
         },
         "selfAudit": {
           "1_schemaValidity": "pass - $schema/version 2.1.0, single run, tool.driver.name=Blitzy-Taint-Layer3, 7 CWE rules each defined once, every result.ruleId is defined in tool.driver.rules.",
           "2_precisionGate": "pass - every error/gateBlocking:true result (G1,G2,G3) has a complete non-empty source->hop->sink codeFlow and demotionBasis 'none ...'; none relies on a banned non-control.",
           "3_emptyCodeFlowsRule": "pass - the only empty-codeFlows result (N4) is note/gateBlocking:false.",
           "4_demotionDiscipline": "pass - every demoted note names a concrete control (fn+file:line) or states uncertainty explicitly; no banned phrase (authenticated/by design/intended behaviour/blind/internal-only/low severity/no known caller/not reachable) is used to demote.",
-          "5_siblingConsistency": "pass - SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2) and timingSafeEqual peers (N6/N7/N8) enumerated with gaps recorded.",
+          "5_siblingConsistency": "pass - sibling sets enumerated exhaustively with gaps recorded: SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2); timingSafeEqual/auth-decision peers (N6/N7/N8/N9); and CWE-862 publicProcedure - all 21 endpoint sites enumerated (13 query, 8 write), the full 8-site public-write set recorded with per-site classification (coverage.CWE-862.publicWriteClassification), and the two warranting human review flagged as N10 (routing-forms response) and N11 (markHostAsNoShow). The earlier claim that routing-forms response was the only public write has been corrected.",
           "6_propertyBagCompleteness": "pass - every result carries gateBlocking, severity, exploitScenario, confidence(+reason), sanitizersEncountered (never omitted; [] when none), demotionBasis, intermediateHopsSummary, cwe, siblingConsistency.",
-          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete'; no level:'warning' anywhere; second-order finding G1 evidences BOTH legs."
+          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete' and exact, reproducible per-category counts (rawHitCount = sum of per-pattern matching-line counts; methodology recorded per block): CWE-918=299, CWE-117=3640, CWE-338=76 (full 76-hit machine-readable inventory in allHits, categorized 5+10+61, no catch-all), CWE-843=54, CWE-601=161, CWE-807=59; CWE-862 = 21 publicProcedure endpoints / 46 v1 verb-handler files / 15 v2 guard folders, all enumerated in full. No level:'warning' anywhere; second-order finding G1 evidences BOTH legs."
         }
       }
     }

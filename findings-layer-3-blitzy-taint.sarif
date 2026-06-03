@@ -1594,7 +1594,7 @@
                 "reason": "inline ownership check before delete."
               },
               {
-                "item": "apps/api/v1/pages/api/users/[userId]/_get|_patch|_delete.ts:106-107",
+                "item": "apps/api/v1/pages/api/users/[userId]/_get.ts:45-46; apps/api/v1/pages/api/users/[userId]/_patch.ts:106-107; apps/api/v1/pages/api/users/[userId]/_delete.ts:44-45",
                 "reason": "each enforces if(!isSystemWideAdmin && query.userId!==req.userId) throw 403."
               },
               {

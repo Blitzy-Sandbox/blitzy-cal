@@ -1140,7 +1140,7 @@
               "window.location",
               "res.redirect"
             ],
-            "rawHitCount": 161,
+            "rawHitCount": 158,
             "directoriesSearched": [
               "apps/web",
               "apps/api/v1",
@@ -1168,9 +1168,9 @@
             "status": "complete",
             "perPatternCounts": {
               ".redirect( (incl. NextResponse.redirect/res.redirect)": 92,
-              "window.location": 69
+              "window.location": 66
             },
-            "recountCorroboration": "independent re-count: .redirect( 92 + window.location 69 = 161 (exact match)"
+            "recountCorroboration": "independent re-count: .redirect( 92 + window.location 66 = 158 (exact match)"
           },
           "CWE-918": {
             "searchPatterns": [
@@ -1778,7 +1778,7 @@
           "4_demotionDiscipline": "pass - every demoted note names a concrete control (fn+file:line) or states uncertainty explicitly; no banned phrase (authenticated/by design/intended behaviour/blind/internal-only/low severity/no known caller/not reachable) is used to demote.",
           "5_siblingConsistency": "pass - sibling sets enumerated exhaustively with gaps recorded: SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2); timingSafeEqual/auth-decision peers (N6/N7/N8/N9); and CWE-862 publicProcedure - all 21 endpoint sites enumerated (13 query, 8 write), the full 8-site public-write set recorded with per-site classification (coverage.CWE-862.publicWriteClassification); the public write emitted as a normalized CWE-862 advisory note is N10 (routing-forms response), and markHostAsNoShow is additionally documented for human review as a sibling of N10 in coverage.CWE-862.publicWriteClassification (not a separate normalized result). The earlier claim that routing-forms response was the only public write has been corrected.",
           "6_propertyBagCompleteness": "pass - every result carries gateBlocking, severity, exploitScenario, confidence(+reason), sanitizersEncountered (never omitted; [] when none), demotionBasis, intermediateHopsSummary, cwe, siblingConsistency.",
-          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete' and exact, reproducible per-category counts (rawHitCount = sum of per-pattern matching-line counts; methodology recorded per block): CWE-918=299, CWE-117=3640, CWE-338=76 (full 76-hit machine-readable inventory in allHits, categorized 5+10+61, no catch-all), CWE-843=54, CWE-601=161, CWE-807=59; CWE-862 = 21 publicProcedure endpoints / 46 v1 verb-handler files / 15 v2 guard folders, all enumerated in full. No level:'warning' anywhere; second-order gate-blocking finding G1 evidences BOTH legs."
+          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete' and exact, reproducible per-category counts (rawHitCount = sum of per-pattern matching-line counts; methodology recorded per block): CWE-918=299, CWE-117=3640, CWE-338=76 (full 76-hit machine-readable inventory in allHits, categorized 5+10+61, no catch-all), CWE-843=54, CWE-601=158, CWE-807=59; CWE-862 = 21 publicProcedure endpoints / 46 v1 verb-handler files / 15 v2 guard folders, all enumerated in full. No level:'warning' anywhere; second-order gate-blocking finding G1 evidences BOTH legs."
         }
       }
     }

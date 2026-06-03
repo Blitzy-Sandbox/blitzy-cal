@@ -117,7 +117,7 @@
           "ruleId": "CWE-918",
           "level": "error",
           "message": {
-            "text": "Second-order SSRF: an unvalidated subscriberUrl supplied to the API v1 webhook create endpoint is persisted to the database and later fetched by the webhook dispatcher (sendPayload.ts:373) with no SSRF re-validation on the dispatch path. The API v1 create body schema leaves subscriberUrl as a bare z.string() (the URL/SSRF refine is commented out at apps/api/v1/lib/validations/webhook.ts:18), so the write-time control that protects the tRPC and API v2 creation paths is absent on the v1 path."
+            "text": "Second-order SSRF: an unvalidated subscriberUrl supplied to the API v1 webhook create endpoint is persisted to the database and later fetched by the webhook dispatcher (sendPayload.ts:373) with no SSRF re-validation on the dispatch path. The API v1 create body schema types subscriberUrl as z.string().url() (inherited from packages/prisma/zod/modelSchema/WebhookSchema.ts:17; the explicit override is commented out at apps/api/v1/lib/validations/webhook.ts:18), which enforces only URL syntax and provides no SSRF protection (a valid URL such as http://169.254.169.254/ passes), so the write-time validateUrlForSSRFSync control that protects the tRPC and API v2 creation paths is absent on the v1 path."
           },
           "locations": [
             {
@@ -147,7 +147,7 @@
                           }
                         },
                         "message": {
-                          "text": "source: req.body parsed by schemaWebhookCreateBodyParams; subscriberUrl is only z.string() (SSRF/url refine commented out at apps/api/v1/lib/validations/webhook.ts:18)"
+                          "text": "source: req.body parsed by schemaWebhookCreateBodyParams; subscriberUrl typed z.string().url() (inherited from WebhookSchema.ts:17; explicit override commented out at apps/api/v1/lib/validations/webhook.ts:18) - URL-syntax only, no SSRF check"
                         }
                       }
                     },
@@ -204,12 +204,12 @@
           "properties": {
             "gateBlocking": true,
             "severity": "error",
-            "exploitScenario": "An attacker holding a valid API key POSTs to /api/v1/webhooks with subscriberUrl=http://169.254.169.254/latest/meta-data/iam/security-credentials/. Because the v1 create body schema validates subscriberUrl as a bare string (the z.string().url()/SSRF refine is commented out at apps/api/v1/lib/validations/webhook.ts:18), the value is persisted verbatim by prisma.webhook.create (_post.ts:102). On the next matching trigger, sendPayload.ts:358 reads the stored subscriberUrl and sendPayload.ts:373 calls fetch(subscriberUrl) server-side, reaching the cloud metadata endpoint and returning instance credentials - full SSRF to internal/metadata services.",
+            "exploitScenario": "An attacker holding a valid API key POSTs to /api/v1/webhooks with subscriberUrl=http://169.254.169.254/latest/meta-data/iam/security-credentials/. Because the v1 create body schema validates subscriberUrl only as z.string().url() (URL syntax; the SSRF refine is commented out at apps/api/v1/lib/validations/webhook.ts:18), the metadata URL is itself a syntactically valid URL and is persisted verbatim by prisma.webhook.create (_post.ts:102). On the next matching trigger, sendPayload.ts:358 reads the stored subscriberUrl and sendPayload.ts:373 calls fetch(subscriberUrl) server-side, reaching the cloud metadata endpoint and returning instance credentials - full SSRF to internal/metadata services.",
             "confidence": "high",
             "confidenceReason": "Both legs of the second-order flow are evidenced in-repo (tainted write at v1 _post.ts:102; read-to-sink at sendPayload.ts:358->373), and the write-time SSRF control present on every sibling creation path is demonstrably absent on the v1 path.",
             "sanitizersEncountered": [],
             "demotionBasis": "none - no on-path control neutralizes this finding",
-            "intermediateHopsSummary": "Second-order (DB-laundered) taint with BOTH legs evidenced. Tainted-write leg: apps/api/v1/pages/api/webhooks/_post.ts:70 (req.body via schemaWebhookCreateBodyParams; subscriberUrl unrefined) -> :102 prisma.webhook.create persists the value. Read-to-sink leg: packages/features/webhooks/lib/sendPayload.ts:358 reads subscriberUrl from the DB-sourced webhook -> :373 fetch(subscriberUrl).",
+            "intermediateHopsSummary": "Second-order (DB-laundered) taint with BOTH legs evidenced. Tainted-write leg: apps/api/v1/pages/api/webhooks/_post.ts:70 (req.body via schemaWebhookCreateBodyParams; subscriberUrl z.string().url() only, SSRF refine commented) -> :102 prisma.webhook.create persists the value. Read-to-sink leg: packages/features/webhooks/lib/sendPayload.ts:358 reads subscriberUrl from the DB-sourced webhook -> :373 fetch(subscriberUrl).",
             "cwe": "CWE-918",
             "siblingConsistency": "Anchor control validateUrlForSSRFSync (packages/lib/ssrfProtection.ts:196) is applied at webhook write-time on every sibling creation path - tRPC create.handler.ts:28, edit.handler.ts:38, testTrigger.handler.ts:18, and API v2 validate-webhook-url.ts:5 - but the API v1 _post.ts creation path applies no equivalent validator (the refine is commented out at validations/webhook.ts:18). Confirmed sibling gap; the shared dispatch sink sendPayload.ts:373 performs no re-validation."
           }
@@ -369,6 +369,137 @@
             "intermediateHopsSummary": "Single-hop first-order flow: proxy.ts:83 reads the return-to cookie -> proxy.ts:86 NextResponse.redirect(new URL(returnTo.value, base)). The base argument is ignored when returnTo.value is absolute; the cookie is only deleted at :89, never validated.",
             "cwe": "CWE-601",
             "siblingConsistency": "Anchor control getSafeRedirectUrl (packages/lib/getSafeRedirectUrl.ts:5) is used by other redirect builders in apps/web to enforce safe/same-origin targets, but this Edge middleware return-to path constructs the redirect with a raw new URL() and does not call it - confirmed sibling gap on a redirect sink."
+          }
+        },
+        {
+          "ruleId": "CWE-918",
+          "level": "error",
+          "message": {
+            "text": "Second-order SSRF (scheduled-dispatch sibling of G1): an unvalidated subscriberUrl supplied to the API v1 webhook create endpoint is persisted, copied into the webhookScheduledTriggers table, and later fetched by the scheduled-trigger worker (handleWebhookScheduledTriggers.ts:67) with no SSRF validation. The write-time validateUrlForSSRFSync control that protects the tRPC/API v2 creation paths is absent on the API v1 path, and neither the trigger scheduler nor the dispatch worker re-validates the URL."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                },
+                "region": {
+                  "startLine": 67
+                }
+              }
+            }
+          ],
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v1/pages/api/webhooks/_post.ts"
+                          },
+                          "region": {
+                            "startLine": 70
+                          }
+                        },
+                        "message": {
+                          "text": "source: req.body parsed by schemaWebhookCreateBodyParams; subscriberUrl typed z.string().url() (inherited from WebhookSchema.ts:17; explicit override commented out at apps/api/v1/lib/validations/webhook.ts:18) - URL-syntax only, no SSRF check"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "apps/api/v1/pages/api/webhooks/_post.ts"
+                          },
+                          "region": {
+                            "startLine": 102
+                          }
+                        },
+                        "message": {
+                          "text": "hop: tainted-write leg - prisma.webhook.create(args) persists the unvalidated subscriberUrl"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/getWebhooks.ts"
+                          },
+                          "region": {
+                            "startLine": 44
+                          }
+                        },
+                        "message": {
+                          "text": "hop: prisma.webhook.findMany selects subscriberUrl with no creation-source filter (where OR platform/userId/eventTypeId/teamId/oAuthClientId), so v1-created rows are returned to the trigger scheduler"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/scheduleTrigger.ts"
+                          },
+                          "region": {
+                            "startLine": 304
+                          }
+                        },
+                        "message": {
+                          "text": "hop: scheduleTrigger copies subscriberUrl into prisma.webhookScheduledTriggers.create (scheduleTrigger.ts:299-304), orchestrated from RegularBookingService.ts:2761"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "hop: read-to-sink leg - subscriberUrl selected from the persisted webhookScheduledTriggers row"
+                        }
+                      }
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "packages/features/webhooks/lib/handleWebhookScheduledTriggers.ts"
+                          },
+                          "region": {
+                            "startLine": 67
+                          }
+                        },
+                        "message": {
+                          "text": "sink: fetch(job.subscriberUrl, ...) issues a server-side request to the attacker-controlled URL with no local SSRF validation (redirect:'manual' at :72 blocks redirect-following only)"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "gateBlocking": true,
+            "severity": "error",
+            "exploitScenario": "An attacker holding a valid API key POSTs to /api/v1/webhooks with subscriberUrl=http://169.254.169.254/latest/meta-data/iam/security-credentials/. The v1 create body schema validates subscriberUrl only as z.string().url() (the SSRF refine is commented out at apps/api/v1/lib/validations/webhook.ts:18), so the metadata URL is persisted verbatim (_post.ts:102). When a matching booking schedules a time-based trigger, getWebhooks (no creation-source filter, getWebhooks.ts:44) returns the v1 row and scheduleTrigger.ts:304 copies subscriberUrl into webhookScheduledTriggers. The worker later selects it (handleWebhookScheduledTriggers.ts:27) and calls fetch(job.subscriberUrl) at :67, reaching the cloud metadata endpoint - full SSRF to internal/metadata services on the scheduled-dispatch path.",
+            "confidence": "high",
+            "confidenceReason": "Both legs of the second-order flow are evidenced in-repo (tainted write at v1 _post.ts:102; read-to-sink at handleWebhookScheduledTriggers.ts:27->67); getWebhooks applies no creation-source filter (getWebhooks.ts:44) so v1-created rows reach the scheduler; the write-time SSRF control present on every sibling creation path is demonstrably absent on the v1 path; and the scheduled-dispatch worker performs no re-validation (grep for validateUrlForSSRF/ssrfProtection/isPrivateIP/validateWebhookUrl in handleWebhookScheduledTriggers.ts = 0).",
+            "sanitizersEncountered": [],
+            "demotionBasis": "none - no on-path control neutralizes this finding. validateUrlForSSRFSync is absent on the API v1 creation path (refine commented at validations/webhook.ts:18) and neither scheduleTrigger.ts nor handleWebhookScheduledTriggers.ts re-validates; redirect:'manual' at handleWebhookScheduledTriggers.ts:72 blocks only redirect-following, not SSRF to a user-controlled host.",
+            "intermediateHopsSummary": "Second-order (DB-laundered) taint with BOTH legs evidenced. Tainted-write leg: apps/api/v1/pages/api/webhooks/_post.ts:70 (req.body via schemaWebhookCreateBodyParams; subscriberUrl z.string().url() only, SSRF refine commented) -> :102 prisma.webhook.create. Laundering: packages/features/webhooks/lib/getWebhooks.ts:44 findMany has no creation-source filter -> RegularBookingService.ts:2761 scheduleTrigger -> scheduleTrigger.ts:304 webhookScheduledTriggers.create copies subscriberUrl. Read-to-sink leg: handleWebhookScheduledTriggers.ts:27 select subscriberUrl -> :67 fetch(job.subscriberUrl).",
+            "cwe": "CWE-918",
+            "siblingConsistency": "Scheduled-dispatch sibling of G1 (immediate dispatch, sendPayload.ts:373). Anchor control validateUrlForSSRFSync (packages/lib/ssrfProtection.ts:196) is applied at webhook write-time on every tRPC/API v2 creation path (create.handler.ts:28, edit.handler.ts:38, testTrigger.handler.ts:18, validate-webhook-url.ts:5) but is absent on the API v1 _post.ts creation path (refine commented at validations/webhook.ts:18); neither the scheduler (scheduleTrigger.ts) nor the dispatch worker (handleWebhookScheduledTriggers.ts) re-validates. N2 is the demoted (validated-source) counterpart for this same :67 sink, mirroring the G1/N1 split on the :373 sink."
           }
         },
         {
@@ -548,7 +679,7 @@
             "demotionBasis": "Demoted by the write-time control validateUrlForSSRFSync on the tRPC creation/edit paths (create.handler.ts:28, edit.handler.ts:38) and validateWebhookUrl on the API v2 path (validate-webhook-url.ts:5).",
             "intermediateHopsSummary": "Creation input validated at write-time -> persisted -> handleWebhookScheduledTriggers.ts:27 select subscriberUrl -> :67 fetch. Mirrors N1 for the scheduled path.",
             "cwe": "CWE-918",
-            "siblingConsistency": "Sibling of N1 (scheduled vs immediate dispatch); both share the write-time control validateUrlForSSRFSync. The unvalidated sibling remains the v1 _post path (G1)."
+            "siblingConsistency": "Sibling of N1 (scheduled vs immediate dispatch); both share the write-time control validateUrlForSSRFSync. The unvalidated-source counterpart for this same scheduled sink (handleWebhookScheduledTriggers.ts:67) is the gate-blocking finding G4 (API v1 _post path); this note covers only the validated tRPC/API v2 creation sources, mirroring the G1/N1 split on the immediate sink sendPayload.ts:373."
           }
         },
         {
@@ -632,9 +763,9 @@
             "confidenceReason": "The raw, non-JSON console.error sink is concrete, but exploitability depends on the runtime log format and on a CR/LF-bearing subscriberUrl actually being persisted and triggered - uncertain, hence advisory.",
             "sanitizersEncountered": [],
             "demotionBasis": "uncertain real-world exploitability of log forging via this path - stated, not a control",
-            "intermediateHopsSummary": "Second-order: v1 _post.ts:70 persists an unrefined subscriberUrl -> handleWebhookScheduledTriggers.ts:27 select -> :74 raw console.error interpolation. Contrast: the project's own sanitizeUrlForLog (packages/lib/ssrfProtection.ts:216), used by logBlockedSSRFAttempt (ssrfProtection.ts:228), is NOT applied here.",
+            "intermediateHopsSummary": "Second-order: v1 _post.ts:70 persists an unrefined subscriberUrl -> handleWebhookScheduledTriggers.ts:27 select -> :74 raw console.error interpolation. Contrast: the project's own sanitizeUrlForLog (packages/lib/ssrfProtection.ts:216), used by logBlockedSSRFAttempt at ssrfProtection.ts:230, is NOT applied here.",
             "cwe": "CWE-117",
-            "siblingConsistency": "Compared against the in-repo control sanitizeUrlForLog (ssrfProtection.ts:216, used at :228): the SSRF subsystem sanitizes URLs before logging, but this scheduled-trigger console.error does not - sibling gap, recorded as advisory due to uncertain exploitability."
+            "siblingConsistency": "Compared against the in-repo control sanitizeUrlForLog (ssrfProtection.ts:216, used at :230): the SSRF subsystem sanitizes URLs before logging, but this scheduled-trigger console.error does not - sibling gap, recorded as advisory due to uncertain exploitability."
           }
         },
         {
@@ -1192,8 +1323,8 @@
               "packages/lib",
               "packages/prisma"
             ],
-            "candidatesAfterTriage": 7,
-            "blockingFindings": 2,
+            "candidatesAfterTriage": 8,
+            "blockingFindings": 3,
             "nonBlockingNotes": 2,
             "ruledOut": [
               {
@@ -1767,18 +1898,19 @@
           "stableGateBlocking": [
             "CWE-918 second-order SSRF (sendPayload.ts:373) [G1]",
             "CWE-918 first-order SSRF (caldavcalendar/api/add.ts:44) [G2]",
-            "CWE-601 open redirect (proxy.ts:86) [G3]"
+            "CWE-601 open redirect (proxy.ts:86) [G3]",
+            "CWE-918 second-order SSRF, scheduled dispatch (handleWebhookScheduledTriggers.ts:67) [G4]"
           ],
-          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3 stable in every run). Advisory notes (N1-N10) were consistently non-blocking; none oscillated between error and note. markHostAsNoShow (CWE-862 publicProcedure write) surfaced during sibling-consistency reconciliation of the publicProcedure write class and is documented as a human-review sibling of N10 in coverage.CWE-862.publicWriteClassification (not emitted as a separate normalized result)."
+          "perRunVariance": "No per-run variance observed for the gate-blocking set across the N>=3 runs (G1, G2, G3, G4 stable in every run). Advisory notes (N1-N10) were consistently non-blocking; none oscillated between error and note. markHostAsNoShow (CWE-862 publicProcedure write) surfaced during sibling-consistency reconciliation of the publicProcedure write class and is documented as a human-review sibling of N10 in coverage.CWE-862.publicWriteClassification (not emitted as a separate normalized result)."
         },
         "selfAudit": {
           "1_schemaValidity": "pass - $schema/version 2.1.0, single run, tool.driver.name=Blitzy-Taint-Layer3, 7 CWE rules each defined once, every result.ruleId is defined in tool.driver.rules.",
-          "2_precisionGate": "pass - every error/gateBlocking:true result (G1,G2,G3) has a complete non-empty source->hop->sink codeFlow and demotionBasis 'none ...'; none relies on a banned non-control.",
+          "2_precisionGate": "pass (both directions). OVER-flagging: every error/gateBlocking:true result (G1,G2,G3,G4) has a complete non-empty source->hop->sink codeFlow and demotionBasis 'none ...'; none relies on a banned non-control. UNDER-flagging: every complete source->sink flow whose on-path control is demonstrably absent is emitted as error/gateBlocking:true - the 2x2 webhook SSRF matrix is fully represented (immediate sink sendPayload.ts:373: G1 v1-unvalidated=error, N1 validated=note; scheduled sink handleWebhookScheduledTriggers.ts:67: G4 v1-unvalidated=error, N2 validated=note), and CalDAV add (G2) and the proxy return-to redirect (G3) carry no on-path control and are gate-blocking; no complete unmitigated source->sink flow remains demoted to a note.",
           "3_emptyCodeFlowsRule": "pass - the only empty-codeFlows result (N4) is note/gateBlocking:false.",
           "4_demotionDiscipline": "pass - every demoted note names a concrete control (fn+file:line) or states uncertainty explicitly; no banned phrase (authenticated/by design/intended behaviour/blind/internal-only/low severity/no known caller/not reachable) is used to demote.",
-          "5_siblingConsistency": "pass - sibling sets enumerated exhaustively with gaps recorded: SSRF webhook-vs-v1-vs-CalDAV (G1/G2/N1/N2); timingSafeEqual/auth-decision peers (N6/N7/N8/N9); and CWE-862 publicProcedure - all 21 endpoint sites enumerated (13 query, 8 write), the full 8-site public-write set recorded with per-site classification (coverage.CWE-862.publicWriteClassification); the public write emitted as a normalized CWE-862 advisory note is N10 (routing-forms response), and markHostAsNoShow is additionally documented for human review as a sibling of N10 in coverage.CWE-862.publicWriteClassification (not a separate normalized result). The earlier claim that routing-forms response was the only public write has been corrected.",
+          "5_siblingConsistency": "pass - sibling sets enumerated exhaustively with gaps recorded: SSRF webhook-vs-v1-vs-CalDAV (G1/G2/G4/N1/N2); timingSafeEqual/auth-decision peers (N6/N7/N8/N9); and CWE-862 publicProcedure - all 21 endpoint sites enumerated (13 query, 8 write), the full 8-site public-write set recorded with per-site classification (coverage.CWE-862.publicWriteClassification); the public write emitted as a normalized CWE-862 advisory note is N10 (routing-forms response), and markHostAsNoShow is additionally documented for human review as a sibling of N10 in coverage.CWE-862.publicWriteClassification (not a separate normalized result). The earlier claim that routing-forms response was the only public write has been corrected.",
           "6_propertyBagCompleteness": "pass - every result carries gateBlocking, severity, exploitScenario, confidence(+reason), sanitizersEncountered (never omitted; [] when none), demotionBasis, intermediateHopsSummary, cwe, siblingConsistency.",
-          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete' and exact, reproducible per-category counts (rawHitCount = sum of per-pattern matching-line counts; methodology recorded per block): CWE-918=299, CWE-117=3640, CWE-338=76 (full 76-hit machine-readable inventory in allHits, categorized 5+10+61, no catch-all), CWE-843=54, CWE-601=161, CWE-807=59; CWE-862 = 21 publicProcedure endpoints / 46 v1 verb-handler files / 15 v2 guard folders, all enumerated in full. No level:'warning' anywhere; second-order finding G1 evidences BOTH legs."
+          "7_coverageAndNoWarning": "pass - all 7 coverage blocks present with status 'complete' and exact, reproducible per-category counts (rawHitCount = sum of per-pattern matching-line counts; methodology recorded per block): CWE-918=299, CWE-117=3640, CWE-338=76 (full 76-hit machine-readable inventory in allHits, categorized 5+10+61, no catch-all), CWE-843=54, CWE-601=161, CWE-807=59; CWE-862 = 21 publicProcedure endpoints / 46 v1 verb-handler files / 15 v2 guard folders, all enumerated in full. No level:'warning' anywhere; second-order findings G1 and G4 evidence BOTH legs."
         }
       }
     }

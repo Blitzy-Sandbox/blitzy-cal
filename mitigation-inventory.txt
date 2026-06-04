@@ -1,0 +1,1022 @@
+apps/api/v2/src/vercel-webhook.guard.ts:46:constant-time-compare:// Check signature length first (timingSafeEqual throws if lengths differ)
+apps/api/v2/src/vercel-webhook.guard.ts:53:constant-time-compare:const isSignatureValid = crypto.timingSafeEqual(
+packages/app-store/_utils/oauth/decodeOAuthState.ts:1:constant-time-compare:import { createHmac, timingSafeEqual } from "node:crypto";
+packages/app-store/_utils/oauth/decodeOAuthState.ts:30:constant-time-compare:if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+packages/app-store/btcpayserver/api/webhook.ts:85:constant-time-compare:const isValid = crypto.timingSafeEqual(
+packages/features/auth/lib/verifyPassword.ts:1:password-hashing:import { compare } from "bcryptjs";
+packages/lib/auth/hashPassword.ts:1:password-hashing:import { hash } from "bcryptjs";
+apps/api/v1/lib/helpers/verifyApiKey.ts:4:api-key-hashing:import { hashAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
+apps/api/v1/lib/helpers/verifyApiKey.ts:28:api-key-hashing:const hashedKey = hashAPIKey(strippedApiKey);
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:56:api-key-hashing:import { isApiKey, sha256Hash, stripApiKey } from "@/lib/api-key";
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:427:api-key-hashing:const apiKeyHash = sha256Hash(strippedApiKey);
+apps/api/v2/src/ee/bookings/2024-08-13/services/input.service.ts:14:api-key-hashing:import { sha256Hash, isApiKey, stripApiKey } from "@/lib/api-key";
+apps/api/v2/src/ee/bookings/2024-08-13/services/input.service.ts:837:api-key-hashing:const apiKeyHash = sha256Hash(strippedApiKey);
+apps/api/v2/src/lib/api-key/index.ts:3:api-key-hashing:export const sha256Hash = (token: string): string => createHash("sha256").update(token).digest("hex");
+apps/api/v2/src/lib/throttler-guard.ts:2:api-key-hashing:import { sha256Hash, isApiKey, stripApiKey } from "@/lib/api-key";
+apps/api/v2/src/lib/throttler-guard.ts:220:api-key-hashing:? `api_key_${sha256Hash(stripApiKey(authorizationHeader, apiKeyPrefix))}`
+apps/api/v2/src/lib/throttler-guard.ts:221:api-key-hashing:: `access_token_${sha256Hash(authorizationHeader)}`;
+apps/api/v2/src/lib/throttler-guard.ts:227:api-key-hashing:return `oauth_client_${sha256Hash(oauthClientId)}`;
+apps/api/v2/src/lib/throttler-guard.ts:231:api-key-hashing:return `ip_${sha256Hash(IP.toString())}`;
+apps/api/v2/src/modules/api-keys/services/api-keys.service.ts:1:api-key-hashing:import { sha256Hash, stripApiKey } from "@/lib/api-key";
+apps/api/v2/src/modules/api-keys/services/api-keys.service.ts:64:api-key-hashing:const apiKeyHash = sha256Hash(strippedApiKey);
+apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts:1:api-key-hashing:import { sha256Hash, isApiKey, stripApiKey } from "@/lib/api-key";
+apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts:246:api-key-hashing:const apiKeyHash = sha256Hash(strippedApiKey);
+packages/app-store/stripepayment/lib/VerificationTokenService.ts:8:api-key-hashing:const hashedToken = createHash("sha256")
+packages/features/ee/api-keys/lib/apiKeys.ts:4:api-key-hashing:export const hashAPIKey = (apiKey: string): string => createHash("sha256").update(apiKey).digest("hex");
+packages/features/ee/api-keys/lib/apiKeys.ts:8:api-key-hashing:hashAPIKey(apiKey),
+packages/features/ee/api-keys/lib/autoLock.ts:7:api-key-hashing:import { hashAPIKey } from "./apiKeys";
+packages/features/ee/api-keys/lib/autoLock.ts:136:api-key-hashing:const hashedApiKey = hashAPIKey(identifier);
+packages/features/ee/api-keys/lib/findValidApiKey.ts:1:api-key-hashing:import { hashAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
+packages/features/ee/api-keys/lib/findValidApiKey.ts:5:api-key-hashing:const hashedKey = hashAPIKey(apiKey.substring(process.env.API_KEY_PREFIX?.length || 0));
+packages/features/oauth/utils/generateSecret.ts:3:api-key-hashing:export const hashSecretKey = (apiKey: string): string => createHash("sha256").update(apiKey).digest("hex");
+packages/features/routing-forms/lib/getRoutedUrl.ts:46:api-key-hashing:const hash = createHash("sha256").update(paramsString).digest("hex");
+packages/lib/pkce.ts:9:api-key-hashing:const expectedChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
+scripts/seed.ts:6:api-key-hashing:import { hashAPIKey } from "@calcom/ee/api-keys/lib/apiKeys";
+scripts/seed.ts:663:api-key-hashing:const hashedKey = hashAPIKey(apiKey);
+apps/api/v2/src/bootstrap.ts:13:headers-cors-validation:import { BadRequestException, Logger, ValidationPipe, VersioningType } from "@nestjs/common";
+apps/api/v2/src/bootstrap.ts:42:headers-cors-validation:app.use(helmet());
+apps/api/v2/src/bootstrap.ts:56:headers-cors-validation:app.enableCors({
+apps/api/v2/src/bootstrap.ts:72:headers-cors-validation:new ValidationPipe({
+apps/api/v2/src/bootstrap.ts:73:headers-cors-validation:whitelist: true,
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/inputs/create-availability.input.ts:10:headers-cors-validation:* Validated by NestJS's `ValidationPipe` using class-validator decorators.
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/inputs/create-schedule.input.ts:9:headers-cors-validation:* Validated by NestJS's `ValidationPipe` using class-validator decorators.
+apps/api/v2/src/modules/auth/oauth2/inputs/token.input.pipe.ts:70:headers-cors-validation:whitelist: true,
+apps/api/v2/src/modules/organizations/delegation-credentials/inputs/service-account-key.input.ts:62:headers-cors-validation:whitelist: true,
+apps/api/v2/src/modules/organizations/delegation-credentials/inputs/service-account-key.input.ts:77:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/cancel-booking-input.pipe.ts:38:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/cancel-booking-input.pipe.ts:54:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/create-booking-input.pipe.ts:47:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/create-booking-input.pipe.ts:63:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/create-booking-input.pipe.ts:79:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/reschedule-booking-input.pipe.ts:43:headers-cors-validation:whitelist: true,
+packages/platform/types/bookings/2024-08-13/inputs/reschedule-booking-input.pipe.ts:59:headers-cors-validation:whitelist: true,
+packages/platform/types/slots/slots-2024-09-04/inputs/get-slots-input.pipe.ts:62:headers-cors-validation:whitelist: true,
+packages/platform/types/slots/slots-2024-09-04/inputs/get-slots-input.pipe.ts:78:headers-cors-validation:whitelist: true,
+packages/platform/types/slots/slots-2024-09-04/inputs/get-slots-input.pipe.ts:94:headers-cors-validation:whitelist: true,
+packages/platform/types/slots/slots-2024-09-04/inputs/get-slots-input.pipe.ts:110:headers-cors-validation:whitelist: true,
+apps/api/v1/lib/helpers/verifyApiKey.ts:11:authorization:import { isAdminGuard } from "../utils/isAdmin";
+apps/api/v1/lib/helpers/verifyApiKey.ts:44:authorization:const { isAdmin, scope } = await isAdminGuard(req);
+apps/api/v1/lib/utils/isAdmin.ts:8:authorization:export const isAdminGuard = async (req: NextApiRequest) => {
+apps/api/v2/src/app.module.ts:10:authorization:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
+apps/api/v2/src/app.module.ts:44:authorization:// note(Lauris): IMPORTANT: rate limiting is enforced by CustomThrottlerGuard, but we need to have at least one
+apps/api/v2/src/app.module.ts:45:authorization:// entry in the throttlers array otherwise CustomThrottlerGuard is not invoked at all. If we specify only ThrottlerModule
+apps/api/v2/src/app.module.ts:46:authorization:// without .forRootAsync then throttler options are not passed to CustomThrottlerGuard containing redis connection etc.
+apps/api/v2/src/app.module.ts:47:authorization:// So we need to specify at least one dummy throttler here and CustomThrottlerGuard is actually handling the default and custom rate limits.
+apps/api/v2/src/app.module.ts:82:authorization:useClass: CustomThrottlerGuard,
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:70:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:71:authorization:import { OptionalApiAuthGuard } from "@/modules/auth/guards/optional-api-auth/optional-api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:72:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:110:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:134:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:183:authorization:@UseGuards(OptionalApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:306:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/bookings.module.ts:6:authorization:import { BookingPbacGuard } from "@/ee/bookings/2024-08-13/guards/booking-pbac.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/bookings.module.ts:110:authorization:BookingPbacGuard,
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:5:authorization:import { BookingPbacGuard } from "@/ee/bookings/2024-08-13/guards/booking-pbac.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:6:authorization:import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:14:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:15:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:22:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:36:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard, BookingPbacGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:1:authorization:import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:10:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:22:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:38:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-location.controller.ts:1:authorization:import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-location.controller.ts:8:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-location.controller.ts:9:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-location.controller.ts:29:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-location.controller.ts:53:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:48:authorization:import { BookingPbacGuard } from "@/ee/bookings/2024-08-13/guards/booking-pbac.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:49:authorization:import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:76:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:77:authorization:import { OptionalApiAuthGuard } from "@/modules/auth/guards/optional-api-auth/optional-api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:78:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:86:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:108:authorization:@UseGuards(OptionalApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:179:authorization:@UseGuards(OptionalApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:206:authorization:@UseGuards(BookingUidGuard, OptionalApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:241:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard, BookingPbacGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:262:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard, BookingPbacGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:285:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:312:authorization:@UseGuards(BookingUidGuard, OptionalApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:353:authorization:@UseGuards(BookingUidGuard, OptionalApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:409:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:434:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:458:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:489:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:513:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:536:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:558:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/bookings.controller.ts:587:authorization:@UseGuards(ApiAuthGuard, BookingUidGuard, BookingPbacGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/guards/booking-pbac.guard.ts:16:authorization:export class BookingPbacGuard implements CanActivate {
+apps/api/v2/src/ee/bookings/2024-08-13/guards/booking-pbac.guard.ts:35:authorization:throw new BadRequestException("BookingPbacGuard - bookingUid is required");
+apps/api/v2/src/ee/bookings/2024-08-13/guards/booking-pbac.guard.ts:45:authorization:`BookingPbacGuard - user with id=${user.id} does not have access to booking with uid=${bookingUid}`
+apps/api/v2/src/ee/bookings/2024-08-13/guards/booking-uid.guard.ts:4:authorization:export class BookingUidGuard implements CanActivate {
+apps/api/v2/src/ee/bookings/2024-08-13/guards/booking-uid.guard.ts:11:authorization:throw new BadRequestException("BookingUidGuard - Booking UID missing in the request path");
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:22:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:23:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:128:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:140:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:147:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:199:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:225:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:309:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:347:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:385:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:5:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:6:authorization:import { EventTypeOwnershipGuard } from "@/modules/event-types/guards/event-type-ownership.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:25:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:32:authorization:@UseGuards(ApiAuthGuard, EventTypeOwnershipGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:50:authorization:@UseGuards(ApiAuthGuard, EventTypeOwnershipGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:66:authorization:@UseGuards(ApiAuthGuard, EventTypeOwnershipGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.ts:85:authorization:@UseGuards(ApiAuthGuard, EventTypeOwnershipGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:10:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:11:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:12:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:13:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:48:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:67:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:84:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/organizations-event-types-private-links.controller.ts:104:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/ee/event-types-private-links/event-types-private-links.module.ts:2:authorization:import { EventTypeOwnershipGuard } from "@/modules/event-types/guards/event-type-ownership.guard";
+apps/api/v2/src/ee/event-types-private-links/event-types-private-links.module.ts:21:authorization:EventTypeOwnershipGuard,
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:19:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:20:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:56:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:67:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:82:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:101:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:170:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.ts:188:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:24:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:25:authorization:import { OptionalApiAuthGuard } from "@/modules/auth/guards/optional-api-auth/optional-api-auth.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:26:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:64:authorization:@UseGuards(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:86:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:131:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:210:authorization:@UseGuards(OptionalApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:231:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.ts:276:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/gcal/gcal.controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/gcal/gcal.controller.ts:10:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/gcal/gcal.controller.ts:58:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/gcal/gcal.controller.ts:89:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/ee/me/me.controller.ts:8:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/me/me.controller.ts:9:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/me/me.controller.ts:23:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/ee/provider/provider.controller.ts:19:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/provider/provider.controller.ts:57:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.ts:11:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.ts:12:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.ts:37:authorization:* Applies {@link ApiAuthGuard} and {@link PermissionsGuard} globally — all endpoints require
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.ts:47:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/ee/schedules/schedules_2024_06_11/controllers/schedules.controller.ts:6:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/schedules/schedules_2024_06_11/controllers/schedules.controller.ts:7:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/schedules/schedules_2024_06_11/controllers/schedules.controller.ts:39:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/lib/throttler-guard.ts:9:authorization:ThrottlerGuard,
+apps/api/v2/src/lib/throttler-guard.ts:31:authorization:export class CustomThrottlerGuard extends ThrottlerGuard {
+apps/api/v2/src/lib/throttler-guard.ts:32:authorization:private logger = new Logger("CustomThrottlerGuard");
+apps/api/v2/src/lib/throttler-guard.ts:74:authorization:throw new ThrottlerException("CustomThrottlerGuard - Too many requests. Please try again later.");
+apps/api/v2/src/lib/throttler-guard.ts:92:authorization:throw new ThrottlerException("CustomThrottlerGuard - Too many requests. Please try again later.");
+apps/api/v2/src/lib/throttler-guard.ts:106:authorization:throw new ThrottlerException("CustomThrottlerGuard - Too many requests. Please try again later.");
+apps/api/v2/src/lib/throttler-guard.ts:160:authorization:throw new UnauthorizedException("CustomThrottlerGuard - Invalid API Key");
+apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts:7:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts:18:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:6:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:7:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:8:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:9:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:10:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:37:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.conferencing-apps.controller.ts:52:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.controller.ts:6:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.controller.ts:43:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:29:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:30:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:31:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:32:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:33:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:53:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:85:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:100:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:112:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:123:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:141:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:152:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:167:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:181:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:202:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:56:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:78:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:93:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:108:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:129:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.schedules.controller.ts:145:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:13:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:95:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:114:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:134:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/auth/auth.module.ts:2:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/auth/auth.module.ts:3:authorization:import { NextAuthGuard } from "@/modules/auth/guards/next-auth/next-auth.guard";
+apps/api/v2/src/modules/auth/auth.module.ts:27:authorization:providers: [NextAuthGuard, NextAuthStrategy, ApiAuthGuard, ApiAuthStrategy, OAuthFlowService],
+apps/api/v2/src/modules/auth/auth.module.ts:28:authorization:exports: [NextAuthGuard, ApiAuthGuard],
+apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts:3:authorization:import { AuthGuard } from "@nestjs/passport";
+apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts:7:authorization:export class ApiAuthGuard extends AuthGuard("api-auth") {
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:11:authorization:export class PlatformPlanGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:28:authorization:throw new ForbiddenException("PlatformPlanGuard - No user associated with the request.");
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:31:authorization:throw new ForbiddenException("PlatformPlanGuard - No organization associated with the request.");
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:49:authorization:throw new ForbiddenException(`PlatformPlanGuard - No organization found with id=${orgId}.`);
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:57:authorization:`PlatformPlanGuard - No platform subscription found for organization with id=${orgId}.`
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:68:authorization:`PlatformPlanGuard - organization with id=${orgId} does not have required plan for this operation. Minimum plan is ${minimumPlan} while the organization has ${
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.ts:91:authorization:`PlatformPlanGuard - Invalid platform billing plan provided. Current plan: ${props.currentPlan}, Minimum plan: ${props.minimumPlan}`
+apps/api/v2/src/modules/auth/guards/next-auth/next-auth.guard.ts:1:authorization:import { AuthGuard } from "@nestjs/passport";
+apps/api/v2/src/modules/auth/guards/next-auth/next-auth.guard.ts:3:authorization:export class NextAuthGuard extends AuthGuard("next-auth") {
+apps/api/v2/src/modules/auth/guards/optional-api-auth/optional-api-auth.guard.ts:1:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/auth/guards/optional-api-auth/optional-api-auth.guard.ts:8:authorization:export class OptionalApiAuthGuard extends ApiAuthGuard {
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:11:authorization:class OrGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:12:authorization:public readonly logger = new Logger("OrGuard");
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:24:authorization:this.logger.log(`OrGuard - Guard ${Guard.name} granted access`);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:33:authorization:`OrGuard - Guard ${Guard.name} failed: ${
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:40:authorization:this.logger.log("OrGuard - All guards failed, access denied");
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:48:authorization:return OrGuard;
+apps/api/v2/src/modules/auth/guards/organization-roles/organization-roles.guard.ts:12:authorization:export class OrganizationRolesGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/organization-roles/organization-roles.guard.ts:26:authorization:throw new ForbiddenException("OrganizationRolesGuard - No organization associated with the user.");
+apps/api/v2/src/modules/auth/guards/organization-roles/organization-roles.guard.ts:43:authorization:throw new ForbiddenException("OrganizationRolesGuard - Organization is not a platform (SHP).");
+apps/api/v2/src/modules/auth/guards/organization-roles/organization-roles.guard.ts:60:authorization:`OrganizationRolesGuard - User has not accepted membership in the organization.`
+apps/api/v2/src/modules/auth/guards/organization-roles/organization-roles.guard.ts:73:authorization:`OrganizationRolesGuard - User must have one of the roles: ${allowedRoles.join(", ")}.`
+apps/api/v2/src/modules/auth/guards/organizations/is-admin-api-enabled.guard.ts:14:authorization:export class IsAdminAPIEnabledGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/organizations/is-admin-api-enabled.guard.ts:25:authorization:throw new ForbiddenException("IsAdminAPIEnabledGuard - No organization id found in request params.");
+apps/api/v2/src/modules/auth/guards/organizations/is-admin-api-enabled.guard.ts:34:authorization:`IsAdminAPIEnabledGuard - Organization with id=${organizationId} does not have Admin API access. Please contact https://cal.com/sales to upgrade.`
+apps/api/v2/src/modules/auth/guards/organizations/is-admin-api-enabled.guard.ts:65:authorization:`IsAdminAPIEnabledGuard - Organization does not have Admin API access, please contact https://cal.com/sales to upgrade`
+apps/api/v2/src/modules/auth/guards/organizations/is-org.guard.ts:14:authorization:export class IsOrgGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/organizations/is-org.guard.ts:25:authorization:throw new ForbiddenException("IsOrgGuard - No organization id found in request params.");
+apps/api/v2/src/modules/auth/guards/organizations/is-org.guard.ts:36:authorization:`IsOrgGuard - provided organization id=${organizationId} does not represent any existing organization.`
+apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:30:authorization:export class PbacGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:46:authorization:throw new UnauthorizedException("PbacGuard - the request does not have an authorized user provided");
+apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:50:authorization:"PbacGuard - can't check pbac because no teamId or orgId provided within the request url"
+apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:164:authorization:let errorMessage = `PbacGuard - user with id=${userId} does not have the minimum required permissions=${requiredPermissions.join(
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.ts:17:authorization:export class PermissionsGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.ts:49:authorization:"PermissionsGuard - no authentication provided. Provide either authorization bearer token containing managed user access token or oAuth client id in 'x-cal-client-id' header."
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.ts:61:authorization:`PermissionsGuard - oAuth client with id=${
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.ts:80:authorization:`PermissionsGuard - no oAuth client found for access token=${accessToken}`
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.ts:89:authorization:throw new ForbiddenException(`PermissionsGuard - no oAuth client found for client id=${id}`);
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:11:authorization:export class RolesGuard implements CanActivate {
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:12:authorization:private readonly logger = new Logger("RolesGuard Logger");
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:41:authorization:let errorMessage = `RolesGuard - user with id=${user.id} does not have the minimum required role=${allowedRole} within`;
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:94:authorization:`RolesGuard - User is not a member of the organization with id=${orgId}.`
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:112:authorization:throw new ForbiddenException(`RolesGuard - User is not a member of the team with id=${teamId}.`);
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:130:authorization:throw new ForbiddenException(`RolesGuard - User is not part of the organization with id=${orgId}.`);
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:144:authorization:`RolesGuard - User is not part of the team with id=${teamId} and/or, is not an admin nor an owner of the organization with id=${orgId}.`
+apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:197:authorization:throw new Error("RolesGuard - Invalid role");
+apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.ts:18:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.ts:47:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/billing/controllers/billing.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/billing/controllers/billing.controller.ts:6:authorization:import { OrganizationRolesGuard } from "@/modules/auth/guards/organization-roles/organization-roles.guard";
+apps/api/v2/src/modules/billing/controllers/billing.controller.ts:54:authorization:@UseGuards(ApiAuthGuard, OrganizationRolesGuard, IsUserInBillingOrg)
+apps/api/v2/src/modules/billing/controllers/billing.controller.ts:72:authorization:@UseGuards(ApiAuthGuard, OrganizationRolesGuard, IsUserInBillingOrg)
+apps/api/v2/src/modules/billing/controllers/billing.controller.ts:91:authorization:@UseGuards(ApiAuthGuard, OrganizationRolesGuard, IsUserInBillingOrg)
+apps/api/v2/src/modules/billing/controllers/billing.controller.ts:109:authorization:@UseGuards(ApiAuthGuard, OrganizationRolesGuard, IsUserInBillingOrg)
+apps/api/v2/src/modules/cal-unified-calendars/controllers/cal-unified-calendars.controller.ts:3:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/cal-unified-calendars/controllers/cal-unified-calendars.controller.ts:4:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/cal-unified-calendars/controllers/cal-unified-calendars.controller.ts:46:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/modules/cal-unified-calendars/controllers/cal-unified-calendars.controller.ts:83:authorization:@UseGuards(ApiAuthGuard, PermissionsGuard)
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:69:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:88:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:131:authorization:@UseGuards()
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:187:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:202:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:221:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:231:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.ts:24:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/event-types/controllers/event-types-webhooks.controller.ts:3:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/event-types/controllers/event-types-webhooks.controller.ts:5:authorization:import { IsUserEventTypeWebhookGuard } from "@/modules/webhooks/guards/is-user-event-type-webhook-guard";
+apps/api/v2/src/modules/event-types/controllers/event-types-webhooks.controller.ts:40:authorization:@UseGuards(ApiAuthGuard, IsUserEventTypeWebhookGuard)
+apps/api/v2/src/modules/event-types/guards/event-type-ownership.guard.ts:14:authorization:export class EventTypeOwnershipGuard implements CanActivate {
+apps/api/v2/src/modules/event-types/guards/event-type-ownership.guard.ts:23:authorization:throw new ForbiddenException("EventTypeOwnershipGuard - No user associated with the request.");
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.ts:24:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.ts:25:authorization:import { OrganizationRolesGuard } from "@/modules/auth/guards/organization-roles/organization-roles.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.ts:32:authorization:import { OAuthClientGuard } from "@/modules/oauth-clients/guards/oauth-client-guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.ts:45:authorization:@UseGuards(ApiAuthGuard, OAuthClientGuard, OrganizationRolesGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:11:authorization:import { OrganizationRolesGuard } from "@/modules/auth/guards/organization-roles/organization-roles.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:13:authorization:import { IsOAuthClientWebhookGuard } from "@/modules/webhooks/guards/is-oauth-client-webhook-guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:26:authorization:import { OAuthClientGuard } from "../../guards/oauth-client-guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:32:authorization:@UseGuards(ApiAuthGuard, OrganizationRolesGuard, OAuthClientGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:74:authorization:@UseGuards(IsOAuthClientWebhookGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:98:authorization:@UseGuards(IsOAuthClientWebhookGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.ts:140:authorization:@UseGuards(IsOAuthClientWebhookGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:30:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:31:authorization:import { OrganizationRolesGuard } from "@/modules/auth/guards/organization-roles/organization-roles.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:36:authorization:import { OAuthClientGuard } from "@/modules/oauth-clients/guards/oauth-client-guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:47:authorization:@UseGuards(ApiAuthGuard, OrganizationRolesGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:106:authorization:@UseGuards(OAuthClientGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:119:authorization:@UseGuards(OAuthClientGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:143:authorization:@UseGuards(OAuthClientGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.ts:160:authorization:@UseGuards(OAuthClientGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:24:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:25:authorization:import { NextAuthGuard } from "@/modules/auth/guards/next-auth/next-auth.guard";
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:50:authorization:@UseGuards(NextAuthGuard)
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:110:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/oauth-clients/guards/oauth-client-guard.ts:14:authorization:export class OAuthClientGuard implements CanActivate {
+apps/api/v2/src/modules/oauth-clients/guards/oauth-client-guard.ts:24:authorization:throw new ForbiddenException("OAuthClientGuard - No OAuth client associated with the request.");
+apps/api/v2/src/modules/oauth-clients/guards/oauth-client-guard.ts:28:authorization:throw new ForbiddenException("OAuthClientGuard - No organization associated with the user.");
+apps/api/v2/src/modules/oauth-clients/guards/oauth-client-guard.ts:34:authorization:throw new NotFoundException("OAuthClientGuard - OAuth client not found.");
+apps/api/v2/src/modules/oauth-clients/guards/oauth-client-guard.ts:40:authorization:`OAuthClientGuard - forbidden. oAuth client with id=${oAuthClientId} does not belong to the organization with id=${organizationId}.`
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organizations-attributes.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organizations-attributes.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organizations-attributes.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organizations-attributes.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organizations-attributes.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organizations-attributes.controller.ts:41:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/attributes/options/organizations-attributes-options.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/attributes/options/organizations-attributes-options.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/attributes/options/organizations-attributes-options.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/attributes/options/organizations-attributes-options.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/attributes/options/organizations-attributes-options.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/attributes/options/organizations-attributes-options.controller.ts:45:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.ts:12:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.ts:13:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.ts:14:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.ts:15:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.ts:16:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.ts:28:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:79:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:105:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:140:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:159:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:183:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:206:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:232:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.ts:14:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.ts:43:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:12:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:13:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:14:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:15:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:16:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:80:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:114:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:137:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, IsTeamInOrg, RolesGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:160:authorization:@UseGuards(IsOrgGuard, IsTeamInOrg, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:196:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:223:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:254:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:10:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:14:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:46:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:93:authorization:@UseGuards(IsMembershipInOrg)
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:110:authorization:@UseGuards(IsMembershipInOrg)
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.ts:125:authorization:@UseGuards(IsMembershipInOrg)
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:24:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:25:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:26:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:28:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:29:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:45:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:85:authorization:@UseGuards(IsManagedOrgInManagerOrg)
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:125:authorization:@UseGuards(IsManagedOrgInManagerOrg)
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:151:authorization:@UseGuards(IsManagedOrgInManagerOrg)
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:14:authorization:import { PbacGuard } from "@/modules/auth/guards/pbac/pbac.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:15:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.ts:48:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, PbacGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:14:authorization:import { PbacGuard } from "@/modules/auth/guards/pbac/pbac.guard";
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:15:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.ts:43:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, PbacGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:8:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:9:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:11:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:42:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:53:authorization:@UseGuards(RolesGuard)
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:80:authorization:@UseGuards(Or([RolesGuard, IsUserRoutingForm]))
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.ts:103:authorization:@UseGuards(RolesGuard)
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.ts:26:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:14:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:49:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:80:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:98:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:116:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:133:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.controller.ts:152:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:65:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:104:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:116:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:1:authorization:import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:17:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:18:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:19:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:20:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:21:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:35:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:73:authorization:@UseGuards(
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:74:authorization:ApiAuthGuard,
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:75:authorization:BookingUidGuard,
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:76:authorization:IsOrgGuard,
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:77:authorization:RolesGuard,
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:79:authorization:PlatformPlanGuard,
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.ts:80:authorization:IsAdminAPIEnabledGuard
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:31:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:32:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:33:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:34:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:35:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:53:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:108:authorization:@UseGuards(IsTeamInOrg)
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:120:authorization:@UseGuards(IsTeamInOrg)
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:137:authorization:@UseGuards(IsTeamInOrg)
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.ts:8:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.ts:9:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.ts:10:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.ts:11:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.ts:12:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.ts:26:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:10:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:11:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:12:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:13:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:52:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:68:authorization:@UseGuards()
+apps/api/v2/src/modules/organizations/teams/memberships/organizations-teams-memberships.controller.ts:94:authorization:@UseGuards()
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:14:authorization:import { PbacGuard } from "@/modules/auth/guards/pbac/pbac.guard";
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:15:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:49:authorization:@UseGuards(
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:50:authorization:ApiAuthGuard,
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:51:authorization:IsOrgGuard,
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:52:authorization:PbacGuard,
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:53:authorization:RolesGuard,
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:55:authorization:PlatformPlanGuard,
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.ts:56:authorization:IsAdminAPIEnabledGuard
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:14:authorization:import { PbacGuard } from "@/modules/auth/guards/pbac/pbac.guard";
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:15:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:44:authorization:@UseGuards(
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:45:authorization:ApiAuthGuard,
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:46:authorization:IsOrgGuard,
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:47:authorization:PbacGuard,
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:48:authorization:RolesGuard,
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:50:authorization:PlatformPlanGuard,
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.ts:51:authorization:IsAdminAPIEnabledGuard
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:41:authorization:@UseGuards(
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:42:authorization:ApiAuthGuard,
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:43:authorization:IsOrgGuard,
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:46:authorization:PlatformPlanGuard,
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:47:authorization:RolesGuard,
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.ts:48:authorization:IsAdminAPIEnabledGuard
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.ts:6:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.ts:7:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.ts:8:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.ts:27:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:14:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:32:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, IsTeamInOrg, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:43:authorization:@UseGuards(IsTeamInOrg)
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.controller.ts:67:authorization:@UseGuards(IsUserInOrgTeam)
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:6:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:7:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:8:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:9:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:10:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:50:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:10:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:11:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:12:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:13:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:14:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:55:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, IsTeamInOrg, PlatformPlanGuard, RolesGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:98:authorization:@UseGuards(IsEventTypeWorkflowInTeam)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:112:authorization:@UseGuards(IsRoutingFormWorkflowInTeam)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:155:authorization:@UseGuards(IsEventTypeWorkflowInTeam)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:175:authorization:@UseGuards(IsRoutingFormWorkflowInTeam)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:195:authorization:@UseGuards(IsEventTypeWorkflowInTeam)
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.ts:208:authorization:@UseGuards(IsRoutingFormWorkflowInTeam)
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings-controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings-controller.ts:10:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings-controller.ts:11:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings-controller.ts:12:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings-controller.ts:13:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings-controller.ts:26:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsUserInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:11:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:12:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:13:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:14:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:15:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:52:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:53:authorization:@UseGuards(IsOrgGuard)
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:117:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.controller.ts:138:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:10:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:11:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:12:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:13:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:53:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:54:authorization:@UseGuards(IsOrgGuard)
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:68:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:86:authorization:@UseGuards(IsUserInOrg)
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:102:authorization:@UseGuards(IsUserInOrg, IsUserOOO)
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo-controller.ts:120:authorization:@UseGuards(IsUserInOrg, IsUserOOO)
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:9:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:10:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:11:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:12:authorization:import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:14:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:50:authorization:@UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, PlatformPlanGuard, IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:109:authorization:@UseGuards(IsWebhookInOrg)
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:125:authorization:@UseGuards(IsWebhookInOrg)
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.controller.ts:141:authorization:@UseGuards(IsWebhookInOrg)
+apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts:22:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts:80:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/selected-calendars/controllers/selected-calendars.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/selected-calendars/controllers/selected-calendars.controller.ts:26:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:37:authorization:import { OptionalApiAuthGuard } from "@/modules/auth/guards/optional-api-auth/optional-api-auth.guard";
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:48:authorization:* - `POST /v2/slots/reservations`       — Reserve a slot to prevent double-booking (optional auth via `OptionalApiAuthGuard`).
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:57:authorization:* `OptionalApiAuthGuard`, which enables optional authentication for user context
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:332:authorization:* Protected by {@link OptionalApiAuthGuard}: when authenticated (via OAuth, API key,
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:341:authorization:@UseGuards(OptionalApiAuthGuard)
+apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:50:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:80:authorization:@UseGuards()
+apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:151:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/teams/bookings/teams-bookings.controller.ts:6:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/bookings/teams-bookings.controller.ts:7:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/bookings/teams-bookings.controller.ts:20:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types-webhooks.controller.ts:21:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types-webhooks.controller.ts:22:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types-webhooks.controller.ts:24:authorization:import { IsTeamEventTypeWebhookGuard } from "@/modules/webhooks/guards/is-team-event-type-webhook-guard";
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types-webhooks.controller.ts:41:authorization:@UseGuards(ApiAuthGuard, RolesGuard, IsTeamEventTypeWebhookGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:8:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:9:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:74:authorization:* Guards: `ApiAuthGuard` and `RolesGuard` with `@Roles("TEAM_ADMIN")` correctly enforce team admin
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:90:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:121:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:150:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:175:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:215:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.ts:254:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts:6:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts:27:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/memberships/controllers/teams-memberships.controller.ts:23:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/memberships/controllers/teams-memberships.controller.ts:24:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/memberships/controllers/teams-memberships.controller.ts:40:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/schedules/controllers/teams-schedules.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/schedules/controllers/teams-schedules.controller.ts:5:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/schedules/controllers/teams-schedules.controller.ts:17:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:11:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:12:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:28:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:64:authorization:@UseGuards(RolesGuard)
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:86:authorization:@UseGuards(RolesGuard)
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:99:authorization:@UseGuards(RolesGuard)
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:5:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:6:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:45:authorization:@UseGuards(ApiAuthGuard, RolesGuard)
+apps/api/v2/src/modules/verified-resources/controllers/users-verified-resources.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/verified-resources/controllers/users-verified-resources.controller.ts:32:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts:4:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts:7:authorization:import { IsUserWebhookGuard } from "@/modules/webhooks/guards/is-user-webhook-guard";
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts:30:authorization:@UseGuards(ApiAuthGuard)
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts:59:authorization:@UseGuards(IsUserWebhookGuard)
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts:79:authorization:@UseGuards(IsUserWebhookGuard)
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts:113:authorization:@UseGuards(IsUserWebhookGuard)
+apps/api/v2/src/modules/webhooks/guards/is-oauth-client-webhook-guard.ts:18:authorization:export class IsOAuthClientWebhookGuard implements CanActivate {
+apps/api/v2/src/modules/webhooks/guards/is-oauth-client-webhook-guard.ts:35:authorization:throw new ForbiddenException("IsOAuthClientWebhookGuard - User not authenticated");
+apps/api/v2/src/modules/webhooks/guards/is-oauth-client-webhook-guard.ts:40:authorization:"IsOAuthClientWebhookGuard - webhookId parameter not specified in the request"
+apps/api/v2/src/modules/webhooks/guards/is-oauth-client-webhook-guard.ts:46:authorization:"IsOAuthClientWebhookGuard - oAuthClientId parameter not specified in the request"
+apps/api/v2/src/modules/webhooks/guards/is-oauth-client-webhook-guard.ts:53:authorization:throw new NotFoundException(`IsOAuthClientWebhookGuard - OAuthClient (${oAuthClientId}) not found`);
+apps/api/v2/src/modules/webhooks/guards/is-oauth-client-webhook-guard.ts:63:authorization:throw new ForbiddenException("IsOAuthClientWebhookGuard - Webhook does not belong to this oAuthClient");
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:19:authorization:export class IsTeamEventTypeWebhookGuard implements CanActivate {
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:46:authorization:throw new ForbiddenException("IsTeamEventTypeWebhookGuard - No user associated with the request.");
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:49:authorization:throw new BadRequestException("IsTeamEventTypeWebhookGuard - Team ID is required.");
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:52:authorization:throw new BadRequestException("IsTeamEventTypeWebhookGuard - Event Type ID is required.");
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:60:authorization:`IsTeamEventTypeWebhookGuard - User (${userId}) is not an admin/owner of team (${teamId})`
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:69:authorization:`IsTeamEventTypeWebhookGuard - Event type (${eventTypeId}) not found for team (${teamId})`
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:79:authorization:throw new NotFoundException(`IsTeamEventTypeWebhookGuard - Webhook (${webhookId}) not found`);
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:82:authorization:throw new BadRequestException(`IsTeamEventTypeWebhookGuard - Webhook (${webhookId}) no event type`);
+apps/api/v2/src/modules/webhooks/guards/is-team-event-type-webhook-guard.ts:85:authorization:throw new ForbiddenException(`IsTeamEventTypeWebhookGuard - Webhook mismatch with event type`);
+apps/api/v2/src/modules/webhooks/guards/is-user-event-type-webhook-guard.ts:17:authorization:export class IsUserEventTypeWebhookGuard implements CanActivate {
+apps/api/v2/src/modules/webhooks/guards/is-user-event-type-webhook-guard.ts:32:authorization:throw new ForbiddenException("IsUserEventTypeWebhookGuard - No user associated with the request.");
+apps/api/v2/src/modules/webhooks/guards/is-user-event-type-webhook-guard.ts:38:authorization:throw new NotFoundException(`IsUserEventTypeWebhookGuard - Event type (${eventTypeId}) not found`);
+apps/api/v2/src/modules/webhooks/guards/is-user-event-type-webhook-guard.ts:42:authorization:`IsUserEventTypeWebhookGuard - User (${user.id}) is not the owner of event type (${eventTypeId})`
+apps/api/v2/src/modules/webhooks/guards/is-user-event-type-webhook-guard.ts:52:authorization:`IsUserEventTypeWebhookGuard - Webhook (${webhookId}) is not associated with an event type`
+apps/api/v2/src/modules/webhooks/guards/is-user-event-type-webhook-guard.ts:57:authorization:`IsUserEventTypeWebhookGuard - Webhook (${webhookId}) is not associated with event type (${eventTypeId})`
+apps/api/v2/src/modules/webhooks/guards/is-user-webhook-guard.ts:9:authorization:export class IsUserWebhookGuard implements CanActivate {
+apps/api/v2/src/modules/webhooks/guards/is-user-webhook-guard.ts:18:authorization:throw new ForbiddenException("IsUserWebhookGuard - No user associated with the request.");
+apps/api/v2/src/modules/webhooks/guards/is-user-webhook-guard.ts:22:authorization:throw new ForbiddenException("IsUserWebhookGuard - No webhook id found in request params.");
+apps/api/v2/src/modules/webhooks/guards/is-user-webhook-guard.ts:29:authorization:`IsUserWebhookGuard - user with id=(${user.id}) is not the owner of webhook with id=(${webhookId})`
+apps/api/v2/src/vercel-webhook.controller.ts:12:authorization:import { VercelWebhookGuard } from "./vercel-webhook.guard";
+apps/api/v2/src/vercel-webhook.controller.ts:28:authorization:@UseGuards(VercelWebhookGuard)
+apps/api/v2/src/vercel-webhook.guard.ts:5:authorization:export class VercelWebhookGuard implements CanActivate {
+apps/api/v2/src/vercel-webhook.guard.ts:6:authorization:private readonly logger = new Logger(VercelWebhookGuard.name);
+apps/web/app/(use-page-wrapper)/apps/routing-forms/[...pages]/RoutingFormAuthGuard.tsx:5:authorization:export function RoutingFormAuthGuard({ children }: { children: React.ReactNode }) {
+apps/web/app/(use-page-wrapper)/apps/routing-forms/[...pages]/layout.tsx:4:authorization:import { RoutingFormAuthGuard } from "./RoutingFormAuthGuard";
+apps/web/app/(use-page-wrapper)/apps/routing-forms/[...pages]/layout.tsx:19:authorization:<RoutingFormAuthGuard>
+apps/web/app/(use-page-wrapper)/apps/routing-forms/[...pages]/layout.tsx:21:authorization:</RoutingFormAuthGuard>
+packages/features/pbac/client/components/WorkflowTabPermissionGuard.tsx:12:authorization:export const WorkflowTabPermissionGuard = ({
+apps/web/components/PageWrapperAppDir.tsx:18:csp-nonce:// See https://github.com/kentcdodds/nonce-hydration-issues
+apps/web/lib/csp.ts:21:csp-nonce:? // 'self' 'unsafe-inline' https: added for Browsers not supporting strict-dynamic
+apps/web/lib/csp.ts:22:csp-nonce:`'nonce-${nonce}' 'strict-dynamic' 'self' 'unsafe-inline' https:`
+apps/web/lib/csp.ts:23:csp-nonce:: // Note: We could use 'strict-dynamic' with 'nonce-..' instead of unsafe-inline but there are some streaming related scripts that get blocked(because they don't have nonce on them). It causes a really frustrating full page error model by Next.js to show up sometimes
+apps/web/lib/csp.ts:38:csp-nonce:export function getCspNonce() {
+apps/web/proxy.ts:2:csp-nonce:import { getCspHeader, getCspNonce } from "@lib/csp";
+apps/web/proxy.ts:148:csp-nonce:const nonce = getCspNonce();
+apps/web/app/api/auth/signup/route.ts:14:bot-protection:import { checkCfTurnstileToken } from "@calcom/lib/server/checkCfTurnstileToken";
+apps/web/app/api/auth/signup/route.ts:51:bot-protection:await checkCfTurnstileToken({
+apps/web/modules/auth/components/Turnstile.tsx:1:bot-protection:import type { TurnstileProps } from "react-turnstile";
+apps/web/modules/auth/components/Turnstile.tsx:2:bot-protection:import Turnstile from "react-turnstile";
+apps/web/modules/auth/components/Turnstile.tsx:6:bot-protection:type Props = Omit<TurnstileProps, "sitekey">;
+apps/web/modules/auth/components/Turnstile.tsx:8:bot-protection:export default function TurnstileWidget(props: Props) {
+apps/web/modules/auth/components/Turnstile.tsx:11:bot-protection:return <Turnstile {...props} sitekey={CLOUDFLARE_SITE_ID} theme="auto" />;
+apps/web/modules/bookings/components/Booker.tsx:7:bot-protection:import TurnstileCaptcha from "@calcom/web/modules/auth/components/Turnstile";
+apps/web/modules/bookings/components/Booker.tsx:215:bot-protection:// Cloudflare Turnstile Captcha
+apps/web/modules/bookings/components/Booker.tsx:604:bot-protection:<TurnstileCaptcha
+apps/web/modules/signup-view.tsx:30:bot-protection:import { INVALID_CLOUDFLARE_TOKEN_ERROR } from "@calcom/lib/server/checkCfTurnstileToken";
+apps/web/modules/signup-view.tsx:61:bot-protection:const TurnstileCaptcha = dynamic(() => import("@calcom/web/modules/auth/components/Turnstile"), {
+apps/web/modules/signup-view.tsx:203:bot-protection:const [turnstileKey, setTurnstileKey] = useState(0);
+apps/web/modules/signup-view.tsx:317:bot-protection:setTurnstileKey((k) => k + 1);
+apps/web/modules/signup-view.tsx:550:bot-protection:{/* Cloudflare Turnstile Captcha */}
+apps/web/modules/signup-view.tsx:552:bot-protection:<TurnstileCaptcha
+apps/web/modules/signup-view.tsx:553:bot-protection:key={turnstileKey}
+apps/web/pages/api/book/event.ts:12:bot-protection:import { checkCfTurnstileToken } from "@calcom/lib/server/checkCfTurnstileToken";
+apps/web/pages/api/book/event.ts:22:bot-protection:await checkCfTurnstileToken({
+apps/web/pages/api/book/recurring-event.ts:8:bot-protection:import { checkCfTurnstileToken } from "@calcom/lib/server/checkCfTurnstileToken";
+apps/web/pages/api/book/recurring-event.ts:32:bot-protection:await checkCfTurnstileToken({
+packages/lib/server/checkCfTurnstileToken.ts:7:bot-protection:export async function checkCfTurnstileToken({ token, remoteIp }: { token?: string; remoteIp: string }) {
+packages/lib/server/checkCfTurnstileToken.ts:8:bot-protection:// This means the instance doesn't have turnstile enabled - we skip the check and just return success.
+packages/lib/server/checkCfTurnstileToken.ts:25:bot-protection:const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:4:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:7:rate-limiting:export const rateLimitApiKey: NextMiddleware = async (req, res, next) => {
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:14:rate-limiting:await checkRateLimitAndThrowError({
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:16:rate-limiting:rateLimitingType: "api",
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:17:rate-limiting:onRateLimiterResponse: async (response) => {
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:18:rate-limiting:res.setHeader("X-RateLimit-Limit", response.limit);
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:19:rate-limiting:res.setHeader("X-RateLimit-Remaining", response.remaining);
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:20:rate-limiting:res.setHeader("X-RateLimit-Reset", response.reset);
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:26:rate-limiting:rateLimitResponse: response,
+apps/api/v1/lib/helpers/rateLimitApiKey.ts:44:rate-limiting:return res.status(429).json({ message: "Rate limit exceeded" });
+apps/api/v1/lib/helpers/withMiddleware.ts:15:rate-limiting:import { rateLimitApiKey } from "./rateLimitApiKey";
+apps/api/v1/lib/helpers/withMiddleware.ts:29:rate-limiting:rateLimitApiKey,
+apps/api/v1/lib/helpers/withMiddleware.ts:43:rate-limiting:"rateLimitApiKey",
+apps/api/v2/src/app.module.ts:1:rate-limiting:import { ThrottlerStorageRedisService } from "@nest-lab/throttler-storage-redis";
+apps/api/v2/src/app.module.ts:6:rate-limiting:import { seconds, ThrottlerModule } from "@nestjs/throttler";
+apps/api/v2/src/app.module.ts:10:rate-limiting:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
+apps/api/v2/src/app.module.ts:40:rate-limiting:ThrottlerModule.forRootAsync({
+apps/api/v2/src/app.module.ts:44:rate-limiting:// note(Lauris): IMPORTANT: rate limiting is enforced by CustomThrottlerGuard, but we need to have at least one
+apps/api/v2/src/app.module.ts:45:rate-limiting:// entry in the throttlers array otherwise CustomThrottlerGuard is not invoked at all. If we specify only ThrottlerModule
+apps/api/v2/src/app.module.ts:46:rate-limiting:// without .forRootAsync then throttler options are not passed to CustomThrottlerGuard containing redis connection etc.
+apps/api/v2/src/app.module.ts:47:rate-limiting:// So we need to specify at least one dummy throttler here and CustomThrottlerGuard is actually handling the default and custom rate limits.
+apps/api/v2/src/app.module.ts:48:rate-limiting:throttlers: [
+apps/api/v2/src/app.module.ts:55:rate-limiting:storage: new ThrottlerStorageRedisService(redisService.redis),
+apps/api/v2/src/app.module.ts:70:rate-limiting:provide: ThrottlerStorageRedisService,
+apps/api/v2/src/app.module.ts:72:rate-limiting:return new ThrottlerStorageRedisService(redisService.redis);
+apps/api/v2/src/app.module.ts:82:rate-limiting:useClass: CustomThrottlerGuard,
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:11:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-attendees.controller.ts:37:rate-limiting:@Throttle({
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:6:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:39:rate-limiting:@Throttle({
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:50:rate-limiting:**Rate Limiting:**
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/booking-guests.controller.ts:51:rate-limiting:This endpoint is rate limited to 5 requests per minute to prevent abuse.
+apps/api/v2/src/ee/platform-endpoints-module.ts:47:rate-limiting:// TODO: apply ratelimits
+apps/api/v2/src/lib/endpoint-throttler-decorator.ts:1:rate-limiting:import { RateLimitType } from "@/lib/throttler-guard";
+apps/api/v2/src/lib/endpoint-throttler-decorator.ts:4:rate-limiting:export const Throttle = Reflector.createDecorator<RateLimitType>();
+apps/api/v2/src/lib/throttler-guard.ts:3:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/lib/throttler-guard.ts:5:rate-limiting:import { ThrottlerStorageRedisService } from "@nest-lab/throttler-storage-redis";
+apps/api/v2/src/lib/throttler-guard.ts:9:rate-limiting:ThrottlerGuard,
+apps/api/v2/src/lib/throttler-guard.ts:10:rate-limiting:ThrottlerException,
+apps/api/v2/src/lib/throttler-guard.ts:11:rate-limiting:ThrottlerRequest,
+apps/api/v2/src/lib/throttler-guard.ts:12:rate-limiting:ThrottlerModuleOptions,
+apps/api/v2/src/lib/throttler-guard.ts:13:rate-limiting:} from "@nestjs/throttler";
+apps/api/v2/src/lib/throttler-guard.ts:19:rate-limiting:const rateLimitSchema = z.object({
+apps/api/v2/src/lib/throttler-guard.ts:25:rate-limiting:export type RateLimitType = z.infer<typeof rateLimitSchema>;
+apps/api/v2/src/lib/throttler-guard.ts:26:rate-limiting:const rateLimitsSchema = z.array(rateLimitSchema);
+apps/api/v2/src/lib/throttler-guard.ts:31:rate-limiting:export class CustomThrottlerGuard extends ThrottlerGuard {
+apps/api/v2/src/lib/throttler-guard.ts:32:rate-limiting:private logger = new Logger("CustomThrottlerGuard");
+apps/api/v2/src/lib/throttler-guard.ts:44:rate-limiting:options: ThrottlerModuleOptions,
+apps/api/v2/src/lib/throttler-guard.ts:45:rate-limiting:@Inject(ThrottlerStorageRedisService) protected readonly storageService: ThrottlerStorageRedisService,
+apps/api/v2/src/lib/throttler-guard.ts:53:rate-limiting:protected async handleRequest(requestProps: ThrottlerRequest): Promise<boolean> {
+apps/api/v2/src/lib/throttler-guard.ts:55:rate-limiting:const throttleOptions = this.reflector.get(Throttle, context.getHandler());
+apps/api/v2/src/lib/throttler-guard.ts:60:rate-limiting:if (throttleOptions) {
+apps/api/v2/src/lib/throttler-guard.ts:61:rate-limiting:return this.handleApiEndpointThrottle(tracker, throttleOptions, response);
+apps/api/v2/src/lib/throttler-guard.ts:71:rate-limiting:private async handleApiEndpointThrottle(tracker: string, options: RateLimitType, response: Response) {
+apps/api/v2/src/lib/throttler-guard.ts:72:rate-limiting:const { isBlocked } = await this.incrementRateLimit(`${tracker}_${options.name}`, options, response);
+apps/api/v2/src/lib/throttler-guard.ts:74:rate-limiting:throw new ThrottlerException("CustomThrottlerGuard - Too many requests. Please try again later.");
+apps/api/v2/src/lib/throttler-guard.ts:81:rate-limiting:const rateLimits = await this.getRateLimitsForApiKeyTracker(tracker);
+apps/api/v2/src/lib/throttler-guard.ts:84:rate-limiting:for (const rateLimit of rateLimits) {
+apps/api/v2/src/lib/throttler-guard.ts:85:rate-limiting:const { isBlocked } = await this.incrementRateLimit(tracker, rateLimit, response);
+apps/api/v2/src/lib/throttler-guard.ts:92:rate-limiting:throw new ThrottlerException("CustomThrottlerGuard - Too many requests. Please try again later.");
+apps/api/v2/src/lib/throttler-guard.ts:99:rate-limiting:const rateLimit = this.getDefaultRateLimit(tracker);
+apps/api/v2/src/lib/throttler-guard.ts:100:rate-limiting:/*this.logger.verbose(`Tracker "${tracker}" uses default rate limits because it is not tracking api key:
+apps/api/v2/src/lib/throttler-guard.ts:101:rate-limiting:${JSON.stringify(rateLimit, null, 2)}
+apps/api/v2/src/lib/throttler-guard.ts:104:rate-limiting:const { isBlocked } = await this.incrementRateLimit(tracker, rateLimit, response);
+apps/api/v2/src/lib/throttler-guard.ts:106:rate-limiting:throw new ThrottlerException("CustomThrottlerGuard - Too many requests. Please try again later.");
+apps/api/v2/src/lib/throttler-guard.ts:112:rate-limiting:private getDefaultRateLimit(tracker: string) {
+apps/api/v2/src/lib/throttler-guard.ts:141:rate-limiting:private async getRateLimitsForApiKeyTracker(tracker: string) {
+apps/api/v2/src/lib/throttler-guard.ts:142:rate-limiting:const cacheKey = `rate_limit:${tracker}`;
+apps/api/v2/src/lib/throttler-guard.ts:144:rate-limiting:const cachedRateLimits = await this.storageService.redis.get(cacheKey);
+apps/api/v2/src/lib/throttler-guard.ts:145:rate-limiting:if (cachedRateLimits) {
+apps/api/v2/src/lib/throttler-guard.ts:146:rate-limiting:/*this.logger.verbose(`Tracker "${tracker}" rate limits retrieved from redis cache:
+apps/api/v2/src/lib/throttler-guard.ts:147:rate-limiting:${cachedRateLimits}
+apps/api/v2/src/lib/throttler-guard.ts:149:rate-limiting:return rateLimitsSchema.parse(JSON.parse(cachedRateLimits));
+apps/api/v2/src/lib/throttler-guard.ts:153:rate-limiting:let rateLimits: RateLimitType[];
+apps/api/v2/src/lib/throttler-guard.ts:160:rate-limiting:throw new UnauthorizedException("CustomThrottlerGuard - Invalid API Key");
+apps/api/v2/src/lib/throttler-guard.ts:163:rate-limiting:rateLimits = await this.dbRead.prisma.rateLimit.findMany({
+apps/api/v2/src/lib/throttler-guard.ts:168:rate-limiting:if (!rateLimits || rateLimits.length === 0) {
+apps/api/v2/src/lib/throttler-guard.ts:169:rate-limiting:rateLimits = [this.getDefaultRateLimit(tracker)];
+apps/api/v2/src/lib/throttler-guard.ts:170:rate-limiting:/*this.logger.verbose(`Tracker "${tracker}" rate limits not found in database. Using default rate limits:
+apps/api/v2/src/lib/throttler-guard.ts:171:rate-limiting:${JSON.stringify(rateLimits, null, 2)}`);*/
+apps/api/v2/src/lib/throttler-guard.ts:174:rate-limiting:await this.storageService.redis.set(cacheKey, JSON.stringify(rateLimits), "EX", 3600);
+apps/api/v2/src/lib/throttler-guard.ts:176:rate-limiting:return rateLimits;
+apps/api/v2/src/lib/throttler-guard.ts:179:rate-limiting:private async incrementRateLimit(tracker: string, rateLimit: RateLimitType, response: Response) {
+apps/api/v2/src/lib/throttler-guard.ts:180:rate-limiting:const { name, limit, ttl, blockDuration } = rateLimit;
+apps/api/v2/src/lib/throttler-guard.ts:193:rate-limiting:response.setHeader(`X-RateLimit-Limit-${nameFirstUpper}`, limit);
+apps/api/v2/src/lib/throttler-guard.ts:195:rate-limiting:`X-RateLimit-Remaining-${nameFirstUpper}`,
+apps/api/v2/src/lib/throttler-guard.ts:198:rate-limiting:response.setHeader(`X-RateLimit-Reset-${nameFirstUpper}`, timeToBlockExpire || timeToExpire);
+apps/api/v2/src/lib/throttler-guard.ts:201:rate-limiting:`Tracker "${tracker}" rate limit "${name}" incremented. isBlocked ${isBlocked}, totalHits ${totalHits}, timeToExpire ${timeToExpire}, timeToBlockExpire ${timeToBlockExpire}`
+apps/api/v2/src/lib/throttler-guard.ts:204:rate-limiting:`Tracker "${tracker}" rate limit "${name}" response headers:
+apps/api/v2/src/lib/throttler-guard.ts:205:rate-limiting:X-RateLimit-Limit-${nameFirstUpper}: ${limit},
+apps/api/v2/src/lib/throttler-guard.ts:206:rate-limiting:X-RateLimit-Remaining-${nameFirstUpper}: ${timeToBlockExpire ? 0 : Math.max(0, limit - totalHits)},
+apps/api/v2/src/lib/throttler-guard.ts:207:rate-limiting:X-RateLimit-Reset-${nameFirstUpper}: ${timeToBlockExpire || timeToExpire}`
+apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:2:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:44:rate-limiting:@Throttle({ limit: 3, ttl: 60000, blockDuration: 60000, name: "atoms_verification_email_send_code" })
+apps/api/v2/src/modules/endpoints.module.ts:52:rate-limiting:// TODO: apply ratelimits
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:20:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.ts:145:rate-limiting:@Throttle({ limit: 1, ttl: 1000, blockDuration: 1000, name: "organizations_delete" })
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:26:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.ts:124:rate-limiting:@Throttle({ limit: 1, ttl: 1000, blockDuration: 1000, name: "org_teams_delete" })
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:2:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:59:rate-limiting:@Throttle({
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:90:rate-limiting:@Throttle({
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.ts:144:rate-limiting:@Throttle({
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:8:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.ts:101:rate-limiting:@Throttle({ limit: 1, ttl: 1000, blockDuration: 1000, name: "teams_delete" })
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:2:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:56:rate-limiting:@Throttle({ limit: 5, ttl: 60000, blockDuration: 60000, name: "teams_verified_resources_emails_requests" })
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:80:rate-limiting:@Throttle({ limit: 3, ttl: 60000, blockDuration: 60000, name: "teams_verified_resources_phones_requests" })
+apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:126:rate-limiting:@Throttle({ limit: 3, ttl: 60000, blockDuration: 60000, name: "teams_verified_resources_phones_verify" })
+apps/api/v2/src/modules/verified-resources/controllers/users-verified-resources.controller.ts:2:rate-limiting:import { Throttle } from "@/lib/endpoint-throttler-decorator";
+apps/api/v2/src/modules/verified-resources/controllers/users-verified-resources.controller.ts:43:rate-limiting:@Throttle({ limit: 5, ttl: 60000, blockDuration: 60000, name: "users_verified_resources_emails_requests" })
+apps/api/v2/src/modules/verified-resources/controllers/users-verified-resources.controller.ts:66:rate-limiting:@Throttle({ limit: 3, ttl: 60000, blockDuration: 60000, name: "users_verified_resources_phones_requests" })
+apps/api/v2/src/modules/verified-resources/controllers/users-verified-resources.controller.ts:85:rate-limiting:@Throttle({ limit: 3, ttl: 60000, blockDuration: 60000, name: "users_verified_resources_phones_verify" })
+apps/web/app/(use-page-wrapper)/workflow/new/page.tsx:6:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/(use-page-wrapper)/workflow/new/page.tsx:50:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/(use-page-wrapper)/workflow/new/page.tsx:51:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/auth/forgot-password/route.ts:2:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/auth/forgot-password/route.ts:26:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/auth/forgot-password/route.ts:27:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/auth/reset-password/route.ts:10:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/auth/reset-password/route.ts:43:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/auth/reset-password/route.ts:44:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/auth/reset-password/route.ts:49:rate-limiting:// to brute force 3.8126967e+40 options, but rate limiting provides additional protection.
+apps/web/app/api/auth/signup/route.ts:8:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/auth/signup/route.ts:43:rate-limiting:// Rate limit: 10 signups per 60 seconds per IP
+apps/web/app/api/auth/signup/route.ts:44:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/auth/signup/route.ts:45:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/auth/two-factor/totp/disable/route.ts:10:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/auth/two-factor/totp/disable/route.ts:31:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/auth/two-factor/totp/disable/route.ts:32:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/auth/two-factor/totp/enable/route.ts:9:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/auth/two-factor/totp/enable/route.ts:29:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/auth/two-factor/totp/enable/route.ts:30:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/auth/two-factor/totp/setup/route.ts:13:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/auth/two-factor/totp/setup/route.ts:33:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/auth/two-factor/totp/setup/route.ts:34:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/cancel/route.ts:8:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/app/api/cancel/route.ts:32:rate-limiting:// Rate limit: 10 booking cancellations per 60 seconds per user (or IP if not authenticated)
+apps/web/app/api/cancel/route.ts:36:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/app/api/cancel/route.ts:37:rate-limiting:rateLimitingType: "core",
+apps/web/app/api/cron/monthlyDigestEmail/route.ts:309:rate-limiting:await delay(100); // Adjust the delay as needed to avoid rate limiting
+apps/web/modules/ee/workflows/components/WorkflowStepContainer.tsx:505:rate-limiting:if (err.message === "rate-limit-exceeded") {
+apps/web/modules/ee/workflows/components/WorkflowStepContainer.tsx:506:rate-limiting:message = t("rate_limit_exceeded");
+apps/web/pages/api/book/event.ts:9:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/pages/api/book/event.ts:38:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/pages/api/book/event.ts:39:rate-limiting:rateLimitingType: "core",
+apps/web/pages/api/book/instant-event.ts:5:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/pages/api/book/instant-event.ts:14:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/pages/api/book/instant-event.ts:15:rate-limiting:rateLimitingType: "instantMeeting",
+apps/web/pages/api/book/recurring-event.ts:5:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/web/pages/api/book/recurring-event.ts:38:rate-limiting:await checkRateLimitAndThrowError({
+apps/web/pages/api/book/recurring-event.ts:39:rate-limiting:rateLimitingType: "core",
+packages/app-store/dailyvideo/lib/scripts/deleteRecordings.ts:65:rate-limiting:console.log(`Rate limiting: waiting ${delayTime}ms before next request...`);
+packages/app-store/dailyvideo/lib/scripts/deleteRecordings.ts:103:rate-limiting:`Rate limit exceeded (429). Retrying in ${backoffDelay / 1000}s... (attempt ${retries + 1}/${
+packages/app-store/dailyvideo/lib/scripts/deleteRecordings.ts:111:rate-limiting:throw new Error(`Rate limit exceeded after ${maxRetries + 1} attempts`);
+packages/app-store/dailyvideo/lib/scripts/deleteRecordings.ts:272:rate-limiting:`Rate limit for ${recordingId}. Retrying in ${backoffDelay / 1000}s... (attempt ${retries + 1}/${
+packages/app-store/office365calendar/lib/CalendarService.ts:661:rate-limiting:* Handles HTTP 429 rate limiting responses from Microsoft Graph batch API.
+packages/features/auth/lib/ErrorCode.ts:17:rate-limiting:RateLimitExceeded = "rate-limit-exceeded",
+packages/features/auth/lib/next-auth-options.ts:31:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/auth/lib/next-auth-options.ts:171:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/auth/lib/verifyCodeUnAuthenticated.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/auth/lib/verifyCodeUnAuthenticated.ts:12:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/auth/lib/verifyCodeUnAuthenticated.ts:13:rate-limiting:rateLimitingType: "core",
+packages/features/auth/lib/verifyEmail.ts:12:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/auth/lib/verifyEmail.ts:57:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/auth/lib/verifyEmail.ts:58:rate-limiting:rateLimitingType: "core",
+packages/features/auth/lib/verifyEmail.ts:151:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/auth/lib/verifyEmail.ts:152:rate-limiting:rateLimitingType: "core",
+packages/features/calAIPhone/providers/retellAI/services/CallService.ts:1:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/calAIPhone/providers/retellAI/services/CallService.ts:98:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/calAIPhone/providers/retellAI/services/CallService.ts:99:rate-limiting:rateLimitingType: "core",
+packages/features/calAIPhone/providers/retellAI/services/CallService.ts:193:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/calAIPhone/providers/retellAI/services/CallService.ts:194:rate-limiting:rateLimitingType: "core",
+packages/features/delegation-credentials/scripts/rate-limit-test-google-service-account-impersonation.js:2:rate-limiting:* How to verify that rate limit is different for different impersonated users?
+packages/features/delegation-credentials/scripts/rate-limit-test-google-service-account-impersonation.js:4:rate-limiting:* Terminal 1: Run `node rate-limit-test-google-service-account-impersonation.js email1@cal.com 1000` - This makes email1 hit the limit. 1000 is much more than 600, so it gives more reliability in reaching the limit.
+packages/features/delegation-credentials/scripts/rate-limit-test-google-service-account-impersonation.js:5:rate-limiting:* Terminal 1: Run `node rate-limit-test-google-service-account-impersonation.js email1@cal.com 100` - Verify that email1 is still hitting the limit
+packages/features/delegation-credentials/scripts/rate-limit-test-google-service-account-impersonation.js:7:rate-limiting:* Terminal 2: Run `node rate-limit-test-google-service-account-impersonation.js email2@cal.com 100` - Check for email2's limit, it should not hit the limit
+packages/features/ee/api-keys/lib/autoLock.ts:1:rate-limiting:import type { RatelimitResponse } from "@unkey/ratelimit";
+packages/features/ee/api-keys/lib/autoLock.ts:9:rate-limiting:// This is the number of times a user can exceed the rate limit before being locked
+packages/features/ee/api-keys/lib/autoLock.ts:11:rate-limiting:// This is the duration of the rate limit check window
+packages/features/ee/api-keys/lib/autoLock.ts:17:rate-limiting:rateLimitResponse: RatelimitResponse;
+packages/features/ee/api-keys/lib/autoLock.ts:24:rate-limiting:RATE_LIMIT = "Auto-locking user due to rate limit exceeded",
+packages/features/ee/api-keys/lib/autoLock.ts:33:rate-limiting:* its their rate limit. For example, in the "core" * namespace, a user would need to make at least 50 requests (10 limit × 5 threshold)
+packages/features/ee/api-keys/lib/autoLock.ts:39:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.ts:44:rate-limiting:const { success, remaining } = rateLimitResponse;
+packages/features/ee/api-keys/lib/autoLock.ts:68:rate-limiting:`Rate limit exceeded for ${identifierType}: ${identifier}. Current count: ${currentCount}/${autolockThreshold}`
+packages/features/ee/api-keys/lib/autoLock.ts:165:rate-limiting:// Leaving SMS here but it is handled differently via checkRateLimitForSMS that auto locks
+packages/features/ee/workflows/lib/reminders/aiPhoneCallManager.ts:8:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/ee/workflows/lib/reminders/aiPhoneCallManager.ts:401:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/ee/workflows/lib/reminders/aiPhoneCallManager.ts:402:rate-limiting:rateLimitingType: "core",
+packages/features/ee/workflows/lib/reminders/providers/twilioProvider.ts:7:rate-limiting:import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
+packages/features/ee/workflows/lib/reminders/providers/twilioProvider.ts:81:rate-limiting:await checkSMSRateLimit({
+packages/features/ee/workflows/lib/reminders/providers/twilioProvider.ts:83:rate-limiting:rateLimitingType: "smsMonth",
+packages/features/ee/workflows/lib/reminders/providers/twilioProvider.ts:169:rate-limiting:await checkSMSRateLimit({
+packages/features/ee/workflows/lib/reminders/providers/twilioProvider.ts:171:rate-limiting:rateLimitingType: "smsMonth",
+packages/features/ee/workflows/lib/reminders/reminderScheduler.ts:20:rate-limiting:import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
+packages/features/ee/workflows/lib/reminders/reminderScheduler.ts:115:rate-limiting:await checkSMSRateLimit({
+packages/features/ee/workflows/lib/reminders/reminderScheduler.ts:117:rate-limiting:rateLimitingType: "sms",
+packages/features/handleCreatePhoneCall.ts:5:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/handleCreatePhoneCall.ts:22:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/handleCreatePhoneCall.ts:23:rate-limiting:rateLimitingType: "core",
+packages/features/routing-forms/lib/getRoutedUrl.ts:18:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/routing-forms/lib/getRoutedUrl.ts:151:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/tasker/tasks/executeAIPhoneCall.ts:13:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/tasker/tasks/executeAIPhoneCall.ts:182:rate-limiting:const rateLimitIdentifier = data.teamId
+packages/features/tasker/tasks/executeAIPhoneCall.ts:188:rate-limiting:if (!rateLimitIdentifier) {
+packages/features/tasker/tasks/executeAIPhoneCall.ts:189:rate-limiting:log.warn(`No rate limit identifier found for AI phone call. This should not happen.`, {
+packages/features/tasker/tasks/executeAIPhoneCall.ts:194:rate-limiting:throw new Error("No rate limit identifier found for AI phone call. This should not happen.");
+packages/features/tasker/tasks/executeAIPhoneCall.ts:197:rate-limiting:// TODO: add better rate limiting for AI phone calls
+packages/features/tasker/tasks/executeAIPhoneCall.ts:198:rate-limiting:await checkRateLimitAndThrowError({
+packages/features/tasker/tasks/executeAIPhoneCall.ts:199:rate-limiting:rateLimitingType: "core",
+packages/features/tasker/tasks/executeAIPhoneCall.ts:200:rate-limiting:identifier: rateLimitIdentifier,
+packages/lib/checkRateLimitAndThrowError.ts:2:rate-limiting:import type { RateLimitHelper } from "./rateLimit";
+packages/lib/checkRateLimitAndThrowError.ts:3:rate-limiting:import { rateLimiter } from "./rateLimit";
+packages/lib/checkRateLimitAndThrowError.ts:5:rate-limiting:export async function checkRateLimitAndThrowError({
+packages/lib/checkRateLimitAndThrowError.ts:6:rate-limiting:rateLimitingType = "core",
+packages/lib/checkRateLimitAndThrowError.ts:8:rate-limiting:onRateLimiterResponse,
+packages/lib/checkRateLimitAndThrowError.ts:10:rate-limiting:}: RateLimitHelper) {
+packages/lib/checkRateLimitAndThrowError.ts:11:rate-limiting:const response = await rateLimiter()({ rateLimitingType, identifier, opts });
+packages/lib/checkRateLimitAndThrowError.ts:12:rate-limiting:if (onRateLimiterResponse) onRateLimiterResponse(response);
+packages/lib/checkRateLimitAndThrowError.ts:19:rate-limiting:message: `Rate limit exceeded. Try again in ${secondsToWait} seconds.`,
+packages/lib/rateLimit.ts:1:rate-limiting:import { Ratelimit, type LimitOptions, type RatelimitResponse } from "@unkey/ratelimit";
+packages/lib/rateLimit.ts:6:rate-limiting:const log = logger.getSubLogger({ prefix: ["RateLimit"] });
+packages/lib/rateLimit.ts:8:rate-limiting:export { type RatelimitResponse };
+packages/lib/rateLimit.ts:10:rate-limiting:export type RateLimitHelper = {
+packages/lib/rateLimit.ts:11:rate-limiting:rateLimitingType?:
+packages/lib/rateLimit.ts:24:rate-limiting:* when the rate limit is reached and an error is thrown.
+packages/lib/rateLimit.ts:26:rate-limiting:onRateLimiterResponse?: (response: RatelimitResponse) => void;
+packages/lib/rateLimit.ts:33:rate-limiting:export function rateLimiter() {
+packages/lib/rateLimit.ts:41:rate-limiting:return () => ({ success: true, limit: 10, remaining: 999, reset: 0 }) as RatelimitResponse;
+packages/lib/rateLimit.ts:49:rate-limiting:log.error("Unkey rate limiter encountered unknown error", {
+packages/lib/rateLimit.ts:59:rate-limiting:core: new Ratelimit({
+packages/lib/rateLimit.ts:67:rate-limiting:instantMeeting: new Ratelimit({
+packages/lib/rateLimit.ts:75:rate-limiting:common: new Ratelimit({
+packages/lib/rateLimit.ts:83:rate-limiting:forcedSlowMode: new Ratelimit({
+packages/lib/rateLimit.ts:91:rate-limiting:api: new Ratelimit({
+packages/lib/rateLimit.ts:99:rate-limiting:ai: new Ratelimit({
+packages/lib/rateLimit.ts:107:rate-limiting:sms: new Ratelimit({
+packages/lib/rateLimit.ts:115:rate-limiting:smsMonth: new Ratelimit({
+packages/lib/rateLimit.ts:125:rate-limiting:async function rateLimit({ rateLimitingType = "core", identifier, opts }: RateLimitHelper) {
+packages/lib/rateLimit.ts:130:rate-limiting:return await limiter[rateLimitingType].limit(identifier, opts);
+packages/lib/rateLimit.ts:133:rate-limiting:return rateLimit;
+packages/lib/smsLockState.ts:3:rate-limiting:import type { RateLimitHelper } from "./rateLimit";
+packages/lib/smsLockState.ts:4:rate-limiting:import { rateLimiter } from "./rateLimit";
+packages/lib/smsLockState.ts:6:rate-limiting:export async function checkSMSRateLimit({
+packages/lib/smsLockState.ts:7:rate-limiting:rateLimitingType = "sms",
+packages/lib/smsLockState.ts:9:rate-limiting:onRateLimiterResponse,
+packages/lib/smsLockState.ts:11:rate-limiting:}: RateLimitHelper) {
+packages/lib/smsLockState.ts:12:rate-limiting:const response = await rateLimiter()({ rateLimitingType, identifier, opts });
+packages/lib/smsLockState.ts:15:rate-limiting:if (onRateLimiterResponse) onRateLimiterResponse(response);
+packages/lib/smsLockState.ts:20:rate-limiting:rateLimitingType === "sms" ? SMSLockState.LOCKED : SMSLockState.REVIEW_NEEDED
+packages/platform/atoms/cal-provider/CalProvider.tsx:18:rate-limiting:// retry on 408 (timeout), 429 (rate limit), and 5xx (server errors)
+packages/sms/sms-manager.ts:8:rate-limiting:import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
+packages/sms/sms-manager.ts:14:rate-limiting:* Centralized SMS/WhatsApp dispatcher with rate limiting, credit checks, and Twilio delivery.
+packages/sms/sms-manager.ts:43:rate-limiting:// If teamId is provided, we check the rate limit for the team.
+packages/sms/sms-manager.ts:44:rate-limiting:// If organizerUserId is provided, we check the rate limit for the organizer.
+packages/sms/sms-manager.ts:45:rate-limiting:// If neither is provided(Just in case), we check the rate limit for the reminderPhone.
+packages/sms/sms-manager.ts:46:rate-limiting:await checkSMSRateLimit({
+packages/sms/sms-manager.ts:52:rate-limiting:rateLimitingType: "sms",
+packages/sms/sms-manager.ts:290:rate-limiting:* Sends an SMS to a single attendee with rate limiting, credit checks, and org opt-out enforcement.
+packages/trpc/server/procedures/authedProcedure.ts:7:rate-limiting:/*interface IRateLimitOptions {
+packages/trpc/server/procedures/authedProcedure.ts:11:rate-limiting:const isRateLimitedByUserIdMiddleware = ({ intervalInMs, limit }: IRateLimitOptions) =>
+packages/trpc/server/procedures/authedProcedure.ts:18:rate-limiting:const { isRateLimited } = rateLimit({ intervalInMs }).check(limit, ctx.user.id.toString());
+packages/trpc/server/procedures/authedProcedure.ts:20:rate-limiting:if (isRateLimited) {
+packages/trpc/server/procedures/authedProcedure.ts:28:rate-limiting:/*export const authedRateLimitedProcedure = ({ intervalInMs, limit }: IRateLimitOptions) =>
+packages/trpc/server/procedures/authedProcedure.ts:29:rate-limiting:authedProcedure.use(isRateLimitedByUserIdMiddleware({ intervalInMs, limit }));*/
+packages/trpc/server/routers/loggedInViewer/addSecondaryEmail.handler.ts:4:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/loggedInViewer/addSecondaryEmail.handler.ts:23:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/loggedInViewer/addSecondaryEmail.handler.ts:24:rate-limiting:rateLimitingType: "core",
+packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts:2:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts:25:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts:26:rate-limiting:rateLimitingType: "core",
+packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts:4:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts:28:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts:29:rate-limiting:rateLimitingType: "core",
+packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts:6:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts:206:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts:208:rate-limiting:rateLimitingType: "common",
+packages/trpc/server/routers/viewer/eventTypes/getByViewer.handler.ts:2:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/eventTypes/getByViewer.handler.ts:17:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/eventTypes/getByViewer.handler.ts:19:rate-limiting:rateLimitingType: "common",
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts:33:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts:35:rate-limiting:rateLimitingType: "common",
+packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts:4:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts:26:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts:28:rate-limiting:rateLimitingType: "common",
+packages/trpc/server/routers/viewer/eventTypes/list.handler.ts:1:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/eventTypes/list.handler.ts:33:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/eventTypes/list.handler.ts:35:rate-limiting:rateLimitingType: "common",
+packages/trpc/server/routers/viewer/organizations/verifyCode.handler.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/organizations/verifyCode.handler.ts:49:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/organizations/verifyCode.handler.ts:50:rate-limiting:rateLimitingType: "core",
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.ts:7:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.ts:346:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/teams/removeMember.handler.ts:1:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/teams/removeMember.handler.ts:28:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.ts:22:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.ts:24:rate-limiting:rateLimitingType: "sms",
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.ts:27:rate-limiting:await checkRateLimitAndThrowError({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.ts:29:rate-limiting:rateLimitingType: "smsMonth",
+packages/features/calendars/lib/getCalendarsEvents.ts:4:modern-encryption:import { decryptSecret } from "@calcom/lib/crypto/keyring";
+packages/features/credentials/services/CredentialDataService.ts:1:modern-encryption:import { encryptSecret } from "@calcom/lib/crypto/keyring";
+packages/features/credentials/services/CredentialDataService.ts:34:modern-encryption:// Encryption keyring not configured - this is expected in tests and some environments
+packages/lib/crypto/keyring.ts:4:modern-encryption:type KeyringName = "CREDENTIALS";
+packages/lib/crypto/keyring.ts:9:modern-encryption:ring: KeyringName;
+packages/lib/crypto/keyring.ts:46:modern-encryption:const envKeyringPrefix = (ring: KeyringName): string => {
+packages/lib/crypto/keyring.ts:50:modern-encryption:throw new Error(`Keyring name must be ALL CAPS. Got: ${ring}`);
+packages/lib/crypto/keyring.ts:55:modern-encryption:const getCurrentKid = (ring: KeyringName): string => {
+packages/lib/crypto/keyring.ts:56:modern-encryption:const prefix = envKeyringPrefix(ring);
+packages/lib/crypto/keyring.ts:62:modern-encryption:export function getKeyMaterial(ring: KeyringName, kid: string): Buffer {
+packages/lib/crypto/keyring.ts:63:modern-encryption:const prefix = envKeyringPrefix(ring);
+packages/lib/crypto/keyring.ts:79:modern-encryption:ring: KeyringName;
+packages/lib/crypto/keyring.ts:89:modern-encryption:const cipher = createCipheriv("aes-256-gcm", key, nonce);
+packages/lib/crypto/keyring.ts:120:modern-encryption:const decipher = createDecipheriv("aes-256-gcm", key, nonce);

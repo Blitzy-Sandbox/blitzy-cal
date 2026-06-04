@@ -1,0 +1,542 @@
+apps/web/playwright/fixtures/users.ts:3:password-hashing:import { hashSync as hash } from "bcryptjs";
+apps/web/playwright/signup.e2e.ts:7:password-hashing:import { hashSync } from "bcryptjs";
+packages/features/ee/billing/active-user/seed-active-user-test.ts:30:password-hashing:import bcrypt from "bcryptjs";
+packages/features/ee/billing/active-user/seed-active-user-test.ts:61:password-hashing:const salt = await bcrypt.genSalt(10);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:62:password-hashing:hashedPasswordCache = await bcrypt.hash("password123", salt);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:30:password-hashing:import bcrypt from "bcryptjs";
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:37:password-hashing:const salt = await bcrypt.genSalt(10);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:38:password-hashing:return bcrypt.hash(password, salt);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:29:password-hashing:import bcrypt from "bcryptjs";
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:45:password-hashing:const salt = await bcrypt.genSalt(10);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:46:password-hashing:return bcrypt.hash(password, salt);
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:36:api-key-hashing:import { sha256Hash, stripApiKey } from "@/lib/api-key";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:366:api-key-hashing:const hashedApiKey = `${sha256Hash(stripApiKey(managedOrg?.apiKey, apiKeyPrefix))}`;
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:567:api-key-hashing:const hashedApiKey = `${sha256Hash(stripApiKey(newApiKey, apiKeyPrefix))}`;
+apps/api/v2/test/fixtures/repository/api-keys.repository.fixture.ts:17:api-key-hashing:const hashedKey = createHash("sha256").update(keyString).digest("hex");
+apps/web/playwright/oauth-provider.e2e.ts:35:api-key-hashing:const codeChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
+packages/features/ee/api-keys/lib/autoLock.test.ts:4:api-key-hashing:import { hashAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
+packages/features/ee/api-keys/lib/autoLock.test.ts:13:api-key-hashing:hashAPIKey: vi.fn((key) => `hashed_${key}`),
+packages/features/ee/api-keys/lib/autoLock.test.ts:186:api-key-hashing:expect(hashAPIKey).toHaveBeenCalledWith(testApiKey);
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:327:api-key-hashing:const expectedHash = createHash("sha256")
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:19:authorization:import { isAdminGuard } from "../utils/isAdmin";
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:33:authorization:isAdminGuard: vi.fn(),
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:79:authorization:vi.mocked(isAdminGuard).mockReset();
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:149:authorization:vi.mocked(isAdminGuard).mockResolvedValue({
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:194:authorization:vi.mocked(isAdminGuard).mockResolvedValue({
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:239:authorization:vi.mocked(isAdminGuard).mockResolvedValue({
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:8:authorization:import { isAdminGuard } from "../../../lib/utils/isAdmin";
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:71:authorization:const { isAdmin, scope } = await isAdminGuard(req);
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:88:authorization:const { isAdmin, scope } = await isAdminGuard(req);
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:105:authorization:const { isAdmin, scope } = await isAdminGuard(req);
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:122:authorization:const { isAdmin, scope } = await isAdminGuard(req);
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:138:authorization:const { isAdmin } = await isAdminGuard(req);
+apps/api/v2/src/app.e2e-spec.ts:16:authorization:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
+apps/api/v2/src/app.e2e-spec.ts:55:authorization:jest.spyOn(CustomThrottlerGuard.prototype, "getDefaultLimit").mockReturnValue(mockDefaultLimit);
+apps/api/v2/src/app.e2e-spec.ts:56:authorization:jest.spyOn(CustomThrottlerGuard.prototype, "getDefaultTtl").mockReturnValue(mockDefaultTtl);
+apps/api/v2/src/app.e2e-spec.ts:58:authorization:.spyOn(CustomThrottlerGuard.prototype, "getDefaultBlockDuration")
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings-billing.e2e-spec.ts:26:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings-billing.e2e-spec.ts:57:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings-billing.e2e-spec.ts:280:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.e2e-spec.ts:25:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.e2e-spec.ts:55:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:20:authorization:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:28:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:71:authorization:mockThrottlerGuard();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:76:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-guests.e2e-spec.ts:32:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-guests.e2e-spec.ts:78:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/api-key-bookings.e2e-spec.ts:36:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/api-key-bookings.e2e-spec.ts:90:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-access-auth.e2e-spec.ts:21:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-access-auth.e2e-spec.ts:54:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-fields.e2e-spec.ts:26:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-fields.e2e-spec.ts:69:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:23:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:53:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:202:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/calendar-links.e2e-spec.ts:19:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/calendar-links.e2e-spec.ts:47:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/confirm-bookings.e2e-spec.ts:20:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/confirm-bookings.e2e-spec.ts:52:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/confirm-emails.e2e-spec.ts:38:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/confirm-emails.e2e-spec.ts:101:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/team-emails.e2e-spec.ts:39:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/team-emails.e2e-spec.ts:107:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:36:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:37:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:86:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:90:authorization:.overrideGuard(ApiAuthGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reassign-bookings.e2e-spec.ts:26:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reassign-bookings.e2e-spec.ts:75:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:26:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:57:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:377:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:587:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reschedule-bookings.e2e-spec.ts:24:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reschedule-bookings.e2e-spec.ts:53:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:32:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:71:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/team-bookings.e2e-spec.ts:33:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/team-bookings.e2e-spec.ts:85:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/update-booking-location.e2e-spec.ts:28:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/update-booking-location.e2e-spec.ts:63:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/user-bookings.e2e-spec.ts:49:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/user-bookings.e2e-spec.ts:93:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/variable-length-bookings.e2e-spec.ts:29:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/variable-length-bookings.e2e-spec.ts:63:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.e2e-spec.ts:44:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.e2e-spec.ts:72:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.e2e-spec.ts:18:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.e2e-spec.ts:44:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.e2e-spec.ts:37:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.e2e-spec.ts:50:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.e2e-spec.ts:94:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:46:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:65:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:185:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:2178:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:2909:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/gcal/gcal.controller.e2e-spec.ts:17:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/gcal/gcal.controller.e2e-spec.ts:43:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/me/me.controller.e2e-spec.ts:17:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/me/me.controller.e2e-spec.ts:43:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.e2e-spec.ts:19:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.e2e-spec.ts:29:authorization:* Uses `PermissionsGuard` override to isolate schedule behavior from permission enforcement.
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.e2e-spec.ts:52:authorization:* TokensModule, and SchedulesModule_2024_04_15. Overrides PermissionsGuard.
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.e2e-spec.ts:62:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/ee/schedules/schedules_2024_06_11/controllers/schedules.controller.e2e-spec.ts:22:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/ee/schedules/schedules_2024_06_11/controllers/schedules.controller.e2e-spec.ts:60:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.spec.ts:1:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.spec.ts:9:authorization:describe("PlatformPlanGuard", () => {
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.spec.ts:10:authorization:let guard: PlatformPlanGuard;
+apps/api/v2/src/modules/auth/guards/billing/platform-plan.guard.spec.ts:29:authorization:guard = new PlatformPlanGuard(reflector, organizationsRepository, redisService);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:6:authorization:class MockGuard1 implements CanActivate {
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:14:authorization:class MockGuard2 implements CanActivate {
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:22:authorization:class MockGuard3 implements CanActivate {
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:33:authorization:describe("OrGuard", () => {
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:43:authorization:const OrGuardClass = Or([MockGuard1, MockGuard2]);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:53:authorization:const mockGuard1 = new MockGuard1(true);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:54:authorization:const mockGuard2 = new MockGuard2(false);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:56:authorization:mockModuleRef.get.mockReturnValueOnce(mockGuard1).mockReturnValueOnce(mockGuard2);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:64:authorization:const mockGuard1 = new MockGuard1(false);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:65:authorization:const mockGuard2 = new MockGuard2(true);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:67:authorization:mockModuleRef.get.mockReturnValueOnce(mockGuard1).mockReturnValueOnce(mockGuard2);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:75:authorization:const mockGuard1 = new MockGuard1(false);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:76:authorization:const mockGuard2 = new MockGuard2(false);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:78:authorization:mockModuleRef.get.mockReturnValueOnce(mockGuard1).mockReturnValueOnce(mockGuard2);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:86:authorization:const mockGuard1 = new MockGuard3(true); // throws error
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:87:authorization:const mockGuard2 = new MockGuard2(true); // passes
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:89:authorization:mockModuleRef.get.mockReturnValueOnce(mockGuard1).mockReturnValueOnce(mockGuard2);
+apps/api/v2/src/modules/auth/guards/or-guard/or.guard.spec.ts:99:authorization:const OrGuardClass = Or([MockGuard1, MockGuard2]);
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:12:authorization:import { PermissionsGuard } from "./permissions.guard";
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:14:authorization:describe("PermissionsGuard", () => {
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:15:authorization:let guard: PermissionsGuard;
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:20:authorization:guard = new PermissionsGuard(
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:70:authorization:"PermissionsGuard - no authentication provided. Provide either authorization bearer token containing managed user access token or oAuth client id in 'x-cal-client-id' header."
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:126:authorization:"PermissionsGuard - oAuth client with id=100 does not have the required permissions=SCHEDULE_WRITE"
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:142:authorization:"PermissionsGuard - oAuth client with id=100 does not have the required permissions=SCHEDULE_WRITE, SCHEDULE_READ"
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:199:authorization:"PermissionsGuard - oAuth client with id=100 does not have the required permissions=SCHEDULE_WRITE"
+apps/api/v2/src/modules/auth/guards/permissions/permissions.guard.spec.ts:212:authorization:"PermissionsGuard - oAuth client with id=100 does not have the required permissions=SCHEDULE_WRITE, SCHEDULE_READ"
+apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.e2e-spec.ts:18:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.e2e-spec.ts:45:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/organizations/bookings/managed-organizations-bookings.controller.e2e-spec.ts:35:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/bookings/managed-organizations-bookings.controller.e2e-spec.ts:36:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/organizations/bookings/managed-organizations-bookings.controller.e2e-spec.ts:80:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/organizations/bookings/managed-organizations-bookings.controller.e2e-spec.ts:84:authorization:.overrideGuard(PlatformPlanGuard)
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:35:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:76:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:17:authorization:import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:18:authorization:import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:19:authorization:import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:20:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:48:authorization:.overrideGuard(PlatformPlanGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:50:authorization:.overrideGuard(IsAdminAPIEnabledGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:52:authorization:.overrideGuard(RolesGuard)
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:54:authorization:// Keep IsOrgGuard and IsTeamInOrg to validate org/team path integrity
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:55:authorization:.overrideGuard(ApiAuthGuard)
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:32:authorization:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:96:authorization:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:237:authorization:`PlatformPlanGuard - organization with id=${essentialsPlanManagerOrg.id} does not have required plan for this operation. Minimum plan is SCALE while the organization has ESSENTIALS.`
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:17:authorization:import { PbacGuard } from "@/modules/auth/guards/pbac/pbac.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:18:authorization:import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:210:authorization:const pbacSpyCanActivate = jest.spyOn(PbacGuard.prototype, "canActivate");
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:212:authorization:PbacGuard.prototype as unknown as PbacGuard,
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:216:authorization:const rolesSpyCanActivate = jest.spyOn(RolesGuard.prototype, "canActivate");
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:218:authorization:RolesGuard.prototype as unknown as RolesGuard,
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:254:authorization:const pbacSpyCanActivate = jest.spyOn(PbacGuard.prototype, "canActivate");
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:256:authorization:PbacGuard.prototype as unknown as PbacGuard,
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:259:authorization:const rolesSpyCanActivate = jest.spyOn(RolesGuard.prototype, "canActivate");
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:261:authorization:RolesGuard.prototype as unknown as RolesGuard,
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:321:authorization:`RolesGuard - user with id=${userWithNoRole.id} does not have the minimum required role=ORG_ADMIN within organization with id=${pbacEnabledOrganization.id}.`
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:337:authorization:`RolesGuard - user with id=${pbacOrgUserWithoutRolePermission.id} does not have the minimum required role=ORG_ADMIN within organization with id=${pbacEnabledOrganization.id}.`
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:353:authorization:`RolesGuard - User is not a member of the organization with id=${organization.id}.`
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:369:authorization:`RolesGuard - user with id=${legacyOrgMemberUser.id} does not have the minimum required role=ORG_ADMIN within organization with id=${organization.id}.`
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.e2e-spec.ts:814:authorization:it("should allow org admin to access any routing form using RolesGuard", async () => {
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.e2e-spec.ts:35:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.e2e-spec.ts:71:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:15:authorization:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:44:authorization:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:307:authorization:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:423:authorization:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:555:authorization:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings.e2e-spec.ts:31:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings.e2e-spec.ts:71:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/routing-forms/controllers/routing-forms.e2e-spec.ts:16:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/routing-forms/controllers/routing-forms.e2e-spec.ts:57:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/selected-calendars/controllers/selected-calendars.controller.e2e-spec.ts:18:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/selected-calendars/controllers/selected-calendars.controller.e2e-spec.ts:45:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.e2e-spec.ts:16:authorization:* `SlotsModule_2024_04_15`. The `PermissionsGuard` is overridden with
+apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.e2e-spec.ts:79:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.e2e-spec.ts:340:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/dynamic-event-type-slots.controller.e2e-spec.ts:32:authorization:* The `PermissionsGuard` is overridden to always return `true`, bypassing authorization checks
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/dynamic-event-type-slots.controller.e2e-spec.ts:77:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/dynamic-event-type-slots.controller.e2e-spec.ts:120:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/org-team-event-type-slots.controller.e2e-spec.ts:41:authorization:* - `PermissionsGuard` overridden to always allow access (`canActivate: () => true`)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/org-team-event-type-slots.controller.e2e-spec.ts:92:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/org-team-event-type-slots.controller.e2e-spec.ts:151:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/reschedule-uid-slots.controller.e2e-spec.ts:35:authorization:* `SlotsModule_2024_09_04`. The `PermissionsGuard` is overridden to always allow access.
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/reschedule-uid-slots.controller.e2e-spec.ts:80:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/reschedule-uid-slots.controller.e2e-spec.ts:118:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/team-event-type-slots.controller.e2e-spec.ts:61:authorization:* - `PermissionsGuard` is overridden to always allow access (guard logic tested
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/team-event-type-slots.controller.e2e-spec.ts:127:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/team-event-type-slots.controller.e2e-spec.ts:188:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/user-event-type-slots.controller.e2e-spec.ts:66:authorization:* - `PermissionsGuard` overridden to always allow
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/user-event-type-slots.controller.e2e-spec.ts:122:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/user-event-type-slots.controller.e2e-spec.ts:189:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/teams/bookings/teams-bookings.controller.e2e-spec.ts:27:authorization:import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
+apps/api/v2/src/modules/teams/bookings/teams-bookings.controller.e2e-spec.ts:110:authorization:.overrideGuard(PermissionsGuard)
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.e2e-spec.ts:15:authorization:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.e2e-spec.ts:45:authorization:mockThrottlerGuard();
+apps/api/v2/test/utils/withNoThrottler.ts:1:authorization:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
+apps/api/v2/test/utils/withNoThrottler.ts:3:authorization:export const mockThrottlerGuard = (): void => {
+apps/api/v2/test/utils/withNoThrottler.ts:4:authorization:jest.spyOn(CustomThrottlerGuard.prototype, "handleRequest").mockResolvedValue(true);
+__checks__/csp-login.spec.ts:15:csp-nonce:const nonceMatch = cspHeader?.match(/'nonce-([^']+)'/);
+apps/web/modules/bookings/components/Booker.test.tsx:35:bot-protection:import "@calcom/web/modules/auth/components/Turnstile";
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:1:rate-limiting:import type { RatelimitResponse } from "@unkey/ratelimit";
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:8:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:11:rate-limiting:import { rateLimitApiKey } from "~/lib/helpers/rateLimitApiKey";
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:18:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => ({
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:19:rate-limiting:checkRateLimitAndThrowError: vi.fn(),
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:26:rate-limiting:describe("rateLimitApiKey middleware", () => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:34:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:40:rate-limiting:it("should call checkRateLimitAndThrowError with correct parameters", async () => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:47:rate-limiting:(checkRateLimitAndThrowError as any).mockResolvedValueOnce({
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:55:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:57:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:59:rate-limiting:rateLimitingType: "api",
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:60:rate-limiting:onRateLimiterResponse: expect.any(Function),
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:64:rate-limiting:it("should set rate limit headers correctly", async () => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:71:rate-limiting:const rateLimiterResponse: RatelimitResponse = {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:79:rate-limiting:(checkRateLimitAndThrowError as any).mockImplementationOnce(
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:80:rate-limiting:({ onRateLimiterResponse }: { onRateLimiterResponse: (response: RatelimitResponse) => void }) => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:81:rate-limiting:onRateLimiterResponse(rateLimiterResponse);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:86:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:88:rate-limiting:expect(res.getHeader("X-RateLimit-Limit")).toBe(rateLimiterResponse.limit);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:89:rate-limiting:expect(res.getHeader("X-RateLimit-Remaining")).toBe(rateLimiterResponse.remaining);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:90:rate-limiting:expect(res.getHeader("X-RateLimit-Reset")).toBe(rateLimiterResponse.reset);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:93:rate-limiting:it("should return 429 if rate limit is exceeded", async () => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:100:rate-limiting:(checkRateLimitAndThrowError as any).mockRejectedValue(new Error("Rate limit exceeded"));
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:104:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:107:rate-limiting:expect(res._getJSONData()).toEqual({ message: "Rate limit exceeded" });
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:110:rate-limiting:it("should lock API key when rate limit is repeatedly exceeded", async () => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:117:rate-limiting:const rateLimiterResponse: RatelimitResponse = {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:124:rate-limiting:// Mock rate limiter to trigger the onRateLimiterResponse callback
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:126:rate-limiting:(checkRateLimitAndThrowError as any).mockImplementationOnce(
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:127:rate-limiting:({ onRateLimiterResponse }: { onRateLimiterResponse: (response: RatelimitResponse) => void }) => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:128:rate-limiting:onRateLimiterResponse(rateLimiterResponse);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:137:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:142:rate-limiting:rateLimitResponse: rateLimiterResponse,
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:156:rate-limiting:const rateLimiterResponse: RatelimitResponse = {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:163:rate-limiting:// Mock rate limiter to trigger the onRateLimiterResponse callback
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:165:rate-limiting:(checkRateLimitAndThrowError as any).mockImplementationOnce(
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:166:rate-limiting:({ onRateLimiterResponse }: { onRateLimiterResponse: (response: RatelimitResponse) => void }) => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:167:rate-limiting:onRateLimiterResponse(rateLimiterResponse);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:176:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:181:rate-limiting:rateLimitResponse: rateLimiterResponse,
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:195:rate-limiting:const rateLimiterResponse: RatelimitResponse = {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:202:rate-limiting:// Mock rate limiter to trigger the onRateLimiterResponse callback
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:204:rate-limiting:(checkRateLimitAndThrowError as any).mockImplementationOnce(
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:205:rate-limiting:({ onRateLimiterResponse }: { onRateLimiterResponse: (response: RatelimitResponse) => void }) => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:206:rate-limiting:onRateLimiterResponse(rateLimiterResponse);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:215:rate-limiting:await rateLimitApiKey(req, res, next);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:220:rate-limiting:rateLimitResponse: rateLimiterResponse,
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:224:rate-limiting:expect(res.getHeader("X-RateLimit-Limit")).toBe(rateLimiterResponse.limit);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:228:rate-limiting:it("should handle HttpError during rate limiting", async () => {
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:235:rate-limiting:// Mock checkRateLimitAndThrowError to throw HttpError
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:236:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockRejectedValueOnce(
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:239:rate-limiting:message: "Custom rate limit error",
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:245:rate-limiting:await rateLimitApiKey(req, res, vi.fn() as any);
+apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:248:rate-limiting:expect(res._getJSONData()).toEqual({ message: "Custom rate limit error" });
+apps/api/v2/src/app.e2e-spec.ts:2:rate-limiting:import type { PlatformOAuthClient, RateLimit, Team, User } from "@calcom/prisma/client";
+apps/api/v2/src/app.e2e-spec.ts:11:rate-limiting:import { RateLimitRepositoryFixture } from "test/fixtures/repository/rate-limit.repository.fixture";
+apps/api/v2/src/app.e2e-spec.ts:16:rate-limiting:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
+apps/api/v2/src/app.e2e-spec.ts:22:rate-limiting:describe("Rate limiting", () => {
+apps/api/v2/src/app.e2e-spec.ts:26:rate-limiting:let rateLimitRepositoryFixture: RateLimitRepositoryFixture;
+apps/api/v2/src/app.e2e-spec.ts:27:rate-limiting:const userEmail = `app-rate-limits-user-${randomString()}@api.com`;
+apps/api/v2/src/app.e2e-spec.ts:39:rate-limiting:let rateLimit: RateLimit;
+apps/api/v2/src/app.e2e-spec.ts:40:rate-limiting:let apiKeyStringWithRateLimit: string;
+apps/api/v2/src/app.e2e-spec.ts:43:rate-limiting:let firstRateLimitWithMultipleLimits: RateLimit;
+apps/api/v2/src/app.e2e-spec.ts:44:rate-limiting:let secondRateLimitWithMultipleLimits: RateLimit;
+apps/api/v2/src/app.e2e-spec.ts:55:rate-limiting:jest.spyOn(CustomThrottlerGuard.prototype, "getDefaultLimit").mockReturnValue(mockDefaultLimit);
+apps/api/v2/src/app.e2e-spec.ts:56:rate-limiting:jest.spyOn(CustomThrottlerGuard.prototype, "getDefaultTtl").mockReturnValue(mockDefaultTtl);
+apps/api/v2/src/app.e2e-spec.ts:58:rate-limiting:.spyOn(CustomThrottlerGuard.prototype, "getDefaultBlockDuration")
+apps/api/v2/src/app.e2e-spec.ts:71:rate-limiting:rateLimitRepositoryFixture = new RateLimitRepositoryFixture(moduleRef);
+apps/api/v2/src/app.e2e-spec.ts:72:rate-limiting:const { apiKey, keyString: keyStringWithRateLimit } = await apiKeysRepositoryFixture.createApiKey(
+apps/api/v2/src/app.e2e-spec.ts:76:rate-limiting:apiKeyStringWithRateLimit = `cal_test_${keyStringWithRateLimit}`;
+apps/api/v2/src/app.e2e-spec.ts:77:rate-limiting:rateLimit = await rateLimitRepositoryFixture.createRateLimit("long", apiKey.id, 2000, 3, 4000);
+apps/api/v2/src/app.e2e-spec.ts:82:rate-limiting:firstRateLimitWithMultipleLimits = await rateLimitRepositoryFixture.createRateLimit(
+apps/api/v2/src/app.e2e-spec.ts:89:rate-limiting:secondRateLimitWithMultipleLimits = await rateLimitRepositoryFixture.createRateLimit(
+apps/api/v2/src/app.e2e-spec.ts:99:rate-limiting:name: `app-rate-limits-organization-${randomString()}`,
+apps/api/v2/src/app.e2e-spec.ts:137:rate-limiting:"api key with default rate limit - should enforce rate limits and reset after block duration",
+apps/api/v2/src/app.e2e-spec.ts:148:rate-limiting:expect(response.headers["x-ratelimit-limit-default"]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:149:rate-limiting:expect(response.headers["x-ratelimit-remaining-default"]).toBe((limit - i).toString());
+apps/api/v2/src/app.e2e-spec.ts:150:rate-limiting:expect(Number(response.headers["x-ratelimit-reset-default"])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:158:rate-limiting:expect(blockedResponse.headers["x-ratelimit-limit-default"]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:159:rate-limiting:expect(blockedResponse.headers["x-ratelimit-remaining-default"]).toBe("0");
+apps/api/v2/src/app.e2e-spec.ts:160:rate-limiting:expect(Number(blockedResponse.headers["x-ratelimit-reset-default"])).toBeGreaterThanOrEqual(
+apps/api/v2/src/app.e2e-spec.ts:171:rate-limiting:expect(afterBlockResponse.headers["x-ratelimit-limit-default"]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:172:rate-limiting:expect(afterBlockResponse.headers["x-ratelimit-remaining-default"]).toBe((limit - 1).toString());
+apps/api/v2/src/app.e2e-spec.ts:173:rate-limiting:expect(Number(afterBlockResponse.headers["x-ratelimit-reset-default"])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:179:rate-limiting:"api key with custom rate limit - should enforce rate limits and reset after block duration",
+apps/api/v2/src/app.e2e-spec.ts:181:rate-limiting:const limit = rateLimit.limit;
+apps/api/v2/src/app.e2e-spec.ts:182:rate-limiting:const blockDuration = rateLimit.blockDuration;
+apps/api/v2/src/app.e2e-spec.ts:183:rate-limiting:const name = rateLimit.name;
+apps/api/v2/src/app.e2e-spec.ts:188:rate-limiting:.set({ Authorization: `Bearer ${apiKeyStringWithRateLimit}` })
+apps/api/v2/src/app.e2e-spec.ts:191:rate-limiting:expect(response.headers[`x-ratelimit-limit-${name}`]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:192:rate-limiting:expect(response.headers[`x-ratelimit-remaining-${name}`]).toBe((limit - i).toString());
+apps/api/v2/src/app.e2e-spec.ts:193:rate-limiting:expect(Number(response.headers[`x-ratelimit-reset-${name}`])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:198:rate-limiting:.set("Authorization", `Bearer ${apiKeyStringWithRateLimit}`)
+apps/api/v2/src/app.e2e-spec.ts:201:rate-limiting:expect(blockedResponse.headers[`x-ratelimit-limit-${name}`]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:202:rate-limiting:expect(blockedResponse.headers[`x-ratelimit-remaining-${name}`]).toBe("0");
+apps/api/v2/src/app.e2e-spec.ts:203:rate-limiting:expect(Number(blockedResponse.headers[`x-ratelimit-reset-${name}`])).toBeGreaterThanOrEqual(
+apps/api/v2/src/app.e2e-spec.ts:211:rate-limiting:.set("Authorization", `Bearer ${apiKeyStringWithRateLimit}`)
+apps/api/v2/src/app.e2e-spec.ts:214:rate-limiting:expect(afterBlockResponse.headers[`x-ratelimit-limit-${name}`]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:215:rate-limiting:expect(afterBlockResponse.headers[`x-ratelimit-remaining-${name}`]).toBe((limit - 1).toString());
+apps/api/v2/src/app.e2e-spec.ts:216:rate-limiting:expect(Number(afterBlockResponse.headers[`x-ratelimit-reset-${name}`])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:222:rate-limiting:"api key with multiple rate limits - should enforce both short and long rate limits",
+apps/api/v2/src/app.e2e-spec.ts:224:rate-limiting:const shortLimit = firstRateLimitWithMultipleLimits.limit;
+apps/api/v2/src/app.e2e-spec.ts:225:rate-limiting:const longLimit = secondRateLimitWithMultipleLimits.limit;
+apps/api/v2/src/app.e2e-spec.ts:226:rate-limiting:const shortName = firstRateLimitWithMultipleLimits.name;
+apps/api/v2/src/app.e2e-spec.ts:227:rate-limiting:const longName = secondRateLimitWithMultipleLimits.name;
+apps/api/v2/src/app.e2e-spec.ts:228:rate-limiting:const shortBlock = firstRateLimitWithMultipleLimits.blockDuration;
+apps/api/v2/src/app.e2e-spec.ts:229:rate-limiting:const longBlock = secondRateLimitWithMultipleLimits.blockDuration;
+apps/api/v2/src/app.e2e-spec.ts:241:rate-limiting:expect(response.headers[`x-ratelimit-limit-${shortName}`]).toBe(shortLimit.toString());
+apps/api/v2/src/app.e2e-spec.ts:242:rate-limiting:expect(response.headers[`x-ratelimit-remaining-${shortName}`]).toBe((shortLimit - i).toString());
+apps/api/v2/src/app.e2e-spec.ts:243:rate-limiting:expect(Number(response.headers[`x-ratelimit-reset-${shortName}`])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:245:rate-limiting:expect(response.headers[`x-ratelimit-limit-${longName}`]).toBe(longLimit.toString());
+apps/api/v2/src/app.e2e-spec.ts:246:rate-limiting:expect(response.headers[`x-ratelimit-remaining-${longName}`]).toBe((longLimit - i).toString());
+apps/api/v2/src/app.e2e-spec.ts:247:rate-limiting:expect(Number(response.headers[`x-ratelimit-reset-${longName}`])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:259:rate-limiting:expect(responseAfterShortLimit.headers[`x-ratelimit-limit-${shortName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:262:rate-limiting:expect(responseAfterShortLimit.headers[`x-ratelimit-remaining-${shortName}`]).toBe("0");
+apps/api/v2/src/app.e2e-spec.ts:263:rate-limiting:expect(Number(responseAfterShortLimit.headers[`x-ratelimit-reset-${shortName}`])).toBeGreaterThan(
+apps/api/v2/src/app.e2e-spec.ts:267:rate-limiting:expect(responseAfterShortLimit.headers[`x-ratelimit-limit-${longName}`]).toBe(longLimit.toString());
+apps/api/v2/src/app.e2e-spec.ts:268:rate-limiting:expect(responseAfterShortLimit.headers[`x-ratelimit-remaining-${longName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:271:rate-limiting:expect(Number(responseAfterShortLimit.headers[`x-ratelimit-reset-${longName}`])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:280:rate-limiting:expect(blockedResponseLong.headers[`x-ratelimit-limit-${shortName}`]).toBe(shortLimit.toString());
+apps/api/v2/src/app.e2e-spec.ts:281:rate-limiting:expect(blockedResponseLong.headers[`x-ratelimit-remaining-${shortName}`]).toBe("0");
+apps/api/v2/src/app.e2e-spec.ts:282:rate-limiting:expect(Number(blockedResponseLong.headers[`x-ratelimit-reset-${shortName}`])).toBeGreaterThanOrEqual(
+apps/api/v2/src/app.e2e-spec.ts:283:rate-limiting:firstRateLimitWithMultipleLimits.blockDuration / 1000
+apps/api/v2/src/app.e2e-spec.ts:286:rate-limiting:expect(blockedResponseLong.headers[`x-ratelimit-limit-${longName}`]).toBe(longLimit.toString());
+apps/api/v2/src/app.e2e-spec.ts:287:rate-limiting:expect(blockedResponseLong.headers[`x-ratelimit-remaining-${longName}`]).toBe("0");
+apps/api/v2/src/app.e2e-spec.ts:288:rate-limiting:expect(Number(blockedResponseLong.headers[`x-ratelimit-reset-${longName}`])).toBeGreaterThanOrEqual(
+apps/api/v2/src/app.e2e-spec.ts:289:rate-limiting:secondRateLimitWithMultipleLimits.blockDuration / 1000
+apps/api/v2/src/app.e2e-spec.ts:298:rate-limiting:expect(responseAfterShortLimitReload.headers[`x-ratelimit-limit-${shortName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:301:rate-limiting:expect(responseAfterShortLimitReload.headers[`x-ratelimit-remaining-${shortName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:305:rate-limiting:Number(responseAfterShortLimitReload.headers[`x-ratelimit-reset-${shortName}`])
+apps/api/v2/src/app.e2e-spec.ts:307:rate-limiting:expect(responseAfterShortLimitReload.headers[`x-ratelimit-limit-${longName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:310:rate-limiting:expect(responseAfterShortLimitReload.headers[`x-ratelimit-remaining-${longName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:314:rate-limiting:Number(responseAfterShortLimitReload.headers[`x-ratelimit-reset-${longName}`])
+apps/api/v2/src/app.e2e-spec.ts:323:rate-limiting:expect(responseAfterLongLimitReload.headers[`x-ratelimit-limit-${shortName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:326:rate-limiting:expect(responseAfterLongLimitReload.headers[`x-ratelimit-remaining-${shortName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:330:rate-limiting:Number(responseAfterLongLimitReload.headers[`x-ratelimit-reset-${shortName}`])
+apps/api/v2/src/app.e2e-spec.ts:332:rate-limiting:expect(responseAfterLongLimitReload.headers[`x-ratelimit-limit-${longName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:335:rate-limiting:expect(responseAfterLongLimitReload.headers[`x-ratelimit-remaining-${longName}`]).toBe(
+apps/api/v2/src/app.e2e-spec.ts:338:rate-limiting:expect(Number(responseAfterLongLimitReload.headers[`x-ratelimit-reset-${longName}`])).toBeGreaterThan(
+apps/api/v2/src/app.e2e-spec.ts:346:rate-limiting:"non api key with default rate limit - should enforce rate limits and reset after block duration",
+apps/api/v2/src/app.e2e-spec.ts:358:rate-limiting:expect(response.headers["x-ratelimit-limit-default"]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:359:rate-limiting:expect(response.headers["x-ratelimit-remaining-default"]).toBe((limit - i).toString());
+apps/api/v2/src/app.e2e-spec.ts:360:rate-limiting:expect(Number(response.headers["x-ratelimit-reset-default"])).toBeGreaterThan(0);
+apps/api/v2/src/app.e2e-spec.ts:369:rate-limiting:expect(blockedResponse.headers["x-ratelimit-limit-default"]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:370:rate-limiting:expect(blockedResponse.headers["x-ratelimit-remaining-default"]).toBe("0");
+apps/api/v2/src/app.e2e-spec.ts:371:rate-limiting:expect(Number(blockedResponse.headers["x-ratelimit-reset-default"])).toBeGreaterThanOrEqual(
+apps/api/v2/src/app.e2e-spec.ts:383:rate-limiting:expect(afterBlockResponse.headers["x-ratelimit-limit-default"]).toBe(limit.toString());
+apps/api/v2/src/app.e2e-spec.ts:384:rate-limiting:expect(afterBlockResponse.headers["x-ratelimit-remaining-default"]).toBe((limit - 1).toString());
+apps/api/v2/src/app.e2e-spec.ts:385:rate-limiting:expect(Number(afterBlockResponse.headers["x-ratelimit-reset-default"])).toBeGreaterThan(0);
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:20:rate-limiting:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:71:rate-limiting:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:32:rate-limiting:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:96:rate-limiting:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:15:rate-limiting:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:44:rate-limiting:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:307:rate-limiting:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:423:rate-limiting:mockThrottlerGuard();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:555:rate-limiting:mockThrottlerGuard();
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.e2e-spec.ts:15:rate-limiting:import { mockThrottlerGuard } from "test/utils/withNoThrottler";
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.e2e-spec.ts:45:rate-limiting:mockThrottlerGuard();
+apps/api/v2/test/fixtures/repository/rate-limit.repository.fixture.ts:4:rate-limiting:export class RateLimitRepositoryFixture {
+apps/api/v2/test/fixtures/repository/rate-limit.repository.fixture.ts:11:rate-limiting:async createRateLimit(name: string, apiKeyId: string, ttl: number, limit: number, blockDuration: number) {
+apps/api/v2/test/fixtures/repository/rate-limit.repository.fixture.ts:12:rate-limiting:return await this.dbWrite.rateLimit.create({
+apps/api/v2/test/setEnvVars.ts:22:rate-limiting:// note(Lauris): setting high limit so that e2e tests themselves are not rate limited
+apps/api/v2/test/utils/withNoThrottler.ts:1:rate-limiting:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
+apps/api/v2/test/utils/withNoThrottler.ts:3:rate-limiting:export const mockThrottlerGuard = (): void => {
+apps/api/v2/test/utils/withNoThrottler.ts:4:rate-limiting:jest.spyOn(CustomThrottlerGuard.prototype, "handleRequest").mockResolvedValue(true);
+apps/web/app/api/defaultResponderForAppDir.test.ts:65:rate-limiting:it("should respond with a 429 status code for rate limit errors", async () => {
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1175:rate-limiting:// fetchRequestWithRetryAfter — rate limiting (via getAvailability)
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1177:rate-limiting:describe("rate limiting (fetchRequestWithRetryAfter)", () => {
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1273:rate-limiting:body: { error: { code: "TooManyRequests", message: "Rate limit exceeded" } },
+packages/features/auth/lib/next-auth-options.test.ts:38:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => ({
+packages/features/auth/lib/next-auth-options.test.ts:39:rate-limiting:checkRateLimitAndThrowError: vi.fn().mockResolvedValue(undefined),
+packages/features/bookings/lib/handleNewBooking/test/email-verification-booking.test.ts:6:rate-limiting:* - Test rate limiting behavior
+packages/features/bookings/lib/handleNewBooking/test/email-verification-booking.test.ts:231:rate-limiting:"should handle rate limiting error from verification service",
+packages/features/bookings/lib/handleNewBooking/test/email-verification-booking.test.ts:238:rate-limiting:const rateLimitError = new Error("Rate limit exceeded");
+packages/features/bookings/lib/handleNewBooking/test/email-verification-booking.test.ts:239:rate-limiting:rateLimitError.name = "RateLimitError";
+packages/features/bookings/lib/handleNewBooking/test/email-verification-booking.test.ts:240:rate-limiting:vi.mocked(verifyCodeUnAuthenticated).mockRejectedValue(rateLimitError);
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:48:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => ({
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:49:rate-limiting:checkRateLimitAndThrowError: vi.fn(),
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:860:rate-limiting:// Mock rate limiting like the working example
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:861:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockResolvedValueOnce(undefined as any);
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:922:rate-limiting:expect(vi.mocked(checkRateLimitAndThrowError)).toHaveBeenCalledWith({
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:923:rate-limiting:rateLimitingType: "core",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:957:rate-limiting:const { checkRateLimitAndThrowError } = await import("@calcom/lib/checkRateLimitAndThrowError");
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:967:rate-limiting:(checkRateLimitAndThrowError as any).mockResolvedValue(undefined);
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:981:rate-limiting:const { checkRateLimitAndThrowError } = await import("@calcom/lib/checkRateLimitAndThrowError");
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:991:rate-limiting:(checkRateLimitAndThrowError as any).mockResolvedValue(undefined);
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:1007:rate-limiting:const { checkRateLimitAndThrowError } = await import("@calcom/lib/checkRateLimitAndThrowError");
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:1017:rate-limiting:(checkRateLimitAndThrowError as any).mockResolvedValue(undefined);
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:12:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => ({
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:13:rate-limiting:checkRateLimitAndThrowError: vi.fn(),
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:27:rate-limiting:const { checkRateLimitAndThrowError } = await import("@calcom/lib/checkRateLimitAndThrowError");
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:35:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockResolvedValue(undefined);
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:202:rate-limiting:it("should handle rate limiting errors", async () => {
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:206:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockRejectedValue(new Error("Rate limit exceeded"));
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:208:rate-limiting:await expect(service.createTestCall(validTestCallData)).rejects.toThrow("Rate limit exceeded");
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:210:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:211:rate-limiting:rateLimitingType: "core",
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:216:rate-limiting:it("should call rate limiting with correct identifier for different users", async () => {
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:220:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockResolvedValue(undefined);
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:227:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+packages/features/calAIPhone/providers/retellAI/services/__tests__/CallService.test.ts:228:rate-limiting:rateLimitingType: "core",
+packages/features/calAIPhone/providers/retellAI/services/__tests__/test-utils.ts:186:rate-limiting:// Rate Limiting Mocks
+packages/features/calAIPhone/providers/retellAI/services/__tests__/test-utils.ts:187:rate-limiting:export const setupRateLimitMocks = () => {
+packages/features/calAIPhone/providers/retellAI/services/__tests__/test-utils.ts:188:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => ({
+packages/features/calAIPhone/providers/retellAI/services/__tests__/test-utils.ts:189:rate-limiting:checkRateLimitAndThrowError: vi.fn().mockResolvedValue(undefined),
+packages/features/ee/api-keys/lib/autoLock.test.ts:1:rate-limiting:import type { RatelimitResponse } from "@unkey/ratelimit";
+packages/features/ee/api-keys/lib/autoLock.test.ts:55:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:65:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:71:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:83:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:91:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:103:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:112:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:124:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:140:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:152:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:163:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:182:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:201:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:219:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:224:rate-limiting:it("should not increment counter when rate limit is successful", async () => {
+packages/features/ee/api-keys/lib/autoLock.test.ts:225:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:235:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:243:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:255:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:263:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:275:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:284:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:296:rate-limiting:rateLimitResponse,
+packages/features/ee/api-keys/lib/autoLock.test.ts:311:rate-limiting:const rateLimitResponse: RatelimitResponse = {
+packages/features/ee/api-keys/lib/autoLock.test.ts:323:rate-limiting:rateLimitResponse,
+packages/features/ee/workflows/lib/reminders/reminderSchedulerInApp.test.ts:109:rate-limiting:checkSMSRateLimit: vi.fn(),
+packages/features/ee/workflows/lib/test/workflows.test.ts:23:rate-limiting:import * as rateLimitModule from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/ee/workflows/lib/test/workflows.test.ts:1248:rate-limiting:// Mock rate limiting
+packages/features/ee/workflows/lib/test/workflows.test.ts:1249:rate-limiting:const mockRateLimit = vi
+packages/features/ee/workflows/lib/test/workflows.test.ts:1250:rate-limiting:.spyOn(rateLimitModule, "checkRateLimitAndThrowError")
+packages/features/ee/workflows/lib/test/workflows.test.ts:1334:rate-limiting:mockRateLimit.mockRestore();
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:13:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:24:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError");
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:324:rate-limiting:it("should throw an error if rate limit is exceeded", async () => {
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:325:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockRejectedValue(new Error("Rate limit exceeded"));
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:331:rate-limiting:await expect(getRoutedUrl(context)).rejects.toThrow("Rate limit exceeded");
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:332:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+packages/lib/checkRateLimitAndThrowError.test.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "./checkRateLimitAndThrowError";
+packages/lib/checkRateLimitAndThrowError.test.ts:4:rate-limiting:import { rateLimiter } from "./rateLimit";
+packages/lib/checkRateLimitAndThrowError.test.ts:5:rate-limiting:import type { RatelimitResponse } from "./rateLimit";
+packages/lib/checkRateLimitAndThrowError.test.ts:13:rate-limiting:vi.mock("./rateLimit", () => {
+packages/lib/checkRateLimitAndThrowError.test.ts:15:rate-limiting:rateLimiter: vi.fn(),
+packages/lib/checkRateLimitAndThrowError.test.ts:19:rate-limiting:describe("checkRateLimitAndThrowError", () => {
+packages/lib/checkRateLimitAndThrowError.test.ts:20:rate-limiting:it("should throw an error if rate limit is exceeded", async () => {
+packages/lib/checkRateLimitAndThrowError.test.ts:23:rate-limiting:vi.mocked(rateLimiter).mockReturnValue(() => {
+packages/lib/checkRateLimitAndThrowError.test.ts:29:rate-limiting:} as RatelimitResponse;
+packages/lib/checkRateLimitAndThrowError.test.ts:33:rate-limiting:const rateLimitingType = "core";
+packages/lib/checkRateLimitAndThrowError.test.ts:35:rate-limiting:await expect(checkRateLimitAndThrowError({ rateLimitingType, identifier })).rejects.toThrow();
+packages/lib/checkRateLimitAndThrowError.test.ts:38:rate-limiting:it("should not throw an error if rate limit is not exceeded", async () => {
+packages/lib/checkRateLimitAndThrowError.test.ts:40:rate-limiting:vi.mocked(rateLimiter).mockReturnValue(() => {
+packages/lib/checkRateLimitAndThrowError.test.ts:46:rate-limiting:} as RatelimitResponse;
+packages/lib/checkRateLimitAndThrowError.test.ts:50:rate-limiting:const rateLimitingType = "core";
+packages/lib/checkRateLimitAndThrowError.test.ts:52:rate-limiting:await expect(checkRateLimitAndThrowError({ rateLimitingType, identifier })).resolves.not.toThrow();
+packages/lib/checkRateLimitAndThrowError.test.ts:56:rate-limiting:vi.mocked(rateLimiter).mockReturnValue(() => {
+packages/lib/checkRateLimitAndThrowError.test.ts:62:rate-limiting:} as RatelimitResponse;
+packages/lib/checkRateLimitAndThrowError.test.ts:66:rate-limiting:const rateLimitingType = "core";
+packages/lib/checkRateLimitAndThrowError.test.ts:68:rate-limiting:await expect(checkRateLimitAndThrowError({ rateLimitingType, identifier })).resolves.not.toThrow();
+packages/lib/server/defaultResponder.test.ts:54:rate-limiting:it("Rate limit should respond with a 429 status code", async () => {
+packages/sms/test/sms-manager.test.ts:5:rate-limiting:import { checkSMSRateLimit } from "@calcom/lib/smsLockState";
+packages/sms/test/sms-manager.test.ts:139:rate-limiting:(checkSMSRateLimit as jest.Mock).mockResolvedValue(undefined);
+packages/sms/test/sms-manager.test.ts:143:rate-limiting:expect(checkSMSRateLimit).toHaveBeenCalledWith({
+packages/sms/test/sms-manager.test.ts:145:rate-limiting:rateLimitingType: "sms",
+packages/sms/test/sms-manager.test.ts:196:rate-limiting:(checkSMSRateLimit as jest.Mock).mockResolvedValue(undefined);
+packages/sms/test/sms-manager.test.ts:208:rate-limiting:(checkSMSRateLimit as jest.Mock).mockResolvedValue(undefined);
+packages/testing/src/lib/bookingScenario/setupAndTeardown.ts:15:rate-limiting:// Ensure that Rate Limiting isn't enforced for tests
+packages/trpc/server/routers/viewer/eventTypes/__tests__/getUserEventGroups.test.ts:11:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => ({
+packages/trpc/server/routers/viewer/eventTypes/__tests__/getUserEventGroups.test.ts:12:rate-limiting:checkRateLimitAndThrowError: vi.fn(),
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:4:rate-limiting:import type * as checkRateLimitAndThrowError from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:6:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError", () => checkRateLimitAndThrowErrorMock);
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:9:rate-limiting:mockReset(checkRateLimitAndThrowErrorMock);
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:12:rate-limiting:const checkRateLimitAndThrowErrorMock = mockDeep<typeof checkRateLimitAndThrowError>();
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:15:rate-limiting:fakeRateLimitPassed: () => {
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:17:rate-limiting:checkRateLimitAndThrowErrorMock.checkRateLimitAndThrowError.mockResolvedValue({
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:24:rate-limiting:fakeRateLimitFailed: () => {
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:27:rate-limiting:checkRateLimitAndThrowErrorMock.checkRateLimitAndThrowError.mockImplementation(() => {
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.ts:34:rate-limiting:export default checkRateLimitAndThrowErrorMock;
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.test.ts:6:rate-limiting:import { scenarios as checkRateLimitAndThrowErrorScenarios } from "./__mocks__/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.test.ts:136:rate-limiting:checkRateLimitAndThrowErrorScenarios.fakeRateLimitPassed();
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.test.ts:574:rate-limiting:it("When rate limit exceeded, it should throw error", async () => {
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.test.ts:581:rate-limiting:const errorMessageForRateLimit = checkRateLimitAndThrowErrorScenarios.fakeRateLimitFailed();
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.test.ts:602:rate-limiting:expect(e.message).toEqual(errorMessageForRateLimit);
+packages/trpc/server/routers/viewer/teams/removeMember/__tests__/removeMember.handler.test.ts:3:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/teams/removeMember/__tests__/removeMember.handler.test.ts:11:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError");
+packages/trpc/server/routers/viewer/teams/removeMember/__tests__/removeMember.handler.test.ts:23:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockResolvedValue({
+packages/trpc/server/routers/viewer/teams/removeMember/__tests__/removeMember.handler.test.ts:36:rate-limiting:describe("Rate Limiting", () => {
+packages/trpc/server/routers/viewer/teams/removeMember/__tests__/removeMember.handler.test.ts:37:rate-limiting:it("should check rate limit before processing", async () => {
+packages/trpc/server/routers/viewer/teams/removeMember/__tests__/removeMember.handler.test.ts:50:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:5:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:12:rate-limiting:vi.mock("@calcom/lib/checkRateLimitAndThrowError");
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:35:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockResolvedValue({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:55:rate-limiting:describe("Rate Limiting", () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:56:rate-limiting:it("should check SMS rate limit with 'sms' type before processing", async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:59:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:61:rate-limiting:rateLimitingType: "sms",
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:65:rate-limiting:it("should check SMS rate limit with 'smsMonth' type before processing", async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:68:rate-limiting:expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:70:rate-limiting:rateLimitingType: "smsMonth",
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:74:rate-limiting:it("should check both rate limits in order (sms first, then smsMonth)", async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:76:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockImplementation(async ({ rateLimitingType }) => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:77:rate-limiting:callOrder.push(rateLimitingType as string);
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:86:rate-limiting:it("should check rate limits before billing gate (credits check)", async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:88:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockImplementation(async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:89:rate-limiting:callOrder.push("rateLimit");
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:108:rate-limiting:expect(callOrder.indexOf("rateLimit")).toBeLessThan(callOrder.indexOf("credits"));
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:111:rate-limiting:it("should throw and not check billing when sms rate limit fails", async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:112:rate-limiting:vi.mocked(checkRateLimitAndThrowError).mockRejectedValueOnce(
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:113:rate-limiting:new Error("Rate limit exceeded. Try again in 60 seconds.")
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:117:rate-limiting:"Rate limit exceeded"
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:125:rate-limiting:it("should throw and not check billing when smsMonth rate limit fails", async () => {
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:126:rate-limiting:vi.mocked(checkRateLimitAndThrowError)
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:128:rate-limiting:.mockRejectedValueOnce(new Error("Rate limit exceeded. Try again in 2592000 seconds."));
+packages/trpc/server/routers/viewer/workflows/sendVerificationCode.handler.test.ts:131:rate-limiting:"Rate limit exceeded"
+packages/trpc/types/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.d.ts:1:rate-limiting:import type * as checkRateLimitAndThrowError from "@calcom/lib/checkRateLimitAndThrowError";
+packages/trpc/types/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.d.ts:2:rate-limiting:declare const checkRateLimitAndThrowErrorMock: import("vitest-mock-extended").DeepMockProxy<typeof checkRateLimitAndThrowError>;
+packages/trpc/types/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.d.ts:4:rate-limiting:fakeRateLimitPassed: () => void;
+packages/trpc/types/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.d.ts:5:rate-limiting:fakeRateLimitFailed: () => string;
+packages/trpc/types/server/routers/viewer/teams/inviteMember/__mocks__/checkRateLimitAndThrowError.d.ts:7:rate-limiting:export default checkRateLimitAndThrowErrorMock;

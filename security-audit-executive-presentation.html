@@ -93,6 +93,20 @@
     html, body { box-sizing: border-box; }
     *, *::before, *::after { box-sizing: inherit; }
 
+    /* Screen-reader-only utility: exposes an accessible name (e.g. a table
+       <caption>) to assistive technology without rendering visible text, so it
+       adds no visible words to a slide's content budget (AAP §0.8.2). Standard
+       clip pattern — kept in the layout but visually hidden. */
+    .sr-only {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .reveal {
       font-family: var(--ff-body);
       font-size: 30px;
@@ -450,10 +464,10 @@
         </div>
         <div class="two-col">
           <ul>
-            <li>Find risk before attackers do, across the whole monorepo</li>
-            <li>One severity language makes results comparable and actionable</li>
-            <li>An automatic gate keeps known-risky code out of releases</li>
-            <li>Evidence is reproducible, offline, and auditable</li>
+            <li>Find risk before attackers do</li>
+            <li>One severity language makes results comparable</li>
+            <li>An automatic gate blocks risky code</li>
+            <li>Evidence is reproducible and auditable</li>
           </ul>
           <div class="icon-row">
             <div class="icon-cell"><i data-lucide="shield"></i><span class="icon-caption">Protect</span></div>
@@ -474,29 +488,29 @@
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="siren"></i></div>
             <div class="kpi-value">298</div>
-            <div class="kpi-label">Total findings across four merged layers</div>
+            <div class="kpi-label">Total findings, four layers</div>
             <div class="kpi-sub">18 critical &middot; 96 high</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="gavel"></i></div>
             <div class="kpi-value">BLOCK</div>
-            <div class="kpi-label">CI/CD gate verdict</div>
+            <div class="kpi-label">Gate verdict</div>
             <div class="kpi-sub">ERROR &rarr; BLOCK &rarr; WARN &rarr; PASS</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="layers"></i></div>
             <div class="kpi-value">5</div>
-            <div class="kpi-label">Measurement layers run</div>
-            <div class="kpi-sub">4 merged &middot; all status OK</div>
+            <div class="kpi-label">Layers run</div>
+            <div class="kpi-sub">4 merged &middot; all OK</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-icon"><i data-lucide="alert-triangle"></i></div>
             <div class="kpi-value">80</div>
-            <div class="kpi-label">Gate-blocking findings</div>
+            <div class="kpi-label">Gate-blocking</div>
             <div class="kpi-sub">218 advisory</div>
           </div>
         </div>
-        <p class="source-note">Source: findings-merged.json &middot; _summary</p>
+        <p class="source-note">findings-merged.json &middot; _summary</p>
       </section>
 
       <!-- 4 · DIVIDER — HOW WE MEASURED ----------------------------- -->
@@ -512,7 +526,7 @@
           <span class="eyebrow">Pipeline</span>
           <h2>Five layers, deterministic first</h2>
         </div>
-        <pre class="mermaid">
+        <pre class="mermaid" role="img" aria-label="Pipeline flow diagram. The read-only Cal.com monorepo source feeds two tracks. Deterministic tooling produces Layer 2 Semgrep, the Layer 3a sink inventory, and Layer 4 OSV dependency findings; AI reasoning produces the Layer 1 architecture review, and the Layer 3a inventory feeds Layer 3b taint analysis. Every layer is normalized, then merged and corroborated into a single gate verdict.">
 flowchart LR
     SRC["Cal.com monorepo<br/>read-only source"] --> DET["Deterministic<br/>tooling"]
     SRC --> AGT["AI<br/>reasoning"]
@@ -567,8 +581,9 @@ flowchart LR
           <h2>Findings by layer and severity</h2>
         </div>
         <table class="data-table data-table--inset">
+          <caption class="sr-only">Findings by layer and severity: counts of critical, high, medium, low, and total findings for Layer 1 architecture, Layer 2 Semgrep, Layer 3b taint, and Layer 4 dependencies, with an all-layers total of 298.</caption>
           <thead>
-            <tr><th>Layer</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th><th>Total</th></tr>
+            <tr><th scope="col">Layer</th><th scope="col">Critical</th><th scope="col">High</th><th scope="col">Medium</th><th scope="col">Low</th><th scope="col">Total</th></tr>
           </thead>
           <tbody>
             <tr><td>Layer 1 &mdash; Architecture</td><td class="num">0</td><td class="num">2</td><td class="num">19</td><td class="num">8</td><td class="num">29</td></tr>
@@ -591,25 +606,25 @@ flowchart LR
           <div class="icon-cell">
             <i data-lucide="key-round"></i>
             <span class="icon-caption">Legacy crypto</span>
-            <span class="icon-detail">Unauthenticated AES-256-CBC, no key derivation</span>
+            <span class="icon-detail">Unauthenticated AES-256-CBC</span>
           </div>
           <div class="icon-cell">
             <i data-lucide="container"></i>
             <span class="icon-caption">Container</span>
-            <span class="icon-detail">Default build secrets, no non-root user</span>
+            <span class="icon-detail">Default build secrets, no USER</span>
           </div>
           <div class="icon-cell">
             <i data-lucide="globe-lock"></i>
             <span class="icon-caption">Transport</span>
-            <span class="icon-detail">CSP on login only, dev unsafe-inline</span>
+            <span class="icon-detail">CSP on login only</span>
           </div>
           <div class="icon-cell">
             <i data-lucide="shield-alert"></i>
             <span class="icon-caption">Open redirect</span>
-            <span class="icon-detail">Edge redirect to an unvalidated cookie</span>
+            <span class="icon-detail">Redirect to unvalidated cookie</span>
           </div>
         </div>
-        <p class="source-note">10 categories reviewed &middot; up to 50 files each &middot; findings-layer-1-blitzy.json</p>
+        <p class="source-note">findings-layer-1-blitzy.json &middot; 10 categories</p>
       </section>
 
       <!-- 10 · CONTENT — LAYER 2 &amp; 4 + CORROBORATION ----------- -->
@@ -635,10 +650,10 @@ flowchart LR
             <div class="kpi-icon"><i data-lucide="link"></i></div>
             <div class="kpi-value">16</div>
             <div class="kpi-label">Cross-layer corroborated</div>
-            <div class="kpi-sub">2 high &middot; 14 medium confidence</div>
+            <div class="kpi-sub">2 high &middot; 14 medium</div>
           </div>
         </div>
-        <p class="source-note">Corroboration is confirmed by two or more layers at the same file and line</p>
+        <p class="source-note">Same file and line, 2+ layers</p>
       </section>
 
       <!-- 11 · DIVIDER — THE CI/CD GATE ----------------------------- -->
@@ -654,7 +669,7 @@ flowchart LR
           <span class="eyebrow">Verdict</span>
           <h2>Why the gate says BLOCK</h2>
         </div>
-        <pre class="mermaid">
+        <pre class="mermaid" role="img" aria-label="Gate decision flowchart. Starting from 298 findings across four passing layers: if any layer errored, the verdict is ERROR; otherwise, if gate-blocking critical or high findings exist (80 here), the verdict is BLOCK; otherwise, if only advisory findings remain, the verdict is WARN; otherwise PASS.">
 flowchart TD
     START["298 findings<br/>4 layers OK"] --> Q1{"Any layer<br/>errored?"}
     Q1 -->|No| Q2{"Gate-blocking<br/>critical or high?"}
@@ -674,14 +689,15 @@ flowchart TD
           <h2>Top risks and existing defenses</h2>
         </div>
         <table class="data-table data-table--inset">
+          <caption class="sr-only">Top risks and existing defenses: each row pairs a risk with the layer that surfaced it and the compensating control already present in the codebase.</caption>
           <thead>
-            <tr><th>Risk</th><th>Layer</th><th>Existing defense</th></tr>
+            <tr><th scope="col">Risk</th><th scope="col">Layer</th><th scope="col">Existing defense</th></tr>
           </thead>
           <tbody>
-            <tr><td>Outbound-webhook SSRF</td><td class="tag">Layer 3b</td><td>HMAC-SHA256 signing; add egress allowlist</td></tr>
-            <tr><td>Malicious dependency</td><td class="tag">Layer 4</td><td>Removal required; never demoted</td></tr>
+            <tr><td>Outbound-webhook SSRF</td><td class="tag">Layer 3b</td><td>Signed; add egress allowlist</td></tr>
+            <tr><td>Malicious dependency</td><td class="tag">Layer 4</td><td>Remove; never demoted</td></tr>
             <tr><td>Legacy AES-256-CBC</td><td class="tag">Layer 1</td><td>AES-256-GCM keyring supersedes</td></tr>
-            <tr><td>Missing authorization</td><td class="tag">Layer 3b</td><td>PBAC and fifteen guard folders</td></tr>
+            <tr><td>Missing authorization</td><td class="tag">Layer 3b</td><td>PBAC; 15 guard folders</td></tr>
             <tr><td>Cross-site scripting</td><td class="tag">Layer 2</td><td>CSP nonce middleware</td></tr>
           </tbody>
         </table>
@@ -718,9 +734,9 @@ flowchart TD
         </div>
         <div class="two-col">
           <ul>
-            <li>Start from findings-merged.json &mdash; the canonical figures</li>
-            <li>Wire the BLOCK verdict into all-checks.yml (recommended)</li>
-            <li>Remediation is a separate, scoped follow-up</li>
+            <li>Start from findings-merged.json figures</li>
+            <li>Wire BLOCK into all-checks.yml (recommended)</li>
+            <li>Remediation is a scoped follow-up</li>
             <li>Re-run the pipeline to confirm progress</li>
           </ul>
           <div class="icon-row">

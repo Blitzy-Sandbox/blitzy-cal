@@ -2024,14 +2024,6 @@ packages/ui/components/editor/plugins/AutoLinkPlugin.test.tsx:13:CWE-843:// @ts-
 packages/ui/components/editor/plugins/AutoLinkPlugin.test.tsx:56:CWE-843:// @ts-expect-error - it's definitely not undefined
 packages/ui/components/editor/plugins/AutoLinkPlugin.test.tsx:77:CWE-843:// @ts-expect-error - it's definitely not undefined
 packages/ui/components/form/datepicker/datepicker.test.tsx:21:CWE-843:const { getByTestId } = render(<DatePicker date={null as unknown as Date} />);
-playwright.config.ts:75:CWE-843:// @ts-ignore TS definitions for USE are wrong.
-playwright.config.ts:125:CWE-843:// @ts-ignore TS definitions for USE are wrong.
-playwright.config.ts:136:CWE-843:// @ts-ignore TS definitions for USE are wrong.
-playwright.config.ts:160:CWE-843:// @ts-ignore TS definitions for USE are wrong.
-playwright.config.ts:208:CWE-843:getActionFiredDetails: (a: { calNamespace: string; actionType: string }) => Promise<any>,
-playwright.config.ts:296:CWE-843://@ts-ignore
-playwright.config.ts:299:CWE-843://@ts-ignore
-playwright.config.ts:302:CWE-843://@ts-ignore
 packages/lib/server/defaultHandler.test.ts:13:CWE-862:const handler = defaultHandler(handlers);
 packages/lib/server/defaultHandler.test.ts:32:CWE-862:const handler = defaultHandler(handlers);
 packages/lib/server/defaultResponder.test.ts:28:CWE-862:await defaultResponder(f)(req, res);

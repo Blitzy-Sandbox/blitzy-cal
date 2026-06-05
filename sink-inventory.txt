@@ -511,10 +511,6 @@ packages/platform/examples/base/src/pages/conferencing-apps.tsx:29:CWE-601:<Conf
 packages/trpc/server/routers/viewer/sso/get.handler.ts:57:CWE-601:callbackUrl: type === "oidc" ? `${process.env.NEXT_PUBLIC_WEBAPP_URL}${oidcPath}` : null,
 packages/trpc/server/routers/viewer/teams/resendInvitation.handler.ts:49:CWE-601:joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/settings/teams`,
 packages/trpc/server/routers/viewer/teams/resendInvitation.handler.ts:65:CWE-601:inviteTeamOptions.joinLink = `${WEBAPP_URL}/signup?token=${verificationToken.token}&callbackUrl=${gettingStartedPath}`;
-scripts/seed-utils.ts:300:CWE-601:name: "Location",
-scripts/seed-utils.ts:620:CWE-601:label: "Location",
-scripts/seed-utils.ts:741:CWE-601:label: "Location",
-scripts/seed-utils.ts:784:CWE-601:label: "Location",
 apps/api/v2/src/ee/calendars/services/outlook.service.ts:187:CWE-918:const response = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
 apps/api/v2/src/ee/calendars/services/outlook.service.ts:210:CWE-918:const response = await fetch("https://graph.microsoft.com/v1.0/me/calendar", {
 apps/api/v2/src/modules/conferencing/services/office365-video.service.ts:81:CWE-918:const response = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
@@ -597,10 +593,6 @@ apps/web/modules/videos/views/videos-single-view.tsx:361:CWE-918:const response 
 apps/web/next.config.ts:231:CWE-918:"superagent-proxy",
 apps/web/next.config.ts:232:CWE-918:"superagent",
 apps/web/server/lib/auth/verify-email-change/getServerSideProps.tsx:29:CWE-918:const response = await fetch(`${WEBAPP_URL}/api/auth/verify-email?${params.toString()}`, {
-example-apps/credential-sync/lib/integrations.ts:32:CWE-918:const response = await fetch(url, {
-example-apps/credential-sync/lib/integrations.ts:67:CWE-918:const response = await fetch(url, {
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:32:CWE-918:const result = await fetch(
-example-apps/credential-sync/pages/index.tsx:31:CWE-918:const res = await fetch(
 packages/app-store/_utils/oauth/OAuthManager.ts:342:CWE-918:response = await fetch(url, {
 packages/app-store/_utils/oauth/OAuthManager.ts:409:CWE-918:const response = await fetch(url, {
 packages/app-store/_utils/oauth/OAuthManager.ts:493:CWE-918:response = await fetch(`${this.credentialSyncVariables.CREDENTIAL_SYNC_ENDPOINT}`, {
@@ -770,10 +762,6 @@ packages/trpc/server/routers/viewer/admin/billingPortalLink.handler.ts:45:CWE-91
 packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts:45:CWE-918:return await fetch(url, {
 packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts:45:CWE-918:return await fetch(url, {
 packages/trpc/server/routers/viewer/admin/resendPurchaseCompleteEmail.handler.ts:35:CWE-918:const response = await fetch(`${CALCOM_PRIVATE_API_ROUTE}/v1/license/purchase-complete-email/resend`, {
-scripts/devin/delete-all-devin-knowledge.ts:46:CWE-918:const response = await fetch(url, options);
-scripts/devin/export-devin-knowledge.ts:51:CWE-918:const response = await fetch(`${API_BASE}/knowledge`, {
-scripts/devin/sync-knowledge-to-devin.ts:69:CWE-918:const response = await fetch(url, options);
-scripts/pull-coss-ui-components.ts:56:CWE-918:const req = https.get(url, (res) => {
 apps/api/v2/scripts/docker-start.ts:33:CWE-117:console.error(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`);
 apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.ts:603:CWE-117:this.logger.log(`createNextApiBookingRequest_2024_04_15`, {
 apps/api/v2/src/ee/bookings/2024-08-13/services/bookings.service.ts:1067:CWE-117:this.logger.error(`Booking with uid=${booking.uid} has no host`);
@@ -1484,111 +1472,6 @@ packages/trpc/server/routers/viewer/workflows/delete.handler.ts:132:CWE-117:log.
 packages/trpc/server/routers/viewer/workflows/update.handler.ts:405:CWE-117:log.error(`External service cleanup errors for workflow step ${oldStep.id}:`, externalErrors);
 packages/trpc/server/routers/viewer/workflows/update.handler.ts:670:CWE-117:log.error(`Agent not found for step ${step.id} agentId ${step.agentId}`);
 packages/trpc/server/routers/viewer/workflows/update.handler.ts:715:CWE-117:log.error(`Agent tool update errors for workflow ${id}:`, externalToolErrors);
-scripts/devin/delete-all-devin-knowledge.ts:100:CWE-117:console.log(`Found ${entryCount} knowledge entries:\n`);
-scripts/devin/delete-all-devin-knowledge.ts:102:CWE-117:console.log(`  - ${entry.name}`);
-scripts/devin/delete-all-devin-knowledge.ts:125:CWE-117:console.log(`\nSuccessfully deleted ${deleted} knowledge entries.`);
-scripts/devin/export-devin-knowledge.ts:61:CWE-117:console.error(`Error: API request failed with status ${response.status}`);
-scripts/devin/export-devin-knowledge.ts:62:CWE-117:console.error(`Response: ${errorText}`);
-scripts/devin/export-devin-knowledge.ts:74:CWE-117:console.log(`Success! Backup saved to: ${backupFile}`);
-scripts/devin/export-devin-knowledge.ts:75:CWE-117:console.log(`  - Folders: ${data.folders.length}`);
-scripts/devin/export-devin-knowledge.ts:76:CWE-117:console.log(`  - Knowledge entries: ${data.knowledge.length}`);
-scripts/devin/parse-local-knowledge.ts:187:CWE-117:console.log(`Generated ${output.knowledge.length} knowledge entries in ${output.folders.length} folders`);
-scripts/devin/parse-local-knowledge.ts:188:CWE-117:console.log(`Output written to: ${outputPath}`);
-scripts/devin/parse-local-knowledge.ts:199:CWE-117:console.log(`  ${folder}: ${count} entries`);
-scripts/devin/sync-knowledge-to-devin.ts:162:CWE-117:console.log(`  Updating: ${entry.name}`);
-scripts/devin/sync-knowledge-to-devin.ts:169:CWE-117:console.log(`  Creating: ${entry.name}`);
-scripts/devin/sync-knowledge-to-devin.ts:181:CWE-117:console.log(`  Deleting: ${entry.name}`);
-scripts/devin/sync-knowledge-to-devin.ts:190:CWE-117:console.log(`  Created: ${created}`);
-scripts/devin/sync-knowledge-to-devin.ts:191:CWE-117:console.log(`  Updated: ${updated}`);
-scripts/devin/sync-knowledge-to-devin.ts:192:CWE-117:console.log(`  Unchanged: ${unchanged}`);
-scripts/devin/sync-knowledge-to-devin.ts:194:CWE-117:console.log(`  Deleted: ${deleted}`);
-scripts/devin/validate-local-knowledge.ts:130:CWE-117:console.log(`Checking ${ruleFiles.length} rule files...`);
-scripts/devin/validate-local-knowledge.ts:153:CWE-117:console.log(`Found ${allErrors.length} validation error(s):\n`);
-scripts/devin/validate-local-knowledge.ts:156:CWE-117:console.log(`[ERROR] ${error.file}`);
-scripts/devin/validate-local-knowledge.ts:157:CWE-117:console.log(`  ${error.message}\n`);
-scripts/prepare-local-for-delegation-credentials-testing.js:15:CWE-117:console.log(`Using newEmail: ${newEmail}`);
-scripts/prepare-local-for-delegation-credentials-testing.js:25:CWE-117:console.log(`User with newEmail (${newEmail}) already exists. Skipping email update step.`);
-scripts/prepare-local-for-delegation-credentials-testing.js:38:CWE-117:console.log(`Updated user email to ${newEmail}`);
-scripts/prepare-local-for-delegation-credentials-testing.js:52:CWE-117:console.log(`Found organization: id=${org.id}, slug=${org.slug}`);
-scripts/prepare-local-for-delegation-credentials-testing.js:122:CWE-117:console.error(`Feature with slug ${slug} not found.`);
-scripts/prepare-local-for-delegation-credentials-testing.js:127:CWE-117:console.log(`Enabled Feature: ${slug}`);
-scripts/prepare-local-for-delegation-credentials-testing.js:129:CWE-117:console.log(`Feature: ${slug} already enabled, skipping.`);
-scripts/prepare-local-for-delegation-credentials-testing.js:132:CWE-117:console.log(`Now you can sign in with ${newEmail} and create a new Delegation Credential.`);
-scripts/pull-coss-ui-components.ts:68:CWE-117:console.warn(`⚠️  Unexpected content-type: ${contentType} for ${url}`);
-scripts/pull-coss-ui-components.ts:167:CWE-117:console.error(`❌ Invalid component dependency: ${registryDependency}`, (error as Error).message);
-scripts/pull-coss-ui-components.ts:173:CWE-117:console.log(`Pulling ${componentName}...`);
-scripts/pull-coss-ui-components.ts:192:CWE-117:console.warn(`⚠️  No component file found for ${componentName}`);
-scripts/pull-coss-ui-components.ts:209:CWE-117:console.log(`✅ Pulled ${fileName}`);
-scripts/pull-coss-ui-components.ts:212:CWE-117:console.error(`❌ Error pulling ${componentName}:`, (error as Error).message);
-scripts/pull-coss-ui-components.ts:222:CWE-117:console.log(`Target root: ${targetRoot}`);
-scripts/pull-coss-ui-components.ts:223:CWE-117:console.log(`Components dir: ${targetDirs.components}\n`);
-scripts/pull-coss-ui-components.ts:225:CWE-117:console.log(`Pulling index: ${UI_JSON_URL}...`);
-scripts/pull-coss-ui-components.ts:238:CWE-117:console.log(`Found ${registryDependencies.length} components\n`);
-scripts/pull-coss-ui-components.ts:247:CWE-117:console.log(`\n✨ Done!`);
-scripts/pull-coss-ui-components.ts:248:CWE-117:console.log(`✅ Successfully pulled: ${successCount} components`);
-scripts/pull-coss-ui-components.ts:250:CWE-117:console.log(`❌ Failed: ${failCount} components`);
-scripts/reassign-attributes.ts:25:CWE-117:console.log(`Found ${usersWithAttribute.length} users with attribute ${lookupAttributeId}`);
-scripts/reassign-attributes.ts:37:CWE-117:console.log(`Assigned attribute ${attributeId} to ${results.count} users`);
-scripts/seed-app-store.ts:67:CWE-117:console.log(`📲 Created ${isTemplate ? "template" : "app"}: '${slug}'`);
-scripts/seed-app-store.ts:80:CWE-117:console.log(`📲 Updated ${isTemplate ? "template" : "app"}: '${slug}'`);
-scripts/seed-app-store.ts:90:CWE-117:console.log(`Could not upsert app: ${slug}. Error:`, e);
-scripts/seed-booking-audit.ts:84:CWE-117:console.log(`  ⏭️ Audit logs already exist for ${bookingUid}, skipping.`);
-scripts/seed-booking-audit.ts:467:CWE-117:console.log(`  ✅ Enabled booking-audit for organization ${organizationId}`);
-scripts/seed-booking-audit.ts:479:CWE-117:console.log(`  ✅ Enabled bookings-v3 for organization ${organizationId}`);
-scripts/seed-booking-audit.ts:498:CWE-117:console.log(`📋 Creating new booking for audit logs...`);
-scripts/seed-booking-audit.ts:523:CWE-117:console.log(`  ✅ Created booking: ${booking.uid}`);
-scripts/seed-booking-audit.ts:525:CWE-117:console.log(`📋 Seeding audit logs for ${user.username} — booking ${booking.uid}`);
-scripts/seed-booking-audit.ts:537:CWE-117:console.log(`  ✅ Created ${count} audit log entries`);
-scripts/seed-booking-audit.ts:538:CWE-117:console.log(`  View logs at: /bookings/upcoming?uid=${booking.uid}&activeSegment=history`);
-scripts/seed-booking-audit.ts:540:CWE-117:console.log(`\n📊 Summary:`);
-scripts/seed-booking-audit.ts:541:CWE-117:console.log(`  Booking UID: ${booking.uid}`);
-scripts/seed-booking-audit.ts:542:CWE-117:console.log(`  Total audit log entries created: ${count}`);
-scripts/seed-insights.ts:197:CWE-117:console.log(`Creating payments for ${paidBookings.length} paid bookings...`);
-scripts/seed-insights.ts:278:CWE-117:console.log(`Successfully created payments for ${bookings.length} bookings`);
-scripts/seed-insights.ts:447:CWE-117:console.log(`Created event type: ${createdEventType.title}`);
-scripts/seed-insights.ts:712:CWE-117:console.log(`  - ${scenario.scenarioName}: ${count} bookings`);
-scripts/seed-insights.ts:864:CWE-117:console.log(`Created ${traceData.length - skipped} routing traces (${skipped} skipped due to conflicts)`);
-scripts/seed-load-test-form-reponses.ts:49:CWE-117:console.log(`Using form: ${testForm.id}`);
-scripts/seed-load-test-form-reponses.ts:60:CWE-117:console.log(`Creating batch ${batch + 1}/${NUM_BATCHES} (responses ${batchStart + 1}-${batchEnd})...`);
-scripts/seed-load-test-form-reponses.ts:81:CWE-117:console.log(`✓ Batch ${batch + 1} completed (${batchEnd}/${TOTAL_RESPONSES} total)`);
-scripts/seed-load-test-form-reponses.ts:86:CWE-117:console.log(`\n✓ Successfully created ${TOTAL_RESPONSES} responses`);
-scripts/seed-pbac-organization.ts:64:CWE-117:console.log(`✅ Created organization: ${organization.name} (ID: ${organization.id})`);
-scripts/seed-pbac-organization.ts:76:CWE-117:console.log(`Organization URL: ${process.env.NEXT_PUBLIC_WEBAPP_URL}/org/${organization.slug}`);
-scripts/seed-pbac-organization.ts:85:CWE-117:console.log(`👤 ${user.name}`);
-scripts/seed-pbac-organization.ts:86:CWE-117:console.log(`   📧 Email: ${user.email}`);
-scripts/seed-pbac-organization.ts:87:CWE-117:console.log(`   🔑 Password: ${password}`);
-scripts/seed-pbac-organization.ts:88:CWE-117:console.log(`   👔 Role: ${role}${customRole ? ` (${customRole})` : ""}`);
-scripts/seed-pbac-organization.ts:91:CWE-117:console.log(`   🔐 Permissions:`);
-scripts/seed-pbac-organization.ts:93:CWE-117:console.log(`      • ${permission.resource}:${permission.action}`);
-scripts/seed-pbac-organization.ts:96:CWE-117:console.log(`   🔐 Permissions: Full access (Owner role)`);
-scripts/seed-pbac-organization.ts:276:CWE-117:console.log(`  - Event Manager (${eventManagerRole.permissions.length} permissions)`);
-scripts/seed-pbac-organization.ts:277:CWE-117:console.log(`  - Analytics Specialist (${analyticsRole.permissions.length} permissions)`);
-scripts/seed-pbac-organization.ts:278:CWE-117:console.log(`  - Team Coordinator (${teamCoordinatorRole.permissions.length} permissions)`);
-scripts/seed-pbac-organization.ts:279:CWE-117:console.log(`  - Support Agent (${supportAgentRole.permissions.length} permissions)`);
-scripts/seed-pbac-organization.ts:442:CWE-117:console.log(`  - ${user.name} (${user.email}) - ${role}${customRole ? ` + ${customRole}` : ""}`);
-scripts/seed-pbac-organization.ts:518:CWE-117:console.log(`✅ Created team: ${team.name} with ${users.length} members`);
-scripts/seed-pbac-organization.ts:519:CWE-117:console.log(`Team URL: ${process.env.NEXT_PUBLIC_WEBAPP_URL}/team/${team.slug}`);
-scripts/seed-utils.ts:184:CWE-117:console.log(`🔑 ${credential.type} credentials created for ${theUser.email}`);
-scripts/seed-utils.ts:210:CWE-117:console.log(`\t👤 Created OAuth2 client '${oAuthClient.name}' for user with id '${userId}'`);
-scripts/seed-utils.ts:246:CWE-117:console.log(`Team '${team.name}' already exists, skipping.`);
-scripts/seed-utils.ts:286:CWE-117:console.log(`\t👤 Added '${teamInput.name}' membership for '${username}' with role '${role}'`);
-scripts/seed-utils.ts:329:CWE-117:console.log(`Skipping attributes seed, attributes already exist`);
-scripts/seed-utils.ts:344:CWE-117:console.log(`🎯 Creating attributes for team ${teamId}`);
-scripts/seed-utils.ts:378:CWE-117:console.log(`\t📝 Created attribute: ${attr.name}`);
-scripts/seed-utils.ts:443:CWE-117:console.log(`\t✅ Assigned ${attr.name} values to ${memberships.length} members`);
-scripts/seed-utils.ts:493:CWE-117:console.log(`Skipping Routing Form - Form Seed, ${seededForm.name} already exists`);
-scripts/seed-utils.ts:808:CWE-117:console.log(`Created ${bookings.length} routing form responses`);
-scripts/seed.ts:114:CWE-117:console.log(`Team '${team.name}' already exists, skipping.`);
-scripts/seed.ts:203:CWE-117:console.log(`\t👤 Added '${teamInput.name}' membership for '${username}' with role '${membershipRole}'`);
-scripts/seed.ts:240:CWE-117:console.log(`Team '${team.name}' already exists, skipping.`);
-scripts/seed.ts:267:CWE-117:console.log(`\t👤 Added '${teamInput.name}' membership for '${username}' with role '${role}'`);
-scripts/seed.ts:322:CWE-117:console.log(`\n🏢 Creating organization "${orgData.name}"`);
-scripts/seed.ts:332:CWE-117:console.log(`Organization with slug '${orgData.slug}' already exists, skipping.`);
-scripts/seed.ts:414:CWE-117:console.log(`One of the organization members already exists, skipping the entire seeding`);
-scripts/seed.ts:670:CWE-117:console.log(`🔑 API Key already exists, skipping.`);
-scripts/seed.ts:684:CWE-117:console.log(`🔑 Created seeded API Key: ${apiKeyPrefix}${apiKey}`);
-scripts/seed.ts:1480:CWE-117:console.log(`Skipping Routing Form - Form Seed, "Seeded Form - Pro" already exists`);
-scripts/seed.ts:1489:CWE-117:console.log(`Skipping Routing Form - Seeding - Pro User not found`);
 apps/api/v1/lib/helpers/rateLimitApiKey.ts:9:CWE-807:if (!req.query.apiKey) return res.status(401).json({ message: "No apiKey provided" });
 apps/api/v1/lib/helpers/verifyApiKey.ts:25:CWE-807:if (!req.query.apiKey) return res.status(401).json({ message: "No apiKey provided" });
 apps/api/v1/lib/helpers/verifyApiKey.ts:27:CWE-807:const strippedApiKey = `${req.query.apiKey}`.replace(process.env.API_KEY_PREFIX || "cal_", "");
@@ -1702,12 +1585,6 @@ apps/web/pages/api/twilio/webhook.ts:63:CWE-807:const countryCode = await twilio
 apps/web/pages/api/twilio/webhook.ts:65:CWE-807:const smsSid = req.body.SmsSid;
 apps/web/proxy.ts:129:CWE-807:const nonce = req.headers.get("x-csp-nonce");
 apps/web/server/lib/router/getServerSideProps.ts:20:CWE-807:const userAgent = context.req.headers["user-agent"];
-example-apps/credential-sync/pages/api/getToken.ts:7:CWE-807:const secret = req.headers[CALCOM_CREDENTIAL_SYNC_HEADER_NAME];
-example-apps/credential-sync/pages/api/getToken.ts:17:CWE-807:const calcomUserId = req.body.calcomUserId;
-example-apps/credential-sync/pages/api/getToken.ts:18:CWE-807:const appSlug = req.body.appSlug;
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:14:CWE-807:const isInvalid = req.query.invalid === "1";
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:15:CWE-807:const userId = parseInt(req.query.userId as string, 10);
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:16:CWE-807:const appSlug = req.query.appSlug;
 packages/app-store/_utils/oauth/decodeOAuthState.ts:9:CWE-807:if (typeof req.query.state !== "string") {
 packages/app-store/_utils/oauth/decodeOAuthState.ts:12:CWE-807:const state: IntegrationOAuthCallbackState = JSON.parse(req.query.state);
 packages/app-store/_utils/oauth/encodeOAuthState.ts:7:CWE-807:if (typeof req.query.state !== "string") {
@@ -1816,40 +1693,6 @@ packages/platform/examples/base/src/lib/generateRandomText.ts:10:CWE-338:const r
 packages/platform/examples/base/src/pages/_app.tsx:21:CWE-338:String.fromCharCode(Math.floor(Math.random() * 26) + 97)
 packages/platform/examples/base/src/pages/_app.tsx:24:CWE-338:const randomDomain = domain[Math.floor(Math.random() * domain.length)];
 packages/ui/components/file-uploader/FileUploader.tsx:87:CWE-338:const generateFileId = () => `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-scripts/seed-insights.ts:33:CWE-338:Math.random() * VALID_STATUSES_FOR_SEED.length,
-scripts/seed-insights.ts:47:CWE-338:return feedbacks[Math.floor(Math.random() * feedbacks.length)];
-scripts/seed-insights.ts:77:CWE-338:.add(Math.floor(Math.random() * 365), "day")
-scripts/seed-insights.ts:78:CWE-338:.add(Math.floor(Math.random() * 24), "hour")
-scripts/seed-insights.ts:79:CWE-338:.add(Math.floor(Math.random() * 60), "minute")
-scripts/seed-insights.ts:82:CWE-338:eventTypesToPick[Math.floor(Math.random() * eventTypesToPick.length)];
-scripts/seed-insights.ts:85:CWE-338:Math.floor(Math.random() * randomEvent.length),
-scripts/seed-insights.ts:98:CWE-338:Math.random() > 0.5 && Math.random() > 0.5 && Math.random() > 0.5;
-scripts/seed-insights.ts:111:CWE-338:usersIdsToPick[Math.floor(Math.random() * usersIdsToPick.length)];
-scripts/seed-insights.ts:119:CWE-338:booking.rating = Math.floor(Math.random() * 5) + 1; // Generates a random rating from 1 to 5
-scripts/seed-insights.ts:121:CWE-338:booking.noShowHost = Math.random() < 0.5;
-scripts/seed-insights.ts:124:CWE-338:const random = Math.random();
-scripts/seed-insights.ts:127:CWE-338:const randomMeetId = Math.random().toString(36).substring(2, 15);
-scripts/seed-insights.ts:134:CWE-338:const randomZoomId = Math.floor(Math.random() * 1000000000);
-scripts/seed-insights.ts:148:CWE-338:if (randomEvent.recurringEvent && Math.random() < 0.1) {
-scripts/seed-insights.ts:162:CWE-338:Array(Math.floor(Math.random() * 4))
-scripts/seed-insights.ts:626:CWE-338:Math.floor(Math.random() * insightsTeamMembers.length)
-scripts/seed-insights.ts:735:CWE-338:.sort(() => Math.random() - 0.5)
-scripts/seed-insights.ts:744:CWE-338:assignmentReasons[Math.floor(Math.random() * assignmentReasons.length)],
-scripts/seed-insights.ts:834:CWE-338:Math.floor(Math.random() * departments.length)
-scripts/seed-insights.ts:840:CWE-338:skills[Math.floor(Math.random() * skills.length)],
-scripts/seed-performance-testing.ts:243:CWE-338:const random = Math.random();
-scripts/seed-utils.ts:401:CWE-338:const mockNumber = Math.floor(Math.random() * 10 + 1).toString();
-scripts/seed-utils.ts:419:CWE-338:const randomOption = attribute.options[Math.floor(Math.random() * attribute.options.length)];
-scripts/seed-utils.ts:428:CWE-338:const numOptions = Math.floor(Math.random() * 3) + 1;
-scripts/seed-utils.ts:429:CWE-338:const shuffledOptions = [...attribute.options].sort(() => Math.random() - 0.5);
-scripts/seed-utils.ts:720:CWE-338:const numSkills = Math.floor(Math.random() * 3) + 1;
-scripts/seed-utils.ts:721:CWE-338:const shuffledSkillOptions = [...attributeRaw[2].options].sort(() => Math.random() - 0.5);
-scripts/seed-utils.ts:725:CWE-338:attributeRaw[1].options[Math.floor(Math.random() * attributeRaw[1].options.length)];
-scripts/seed-utils.ts:729:CWE-338:.subtract(Math.floor(Math.random() * 30), "days")
-scripts/seed-utils.ts:730:CWE-338:.subtract(Math.floor(Math.random() * 24), "hours")
-scripts/seed-utils.ts:731:CWE-338:.subtract(Math.floor(Math.random() * 60), "minutes");
-scripts/seed-utils.ts:758:CWE-338:value: Math.floor(Math.random() * 5) + 1,
-scripts/seed-utils.ts:801:CWE-338:value: Math.floor(Math.random() * 5) + 1,
 apps/api/v1/lib/helpers/safeParseJSON.ts:3:CWE-843:return JSON.parse(str);
 apps/api/v1/pages/api/credential-sync/_patch.ts:63:CWE-843:const decryptedKey = JSON.parse(
 apps/api/v1/pages/api/credential-sync/_patch.ts:75:CWE-843:key: key as unknown as Prisma.InputJsonValue,
@@ -2368,10 +2211,6 @@ packages/ui/components/form/select/components.tsx:71:CWE-843:) : (props.data as 
 packages/ui/components/form/select/components.tsx:73:CWE-843:teamId={(props.data as unknown as ExtendedOption).creditsTeamId}
 packages/ui/components/form/select/components.tsx:74:CWE-843:isOrganization={(props.data as unknown as ExtendedOption).isOrganization}
 packages/ui/components/form/toggleGroup/ToggleGroup.tsx:67:CWE-843:// @ts-expect-error --toggle-group-shadow is not a valid CSS property but can be a variable
-scripts/devin/sync-knowledge-to-devin.ts:128:CWE-843:const localData: DevinKnowledgeOutput = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
-scripts/pull-coss-ui-components.ts:88:CWE-843:const json = JSON.parse(data) as T;
-scripts/seed-app-store.ts:110:CWE-843:const { client_secret, client_id, redirect_uris } = JSON.parse(
-scripts/seed.ts:1147:CWE-843:key: JSON.parse(process.env.E2E_TEST_CALCOM_QA_GCAL_CREDENTIALS) as Prisma.JsonObject,
 apps/api/v1/pages/api/api-keys/[id]/_delete.ts:15:CWE-862:export default defaultResponder(deleteHandler);
 apps/api/v1/pages/api/api-keys/[id]/_get.ts:16:CWE-862:export default defaultResponder(getHandler);
 apps/api/v1/pages/api/api-keys/[id]/_patch.ts:17:CWE-862:export default defaultResponder(patchHandler);
@@ -2556,8 +2395,6 @@ apps/web/pages/api/router/index.ts:5:CWE-862:export default defaultHandler({
 apps/web/pages/api/router/index.ts:7:CWE-862:default: defaultResponder(async (req, res) => {
 apps/web/pages/api/router/index.ts:15:CWE-862:default: defaultResponder(async (req, res) => {
 apps/web/pages/api/twilio/webhook.ts:174:CWE-862:export default defaultHandler({
-example-apps/credential-sync/pages/api/getToken.ts:6:CWE-862:export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:13:CWE-862:export default async function handler(req: NextApiRequest, res) {
 packages/app-store/alby/api/add.ts:8:CWE-862:export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 packages/app-store/alby/api/webhook.ts:20:CWE-862:export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 packages/app-store/applecalendar/api/add.ts:57:CWE-862:export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -2727,9 +2564,6 @@ packages/trpc/server/routers/viewer/delegationCredential/listWorkspacePlatforms.
 packages/trpc/server/routers/viewer/delegationCredential/toggleEnabled.handler.ts:23:CWE-862:export default async function toggleEnabledHandler({
 packages/trpc/server/routers/viewer/delegationCredential/update.handler.ts:15:CWE-862:export default async function handler({
 packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.ts:344:CWE-862:export default async function inviteMemberHandler({ ctx, input }: InviteMemberOptions) {
-scripts/seed-app-store.ts:94:CWE-862:export default async function main() {
-scripts/seed-booking-audit.ts:415:CWE-862:export default async function seedBookingAuditLogs() {
-scripts/seed-huge-event-types.ts:79:CWE-862:export default async function main() {
 apps/api/v2/src/modules/slots/slots-2024-04-15/services/slots-worker.service.ts:228:CWE-79:worker.postMessage({
 apps/api/v2/src/modules/slots/slots-2024-04-15/workers/slots.worker.ts:106:CWE-79:parentPort?.postMessage({ success: true, data: result } as WorkerResult);
 apps/api/v2/src/modules/slots/slots-2024-04-15/workers/slots.worker.ts:108:CWE-79:parentPort?.postMessage({
@@ -2871,7 +2705,6 @@ packages/ui/components/address/Select.tsx:86:CWE-250:Object.assign({}, provided,
 packages/ui/components/address/Select.tsx:92:CWE-250:Object.assign({}, provided, {
 packages/ui/components/form/select/Select.tsx:54:CWE-250:Object.assign({}, base, {
 packages/ui/components/section/section.tsx:221:CWE-250:export const Section = Object.assign(Root, {
-setupVitest.ts:16:CWE-250:Object.defineProperty(window, "matchMedia", {
 apps/api/v2/scripts/generate-secrets.ts:11:CWE-912:fs.writeFileSync(outputPath, content);
 apps/api/v2/src/swagger/generate-swagger.ts:33:CWE-912:fs.unlinkSync(docsOutputFile);
 apps/api/v2/src/swagger/generate-swagger.ts:34:CWE-912:fs.writeFileSync(docsOutputFile, stringifiedContents, { encoding: "utf8" });
@@ -2895,9 +2728,6 @@ packages/prisma/enum-generator.ts:28:CWE-912:const outputFile = options.generato
 packages/prisma/enum-generator.ts:29:CWE-912:if (!outputFile || !outputFile.value) {
 packages/prisma/enum-generator.ts:33:CWE-912:const outputPath = path.resolve(outputFile.value);
 packages/prisma/enum-generator.ts:35:CWE-912:await fs.writeFile(outputPath, header + output.join("\n"), "utf-8");
-scripts/devin/export-devin-knowledge.ts:72:CWE-912:fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
-scripts/devin/parse-local-knowledge.ts:185:CWE-912:fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
-scripts/pull-coss-ui-components.ts:207:CWE-912:await fs.writeFile(filePath, content, 'utf8');
 apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:55:CWE-1004-614-1275:* `reserveSlot` sets a `uid` cookie via `res.cookie("uid", uid)` using `@Res({ passthrough: true })`.
 apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:129:CWE-1004-614-1275:res.cookie("uid", uid);
 apps/web/app/api/auth/reset-password/route.ts:31:CWE-1004-614-1275:const cookieStore = await cookies();
@@ -3030,8 +2860,6 @@ apps/web/modules/settings/billing/components/BillingCredits.tsx:114:CWE-639:cons
 apps/web/modules/settings/teams/[id]/event-types-view.tsx:23:CWE-639:const teamId = searchParams?.get("id") ? Number(searchParams.get("id")) : -1;
 apps/web/modules/settings/teams/[id]/event-types-view.tsx:76:CWE-639:const teamId = searchParams?.get("id") ? Number(searchParams.get("id")) : -1;
 apps/web/modules/webhooks/views/webhook-new-view.tsx:40:CWE-639:const teamId = searchParams?.get("teamId") ? Number(searchParams.get("teamId")) : undefined;
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:14:CWE-639:const isInvalid = req.query.invalid === "1";
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:15:CWE-639:const userId = parseInt(req.query.userId as string, 10);
 packages/app-store/_utils/getAppActor.ts:18:CWE-639:* @param params.bookingId - The booking ID for logging purposes
 packages/app-store/giphy/api/add.ts:21:CWE-639:const teamId = Number(req.query.teamId);
 packages/app-store/giphy/api/add.ts:22:CWE-639:const credentialOwner = req.query.teamId ? { teamId } : { userId: req.session.user.id };
@@ -3389,8 +3217,6 @@ apps/web/pages/api/integrations/subscriptions/webhook.ts:113:CWE-200:console.err
 apps/web/pages/api/integrations/subscriptions/webhook.ts:116:CWE-200:message: err.message,
 apps/web/pages/api/integrations/subscriptions/webhook.ts:117:CWE-200:stack: IS_PRODUCTION ? undefined : err.cause?.stack,
 apps/web/pages/api/twilio/webhook.ts:171:CWE-200:return res.status(500).send("No team or users found to be charged");
-example-apps/credential-sync/pages/api/getToken.ts:39:CWE-200:res.status(500).json({ error: e.message });
-example-apps/credential-sync/pages/api/setTokenInCalCom.ts:29:CWE-200:return res.status(500).json({ error: "Could not get access token" });
 packages/app-store/alby/api/webhook.ts:103:CWE-200:console.error(`Webhook Error: ${err.message}`);
 packages/app-store/alby/api/webhook.ts:105:CWE-200:message: err.message,
 packages/app-store/alby/api/webhook.ts:106:CWE-200:stack: IS_PRODUCTION ? undefined : err.cause?.stack,
@@ -3521,9 +3347,6 @@ packages/trpc/server/routers/viewer/payments/chargeCard.handler.ts:47:CWE-200:me
 packages/trpc/server/routers/viewer/slots/util.ts:1514:CWE-200:message: error.message,
 packages/trpc/server/routers/viewer/teams/changeMemberRole.handler.ts:43:CWE-200:message: error instanceof Error ? error.message : "Unauthorized",
 packages/trpc/server/routers/viewer/teams/changeMemberRole.handler.ts:64:CWE-200:message: error instanceof Error ? error.message : "Failed to assign role",
-scripts/seed-utils.ts:245:CWE-200:if (_err instanceof Error && _err.message.indexOf("Unique constraint failed on the fields") !== -1) {
-scripts/seed.ts:113:CWE-200:if (_err instanceof Error && _err.message.indexOf("Unique constraint failed on the fields") !== -1) {
-scripts/seed.ts:239:CWE-200:if (_err instanceof Error && _err.message.indexOf("Unique constraint failed on the fields") !== -1) {
 apps/api/v1/pages/api/availabilities/[id]/_get.ts:60:CWE-367:const availability = await prisma.availability.findUnique({
 apps/api/v1/pages/api/availabilities/_post.ts:134:CWE-367:const schedule = await prisma.schedule.findFirst({
 apps/api/v1/pages/api/availability/_get.ts:214:CWE-367:const team = await prisma.team.findUnique({
@@ -3740,10 +3563,6 @@ packages/trpc/server/routers/viewer/slots/reserveSlot.schema.ts:5:CWE-367:export
 packages/trpc/server/routers/viewer/slots/types.ts:136:CWE-367:* Input schema for the `reserveSlot` tRPC mutation.
 packages/trpc/server/routers/viewer/slots/types.ts:149:CWE-367:export const reserveSlotSchema = z
 packages/trpc/server/routers/viewer/teams/getActiveUserBookings.handler.ts:73:CWE-367:const targetUser = await prisma.user.findUnique({
-scripts/seed-booking-audit.ts:35:CWE-367:const existing = await prisma.auditActor.findUnique({
-scripts/seed-booking-audit.ts:78:CWE-367:const existingLogs = await prisma.bookingAudit.findFirst({
-scripts/seed-booking-audit.ts:419:CWE-367:const user = await prisma.user.findFirst({
-scripts/seed-booking-audit.ts:483:CWE-367:const eventType = await prisma.eventType.findFirst({
 apps/api/v1/pages/api/attendees/[id]/_patch.ts:60:CWE-285:await checkPermissions(req, data);
 apps/api/v1/pages/api/attendees/[id]/_patch.ts:65:CWE-285:async function checkPermissions(req: NextApiRequest, body: z.infer<typeof schemaAttendeeEditBodyParams>) {
 apps/api/v1/pages/api/availabilities/_post.ts:80:CWE-285:*  2. Calls `checkPermissions` to verify the requesting user owns the target schedule

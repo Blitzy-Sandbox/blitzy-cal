@@ -210,7 +210,6 @@ apps/api/v2/src/modules/teams/teams/controllers/teams.controller.e2e-spec.ts:45:
 apps/api/v2/test/utils/withNoThrottler.ts:1:authorization:import { CustomThrottlerGuard } from "@/lib/throttler-guard";
 apps/api/v2/test/utils/withNoThrottler.ts:3:authorization:export const mockThrottlerGuard = (): void => {
 apps/api/v2/test/utils/withNoThrottler.ts:4:authorization:jest.spyOn(CustomThrottlerGuard.prototype, "handleRequest").mockResolvedValue(true);
-__checks__/csp-login.spec.ts:15:csp-nonce:const nonceMatch = cspHeader?.match(/'nonce-([^']+)'/);
 apps/web/modules/bookings/components/Booker.test.tsx:35:bot-protection:import "@calcom/web/modules/auth/components/Turnstile";
 apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:1:rate-limiting:import type { RatelimitResponse } from "@unkey/ratelimit";
 apps/api/v1/lib/helpers/rateLimitApiKey.test.ts:8:rate-limiting:import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";

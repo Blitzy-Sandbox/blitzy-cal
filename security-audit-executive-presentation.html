@@ -436,9 +436,37 @@
     .reveal .controls .controls-arrow { width: 44px; height: 44px; }
     .reveal .pause-overlay .resume-button { min-height: 44px; padding: 12px 20px; }
 
+    /* Accessibility — visible keyboard focus indicator. The default reveal navigation
+       controls, the pause-overlay resume button, and any in-slide links expose no focus
+       ring; supply a high-contrast brand-token ring (teal outline + purple halo) that reads
+       clearly on both the light content surfaces and the dark gradient/navy title, divider,
+       and closing slides. */
+    .reveal .controls button:focus-visible,
+    .reveal .pause-overlay .resume-button:focus-visible,
+    .reveal a:focus-visible {
+      outline: 0.18rem solid var(--blitzy-accent-teal);
+      outline-offset: 0.12rem;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 0 0 0.3rem var(--blitzy-primary);
+    }
+
     /* Lucide icons inherit currentColor by default; default sizing for bare <i> */
     [data-lucide] { display: inline-flex; }
     svg.lucide { vertical-align: middle; }
+
+    /* Responsive readability — reveal.js scales the fixed 1920x1080 canvas down to fit
+       narrow viewports, which shrinks dense data-table text on phones and tablets. Raise the
+       table type scale (relative rem units that survive the canvas transform) at small
+       widths so the severity and risk tables stay legible without introducing overflow. */
+    @media (max-width: 768px) {
+      .reveal .data-table { font-size: 1.6rem; }
+      .reveal .data-table thead th { font-size: 1.5rem; padding: 1rem 1.15rem; }
+      .reveal .data-table tbody td { padding: 0.95rem 1.15rem; }
+    }
+    @media (max-width: 480px) {
+      .reveal .data-table { font-size: 2rem; }
+      .reveal .data-table thead th { font-size: 1.9rem; }
+    }
   </style>
 </head>
 <body>
@@ -578,22 +606,21 @@ flowchart LR
       <section data-background-color="var(--blitzy-surface-1)">
         <div class="slide-head">
           <span class="eyebrow"><i data-lucide="bug"></i> Severity</span>
-          <h2>Findings by layer and severity</h2>
+          <h2>Findings by severity</h2>
         </div>
-        <table class="data-table data-table--inset">
-          <caption class="sr-only">Findings by layer and severity: counts of critical, high, medium, low, and total findings for Layer 1 architecture, Layer 2 Semgrep, Layer 3b taint, and Layer 4 dependencies, with an all-layers total of 298.</caption>
+        <table class="data-table data-table--inset" aria-label="Finding counts by severity">
           <thead>
-            <tr><th scope="col">Layer</th><th scope="col">Critical</th><th scope="col">High</th><th scope="col">Medium</th><th scope="col">Low</th><th scope="col">Total</th></tr>
+            <tr><th scope="col">Severity</th><th scope="col">Findings</th></tr>
           </thead>
           <tbody>
-            <tr><td>Layer 1 &mdash; Architecture</td><td class="num">0</td><td class="num">2</td><td class="num">19</td><td class="num">8</td><td class="num">29</td></tr>
-            <tr><td>Layer 2 &mdash; Semgrep</td><td class="num">12</td><td class="num">20</td><td class="num">0</td><td class="num">0</td><td class="num">32</td></tr>
-            <tr><td>Layer 3b &mdash; Taint</td><td class="num">0</td><td class="num">1</td><td class="num">16</td><td class="num">48</td><td class="num">65</td></tr>
-            <tr><td>Layer 4 &mdash; Dependencies</td><td class="num">6</td><td class="num">73</td><td class="num">75</td><td class="num">18</td><td class="num">172</td></tr>
-            <tr class="ai-row"><td>All layers</td><td class="num">18</td><td class="num">96</td><td class="num">110</td><td class="num">74</td><td class="num">298</td></tr>
+            <tr><td>Critical</td><td class="num">18</td></tr>
+            <tr><td>High</td><td class="num">96</td></tr>
+            <tr><td>Medium</td><td class="num">110</td></tr>
+            <tr><td>Low</td><td class="num">74</td></tr>
+            <tr class="ai-row"><td>All findings</td><td class="num">298</td></tr>
           </tbody>
         </table>
-        <p class="source-note">Source: findings-merged.json &middot; bySeverityByLayer</p>
+        <p class="source-note">findings-merged.json &middot; layers 29 &middot; 32 &middot; 65 &middot; 172</p>
       </section>
 
       <!-- 9 · CONTENT — LAYER 1 ARCHITECTURAL HIGHLIGHTS ------------ -->
@@ -686,22 +713,21 @@ flowchart TD
       <section data-background-color="var(--blitzy-surface-1)">
         <div class="slide-head">
           <span class="eyebrow"><i data-lucide="shield-check"></i> Risk posture</span>
-          <h2>Top risks and existing defenses</h2>
+          <h2>Top risks and defenses</h2>
         </div>
-        <table class="data-table data-table--inset">
-          <caption class="sr-only">Top risks and existing defenses: each row pairs a risk with the layer that surfaced it and the compensating control already present in the codebase.</caption>
+        <table class="data-table data-table--inset" aria-label="Top risks and defenses">
           <thead>
-            <tr><th scope="col">Risk</th><th scope="col">Layer</th><th scope="col">Existing defense</th></tr>
+            <tr><th scope="col">Risk</th><th scope="col">Existing defense</th></tr>
           </thead>
           <tbody>
-            <tr><td>Outbound-webhook SSRF</td><td class="tag">Layer 3b</td><td>Signed; add egress allowlist</td></tr>
-            <tr><td>Malicious dependency</td><td class="tag">Layer 4</td><td>Remove; never demoted</td></tr>
-            <tr><td>Legacy AES-256-CBC</td><td class="tag">Layer 1</td><td>AES-256-GCM keyring supersedes</td></tr>
-            <tr><td>Missing authorization</td><td class="tag">Layer 3b</td><td>PBAC; 15 guard folders</td></tr>
-            <tr><td>Cross-site scripting</td><td class="tag">Layer 2</td><td>CSP nonce middleware</td></tr>
+            <tr><td>Webhook SSRF</td><td>Add egress allowlist</td></tr>
+            <tr><td>Malicious dependency</td><td>Remove; not demoted</td></tr>
+            <tr><td>Legacy AES-CBC</td><td>GCM keyring supersedes</td></tr>
+            <tr><td>Missing authorization</td><td>PBAC guards</td></tr>
+            <tr><td>Cross-site scripting</td><td>CSP nonce</td></tr>
           </tbody>
         </table>
-        <p class="source-note">Source: security-audit-decision-log.md &middot; &sect;4, &sect;7</p>
+        <p class="source-note">decision-log &middot; &sect;4, &sect;7</p>
       </section>
 
       <!-- 14 · CONTENT — VERIFICATION ------------------------------- -->

@@ -31,8 +31,6 @@ packages/features/ee/api-keys/lib/findValidApiKey.ts:5:api-key-hashing:const has
 packages/features/oauth/utils/generateSecret.ts:3:api-key-hashing:export const hashSecretKey = (apiKey: string): string => createHash("sha256").update(apiKey).digest("hex");
 packages/features/routing-forms/lib/getRoutedUrl.ts:46:api-key-hashing:const hash = createHash("sha256").update(paramsString).digest("hex");
 packages/lib/pkce.ts:9:api-key-hashing:const expectedChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
-scripts/seed.ts:6:api-key-hashing:import { hashAPIKey } from "@calcom/ee/api-keys/lib/apiKeys";
-scripts/seed.ts:663:api-key-hashing:const hashedKey = hashAPIKey(apiKey);
 apps/api/v2/src/bootstrap.ts:13:headers-cors-validation:import { BadRequestException, Logger, ValidationPipe, VersioningType } from "@nestjs/common";
 apps/api/v2/src/bootstrap.ts:42:headers-cors-validation:app.use(helmet());
 apps/api/v2/src/bootstrap.ts:56:headers-cors-validation:app.enableCors({

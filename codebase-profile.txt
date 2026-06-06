@@ -31,3 +31,40 @@ lockfiles=./yarn.lock
 source_file_count=7433
 exclude_dirs=node_modules,.next,dist,build,.turbo,.yarn,.git,coverage
 layer_0_status=OK
+#
+# ---- Deterministic detection-layer status (Directives 2/4/6; AAP §0.7 no-silent-failure) ----
+# layer_0_status is recorded above. The deterministic detection layers below record an
+# explicit status here alongside it. Agent layers (1 Architectural, 3b Taint) self-report
+# coverage via the "_coverage" element inside their own findings JSON files; Layers 2 and 4
+# additionally carry a leading "_coverage" status element in their normalized JSON.
+#
+# Layer 2 (Semgrep CE) is PARTIAL: the scan ran to completion (results-semgrep.sarif
+# executionSuccessful=true) and produced 32 findings, but Semgrep OSS failed to parse
+# 34 targeted files (production=15, test=18, declaration .d.ts=1), reducing AST coverage
+# for those files only. This is a Semgrep OSS parser limitation on certain TS/TSX/HTML/.d.ts
+# constructs, not a scan error. The full affected-file list is enumerated in
+# results-semgrep.sarif (runs[0].invocations[0].toolExecutionNotifications) and in the
+# leading "_coverage".parse_warning_files element of findings-layer-2-semgrep.json.
+# Layer 2 production-file parse failures (security-relevant coverage gaps):
+#   - apps/web/modules/bookings/types.ts
+#   - apps/web/modules/insights/views/insights-call-history-view.tsx
+#   - apps/web/modules/insights/views/insights-routing-view.tsx
+#   - apps/web/modules/insights/views/insights-view.tsx
+#   - packages/app-store/_components/crm/WriteToObjectSettings.types.ts
+#   - packages/emails/src/components/BaseEmailHtml.tsx
+#   - packages/emails/src/components/EmailCommonDivider.tsx
+#   - packages/emails/src/components/EmailHead.tsx
+#   - packages/emails/src/components/V2BaseEmailHtml.tsx
+#   - packages/embeds/embed-core/index.html
+#   - packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts
+#   - packages/platform/examples/base/src/pages/_app.tsx
+#   - packages/platform/examples/base/src/pages/booking.tsx
+#   - packages/platform/examples/base/src/pages/index.tsx
+#   - packages/testing/src/lib/bookingScenario/bookingScenario.ts
+# Layer 3a (deterministic sink/mitigation inventory) and Layer 4 (OSV-Scanner v2 over
+# ./yarn.lock) completed with full coverage.
+layer_2_status=PARTIAL
+layer_2_coverage=partial
+layer_2_parse_warnings=34
+layer_3a_status=OK
+layer_4_status=OK

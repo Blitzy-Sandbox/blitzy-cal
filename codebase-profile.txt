@@ -1,0 +1,33 @@
+# codebase-profile.txt
+# Layer 0 -- Deterministic Discovery profile (Directive 0) for the blitzy-cal (Cal.com fork) monorepo audit.
+#
+# Purpose: This file is the deterministic foundation of the five-layer read-only security audit.
+# Every downstream layer (1 Architectural, 2 Semgrep SAST, 3a Inventory, 3b Taint, 4 OSV SCA) reads
+# this profile to select the JS/TS pattern column and the shared exclude_dirs set. The profile is
+# byte-reproducible on identical input and is free of ANSI escape sequences.
+#
+# Deterministic detection method (fixed and reproducible):
+#   * First-party source is defined as git-tracked files (enumerated with `git ls-files`). This
+#     naturally omits every exclude_dirs entry (all are gitignored: zero tracked files reside under
+#     them) and omits generated / build output that is not committed source -- for example
+#     packages/prisma/generated and the packages/trpc codegen produced by `yarn install` + postinstall
+#     (1200 such generated .ts/.tsx/.js files in this tree are deliberately NOT counted as source).
+#   * The extension census counts tracked .ts/.tsx/.js (the .ts group includes .d.ts declarations).
+#   * Language share is computed over the .ts/.tsx/.js basis; a secondary language must exceed 5% share.
+#   * All probes run under LC_ALL=C with a fixed traversal so re-runs are byte-identical.
+#
+# Extension census (git-tracked, first-party):
+#   .ts=5718 (.d.ts=54)   .tsx=1678   .js=37   .jsx=0   .mjs=6   .cjs=1
+#   TypeScript (.ts + .tsx) = 7396 -> 99.50 percent     JavaScript (.js) = 37 -> 0.50 percent (below 5%)
+#   source_file_count counts .ts + .tsx + .js = 5718 + 1678 + 37 = 7433
+#
+# ---- Discovery profile (key=value, one per line) ----
+primary_language=TypeScript
+secondary_languages=
+frameworks=Next.js,NestJS,React,Prisma,tRPC,Turborepo,Zod,Express,Vitest,Playwright
+package_ecosystems=npm
+package_manager=yarn@4.12.0
+lockfiles=./yarn.lock
+source_file_count=7433
+exclude_dirs=node_modules,.next,dist,build,.turbo,.yarn,.git,coverage
+layer_0_status=OK

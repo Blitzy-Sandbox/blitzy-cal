@@ -1,0 +1,1323 @@
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:259:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual({ error: "You are not authorized to perform this request." });
+apps/api/v1/pages/api/slots/_get.test.ts:63:insecure-deserialization:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:63:sensitive-data-exposure:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:64:insecure-deserialization:const response = JSON.parse(res._getData());
+apps/api/v1/pages/api/slots/_get.test.ts:81:insecure-deserialization:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:81:sensitive-data-exposure:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:82:insecure-deserialization:const response = JSON.parse(res._getData());
+apps/api/v1/test/lib/attendees/_post.test.ts:33:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("Forbidden");
+apps/api/v1/test/lib/attendees/_post.test.ts:63:insecure-deserialization:expect(JSON.parse(res._getData()).attendee).toEqual(attendeeData);
+apps/api/v1/test/lib/attendees/_post.test.ts:64:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("Attendee created successfully");
+apps/api/v1/test/lib/attendees/_post.test.ts:97:insecure-deserialization:expect(JSON.parse(res._getData()).attendee).toEqual(attendeeData);
+apps/api/v1/test/lib/attendees/_post.test.ts:98:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("Attendee created successfully");
+apps/api/v1/test/lib/booking-references.integration-test.ts:281:access-control-idor:const refInDb = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/booking-references.integration-test.ts:400:access-control-idor:const updatedRef = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/booking-references.integration-test.ts:438:access-control-idor:const updatedRef = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/booking-references.integration-test.ts:480:access-control-idor:const refInDb = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/bookings/[id]/_delete.test.ts:61:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/[id]/_patch.integration-test.ts:133:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/[id]/_patch.integration-test.ts:20:access-control-idor:const member1 = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/bookings/[id]/_patch.integration-test.ts:24:access-control-idor:const member0 = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/bookings/[id]/_patch.integration-test.ts:70:access-control-idor:const member2 = await prisma.user.findFirstOrThrow({ where: { email: "member2-acme@example.com" } });
+apps/api/v1/test/lib/bookings/[id]/_patch.integration-test.ts:93:access-control-idor:const existingAdmin = await prisma.user.findUnique({ where: { email: "test-admin@example.com" } });
+apps/api/v1/test/lib/bookings/[id]/_patch.test.ts:139:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/[id]/_patch.test.ts:63:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/[id]/recordings/_get.test.ts:102:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(mockedRecordings);
+apps/api/v1/test/lib/bookings/[id]/transcripts/[recordingId]/_get.test.ts:91:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(mockedTranscripts);
+apps/api/v1/test/lib/bookings/[id]/transcripts/_get.test.ts:83:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(mockedTranscripts);
+apps/api/v1/test/lib/bookings/_auth-middleware.integration-test.ts:184:sensitive-data-exposure:console.log("Cleaning up org", orgRef.id);
+apps/api/v1/test/lib/bookings/_auth-middleware.integration-test.ts:190:sensitive-data-exposure:console.log("Cleaning up users", [
+apps/api/v1/test/lib/bookings/_auth-middleware.integration-test.ts:206:sensitive-data-exposure:console.log(createEventResult1.bookings[0].id);
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:117:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:136:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:192:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:214:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:235:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:238:access-control-idor:const team1 = await prisma.team.findFirst({ where: { slug: "team1" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:239:access-control-idor:const teamEventType = await prisma.eventType.findFirst({
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:245:access-control-idor:const nonTeamBooking = await prisma.booking.findFirst({
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:26:access-control-idor:proUser = await prisma.user.findFirstOrThrow({ where: { email: "pro@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:27:access-control-idor:proUserBooking = await prisma.booking.findFirstOrThrow({ where: { userId: proUser.id } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:29:access-control-idor:memberUser = await prisma.user.findFirstOrThrow({ where: { email: "member2-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:32:access-control-idor:const memberEventType = await prisma.eventType.findFirst({
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:382:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:384:access-control-idor:const testUser = await prisma.user.findFirstOrThrow({ where: { email: "pro@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:418:sensitive-data-exposure:console.log(`Found duplicate booking IDs: ${duplicates.join(", ")}`);
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:99:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/bookings/_post.test.ts:208:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:234:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:264:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:288:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:325:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:363:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:398:insecure-deserialization:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:398:sensitive-data-exposure:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:401:insecure-deserialization:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:466:insecure-deserialization:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:466:sensitive-data-exposure:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:467:insecure-deserialization:createdBooking = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:543:insecure-deserialization:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:543:sensitive-data-exposure:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:544:insecure-deserialization:const rescheduledBooking = JSON.parse(res._getData()) as Booking;
+apps/api/v1/test/lib/bookings/_post.test.ts:547:access-control-idor:const previousBooking = await prisma.booking.findUnique({
+apps/api/v1/test/lib/bookings/_post.test.ts:607:insecure-deserialization:createdBooking = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:664:insecure-deserialization:const data = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:737:insecure-deserialization:const data = JSON.parse(res._getData());
+apps/api/v1/test/lib/event-types/_post.test.ts:153:insecure-deserialization:const data = JSON.parse(res._getData());
+apps/api/v1/test/lib/event-types/_post.test.ts:61:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("ADMIN required for `userId`");
+apps/api/v1/test/lib/event-types/_post.test.ts:81:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("ADMIN required for `teamId`");
+apps/api/v1/test/lib/event-types/_post.test.ts:97:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("`userId` or `teamId` required");
+apps/api/v1/test/lib/selected-calendars/_post.test.ts:116:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/selected-calendars/_post.test.ts:173:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/selected-calendars/_post.test.ts:53:insecure-deserialization:expect(JSON.parse(res._getData()).message).toBe("invalid_type in 'externalId': Required");
+apps/api/v1/test/lib/users/_post.test.ts:136:insecure-deserialization:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:100:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "admin@example.com" } });
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:117:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:133:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-dunder@example.com" } });
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:16:access-control-idor:const acmeOrg = await prisma.team.findFirst({
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:39:access-control-idor:const dunderOrg = await prisma.team.findFirst({
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:83:access-control-idor:const memberUser = await prisma.user.findFirstOrThrow({ where: { email: "member2-acme@example.com" } });
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:100:access-control-idor:const memberOneUser = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:104:access-control-idor:const memberTwoUser = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:12:access-control-idor:const acmeOrg = await prisma.team.findFirst({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:37:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:47:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-dunder@example.com" } });
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:48:access-control-idor:const memberOneUser = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:60:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({ where: { email: "owner1-acme@example.com" } });
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:61:access-control-idor:const memberOneUser = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:64:access-control-idor:const memberTwoUser = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:80:access-control-idor:const memberOneUser = await prisma.user.findFirstOrThrow({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:92:access-control-idor:const adminUser = await prisma.user.findFirstOrThrow({
+apps/api/v2/src/app.e2e-spec.ts:53:ssti-dynamic-template:}).compile();
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings-billing.e2e-spec.ts:284:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings-billing.e2e-spec.ts:61:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/bookings.controller.e2e-spec.ts:59:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-04-15/controllers/managed-user-bookings.e2e-spec.ts:71:ssti-dynamic-template:}).compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:80:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-guests.e2e-spec.ts:82:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/api-key-bookings.e2e-spec.ts:94:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-access-auth.e2e-spec.ts:58:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-fields.e2e-spec.ts:73:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:206:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:57:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/calendar-links.e2e-spec.ts:51:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/confirm-bookings.e2e-spec.ts:56:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/confirm-emails.e2e-spec.ts:105:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/team-emails.e2e-spec.ts:111:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:94:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/managed-user-bookings.e2e-spec.ts:85:ssti-dynamic-template:}).compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reassign-bookings.e2e-spec.ts:79:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:381:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:591:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:61:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reschedule-bookings.e2e-spec.ts:57:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:75:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/team-bookings.e2e-spec.ts:89:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/update-booking-location.e2e-spec.ts:67:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/user-bookings.e2e-spec.ts:97:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/variable-length-bookings.e2e-spec.ts:67:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/calendars/controllers/calendars.controller.e2e-spec.ts:77:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types-private-links/controllers/event-types-private-links.controller.e2e-spec.ts:48:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.e2e-spec.ts:54:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types/event-types_2024_04_15/controllers/event-types.controller.e2e-spec.ts:98:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:1888:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:1893:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:1898:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:189:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:1904:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:2182:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:2874:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:2879:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:2913:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:3182:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:3187:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/ee/event-types/event-types_2024_06_14/controllers/event-types.controller.e2e-spec.ts:69:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/gcal/gcal.controller.e2e-spec.ts:47:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/me/me.controller.e2e-spec.ts:47:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/schedules/schedules_2024_04_15/controllers/schedules.controller.e2e-spec.ts:66:ssti-dynamic-template:.compile();
+apps/api/v2/src/ee/schedules/schedules_2024_06_11/controllers/schedules.controller.e2e-spec.ts:64:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/auth/oauth2/controllers/atoms-oauth2.controller.e2e-spec.ts:29:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.e2e-spec.ts:113:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.e2e-spec.ts:38:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.e2e-spec.ts:490:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.e2e-spec.ts:93:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/billing/controllers/billing.controller.e2e-spec.ts:133:webhook-signature:.set("stripe-signature", "t=1234567890,v1=random_signature_for_e2e_test")
+apps/api/v2/src/modules/billing/controllers/billing.controller.e2e-spec.ts:176:webhook-signature:.set("stripe-signature", "t=1234567890,v1=random_signature_for_e2e_test")
+apps/api/v2/src/modules/billing/controllers/billing.controller.e2e-spec.ts:206:webhook-signature:.set("stripe-signature", "t=1234567890,v1=random_signature_for_e2e_test")
+apps/api/v2/src/modules/billing/controllers/billing.controller.e2e-spec.ts:239:webhook-signature:.set("stripe-signature", "t=1234567890,v1=random_signature_for_e2e_test")
+apps/api/v2/src/modules/billing/controllers/billing.controller.e2e-spec.ts:42:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.e2e-spec.ts:41:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.e2e-spec.ts:50:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/event-types/controllers/event-types-webhooks.controller.e2e-spec.ts:46:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:1038:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:109:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:43:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:819:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:824:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:829:sensitive-data-exposure:console.log(e);
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-users/oauth-client-users.controller.e2e-spec.ts:861:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-client-webhooks/oauth-client-webhooks.controller.e2e-spec.ts:54:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.e2e-spec.ts:154:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.e2e-spec.ts:50:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-clients/oauth-clients.controller.e2e-spec.ts:95:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.e2e-spec.ts:35:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.e2e-spec.ts:83:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organization-attributes.e2e-spec.ts:112:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/attributes/index/controllers/organization-attributes.e2e-spec.ts:38:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/attributes/options/organization-attributes-options.e2e-spec.ts:139:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/attributes/options/organization-attributes-options.e2e-spec.ts:44:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/bookings/managed-organizations-bookings.controller.e2e-spec.ts:88:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:737:crypto-misuse:email: `org-bookings-regular-user-${Math.floor(Math.random() * 10000)}@api.com`,
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:743:crypto-misuse:title: `regular-user-event-type-${Math.floor(Math.random() * 10000)}`,
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:744:crypto-misuse:slug: `regular-user-event-type-${Math.floor(Math.random() * 10000)}`,
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:761:crypto-misuse:uid: `regular-user-booking-${Math.floor(Math.random() * 10000)}`,
+apps/api/v2/src/modules/organizations/bookings/organizations-bookings.controller.e2e-spec.ts:80:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.e2e-spec.ts:60:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/delegation-credentials/services/organizations-delegation-credential.service.spec.ts:59:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/event-types/assign-all-team-members.e2e-spec.ts:71:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/event-types/organizations-admin-not-team-member-event-types.e2e-spec.ts:73:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/event-types/organizations-event-types-private-links.e2e-spec.ts:58:ssti-dynamic-template:const moduleRef = await testingModuleBuilder.compile();
+apps/api/v2/src/modules/organizations/event-types/organizations-member-team-admin-event-types.e2e-spec.ts:74:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.e2e-spec.ts:492:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/memberships/organizations-membership.controller.e2e-spec.ts:74:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/organizations/organizations-organizations.controller.e2e-spec.ts:100:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:633:sensitive-data-exposure:console.error("Cleanup error:", error);
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:636:sensitive-data-exposure:console.error("Cleanup error:", error);
+apps/api/v2/src/modules/organizations/roles/organizations-roles.controller.e2e-spec.ts:67:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.e2e-spec.ts:390:sensitive-data-exposure:console.log(err);
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.e2e-spec.ts:393:sensitive-data-exposure:console.log(err);
+apps/api/v2/src/modules/organizations/roles/permissions/organizations-roles-permissions.controller.e2e-spec.ts:44:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms-responses.controller.e2e-spec.ts:71:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/routing-forms/controllers/organizations-routing-forms.controller.e2e-spec.ts:43:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.e2e-spec.ts:146:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/schedules/organizations-schedules.e2e-spec.ts:48:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/bookings/organizations-teams-bookings.controller.e2e-spec.ts:75:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:118:sensitive-data-exposure:console.log("WOOOW", responseBody.data);
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:314:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:430:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:51:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/index/organizations-teams.controller.e2e-spec.ts:562:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/invite/organizations-teams-invite.controller.e2e-spec.ts:42:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/memberships/e2e/organizations-teams-memberships-guard.controller.e2e-spec.ts:69:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/teams/memberships/e2e/organizations-teams-memberships.controller.e2e-spec.ts:68:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.e2e-spec.ts:464:sensitive-data-exposure:console.error("Cleanup error:", error);
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.e2e-spec.ts:467:sensitive-data-exposure:console.error("Cleanup error:", error);
+apps/api/v2/src/modules/organizations/teams/roles/organizations-teams-roles.controller.e2e-spec.ts:68:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.e2e-spec.ts:282:sensitive-data-exposure:console.log(err);
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.e2e-spec.ts:285:sensitive-data-exposure:console.log(err);
+apps/api/v2/src/modules/organizations/teams/roles/permissions/organizations-teams-roles-permissions.controller.e2e-spec.ts:46:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.e2e-spec.ts:443:sensitive-data-exposure:console.log("responseBody", responseBody.data);
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms-responses.controller.e2e-spec.ts:67:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/teams/routing-forms/controllers/organizations-teams-routing-forms.controller.e2e-spec.ts:43:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.e2e-spec.ts:409:access-control-idor:const user2Original = await prismaWriteService.prisma.user.findUnique({
+apps/api/v2/src/modules/organizations/teams/schedules/organizations-teams-schedules.e2e-spec.ts:73:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/teams/verified-resources/org-teams-verified-resources.controller.e2e-spec.ts:77:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/teams/workflows/controllers/org-team-workflows.controller.e2e-spec.ts:120:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/organizations/users/bookings/controllers/organizations-users-bookings.e2e-spec.ts:75:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.e2e-spec.ts:154:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.e2e-spec.ts:48:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.e2e-spec.ts:528:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/users/index/controllers/organizations-users.e2e-spec.ts:673:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/users/ooo/controllers/organizations-users-ooo.e2e-spec.ts:52:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/organizations/webhooks/controllers/organizations-webhooks.e2e-spec.ts:43:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/routing-forms/controllers/routing-forms.e2e-spec.ts:61:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/selected-calendars/controllers/selected-calendars.controller.e2e-spec.ts:50:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.e2e-spec.ts:344:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/dynamic-event-type-slots.controller.e2e-spec.ts:124:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/org-team-event-type-slots.controller.e2e-spec.ts:155:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/reschedule-uid-slots.controller.e2e-spec.ts:122:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/team-event-type-slots.controller.e2e-spec.ts:192:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/user-event-type-slots.controller.e2e-spec.ts:193:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/services/slots.service.spec.ts:104:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/teams/bookings/teams-bookings.controller.e2e-spec.ts:114:ssti-dynamic-template:.compile();
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types-webhooks.controller.e2e-spec.ts:51:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/event-types/controllers/teams-event-types.controller.e2e-spec.ts:107:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts:120:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts:177:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts:39:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/memberships/controllers/teams-memberships.controller.e2e-spec.ts:69:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/schedules/controllers/teams-schedules.e2e-spec.ts:48:ssti-dynamic-template:).compile();
+apps/api/v2/src/modules/teams/teams/controllers/teams.controller.e2e-spec.ts:49:ssti-dynamic-template:}).compile();
+apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.e2e-spec.ts:40:ssti-dynamic-template:).compile();
+apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts:102:webhook-signature:.set("x-vercel-signature", signature)
+apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts:146:webhook-signature:.set("x-vercel-signature", signature)
+apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts:26:ssti-dynamic-template:}).compile();
+apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts:51:webhook-signature:it("should reject requests without x-vercel-signature header", async () => {
+apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts:61:webhook-signature:.set("x-vercel-signature", "0000000000000000000000000000000000000000")
+apps/api/v2/src/vercel-webhook.controller.e2e-spec.ts:72:webhook-signature:.set("x-vercel-signature", signature)
+apps/api/v2/test/fixtures/repository/api-keys.repository.fixture.ts:17:crypto-misuse:const hashedKey = createHash("sha256").update(keyString).digest("hex");
+apps/api/v2/test/fixtures/repository/billing.repository.fixture.ts:27:access-control-idor:return this.prismaWriteClient.platformBilling.findFirst({
+apps/api/v2/test/fixtures/repository/billing.repository.fixture.ts:56:sensitive-data-exposure:console.error(err);
+apps/api/v2/test/fixtures/repository/bookings.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.booking.findFirst({ where: { id: bookingId } });
+apps/api/v2/test/fixtures/repository/bookings.repository.fixture.ts:21:access-control-idor:return this.prismaReadClient.booking.findUnique({ where: { uid: bookingUid } });
+apps/api/v2/test/fixtures/repository/event-types.repository.fixture.ts:78:access-control-idor:return this.prismaReadClient.eventType.findUnique({ where: { id: eventTypeId } });
+apps/api/v2/test/fixtures/repository/managed-organizations.repository.fixture.ts:15:access-control-idor:return this.prismaReadClient.team.findUnique({
+apps/api/v2/test/fixtures/repository/managed-organizations.repository.fixture.ts:28:access-control-idor:return this.prismaReadClient.managedOrganization.findUnique({
+apps/api/v2/test/fixtures/repository/membership.repository.fixture.ts:26:access-control-idor:return this.prismaReadClient.membership.findFirst({ where: { id: membershipId } });
+apps/api/v2/test/fixtures/repository/membership.repository.fixture.ts:30:access-control-idor:return this.prismaReadClient.membership.findFirst({ where: { teamId, userId } });
+apps/api/v2/test/fixtures/repository/membership.repository.fixture.ts:42:access-control-idor:return this.prismaReadClient.membership.findUnique({ where: { id: membershipId } });
+apps/api/v2/test/fixtures/repository/oauth-client.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.platformOAuthClient.findFirst({ where: { id: clientId } });
+apps/api/v2/test/fixtures/repository/oauth-client.repository.fixture.ts:25:access-control-idor:const response = await this.prismaReadClient.platformOAuthClient.findFirst({
+apps/api/v2/test/fixtures/repository/organization.repository.fixture.ts:17:access-control-idor:return this.primaReadClient.team.findFirst({ where: { id: teamId } });
+apps/api/v2/test/fixtures/repository/profiles.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.profile.findFirst({ where: { id: profileId } });
+apps/api/v2/test/fixtures/repository/profiles.repository.fixture.ts:21:access-control-idor:return this.prismaReadClient.profile.findFirst({ where: { userId, organizationId: orgId } });
+apps/api/v2/test/fixtures/repository/routing-forms.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.app_RoutingForms_Form.findUnique({ where: { id: routingFormId } });
+apps/api/v2/test/fixtures/repository/schedules.repository.fixture.ts:21:access-control-idor:return this.prismaReadClient.schedule.findFirst({ where: { id: scheduleId } });
+apps/api/v2/test/fixtures/repository/selected-slot.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.selectedSlots.findFirst({ where: { uid } });
+apps/api/v2/test/fixtures/repository/team.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.team.findFirst({ where: { id: teamId } });
+apps/api/v2/test/fixtures/repository/users.repository.fixture.ts:17:access-control-idor:return this.prismaReadClient.user.findFirst({ where: { id: userId } });
+apps/api/v2/test/fixtures/repository/workflow-reminder.repository.fixture.ts:15:access-control-idor:return this.prismaReadClient.workflowReminder.findFirst({ where: { bookingUid: uid } });
+apps/api/v2/test/mocks/api-auth-mock.strategy.ts:30:sensitive-data-exposure:console.error(error);
+apps/api/v2/test/mocks/next-auth-mock.strategy.ts:20:sensitive-data-exposure:console.error(error);
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:125:webhook-signature:get: vi.fn((name: string) => (name === "x-retell-signature" ? signature : null)),
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:143:webhook-signature:"some-signature"
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:155:webhook-signature:"some-signature"
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:170:webhook-signature:"invalid-signature"
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:185:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:236:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:296:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:331:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:358:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:406:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:423:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:481:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:535:webhook-signature:const response = await callPOST(createMockRequest(body, "valid-signature"));
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:590:webhook-signature:const response = await callPOST(createMockRequest(body, "valid-signature"));
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:644:webhook-signature:const response1 = await callPOST(createMockRequest(body, "valid-signature"));
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:652:webhook-signature:const response2 = await callPOST(createMockRequest(body, "valid-signature"));
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:710:webhook-signature:const response = await callPOST(createMockRequest(body, "valid-signature"));
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:769:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:812:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:845:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:868:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/app/api/webhooks/retell-ai/__tests__/route.test.ts:895:webhook-signature:const request = createMockRequest(body, "valid-signature");
+apps/web/components/dialog/__tests__/RerouteDialog.test.tsx:250:cross-origin-postmessage:window.addEventListener("message", () => {
+apps/web/components/dialog/__tests__/RerouteDialog.test.tsx:254:cross-origin-postmessage:window.postMessage(
+apps/web/lib/daily-webhook/tests/recorded-daily-video.test.ts:279:sensitive-data-exposure:console.error("Handler error:", error);
+apps/web/lib/pages/document/_applyThemeForDocument.test.ts:15:code-injection:reconstructedFn = new Function(`return ${stringifiedFunction}`)();
+apps/web/modules/bookings/components/Booker.test.tsx:58:sensitive-data-exposure:console.log("BookEventForm Called", { isTimeslotUnavailable, onCancel });
+apps/web/modules/ee/organizations/lib/onboardingStore.test.ts:136:sensitive-data-exposure:console.log("mockRouterPush called", args[0]);
+apps/web/modules/event-types/components/__tests__/AddMembersWithSwitch.test.tsx:84:sensitive-data-exposure:console.log(methods.getValues());
+apps/web/playwright/auth/auth-index.e2e.ts:44:access-control-idor:const tokenObj = await prisma.verificationToken.findFirstOrThrow({
+apps/web/playwright/auth/auth-index.e2e.ts:75:access-control-idor:const createdUser = await prisma.user.findUniqueOrThrow({
+apps/web/playwright/auth/auth-index.e2e.ts:85:sensitive-data-exposure:console.log("createdUser", createdUser);
+apps/web/playwright/auth/forgot-password.e2e.ts:112:access-control-idor:const firstRequest = await prisma.resetPasswordRequest.findFirstOrThrow({
+apps/web/playwright/auth/forgot-password.e2e.ts:134:access-control-idor:const secondRequest = await prisma.resetPasswordRequest.findFirstOrThrow({
+apps/web/playwright/auth/forgot-password.e2e.ts:147:access-control-idor:const firstRequestAfterSecond = await prisma.resetPasswordRequest.findUniqueOrThrow({
+apps/web/playwright/auth/forgot-password.e2e.ts:30:access-control-idor:const { id } = await prisma.resetPasswordRequest.findFirstOrThrow({
+apps/web/playwright/auth/forgot-password.e2e.ts:81:access-control-idor:const updatedUser = await prisma.user.findUniqueOrThrow({
+apps/web/playwright/booking-confirm-reject.e2e.ts:108:access-control-idor:const updatedBooking = await prisma.booking.findUnique({
+apps/web/playwright/booking-confirm-reject.e2e.ts:183:access-control-idor:const updatedBooking = await prisma.booking.findUnique({
+apps/web/playwright/booking-limits.e2e.ts:151:access-control-idor:const rescheduledBooking = await prisma.booking.findFirstOrThrow({ where: { uid: bookingId } });
+apps/web/playwright/booking-limits.e2e.ts:180:access-control-idor:const newBooking = await prisma.booking.findFirstOrThrow({ where: { fromReschedule: bookingId } });
+apps/web/playwright/booking-limits.e2e.ts:183:access-control-idor:const updatedRescheduledBooking = await prisma.booking.findFirstOrThrow({
+apps/web/playwright/booking-pages.e2e.ts:184:redos-regexp:await expect(page).toHaveURL(new RegExp(`${pro.username}/${eventType.slug}`));
+apps/web/playwright/booking-pages.e2e.ts:644:csrf-state-change:const csrfTokenResponse = await page.request.get("/api/csrf");
+apps/web/playwright/booking-pages.e2e.ts:645:csrf-state-change:const { csrfToken } = await csrfTokenResponse.json();
+apps/web/playwright/booking-pages.e2e.ts:649:csrf-state-change:csrfToken,
+apps/web/playwright/booking-phone-autofill.e2e.ts:116:sensitive-data-exposure:console.error("Failed to create user with phone fields:", error);
+apps/web/playwright/booking-race-condition.e2e.ts:124:access-control-idor:const googleCalendarApp = await prisma.app.findFirst({
+apps/web/playwright/booking-race-condition.e2e.ts:81:sensitive-data-exposure:console.log("Race condition prevention test results:", {
+apps/web/playwright/booking-seats.e2e.ts:112:access-control-idor:const updatedBooking = await prisma.booking.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:169:access-control-idor:const oldBooking = await prisma.booking.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:261:access-control-idor:const bookingWithEventType = await prisma.booking.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:414:access-control-idor:const updatedBooking = await prisma.booking.findFirst({
+apps/web/playwright/booking-sheet-keyboard.e2e.ts:11:access-control-idor:const existing = await prisma.feature.findUnique({ where: { slug: "bookings-v3" } });
+apps/web/playwright/bookings-list.e2e.ts:419:access-control-idor:const host = await prisma.membership.findFirstOrThrow({
+apps/web/playwright/bookings-list.e2e.ts:773:access-control-idor:const existingFlag = await prisma.feature.findUnique({ where: { slug: "bookings-v3" } });
+apps/web/playwright/bookings-list.e2e.ts:804:redos-regexp:await expect(page).toHaveURL(new RegExp(`[?&]uid=${bookingFixture.uid}(&|$)`));
+apps/web/playwright/change-username.e2e.ts:48:access-control-idor:const newUpdatedUser = await prisma.user.findUniqueOrThrow({
+apps/web/playwright/embed-code-generator.e2e.ts:3:command-injection:import { spawnSync } from "node:child_process";
+apps/web/playwright/embed-code-generator.e2e.ts:433:command-injection:const result = spawnSync("node", [biomeBin, "format", "--stdin-file-path", "snippet.js"], {
+apps/web/playwright/embed-code-generator.e2e.ts:439:sensitive-data-exposure:console.log(
+apps/web/playwright/embed-code-generator.e2e.ts:452:command-injection:const result = spawnSync("node", [biomeBin, "format", "--stdin-file-path", "snippet.jsx"], {
+apps/web/playwright/embed-code-generator.e2e.ts:458:sensitive-data-exposure:console.log(
+apps/web/playwright/fixtures/bookings.ts:45:crypto-misuse:}:${Math.random()}`;
+apps/web/playwright/fixtures/bookings.ts:94:access-control-idor:await prisma.booking.findUnique({
+apps/web/playwright/fixtures/embeds.ts:102:sensitive-data-exposure:console.log("Playwright Embed Fixture: Received event", JSON.stringify(e.detail));
+apps/web/playwright/fixtures/embeds.ts:121:sensitive-data-exposure:console.log(`Browser Console: ${msg.type()}: ${msg.text()}`);
+apps/web/playwright/fixtures/embeds.ts:125:sensitive-data-exposure:console.log(`Navigation occurred in frame: ${frame.url()}`);
+apps/web/playwright/fixtures/embeds.ts:129:sensitive-data-exposure:console.error(`Page error: ${error.message}`);
+apps/web/playwright/fixtures/embeds.ts:12:sensitive-data-exposure:console.log(
+apps/web/playwright/fixtures/embeds.ts:133:sensitive-data-exposure:console.error(`Failed request: ${request.url()}, ${request.failure()?.errorText}`);
+apps/web/playwright/fixtures/embeds.ts:29:cross-origin-postmessage:window.addEventListener("message", (event) => {
+apps/web/playwright/fixtures/embeds.ts:38:sensitive-data-exposure:console.log("PlaywrightTest postMessage:", `Received ${type} for namespace ${namespace}`);
+apps/web/playwright/fixtures/embeds.ts:42:sensitive-data-exposure:console.log("PlaywrightTest postMessage:", "Setting window.iframeReady = true");
+apps/web/playwright/fixtures/embeds.ts:83:sensitive-data-exposure:console.log("PlaywrightTest:", "window.Cal not available yet, trying again");
+apps/web/playwright/fixtures/embeds.ts:91:sensitive-data-exposure:console.log("Using api from namespace-", { calNamespace, api });
+apps/web/playwright/fixtures/embeds.ts:94:sensitive-data-exposure:console.log(`namespace "${calNamespace}" not found yet - Trying again`);
+apps/web/playwright/fixtures/embeds.ts:98:sensitive-data-exposure:console.log("PlaywrightTest:", `Adding listener for __iframeReady on namespace:${calNamespace}`);
+apps/web/playwright/fixtures/orgs.ts:7:crypto-misuse:const getRandomSlug = () => `org-${Math.random().toString(36).substring(7)}`;
+apps/web/playwright/fixtures/payments.ts:60:access-control-idor:self: async () => await prisma.payment.findUnique({ where: { id: store.payment.id } }),
+apps/web/playwright/fixtures/users.ts:1059:redos-regexp:await page.waitForURL(new RegExp("/booking/*"));
+apps/web/playwright/fixtures/users.ts:1082:webhook-signature:headers: { "stripe-signature": signature },
+apps/web/playwright/fixtures/users.ts:1147:csrf-state-change:// Get CSRF token with retry for transient network errors
+apps/web/playwright/fixtures/users.ts:1148:csrf-state-change:const csrfToken = await retryOnNetworkError(async () => {
+apps/web/playwright/fixtures/users.ts:1149:csrf-state-change:const response = await page.context().request.get("/api/auth/csrf");
+apps/web/playwright/fixtures/users.ts:1151:csrf-state-change:return json.csrfToken;
+apps/web/playwright/fixtures/users.ts:1161:csrf-state-change:csrfToken,
+apps/web/playwright/fixtures/users.ts:420:access-control-idor:const user = await prisma.user.findUniqueOrThrow({
+apps/web/playwright/fixtures/users.ts:502:access-control-idor:await prisma.user.findUniqueOrThrow({
+apps/web/playwright/fixtures/users.ts:583:access-control-idor:const firstTeamMembership = await prisma.membership.findFirstOrThrow({
+apps/web/playwright/fixtures/users.ts:664:access-control-idor:const finalUser = await prisma.user.findUniqueOrThrow({
+apps/web/playwright/fixtures/users.ts:744:access-control-idor:const user = await prisma.user.findUniqueOrThrow({
+apps/web/playwright/fixtures/users.ts:763:access-control-idor:(await prisma.user.findUnique({
+apps/web/playwright/fixtures/users.ts:851:access-control-idor:const membership = await prisma.membership.findFirstOrThrow({
+apps/web/playwright/fixtures/users.ts:880:access-control-idor:prisma.eventType.findFirstOrThrow({
+apps/web/playwright/fixtures/users.ts:892:access-control-idor:return prisma.eventType.findFirstOrThrow({
+apps/web/playwright/fixtures/users.ts:918:access-control-idor:return prisma.profile.findFirstOrThrow({
+apps/web/playwright/fixtures/workflows.ts:149:access-control-idor:const booking = await prisma.booking.findFirst({
+apps/web/playwright/insights-charts.e2e.ts:163:sensitive-data-exposure:console.log(`[Routing] Found ${chartIds.length} charts: ${chartIds.join(", ")}`);
+apps/web/playwright/insights-charts.e2e.ts:260:sensitive-data-exposure:console.log(`[Bookings] Found ${chartIds.length} charts: ${chartIds.join(", ")}`);
+apps/web/playwright/insights.e2e.ts:276:redos-regexp:.filter({ hasText: new RegExp(`^${title}$`) });
+apps/web/playwright/lib/loadJSON.ts:9:insecure-deserialization:export const loadJSON = (file: string) => JSON.parse(fs.readFileSync(path.join(__dirname, file)).toString());
+apps/web/playwright/lib/loadJSON.ts:9:path-traversal-file:export const loadJSON = (file: string) => JSON.parse(fs.readFileSync(path.join(__dirname, file)).toString());
+apps/web/playwright/lib/next-server.ts:21:crypto-misuse:port = await detect(Math.round((1 + Math.random()) * 3000));
+apps/web/playwright/lib/next-server.ts:32:sensitive-data-exposure:console.log("Started Next Server", { dev, port });
+apps/web/playwright/lib/orgMigration.ts:131:access-control-idor:const userToRemoveFromOrg = await prisma.user.findUnique({
+apps/web/playwright/lib/orgMigration.ts:204:access-control-idor:return await prisma.user.findUnique({
+apps/web/playwright/lib/orgMigration.ts:258:access-control-idor:const team = await prisma.team.findUnique({
+apps/web/playwright/lib/orgMigration.ts:578:access-control-idor:const team = await prisma.team.findUnique({
+apps/web/playwright/lib/orgMigration.ts:68:access-control-idor:const userWithSameUsernameInOrg = await prisma.user.findUnique({
+apps/web/playwright/lib/teardown.ts:26:access-control-idor:const event = await prisma.eventType.findFirst({
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:123:sensitive-data-exposure:console.log(`\t📝 Created attribute: ${attr.name}`);
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:132:sensitive-data-exposure:console.log(
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:141:sensitive-data-exposure:console.log(`\t\t⚠️ Skipped ${attr.name} assignment - member at index ${memberIndex} not found`);
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:149:sensitive-data-exposure:console.log(
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:168:sensitive-data-exposure:console.log(
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:61:sensitive-data-exposure:console.log(`🎯 Seeding attributes for org ${orgId}`);
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:74:sensitive-data-exposure:console.log(`Skipping attributes seed, attributes already exist`);
+apps/web/playwright/lib/test-helpers/organizationHelpers.ts:88:sensitive-data-exposure:console.log(`🎯 Creating attributes for org ${orgId}`);
+apps/web/playwright/lib/test-helpers/routingFormHelpers.ts:112:access-control-idor:const orgMembership = await prisma.membership.findFirstOrThrow({
+apps/web/playwright/lib/test-helpers/routingFormHelpers.ts:125:access-control-idor:const team = await prisma.team.findUniqueOrThrow({
+apps/web/playwright/lib/test-helpers/routingFormHelpers.ts:372:sensitive-data-exposure:console.log(`🎯 Created form ${createdForm.id}`, JSON.stringify(createdForm, null, 2));
+apps/web/playwright/lib/testUtils.ts:303:sensitive-data-exposure:console.log(
+apps/web/playwright/lib/testUtils.ts:412:crypto-misuse:const secret = createHash("md5")
+apps/web/playwright/lib/testUtils.ts:438:sensitive-data-exposure:console.log("goToUrlWithErrorHandling: Failed to load URL:", failedToLoadUrl);
+apps/web/playwright/lib/testUtils.ts:444:sensitive-data-exposure:console.log("goToUrlWithErrorHandling: Navigation failed for URL:", failedToLoadUrl);
+apps/web/playwright/lib/testUtils.ts:84:insecure-deserialization:const json = buffer.length ? JSON.parse(buffer.join("")) : undefined;
+apps/web/playwright/login.2fa.e2e.ts:139:access-control-idor:const userWith2FaSecret = await prisma.user.findFirst({
+apps/web/playwright/login.2fa.e2e.ts:173:sensitive-data-exposure:console.log("Token expired, Renerating.");
+apps/web/playwright/login.2fa.e2e.ts:64:access-control-idor:const userWith2FaSecret = await prisma.user.findFirst({
+apps/web/playwright/login.api.e2e.ts:13:auth-session:const contextCookies = await page.context().cookies();
+apps/web/playwright/login.api.e2e.ts:17:csrf-state-change:expect(cookiesMap.has("next-auth.csrf-token")).toBeTruthy();
+apps/web/playwright/manage-booking-questions.e2e.ts:243:access-control-idor:const team = await prisma.team.findFirst({
+apps/web/playwright/oauth-provider.e2e.ts:102:ssrf-outbound-fetch:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:114:ssrf-outbound-fetch:const validTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:181:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:192:ssrf-outbound-fetch:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:211:ssrf-outbound-fetch:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:223:ssrf-outbound-fetch:const validTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:294:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:311:ssrf-outbound-fetch:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:357:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:35:crypto-misuse:const codeChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
+apps/web/playwright/oauth-provider.e2e.ts:404:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:481:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:501:ssrf-outbound-fetch:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:518:ssrf-outbound-fetch:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:571:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:588:ssrf-outbound-fetch:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:605:ssrf-outbound-fetch:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:653:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:671:ssrf-outbound-fetch:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:72:ssrf-outbound-fetch:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:83:ssrf-outbound-fetch:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth/oauth-client-admin.e2e.ts:18:access-control-idor:const row = await prisma.oAuthClient.findUnique({
+apps/web/playwright/oauth/oauth-client-helpers.ts:102:path-traversal-file:return path.join(path.dirname(__filename), "..", "fixtures", fileName);
+apps/web/playwright/oauth/oauth-client-owner-crud.e2e.ts:208:access-control-idor:const dbClientAfterDelete = await prisma.oAuthClient.findUnique({
+apps/web/playwright/oauth/oauth-client-owner-crud.e2e.ts:220:access-control-idor:const dbClient = await prisma.oAuthClient.findUniqueOrThrow({
+apps/web/playwright/oauth/oauth-client-owner-crud.e2e.ts:731:path-traversal-file:return path.join(path.dirname(__filename), "..", "fixtures", fileName);
+apps/web/playwright/organization/assign-all-members-segment-filter.e2e.ts:14:access-control-idor:const existing = await prisma.membership.findFirst({
+apps/web/playwright/organization/lib/gotoPathAndExpectRedirectToOrgDomain.ts:21:sensitive-data-exposure:console.log("Expected navigation error to happen");
+apps/web/playwright/organization/lib/gotoPathAndExpectRedirectToOrgDomain.ts:30:sensitive-data-exposure:console.log("Requested navigation to", requestedUrl);
+apps/web/playwright/organization/organization-invitation.e2e.ts:120:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:159:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:212:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:241:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:369:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:417:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:46:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:70:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-privacy.e2e.ts:105:access-control-idor:const memberUser = await prisma.membership.findFirst({
+apps/web/playwright/organization/organization-privacy.e2e.ts:170:access-control-idor:const memberUser = await prisma.membership.findFirst({
+apps/web/playwright/organization/team-management.e2e.ts:66:access-control-idor:const invitedUser = await prisma.user.findUnique({ where: { email: inviteeEmail } });
+apps/web/playwright/payment-apps.e2e.ts:22:access-control-idor:const app = await prisma.app.findUnique({
+apps/web/playwright/payment-apps.e2e.ts:373:access-control-idor:const paypalPrice = await prisma.eventType.findFirst({
+apps/web/playwright/payment-apps.e2e.ts:392:access-control-idor:const stripePrice = await prisma.eventType.findFirst({
+apps/web/playwright/profile.e2e.ts:132:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:201:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:251:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:323:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:359:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:407:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:74:access-control-idor:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/reschedule.e2e.ts:153:access-control-idor:const newBooking = await prisma.booking.findFirstOrThrow({ where: { fromReschedule: booking.uid } });
+apps/web/playwright/reschedule.e2e.ts:154:access-control-idor:const rescheduledBooking = await prisma.booking.findFirstOrThrow({ where: { uid: booking.uid } });
+apps/web/playwright/reschedule.e2e.ts:185:access-control-idor:const newBooking = await prisma.booking.findFirstOrThrow({ where: { fromReschedule: booking?.uid } });
+apps/web/playwright/reschedule.e2e.ts:204:access-control-idor:const newBooking = await prisma.booking.findFirstOrThrow({ where: { fromReschedule: booking?.uid } });
+apps/web/playwright/reschedule.e2e.ts:267:access-control-idor:const currentBooking = await prisma.booking.findFirstOrThrow({ where: { uid: bookingUID } });
+apps/web/playwright/reschedule.e2e.ts:277:access-control-idor:const newBooking = await prisma.booking.findFirstOrThrow({
+apps/web/playwright/reschedule.e2e.ts:284:access-control-idor:const booking = await prisma.booking.findFirstOrThrow({ where: { id: newBooking.id } });
+apps/web/playwright/settings/upload-avatar.e2e.ts:106:access-control-idor:const response = await prisma.avatar.findUniqueOrThrow({
+apps/web/playwright/settings/upload-avatar.e2e.ts:120:redos-regexp:new RegExp(`^\/api\/avatar\/${response.objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:165:access-control-idor:const response = await prisma.avatar.findUniqueOrThrow({
+apps/web/playwright/settings/upload-avatar.e2e.ts:181:redos-regexp:new RegExp(`^\/api\/avatar\/${response.objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:203:redos-regexp:new RegExp(`^\/api\/avatar\/${objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:37:access-control-idor:const response = await prisma.avatar.findUniqueOrThrow({
+apps/web/playwright/settings/upload-avatar.e2e.ts:51:redos-regexp:await expect(avatarImage).toHaveAttribute("src", new RegExp(`^\/api\/avatar\/${objectKey}\.png$`));
+apps/web/playwright/settings/upload-avatar.e2e.ts:65:redos-regexp:new RegExp(`\/api\/avatar\/${objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:72:redos-regexp:await expect(ogImageLocator).toHaveAttribute("content", new RegExp(encodeURIComponent(searchParam)));
+apps/web/playwright/signup.e2e.ts:205:crypto-misuse:email: `rickjones${Math.random()}-${Date.now()}@example.com`,
+apps/web/playwright/signup.e2e.ts:227:access-control-idor:const dbUser = await prisma.user.findUnique({ where: { email: userToCreate.email } });
+apps/web/playwright/signup.e2e.ts:536:access-control-idor:const createdUser = await prisma.user.findUnique({
+apps/web/playwright/team/team-invitation.e2e.ts:194:access-control-idor:const parentEventType = await prisma.eventType.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:240:access-control-idor:const membership = await prisma.membership.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:256:access-control-idor:const membership = await prisma.membership.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:315:access-control-idor:const membership = await prisma.membership.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:323:access-control-idor:const invitedMembership = await prisma.membership.findFirst({
+apps/web/playwright/webhook.e2e.ts:369:access-control-idor:const newBooking = await prisma.booking.findFirst({ where: { fromReschedule: booking?.uid } })!;
+apps/web/playwright/webhook.e2e.ts:436:access-control-idor:const newBooking = await prisma.booking.findFirst({
+apps/web/proxy.test.ts:116:auth-session:if (overrides?.cookies) {
+apps/web/proxy.test.ts:117:auth-session:Object.entries(overrides.cookies).forEach(([name, value]) => {
+apps/web/proxy.test.ts:118:auth-session:req.cookies.set(name, value);
+apps/web/proxy.test.ts:274:auth-session:const setCookie = getHeader(res, "set-cookie");
+apps/web/proxy.test.ts:276:auth-session:if (setCookie) {
+apps/web/proxy.test.ts:277:auth-session:expect(setCookie).toContain("next-auth.session-token");
+apps/web/proxy.test.ts:51:auth-session:(response as any).cookies = {
+apps/web/proxy.test.ts:88:auth-session:(response as any).cookies = {
+apps/web/test/lib/getSchedule/futureLimit.timezone.test.ts:501:sensitive-data-exposure:console.log({ scheduleForEvent });
+apps/web/test/lib/getSchedule/utils.ts:14:sensitive-data-exposure:console.log({ yesterdayDateString, hours, minutes });
+apps/web/test/lib/next-config.test.ts:20:sensitive-data-exposure:console.log({
+apps/web/test/lib/next-config.test.ts:31:redos-regexp:const regExp = new RegExp(getRegExpThatMatchesAllOrgDomains({ webAppUrl: "app.cal.com" }));
+apps/web/test/lib/next-config.test.ts:40:redos-regexp:const regExp = new RegExp(getRegExpThatMatchesAllOrgDomains({ webAppUrl: "https://app.cal.com" }));
+apps/web/test/lib/next-config.test.ts:53:redos-regexp:const regExp = new RegExp(
+apps/web/test/lib/next-config.test.ts:63:redos-regexp:const regExp = new RegExp(
+apps/web/test/lib/next-config.test.ts:72:redos-regexp:const regExp = new RegExp(getRegExpThatMatchesAllOrgDomains({ webAppUrl: "http://app.vercel.app" }));
+apps/web/test/lib/next-config.test.ts:81:redos-regexp:const regExp = new RegExp(
+packages/app-store/BookingPageTagManager.test.tsx:55:xss-html-injection:expect(trackingScript.innerHTML).toContain(GTM_CONFIG.trackingId);
+packages/app-store/BookingPageTagManager.test.tsx:56:xss-html-injection:expect(pushEventScript.innerHTML).toContain("cal_analytics_app__gtm");
+packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts:94:insecure-deserialization:* (since the mock passes through strings), which is then JSON.parse()'d by
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:167:sensitive-data-exposure:console.log("TESTS: credentialWithDelegation", credentialWithDelegation);
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:171:sensitive-data-exposure:console.log("TESTS: First instance of CalendarService");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:184:access-control-idor:const existingCredential = await prismock.credential.findFirst({
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:191:sensitive-data-exposure:console.log("TESTS: Second instance of CalendarService");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts:1164:prototype-pollution:const error410 = Object.assign(new Error("Resource has been deleted"), { code: 410 });
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts:1177:prototype-pollution:const error404 = Object.assign(new Error("Not Found"), { code: 404 });
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts:1190:prototype-pollution:const error500 = Object.assign(new Error("Internal Server Error"), { code: 500 });
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:143:sensitive-data-exposure:console.log("createMockJWTInstance", { email, authorizeError });
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:185:access-control-idor:const rescheduledBooking = await prisma.booking.findFirst({
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:28:insecure-deserialization:const gCalKeys = JSON.parse(process.env.E2E_TEST_CALCOM_GCAL_KEYS);
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:295:access-control-idor:...(await prisma.credential.findFirstOrThrow({
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:401:access-control-idor:...(await prisma.credential.findFirstOrThrow({
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:421:access-control-idor:const qaUserQuery = await prisma.user.findFirstOrThrow({
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:46:access-control-idor:...(await prisma.credential.findFirstOrThrow({
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:65:access-control-idor:const qaUserQuery = await prisma.user.findFirstOrThrow({
+packages/app-store/googlecalendar/tests/testUtils.ts:37:access-control-idor:prisma.bookingReference.findFirst({
+packages/app-store/googlecalendar/tests/testUtils.ts:51:access-control-idor:prisma.booking.findFirst({
+packages/app-store/googlecalendar/tests/testUtils.ts:78:access-control-idor:const refreshedCredential = await prisma.credential.findFirst({
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1077:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1139:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1168:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1192:insecure-deserialization:let requestBody = JSON.parse(mockRequestRaw.mock.calls[0][0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1212:insecure-deserialization:requestBody = JSON.parse(mockRequestRaw.mock.calls[0][0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1259:insecure-deserialization:const requestBody = JSON.parse(postCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:783:insecure-deserialization:const batchBody = JSON.parse(batchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:830:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:856:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:903:insecure-deserialization:const patchBody = JSON.parse(patchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1398:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1420:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1443:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1465:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1486:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1507:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1540:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1586:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1620:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1642:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1663:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2350:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2369:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2397:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2418:insecure-deserialization:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:532:insecure-deserialization:const patchBody = JSON.parse(patchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:568:insecure-deserialization:const patchBody = JSON.parse(patchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:702:insecure-deserialization:const batchBody = JSON.parse(batchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:743:insecure-deserialization:const batchBody = JSON.parse(batchCall![0].options.body);
+packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponseRepository.integration-test.ts:104:access-control-idor:const response = await prisma.app_RoutingForms_QueuedFormResponse.findUnique({
+packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponseRepository.integration-test.ts:97:access-control-idor:const response = await prisma.app_RoutingForms_QueuedFormResponse.findUnique({
+packages/app-store/routing-forms/playwright/tests/basic.e2e.ts:514:path-traversal-file:const downloadStream = await download.createReadStream();
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:157:access-control-idor:const form = await prisma.app_RoutingForms_Form.findUniqueOrThrow({
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:168:access-control-idor:const form = await prisma.app_RoutingForms_Form.findUniqueOrThrow({
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:179:insecure-deserialization:data: { fields: JSON.parse(JSON.stringify(fields)) },
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:202:crypto-misuse:Id: contact.Id || `003${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:225:crypto-misuse:Id: lead.Id || `00Q${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:246:crypto-misuse:Id: account.Id || `001${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:257:crypto-misuse:Id: user.Id || `005${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:319:crypto-misuse:records.events.push({ ...data, Id: `evt${Math.random().toString().slice(2, 10)}` });
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:323:crypto-misuse:result = { Id: `gen${Math.random().toString().slice(2, 10)}` };
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:342:prototype-pollution:if (record) Object.assign(record, data);
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:346:prototype-pollution:if (record) Object.assign(record, data);
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:350:prototype-pollution:if (record) Object.assign(record, data);
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:354:prototype-pollution:if (record) Object.assign(record, data);
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:358:prototype-pollution:if (record) Object.assign(record, data);
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:53:sensitive-data-exposure:console.log({ query });
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:86:sensitive-data-exposure:console.log({ whereClause });
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:204:insecure-deserialization:const state = JSON.parse(stateStr);
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:220:insecure-deserialization:const state = JSON.parse(stateStr);
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:234:insecure-deserialization:const state = JSON.parse(stateStr);
+packages/app-store/tests/__mocks__/OAuthManager.ts:42:sensitive-data-exposure:console.log("OAuthManager.request full mock being used");
+packages/app-store/tests/__mocks__/OAuthManager.ts:45:sensitive-data-exposure:console.log("OAuthManager.request default mock being used");
+packages/dayjs/__mocks__/index.ts:10:prototype-pollution:const mockDayjs = Object.assign(
+packages/embeds/embed-core/playwright/lib/pages/bookingSuccessPage.ts:8:sensitive-data-exposure:console.error("Failed to find booking-host-email element:", error.message);
+packages/embeds/embed-core/playwright/lib/testUtils.ts:106:sensitive-data-exposure:console.log(`Embed iframe url pathname match. Expected: "${pathname}/embed"`, `Actual: ${u.pathname}`);
+packages/embeds/embed-core/playwright/lib/testUtils.ts:146:redos-regexp:const matches = url.pathname.match(new RegExp(`/${username}/(.+)$`));
+packages/embeds/embed-core/playwright/lib/testUtils.ts:29:access-control-idor:return prisma.app_RoutingForms_QueuedFormResponse.findFirst({
+packages/embeds/embed-core/playwright/lib/testUtils.ts:51:access-control-idor:const booking = await prisma.booking.findUnique({
+packages/embeds/embed-core/playwright/lib/testUtils.ts:7:access-control-idor:return prisma.app_RoutingForms_QueuedFormResponse.findFirst({
+packages/embeds/embed-core/playwright/tests/inline.e2e.ts:40:sensitive-data-exposure:console.log("Request failed: ", request.url(), error);
+packages/embeds/embed-core/playwright/tests/preview.e2e.ts:38:sensitive-data-exposure:console.log("request failed");
+packages/embeds/embed-core/src/EmbedElement.test.ts:153:xss-html-injection:element.innerHTML = inlineHTML({
+packages/embeds/embed-core/src/__tests__/embed-iframe-methods.test.ts:41:sensitive-data-exposure:console.log("Fake ensureQueryParamsInUrl called");
+packages/embeds/embed-core/src/__tests__/embed-iframe-methods.test.ts:53:sensitive-data-exposure:console.log('After each of first describe');
+packages/embeds/embed-core/src/__tests__/embed-iframe.test.ts:268:sensitive-data-exposure:console.log('Importing embed-iframe');
+packages/embeds/embed-core/src/embed-iframe/__tests__/utils.test.ts:141:xss-html-injection:document.body.innerHTML = "";
+packages/embeds/embed-core/src/embed.test.ts:160:xss-html-injection:document.body.innerHTML = "";
+packages/embeds/embed-core/src/embed.test.ts:30:sensitive-data-exposure:console.log("Test:", ...args);
+packages/embeds/embed-core/src/embed.test.ts:76:sensitive-data-exposure:console.log({
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:17:sensitive-data-exposure:console.log("addEventListener called", event, listener);
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:24:sensitive-data-exposure:console.log("removeEventListener called, Remaining listeners", eventListeners.change.length);
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:30:sensitive-data-exposure:console.log("listener called", listener);
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:62:sensitive-data-exposure:console.log("__mock__:fakeDeviceMatchesMediaQuery updated", { query, __matchMediaFakeQuery });
+packages/embeds/embed-core/test/embed-parity.test.ts:116:xss-html-injection:document.body.innerHTML = "";
+packages/embeds/embed-core/test/embed-parity.test.ts:533:xss-html-injection:document.body.innerHTML = "";
+packages/embeds/embed-core/test/embed-parity.test.ts:678:xss-html-injection:document.body.innerHTML = "";
+packages/features/attributes/lib/getAttributes.test.ts:46:access-control-idor:const result = await prismock.attribute.findUnique({
+packages/features/auth/lib/getServerSession.test.ts:103:auth-session:const result = await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:124:auth-session:await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:141:auth-session:const result = await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:156:auth-session:await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:61:auth-session:const result = await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:70:auth-session:const result = await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:83:auth-session:await getServerSession({ req: createMockRequest() });
+packages/features/auth/lib/getServerSession.test.ts:94:auth-session:const result = await getServerSession({ req: createMockRequest() });
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:10:crypto-misuse:return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:155:access-control-idor:const membership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:163:access-control-idor:const profile = await prisma.profile.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:212:access-control-idor:const teamMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:219:access-control-idor:const orgMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:268:access-control-idor:const profile = await prisma.profile.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:328:access-control-idor:const teamMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:335:access-control-idor:const orgMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:343:access-control-idor:const profile = await prisma.profile.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:413:access-control-idor:const teamMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:418:access-control-idor:const orgMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:459:access-control-idor:const teamMembership = await prisma.membership.findUnique({
+packages/features/booking-audit/lib/actions/__tests__/contractVerification.ts:18:crypto-misuse:id: Math.floor(Math.random() * 10000),
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:107:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:127:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:136:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:149:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:170:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:186:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:205:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:215:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:234:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:244:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:260:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:284:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:77:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:92:ssrf-outbound-fetch:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/integration-utils.ts:8:crypto-misuse:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:206:access-control-idor:const googleRefAfter = await prisma.bookingReference.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:211:access-control-idor:const zoomRefAfter = await prisma.bookingReference.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:216:access-control-idor:const newRef = await prisma.bookingReference.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:255:access-control-idor:const deletedRefInDb = await prisma.bookingReference.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:262:access-control-idor:const newRef = await prisma.bookingReference.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:50:access-control-idor:let testUser = await prisma.user.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:64:access-control-idor:let credential = await prisma.credential.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:7:crypto-misuse:const testRunId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:17:auth-session:getCookie.mockImplementation((name) => {
+packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:25:auth-session:getCookie: vi.fn(),
+packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:3:auth-session:import { getCookie } from "@calcom/lib/cookie";
+packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:9:crypto-misuse:const r = (Math.random() * 16) | 0;
+packages/features/bookings/lib/getAllCredentialsForUsersOnEvent/getAllCredentials.test.ts:306:sensitive-data-exposure:console.log(testEventType);
+packages/features/bookings/lib/getAllCredentialsForUsersOnEvent/getAllCredentials.test.ts:632:sensitive-data-exposure:console.log(testEventType);
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:157:insecure-deserialization:hostPayload = JSON.parse(hostTask?.payload ?? "");
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:159:sensitive-data-exposure:console.error("Failed to parse host task payload.");
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:180:insecure-deserialization:guestPayload = JSON.parse(guestTask?.payload ?? "");
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:182:sensitive-data-exposure:console.error("Failed to parse guest task payload.");
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:300:access-control-idor:const updatedBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/booking-flags.test.ts:293:access-control-idor:const actualBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-flags.test.ts:389:access-control-idor:const actualBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:242:sql-raw-injection:vi.spyOn(prismock, "$queryRaw").mockResolvedValue([{ totalMinutes: yearlyDurationLimit }]);
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:266:sql-raw-injection:vi.spyOn(prismock, "$queryRaw").mockResolvedValue([{ totalMinutes: 0 }]);
+packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:1020:access-control-idor:const booking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:1112:access-control-idor:const booking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:1289:access-control-idor:const booking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:651:sensitive-data-exposure:console.log("createdBooking", createdBooking);
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:3101:access-control-idor:const firstBookingInDb = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:481:access-control-idor:const hostLocation = await prisma.hostLocation.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:63:access-control-idor:const hashedLink = await prismaMock.hashedLink.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:1702:access-control-idor:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:1854:access-control-idor:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:193:access-control-idor:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2054:access-control-idor:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2209:access-control-idor:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2379:access-control-idor:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2693:access-control-idor:const newBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/spam-booking.integration-test.ts:124:sensitive-data-exposure:console.log("watchlists", await prisma.watchlist.findMany());
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:1188:access-control-idor:const firstBookingInDb = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:1226:access-control-idor:const rescheduledBookingInDb = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:146:access-control-idor:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:222:access-control-idor:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:320:access-control-idor:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:32:access-control-idor:const testUser = await prisma.user.findFirstOrThrow({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:383:access-control-idor:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:38:access-control-idor:let eventType = await prisma.eventType.findFirst({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:482:access-control-idor:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1023:access-control-idor:const newAttendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1245:access-control-idor:const attendeeSeat = await prismaMock.bookingSeat.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1716:access-control-idor:const attendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1842:access-control-idor:const oldBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1854:access-control-idor:const attendeeSeat = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1983:access-control-idor:const cancelledBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2123:access-control-idor:const cancelledBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2518:access-control-idor:const originalBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2976:access-control-idor:const cancelledBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3520:access-control-idor:const originalBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3773:access-control-idor:const originalBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:4132:access-control-idor:const oldBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:4293:access-control-idor:const oldBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:498:access-control-idor:const newAttendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:624:access-control-idor:const newAttendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/reschedule/determineReschedulePreventionRedirect.test.ts:100:sensitive-data-exposure:console.log("expectRedirectToEventBookingPageWithParams", { result, eventUrl, params });
+packages/features/bookings/lib/service/InstantBookingCreateService.test.ts:114:access-control-idor:const booking = await prismock.booking.findUnique({
+packages/features/bookings/repositories/BookingRepository.integration-test.ts:129:access-control-idor:const testUser = await prisma.user.findFirstOrThrow({
+packages/features/bookings/repositories/BookingRepository.integration-test.ts:135:access-control-idor:let eventType = await prisma.eventType.findFirst({
+packages/features/bookings/repositories/BookingRepository.integration-test.ts:157:access-control-idor:const eventType = await prisma.eventType.findUnique({
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:36:crypto-misuse:const timestamp = `${Date.now()}-${Math.random()}`;
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:52:crypto-misuse:const timestamp = `${Date.now()}-${Math.random()}`;
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:106:insecure-deserialization:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:152:insecure-deserialization:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:176:insecure-deserialization:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:224:insecure-deserialization:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/credentials/handleDeleteCredential.integration-test.ts:104:sensitive-data-exposure:console.log("Credential deletion error:", error);
+packages/features/credentials/handleDeleteCredential.integration-test.ts:16:access-control-idor:const user = await prisma.user.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:193:access-control-idor:const cancelledBooking = await prisma.booking.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:259:access-control-idor:const deletedRef = await prisma.bookingReference.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:434:access-control-idor:const refAfter = await prisma.bookingReference.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:441:access-control-idor:const bookingAfter = await prisma.booking.findUnique({
+packages/features/crmManager/crmManager.test.ts:110:sensitive-data-exposure:console.log(mockedCrmApp);
+packages/features/data-table/__tests__/filterSegments/delete.test.ts:101:access-control-idor:const deletedSegment = await prismock.filterSegment.findUnique({
+packages/features/data-table/__tests__/filterSegments/delete.test.ts:48:access-control-idor:const deletedSegment = await prismock.filterSegment.findUnique({
+packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts:29:sensitive-data-exposure:console.log({ mockEncrypted: serviceAccountKey });
+packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts:345:access-control-idor:const result = await prismock.delegationCredential.findUnique({
+packages/features/di/containers/FeatureRepository.integration-test.ts:7:crypto-misuse:const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+packages/features/ee/billing/active-user/seed-active-user-test.ts:107:sensitive-data-exposure:console.log("Skipping Stripe API calls (--skip-stripe flag)");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:111:sensitive-data-exposure:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:118:sensitive-data-exposure:console.log("Cleaning up Stripe resources...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:124:sensitive-data-exposure:console.log(` Deleted test clock: ${clock.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:139:sensitive-data-exposure:console.log(` Deleted customer: ${customer.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:147:sensitive-data-exposure:console.log("Cleaning up database resources...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:149:access-control-idor:const org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
+packages/features/ee/billing/active-user/seed-active-user-test.ts:167:sensitive-data-exposure:console.log(` Deleted ${bookingIds.length} bookings`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:175:sensitive-data-exposure:console.log(` Deleted org (ID: ${org.id})`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:179:sensitive-data-exposure:if (deleteResult.count > 0) console.log(` Deleted ${deleteResult.count} users`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:181:sensitive-data-exposure:console.log(" Database cleanup complete");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:216:sensitive-data-exposure:console.log("Enabled active-user-billing feature flag");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:224:sensitive-data-exposure:console.log("\nCreating organization...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:225:access-control-idor:let org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
+packages/features/ee/billing/active-user/seed-active-user-test.ts:231:sensitive-data-exposure:console.log(` Organization: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:245:sensitive-data-exposure:console.log(`Creating ${TOTAL_MEMBERS + 1} users...`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:256:sensitive-data-exposure:if ((i + 1) % 25 === 0) console.log(` ... created ${i + 1}/${TOTAL_MEMBERS} members`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:258:sensitive-data-exposure:console.log(` Created admin + ${members.length} members = ${members.length + 1} total`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:261:sensitive-data-exposure:console.log("Adding memberships...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:291:sensitive-data-exposure:console.log("\nCreating Stripe resources...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:303:sensitive-data-exposure:console.log(` Test clock: ${testClock.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:333:sensitive-data-exposure:console.log(` Customer: ${customer.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:334:sensitive-data-exposure:console.log(` Subscription: ${subscription.id} (${totalMembers} seats)`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:335:sensitive-data-exposure:console.log(` Product: ${product.id} (${product.name})`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:336:sensitive-data-exposure:console.log(` Stripe period: ${periodStart.toISOString()} - ${periodEnd.toISOString()}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:337:sensitive-data-exposure:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:353:sensitive-data-exposure:console.log(`Creating bookings in period ${periodStart.toISOString()} - ${periodEnd.toISOString()}...`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:414:sensitive-data-exposure:console.log(` Created ${bookingIds.length} bookings`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:469:sensitive-data-exposure:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:486:sensitive-data-exposure:console.log("=== Active User Billing (AUB) Seed Script ===\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:487:sensitive-data-exposure:console.log("Options:");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:488:sensitive-data-exposure:console.log(` --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:489:sensitive-data-exposure:console.log(` --cleanup: ${CLEANUP_FIRST}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:490:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:496:sensitive-data-exposure:console.log("\n--- Running ActiveUserBillingService ---\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:510:sensitive-data-exposure:console.log("=== Summary ===\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:511:sensitive-data-exposure:console.log(` Organization ID: ${result.orgId}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:512:sensitive-data-exposure:console.log(` Subscription ID: ${result.subscriptionId}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:513:sensitive-data-exposure:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:516:sensitive-data-exposure:console.log(` Total members: ${result.totalMembers}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:517:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:519:sensitive-data-exposure:console.log(` Active hosts (${result.expectedActiveHosts.length}):`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:521:sensitive-data-exposure:console.log(` - ${email}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:524:sensitive-data-exposure:console.log(` Active attendees only (${result.expectedActiveAttendees.length}):`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:526:sensitive-data-exposure:console.log(` - ${email}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:529:sensitive-data-exposure:console.log(` Inactive (${result.expectedInactive.length}):`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:530:sensitive-data-exposure:console.log(` (${result.expectedInactive.length} members with no in-period bookings)`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:532:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:533:sensitive-data-exposure:console.log(" +--------------------------+---------+");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:534:sensitive-data-exposure:console.log(" | Category | Count |");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:535:sensitive-data-exposure:console.log(" +--------------------------+---------+");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:536:sensitive-data-exposure:console.log(` | Total org members | ${String(result.totalMembers).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:537:sensitive-data-exposure:console.log(` | Active hosts (created) | ${String(result.expectedActiveHosts.length).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:538:sensitive-data-exposure:console.log(` | Active attendees (created)| ${String(result.expectedActiveAttendees.length).padStart(6)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:539:sensitive-data-exposure:console.log(` | Total active (created) | ${String(expectedTotal).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:540:sensitive-data-exposure:console.log(` | Inactive (created) | ${String(result.expectedInactive.length).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:541:sensitive-data-exposure:console.log(` | Service counted | ${String(serviceCount).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:542:sensitive-data-exposure:console.log(" +--------------------------+---------+");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:545:sensitive-data-exposure:console.log("\n [PASS] Service count matches expected count.");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:547:sensitive-data-exposure:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:552:sensitive-data-exposure:console.log("\n=== Done ===\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:555:sensitive-data-exposure:console.error("Seed failed:", error);
+packages/features/ee/billing/api/webhook/__handler.test.ts:35:webhook-signature:it("should throw an error if stripe-signature header is missing", async () => {
+packages/features/ee/billing/api/webhook/__handler.test.ts:41:webhook-signature:await expect(handler(req)).rejects.toThrow(new HttpCode(400, "Missing stripe-signature"));
+packages/features/ee/billing/api/webhook/__handler.test.ts:49:webhook-signature:"stripe-signature": "test_signature",
+packages/features/ee/billing/api/webhook/__handler.test.ts:60:webhook-signature:"stripe-signature": "test_signature",
+packages/features/ee/billing/api/webhook/__handler.test.ts:63:webhook-signature:// const req = mockRequest({ "stripe-signature": "test_signature" }, "test_payload");
+packages/features/ee/billing/api/webhook/__handler.test.ts:76:webhook-signature:const req = mockRequest({ "stripe-signature": "test_signature" }, "test_payload");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:101:sensitive-data-exposure:console.log("Stripe cleanup complete");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:105:sensitive-data-exposure:console.log("\nCleaning up database resources...");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:108:access-control-idor:const org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:113:sensitive-data-exposure:console.log(" No test organization found");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:117:sensitive-data-exposure:console.log(` Found test organization: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:123:sensitive-data-exposure:console.log(` Deleted ${deletedProrations.count} proration records`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:129:sensitive-data-exposure:console.log(` Deleted ${deletedLogs.count} seat change logs`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:134:sensitive-data-exposure:.catch(() => console.log(" No organization billing to delete"));
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:139:sensitive-data-exposure:.catch(() => console.log(" No organization settings to delete"));
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:143:sensitive-data-exposure:console.log(" Deleted profiles");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:153:sensitive-data-exposure:console.log(` Deleted team: ${team.name}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:160:sensitive-data-exposure:console.log(` Deleted ${deletedMemberships.count} memberships`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:164:sensitive-data-exposure:console.log(` Deleted organization: ${org.name}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:174:access-control-idor:const user = await prisma.user.findUnique({ where: { email } });
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:179:sensitive-data-exposure:console.log(` Deleted user: ${email}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:186:sensitive-data-exposure:console.log("Database cleanup complete");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:190:sensitive-data-exposure:console.log("=== Proration Test Cleanup Script ===");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:191:sensitive-data-exposure:console.log("\nOptions:");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:192:sensitive-data-exposure:console.log(` --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:203:sensitive-data-exposure:console.log("\n=== Cleanup Complete ===");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:205:sensitive-data-exposure:console.error("\nCleanup failed:", error);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:26:sensitive-data-exposure:console.log("Skipping Stripe cleanup (--skip-stripe flag)");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:31:sensitive-data-exposure:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe cleanup");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:41:sensitive-data-exposure:console.log("\nCleaning up Stripe resources...");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:60:sensitive-data-exposure:console.log(` Cancelled subscription: ${sub.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:73:sensitive-data-exposure:console.log(` Voided invoice: ${invoice.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:75:sensitive-data-exposure:console.log(` Could not void invoice ${invoice.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:81:sensitive-data-exposure:console.log(` Deleted customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:83:sensitive-data-exposure:console.log(` Error cleaning up customer ${customer.id}:`, error);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:94:sensitive-data-exposure:console.log(` Archived product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:96:sensitive-data-exposure:console.log(` Could not archive product ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1013:sensitive-data-exposure:console.log("Proration and seat change records created");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1035:sensitive-data-exposure:console.log("=== Proration Test Seed Script ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1036:sensitive-data-exposure:console.log("Options:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1037:sensitive-data-exposure:console.log(` --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1038:sensitive-data-exposure:console.log(` --cleanup: ${CLEANUP_FIRST}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1039:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1044:sensitive-data-exposure:console.log("\n=== Seed Complete ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1045:sensitive-data-exposure:console.log("Organization:", result.organization);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1046:sensitive-data-exposure:console.log("Team:", result.team);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1048:sensitive-data-exposure:console.log("\nTest Users:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1050:sensitive-data-exposure:console.log(` - ${u.name} (${u.email}) - Role: ${u.role}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1052:sensitive-data-exposure:console.log(` Password for all users: ${TEST_PASSWORD}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1054:sensitive-data-exposure:console.log("\nProration Records:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1056:sensitive-data-exposure:console.log(` - ${p.id}: ${p.status} (blocking: ${p.isBlocking})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1060:sensitive-data-exposure:console.log("\nStripe Resources:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1061:sensitive-data-exposure:console.log(` Customer: ${result.stripe.customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1062:sensitive-data-exposure:console.log(` Subscription: ${result.stripe.subscription?.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1063:sensitive-data-exposure:console.log(` Product: ${result.stripe.product?.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1064:sensitive-data-exposure:console.log(` Price: ${result.stripe.price?.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1067:sensitive-data-exposure:console.log("\n=== Testing Instructions ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1068:sensitive-data-exposure:console.log("1. Login as proration-admin@example.com");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1069:sensitive-data-exposure:console.log(" - Should see the due invoice banner (error variant - blocking)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1070:sensitive-data-exposure:console.log(" - Should be blocked from inviting new members");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1071:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1072:sensitive-data-exposure:console.log("2. Login as proration-member@example.com");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1073:sensitive-data-exposure:console.log(" - Should NOT see the due invoice banner (not a billing admin)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1074:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1075:sensitive-data-exposure:console.log("3. To test sub-team exception:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1076:sensitive-data-exposure:console.log(" - Try inviting proration-member@example.com to the sub-team");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1077:sensitive-data-exposure:console.log(" - This should succeed (existing org member)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1078:sensitive-data-exposure:console.log(" - Try inviting a new email - this should be blocked");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1079:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1082:sensitive-data-exposure:console.log("=== Stripe Dashboard (Proration Org) ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1083:sensitive-data-exposure:console.log(`Customer: https://dashboard.stripe.com/test/customers/${result.stripe.customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1084:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1087:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1093:sensitive-data-exposure:console.log("=== Trigger-Ready Organization ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1094:sensitive-data-exposure:console.log("Organization:", t.organization);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1095:sensitive-data-exposure:console.log("Team:", t.team);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1096:sensitive-data-exposure:console.log(`MonthKey: ${t.monthKey}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1097:sensitive-data-exposure:console.log(`Unprocessed SeatChangeLogs: ${t.unprocessedSeatChanges}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1098:sensitive-data-exposure:console.log("MonthlyProration records: 0 (intentionally absent)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1101:sensitive-data-exposure:console.log(`\nStripe (Trigger Org):`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1102:sensitive-data-exposure:console.log(` Customer: https://dashboard.stripe.com/test/customers/${t.stripe.customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1103:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1108:sensitive-data-exposure:console.log("\n=== Trigger Testing Instructions ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1109:sensitive-data-exposure:console.log("When scheduleMonthlyProration runs, it will:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1110:sensitive-data-exposure:console.log(` 1. Query for annual orgs with unprocessed seat changes for monthKey "${t.monthKey}"`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1111:sensitive-data-exposure:console.log(` 2. Find trigger-test-org with ${t.unprocessedSeatChanges} additions, 0 removals`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1112:sensitive-data-exposure:console.log(" 3. Calculate prorated amount based on remaining annual subscription days");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1113:sensitive-data-exposure:console.log(" 4. Create a MonthlyProration record");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1114:sensitive-data-exposure:console.log(" 5. Mark SeatChangeLog entries as processed");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1115:sensitive-data-exposure:console.log(" 6. Create a Stripe invoice (if amount > 0)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1116:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1117:sensitive-data-exposure:console.log("To verify after trigger runs:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1118:sensitive-data-exposure:console.log(` SELECT * FROM "MonthlyProration" WHERE "teamId" = ${t.organization.id};`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1119:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1122:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1125:sensitive-data-exposure:console.log("=== Cleanup ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1126:sensitive-data-exposure:console.log("To clean up all test data, run:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1127:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1130:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1132:sensitive-data-exposure:console.error("Error seeding data:", error);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:148:sensitive-data-exposure:console.log("Cleaning up existing Stripe test resources...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:168:sensitive-data-exposure:console.log(` Cancelled subscription: ${sub.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:173:sensitive-data-exposure:console.log(` Deleted customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:175:sensitive-data-exposure:console.log(` Could not delete customer ${customer.id}:`, error);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:191:sensitive-data-exposure:console.log(` Archived product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:197:sensitive-data-exposure:console.log("Creating Stripe resources...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:208:sensitive-data-exposure:console.log(` Created product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:223:sensitive-data-exposure:console.log(` Created price: ${price.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:235:sensitive-data-exposure:console.log(` Created customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:254:sensitive-data-exposure:console.log(` Attached payment method: ${paymentMethod.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:270:sensitive-data-exposure:console.log(` Created subscription: ${subscription.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:281:sensitive-data-exposure:console.log(`Creating invoice for $${(amount / 100).toFixed(2)}...`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:302:sensitive-data-exposure:console.log(` Created invoice: ${finalizedInvoice.id} (status: ${finalizedInvoice.status})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:308:sensitive-data-exposure:console.log("Creating Stripe resources for trigger org (annual)...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:318:sensitive-data-exposure:console.log(` Created product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:331:sensitive-data-exposure:console.log(` Created price: ${price.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:342:sensitive-data-exposure:console.log(` Created customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:353:sensitive-data-exposure:console.log(` Attached payment method: ${paymentMethod.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:364:sensitive-data-exposure:console.log(` Created subscription: ${subscription.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:370:sensitive-data-exposure:console.log("Cleaning up database test resources...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:373:access-control-idor:const triggerOrg = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:394:access-control-idor:const user = await prisma.user.findUnique({ where: { email } });
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:406:sensitive-data-exposure:console.log(" Trigger org cleanup complete");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:410:access-control-idor:const org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:415:sensitive-data-exposure:console.log(" No test organization found");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:449:access-control-idor:const user = await prisma.user.findUnique({ where: { email } });
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:461:sensitive-data-exposure:console.log(" Database cleanup complete");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:466:sensitive-data-exposure:console.log(`\nCreating trigger-ready organization (monthKey: ${monthKey})...`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:469:access-control-idor:let org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:482:sensitive-data-exposure:console.log(` Organization created: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:497:access-control-idor:let team = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:510:sensitive-data-exposure:console.log(` Team created: ${team.name} (ID: ${team.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:554:sensitive-data-exposure:console.log(" Users and memberships created (5 org members, 3 team members)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:605:sensitive-data-exposure:console.log(" OrganizationBilling created (ANNUALLY, $150/seat, 3 paid seats, no trial)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:619:access-control-idor:const orgBilling = await prisma.organizationBilling.findUnique({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:652:sensitive-data-exposure:console.log(` Created 2 unprocessed SeatChangeLog entries (monthKey: ${monthKey})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:653:sensitive-data-exposure:console.log(" NO MonthlyProration records created (trigger-ready state)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:674:sensitive-data-exposure:console.log("\nCreating test organization...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:677:access-control-idor:let org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:694:sensitive-data-exposure:console.log(`Organization created: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:708:sensitive-data-exposure:console.log("Organization settings created");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:711:access-control-idor:let team = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:728:sensitive-data-exposure:console.log(`Team created: ${team.name} (ID: ${team.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:731:sensitive-data-exposure:console.log("Creating test users...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:823:sensitive-data-exposure:console.log("Users added to organization and team (8 org members, 4 team members)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:868:sensitive-data-exposure:console.log("Organization billing created");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:883:sensitive-data-exposure:console.log("Organization team metadata updated with subscriptionId");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:886:access-control-idor:const orgBilling = await prisma.organizationBilling.findUnique({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:891:sensitive-data-exposure:console.log("Creating test proration and seat change records...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:91:sensitive-data-exposure:console.log("Skipping Stripe API calls (--skip-stripe flag)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:954:sensitive-data-exposure:console.log("Creating seat change logs...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:96:sensitive-data-exposure:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:167:sensitive-data-exposure:console.log("\n=== E2E Test Setup Complete ===");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:168:sensitive-data-exposure:console.log(`Team ID: ${testTeam.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:169:sensitive-data-exposure:console.log(`Current Members: ${currentMemberCount}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:170:sensitive-data-exposure:console.log(`HWM (Peak): ${peakMemberCount}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:171:sensitive-data-exposure:console.log(`Subscription: ${subscription.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:172:sensitive-data-exposure:console.log(`Test Clock: ${testClock.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:173:sensitive-data-exposure:console.log(`Period End: ${new Date(subscription.current_period_end * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:181:sensitive-data-exposure:console.log(`Deleted test clock: ${testClock.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:184:sensitive-data-exposure:console.log("Could not delete test clock:", error);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:199:sensitive-data-exposure:console.log("E2E Test cleanup complete");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:210:sensitive-data-exposure:console.log(`Test clock ready at: ${new Date(clock.frozen_time * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:215:sensitive-data-exposure:console.log(`Clock still advancing... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:236:sensitive-data-exposure:console.log(`${description} - confirmed`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:240:sensitive-data-exposure:console.log(`Waiting for ${description}... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:249:access-control-idor:const initialBilling = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:254:sensitive-data-exposure:console.log("\n=== Step 1: Advance clock to trigger invoice.upcoming ===");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:255:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:270:access-control-idor:const resetBilling = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:274:sensitive-data-exposure:console.log(`Reset state: paidSeats=${resetBilling?.paidSeats}, HWM=${resetBilling?.highWaterMark}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:281:sensitive-data-exposure:console.log(`Advancing clock to: ${new Date(invoiceUpcomingTime * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:292:sensitive-data-exposure:console.log("\\nManually triggering scale-up (webhook fails during clock advancement)...");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:307:access-control-idor:const updatedBilling = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:313:sensitive-data-exposure:console.log("Scale UP verified: subscription quantity = 6 (HWM)");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:317:sensitive-data-exposure:console.log("\n=== Step 2: Advance clock past renewal to trigger scale down ===");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:325:sensitive-data-exposure:console.log(`Current period end: ${new Date(periodEnd * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:326:sensitive-data-exposure:console.log(`Advancing clock to: ${new Date(renewalTime * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:337:sensitive-data-exposure:console.log("Stripe subscription after renewal:");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:338:sensitive-data-exposure:console.log(` - Status: ${subAfterRenewal.status}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:339:sensitive-data-exposure:console.log(` - Quantity: ${subAfterRenewal.items.data[0].quantity}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:340:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:346:access-control-idor:const billingAfterRenewal = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:350:sensitive-data-exposure:console.log("Database after clock advancement:");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:351:sensitive-data-exposure:console.log(` - paidSeats: ${billingAfterRenewal?.paidSeats}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:352:sensitive-data-exposure:console.log(` - HWM: ${billingAfterRenewal?.highWaterMark}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:357:sensitive-data-exposure:console.log("\\nManually triggering reset (webhook fails during clock advancement)...");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:371:sensitive-data-exposure:console.log("Reset completed, verifying results...");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:374:access-control-idor:const billing = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:386:sensitive-data-exposure:console.log("Scale DOWN verified: subscription quantity = 4 (current members)");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:387:sensitive-data-exposure:console.log(`Final state: paidSeats=${billing?.paidSeats}, HWM=${billing?.highWaterMark}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:100:sensitive-data-exposure:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:152:sensitive-data-exposure:console.log("Cleaning up existing Stripe test resources...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:160:sensitive-data-exposure:console.log(` Deleted test clock: ${clock.id} (${clock.name})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:162:sensitive-data-exposure:console.log(` Could not delete test clock ${clock.id}:`, error);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:185:sensitive-data-exposure:console.log(` Cancelled subscription: ${sub.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:190:sensitive-data-exposure:console.log(` Deleted customer: ${customer.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:192:sensitive-data-exposure:console.log(` Could not delete customer ${customer.id}:`, error);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:206:sensitive-data-exposure:console.log(`Creating Stripe resources for ${name}...`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:214:sensitive-data-exposure:console.log(` Using existing price: ${price.id} ($${pricePerSeatCents / 100}/seat)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:221:sensitive-data-exposure:console.log(` Using existing product: ${product.id} (${product.name})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:228:sensitive-data-exposure:console.log(` Created test clock: ${testClock.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:241:sensitive-data-exposure:console.log(` Created customer: ${customer.id} (attached to test clock)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:253:sensitive-data-exposure:console.log(` Attached payment method: ${paymentMethod.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:264:sensitive-data-exposure:console.log(` Created subscription: ${subscription.id} (${seatCount} seats)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:270:sensitive-data-exposure:console.log("Cleaning up database test resources...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:283:sensitive-data-exposure:console.log(` Deleted ${deleteResult.count} test users`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:287:access-control-idor:const team = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:296:sensitive-data-exposure:console.log(` Deleted HWM test team (ID: ${team.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:300:access-control-idor:const org = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:318:sensitive-data-exposure:console.log(` Deleted HWM test org (ID: ${org.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:321:sensitive-data-exposure:console.log(" Database cleanup complete");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:325:sensitive-data-exposure:console.log("\nCreating HWM test team (standalone)...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:328:access-control-idor:let team = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:341:sensitive-data-exposure:console.log(` Team created: ${team.name} (ID: ${team.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:378:sensitive-data-exposure:console.log(` Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:453:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:458:access-control-idor:const teamBilling = await prisma.teamBilling.findUnique({ where: { teamId: team.id } });
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:500:sensitive-data-exposure:console.log(` SeatChangeLog entries created (5 additions, 1 removal)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:512:sensitive-data-exposure:console.log("\nCreating HWM test organization...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:515:access-control-idor:let org = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:528:sensitive-data-exposure:console.log(` Organization created: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:578:sensitive-data-exposure:console.log(` Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:664:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:669:access-control-idor:const orgBilling = await prisma.organizationBilling.findUnique({ where: { teamId: org.id } });
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:713:sensitive-data-exposure:console.log(` SeatChangeLog entries created (8 additions, 2 removals)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:739:sensitive-data-exposure:console.log("Enabled hwm-seating feature flag");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:774:sensitive-data-exposure:console.log("=== High Water Mark (HWM) Test Seed Script ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:775:sensitive-data-exposure:console.log("Options:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:776:sensitive-data-exposure:console.log(` --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:777:sensitive-data-exposure:console.log(` --cleanup: ${CLEANUP_FIRST}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:778:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:783:sensitive-data-exposure:console.log("\n=== Seed Complete ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:823:sensitive-data-exposure:console.log("=== Summary Table ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:824:sensitive-data-exposure:console.log("| Entity | Qty | Members | HWM | invoice.upcoming | After Renewal | Price |");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:825:sensitive-data-exposure:console.log("|--------|-----|---------|-----|------------------|---------------|-------|");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:826:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:829:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:833:sensitive-data-exposure:console.log("\n=== Test Clock Dates ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:834:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:837:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:841:sensitive-data-exposure:console.log("\n=== Stripe Resources ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:842:sensitive-data-exposure:console.log("Team:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:843:sensitive-data-exposure:console.log(` Subscription: ${teamSubUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:844:sensitive-data-exposure:console.log(` Customer: ${teamCustUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:845:sensitive-data-exposure:console.log(` Test Clock: ${teamClockUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:846:sensitive-data-exposure:console.log("\nOrg:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:847:sensitive-data-exposure:console.log(` Subscription: ${orgSubUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:848:sensitive-data-exposure:console.log(` Customer: ${orgCustUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:849:sensitive-data-exposure:console.log(` Test Clock: ${orgClockUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:852:sensitive-data-exposure:console.log("\n=== Test Users ===");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:853:sensitive-data-exposure:console.log(`Total test users created: ${result.testUsers.length}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:854:sensitive-data-exposure:console.log("User credentials are defined in the seed script constants.");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:856:sensitive-data-exposure:console.log("\n=== Testing Instructions ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:857:sensitive-data-exposure:console.log("1. ADVANCE TEST CLOCK to trigger invoice.upcoming:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:858:sensitive-data-exposure:console.log(" Go to the Test Clock URL above and click 'Advance time'");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:859:sensitive-data-exposure:console.log(" Advance to ~3 days before the billing period ends (e.g., +27 days)");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:860:sensitive-data-exposure:console.log(" This will trigger the invoice.upcoming webhook");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:861:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:862:sensitive-data-exposure:console.log(" Or use Stripe CLI:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:865:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:869:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:870:sensitive-data-exposure:console.log("2. invoice.upcoming webhook flow:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:871:sensitive-data-exposure:console.log(" - Stripe sends invoice.upcoming ~3 days before renewal");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:872:sensitive-data-exposure:console.log(" - The webhook calls HighWaterMarkService.applyHighWaterMarkToSubscription()");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:873:sensitive-data-exposure:console.log(" - This updates the subscription quantity to the HWM value");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:874:sensitive-data-exposure:console.log(" - Team: subscription quantity updated from 4 to 5");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:875:sensitive-data-exposure:console.log(" - Org: subscription quantity updated from 6 to 8");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:876:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:877:sensitive-data-exposure:console.log("3. ADVANCE TEST CLOCK again to trigger renewal:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:878:sensitive-data-exposure:console.log(" Advance to after the billing period ends (e.g., +31 days from start)");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:879:sensitive-data-exposure:console.log(" This will trigger customer.subscription.updated webhook");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:880:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:881:sensitive-data-exposure:console.log("4. customer.subscription.updated webhook flow:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:882:sensitive-data-exposure:console.log(" - After renewal completes, this webhook fires");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:883:sensitive-data-exposure:console.log(" - For MONTHLY billing, it calls resetSubscriptionAfterRenewal()");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:884:sensitive-data-exposure:console.log(" - This resets subscription quantity AND HWM to current member count");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:885:sensitive-data-exposure:console.log(" - Team: subscription quantity reset from 5 to 4, HWM reset to 4");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:886:sensitive-data-exposure:console.log(" - Org: subscription quantity reset from 8 to 6, HWM reset to 6");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:887:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:888:sensitive-data-exposure:console.log("5. To verify HWM in database:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:889:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:892:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:895:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:897:sensitive-data-exposure:console.log("=== Cleanup ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:898:sensitive-data-exposure:console.log("To clean up all test data, run:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:899:sensitive-data-exposure:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:902:sensitive-data-exposure:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:904:sensitive-data-exposure:console.error("Error seeding data:", error);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:95:sensitive-data-exposure:console.log("Skipping Stripe API calls (--skip-stripe flag)");
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:105:crypto-misuse:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:155:crypto-misuse:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:357:access-control-idor:const updated = await prisma.monthlyProration.findUnique({
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:387:access-control-idor:const updated = await prisma.monthlyProration.findUnique({
+packages/features/ee/common/server/LicenseKeyService.test.ts:100:webhook-signature:signature: "mocked-signature",
+packages/features/ee/common/server/LicenseKeyService.test.ts:112:webhook-signature:vi.mocked(createSignature).mockReturnValue("mocked-signature");
+packages/features/ee/common/server/LicenseKeyService.test.ts:122:webhook-signature:signature: "mocked-signature",
+packages/features/ee/common/server/LicenseKeyService.test.ts:160:webhook-signature:vi.mocked(createSignature).mockReturnValue("mocked-signature");
+packages/features/ee/common/server/LicenseKeyService.test.ts:172:webhook-signature:signature: "mocked-signature",
+packages/features/ee/common/server/LicenseKeyService.test.ts:185:webhook-signature:vi.mocked(createSignature).mockReturnValue("mocked-signature");
+packages/features/ee/common/server/LicenseKeyService.test.ts:196:webhook-signature:signature: "mocked-signature",
+packages/features/ee/common/server/LicenseKeyService.test.ts:89:webhook-signature:vi.mocked(createSignature).mockReturnValue("mocked-signature");
+packages/features/ee/deployment/lib/getDeploymentKey.test.ts:62:webhook-signature:vi.stubEnv("CAL_SIGNATURE_TOKEN", "test-signature-token");
+packages/features/ee/deployment/lib/getDeploymentKey.test.ts:64:webhook-signature:expect(result).toBe("test-signature-token");
+packages/features/ee/dsync/lib/assignValueToUser.test.ts:101:access-control-idor:dsync = await prismock.dSyncData.findUnique({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:243:access-control-idor:const cancelledBooking = await prisma.booking.findUnique({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:249:access-control-idor:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:319:access-control-idor:const assignmentReason = await prisma.assignmentReason.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:384:access-control-idor:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:468:access-control-idor:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:93:crypto-misuse:const uniqueId = `test-idempotency-${Date.now()}-${Math.random()}`;
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:106:crypto-misuse:const idempotencyKey = `test-idempotency-${Date.now()}-${Math.random()}`;
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:109:crypto-misuse:uid: `test-booking-${Date.now()}-${Math.random()}`,
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:259:access-control-idor:const cancelledBooking = await prisma.booking.findUnique({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:265:access-control-idor:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:327:access-control-idor:const assignmentReason = await prisma.assignmentReason.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:393:access-control-idor:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/organizations/__mocks__/organizationMock.ts:26:sensitive-data-exposure:console.log(errorMsg, { arg, forInput });
+packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabledOrgOnboardingService.test.ts:435:access-control-idor:const onboarding = await prismock.organizationOnboarding.findUnique({
+packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabledOrgOnboardingService.test.ts:870:access-control-idor:const updatedUser = await prismock.user.findUnique({
+packages/features/ee/teams/repositories/TeamRepository.test.ts:926:sql-raw-injection:prismaMock.$queryRaw.mockResolvedValue(mockUsers);
+packages/features/ee/teams/repositories/TeamRepository.test.ts:934:sql-raw-injection:expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(1);
+packages/features/ee/teams/services/teamService.integration-test.ts:1052:access-control-idor:const userAfterFailure = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:1063:access-control-idor:const profile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:124:access-control-idor:const membership = await prisma.membership.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:133:access-control-idor:const membership = await prisma.membership.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:149:access-control-idor:const user = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:157:access-control-idor:const user = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:31:crypto-misuse:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/teams/services/teamService.integration-test.ts:428:access-control-idor:const deletedEventType1 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:433:access-control-idor:const deletedEventType2 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:439:access-control-idor:const parentStillExists1 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:444:access-control-idor:const parentStillExists2 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:450:access-control-idor:const otherUserEventStillExists = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:470:access-control-idor:const user = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:53:crypto-misuse:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/teams/services/teamService.integration-test.ts:555:access-control-idor:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:561:access-control-idor:const unchangedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:582:access-control-idor:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:610:access-control-idor:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:702:access-control-idor:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:711:access-control-idor:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:745:access-control-idor:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:754:access-control-idor:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:778:access-control-idor:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:833:access-control-idor:const finalUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:843:access-control-idor:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:917:access-control-idor:const deletedEvent1 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:922:access-control-idor:const deletedEvent2 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:928:access-control-idor:const parentEvent1Still = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:933:access-control-idor:const parentEvent2Still = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:939:access-control-idor:const user2EventStill = await prisma.eventType.findUnique({
+packages/features/ee/workflows/lib/reminders/reminderSchedulerInApp.test.ts:32:access-control-idor:get findFirst() {
+packages/features/ee/workflows/lib/test/twilioWebhook.test.ts:134:webhook-signature:"x-twilio-signature": "valid-signature",
+packages/features/ee/workflows/lib/test/twilioWebhook.test.ts:58:webhook-signature:"x-twilio-signature": "valid-signature",
+packages/features/ee/workflows/lib/test/twilioWebhook.test.ts:96:webhook-signature:"x-twilio-signature": "valid-signature",
+packages/features/ee/workflows/lib/test/workflows.test.ts:135:access-control-idor:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:489:access-control-idor:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:582:access-control-idor:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:673:access-control-idor:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:817:access-control-idor:const workflow = await prismock.workflow.findFirst({
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:123:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:12:sensitive-data-exposure:console.log("Mocking i18n.getTranslation to return identity function");
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:143:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:46:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:70:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:84:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:97:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:21:crypto-misuse:const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:488:access-control-idor:const row = await prisma.userFeatures.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:509:access-control-idor:const row = await prisma.userFeatures.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:531:access-control-idor:const row = await prisma.userFeatures.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:563:access-control-idor:const row = await prisma.teamFeatures.findUnique({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:586:access-control-idor:const row = await prisma.teamFeatures.findUnique({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:610:access-control-idor:const row = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:101:access-control-idor:const dbFeature = await prisma.feature.findUnique({
+packages/features/flags/features.repository.integration-test.ts:1033:access-control-idor:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:1063:access-control-idor:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:1104:access-control-idor:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:1144:access-control-idor:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:129:access-control-idor:const dbFeature = await prisma.feature.findUnique({
+packages/features/flags/features.repository.integration-test.ts:701:access-control-idor:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:744:access-control-idor:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:776:access-control-idor:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:819:access-control-idor:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:855:access-control-idor:const beforeDelete = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:872:access-control-idor:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:902:access-control-idor:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:9:crypto-misuse:const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+packages/features/handleMarkNoShow.test.ts:247:crypto-misuse:id: Date.now() + Math.random(),
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:109:access-control-idor:const userUpdatedDenormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:10:crypto-misuse:const randomId = Math.floor(Math.random() * 1000000);
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:126:access-control-idor:const eventTypeUpdatedDenormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:140:access-control-idor:const deletedDenormalizedBooking = await prisma.bookingDenormalized.findUnique({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:151:crypto-misuse:uid: `test-booking-${Math.floor(Math.random() * 1000000)}`,
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:165:access-control-idor:const eventTypeDeletedDenormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:182:crypto-misuse:uid: `test-booking-${Math.floor(Math.random() * 1000000)}`,
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:196:access-control-idor:const userDeletedDenormalizedBooking1 = await prisma.bookingDenormalized.findUnique({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:199:access-control-idor:const userDeletedDenormalizedBooking2 = await prisma.bookingDenormalized.findUnique({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:210:access-control-idor:const denormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:214:access-control-idor:const originalBooking = await prisma.booking.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:239:access-control-idor:const denormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:257:access-control-idor:const denormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:72:access-control-idor:const denormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:92:access-control-idor:const updatedDenormalizedBooking = await prisma.bookingDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:14:crypto-misuse:const randomId = Math.floor(Math.random() * 1000000);
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:175:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:180:access-control-idor:const formWithFields = await prisma.app_RoutingForms_Form.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:238:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:246:access-control-idor:const formResponse = await prisma.app_RoutingForms_FormResponse.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:262:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:278:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:304:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:325:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:337:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:353:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:365:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:377:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:397:access-control-idor:const denormalizedResponse1 = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:400:access-control-idor:const denormalizedResponse2 = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:436:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:454:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:464:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUniqueOrThrow({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:496:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:565:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:640:crypto-misuse:uid: `routing-form-response-denorm-${Math.floor(Math.random() * 1000000)}`,
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:683:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:13:crypto-misuse:const randomId = Math.floor(Math.random() * 1000000);
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:161:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:227:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:273:access-control-idor:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:308:access-control-idor:const initialDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:346:access-control-idor:const updatedDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:410:access-control-idor:const initialDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:435:access-control-idor:const updatedDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/services/InsightsBookingService.integration-test.ts:223:crypto-misuse:email: `regular-user-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:224:crypto-misuse:username: `regularuser-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:27:crypto-misuse:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/insights/services/InsightsBookingService.integration-test.ts:403:crypto-misuse:slug: `standalone-team-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:475:crypto-misuse:slug: `standalone-team-2-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:696:crypto-misuse:uid: `user-booking-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:731:sql-raw-injection:const results = await prisma.$queryRaw<{ id: number }[]>(query);
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:765:sql-raw-injection:const results = await prisma.$queryRaw<Array<{ id: number }>>(query);
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:870:sql-raw-injection:const results = await prisma.$queryRaw<Array<{ id: number }>>(query);
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:961:sql-raw-injection:const results = await prisma.$queryRaw<Array<{ id: number }>>(query);
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:127:access-control-idor:const team2 = await prisma.team.findFirst({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:23:access-control-idor:let testTeam = await prisma.team.findFirst({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:482:access-control-idor:const dbRecord = await prisma.membership.findUnique({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:561:access-control-idor:const dbRecord = await prisma.membership.findUnique({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:607:access-control-idor:const dbRecord = await prisma.membership.findUnique({
+packages/features/pbac/domain/types/permission-registry.test.ts:37:insecure-deserialization:const copy = JSON.parse(JSON.stringify(cfg));
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:24:crypto-misuse:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:478:crypto-misuse:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:559:crypto-misuse:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:724:crypto-misuse:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:850:crypto-misuse:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/profile/repositories/ProfileRepository.test.ts:367:access-control-idor:const profile = await prismock.profile.findUnique({
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:1249:sensitive-data-exposure:console.log("Total time taken", totalTimeTaken, {
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:33:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:45:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:57:crypto-misuse:const timestamp = Date.now() + Math.random();
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:327:crypto-misuse:const expectedHash = createHash("sha256")
+packages/features/schedules/lib/slots.test.ts:396:sensitive-data-exposure:console.log(
+packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:546:access-control-idor:const result = await SelectedCalendarRepository.findFirst({
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:202:access-control-idor:const updatedStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:269:access-control-idor:const updatedStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:158:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:235:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:265:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:327:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:387:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:412:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:87:access-control-idor:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:117:access-control-idor:const booking = await prismaMock.booking.findFirst();
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:23:insecure-deserialization:const parsedBody = JSON.parse((body as string) || "{}");
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:38:insecure-deserialization:const parsedBody = JSON.parse((body as string) || "{}");
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:83:access-control-idor:const booking = await prismaMock.booking.findFirst();
+packages/features/users/repositories/UserRepository.test.ts:44:access-control-idor:const password = await prismock.userPassword.findUnique({
+packages/features/users/repositories/UserRepository.test.ts:62:access-control-idor:const userQuery = await prismock.user.findUnique({
+packages/features/users/repositories/UserRepository.test.ts:96:access-control-idor:const profile = await prismock.profile.findFirst({
+packages/features/webhooks/lib/handleWebhookScheduledTriggers.test.ts:56:webhook-signature:expect(options.headers).toHaveProperty("X-Cal-Signature-256");
+packages/features/webhooks/lib/sendPayload.test.ts:211:insecure-deserialization:const body = JSON.parse(options.body);
+packages/features/webhooks/lib/sendPayload.test.ts:241:insecure-deserialization:const body = JSON.parse(options.body);
+packages/features/webhooks/lib/sendPayload.test.ts:53:webhook-signature:it("should include X-Cal-Signature-256 header alongside version header", async () => {
+packages/features/webhooks/lib/sendPayload.test.ts:78:webhook-signature:expect(options.headers).toHaveProperty("X-Cal-Signature-256");
+packages/features/webhooks/lib/service/WebhookService.test.ts:103:webhook-signature:expect(options.headers).toHaveProperty("X-Cal-Signature-256");
+packages/features/webhooks/lib/service/WebhookService.test.ts:183:insecure-deserialization:const parsedPayload = JSON.parse(taskPayload);
+packages/lib/CalEventParser.test.ts:38:sensitive-data-exposure:console.log("Description:", description);
+packages/lib/CalEventParser.test.ts:39:sensitive-data-exposure:console.log(
+packages/lib/__mocks__/constants.ts:31:prototype-pollution:Object.assign(mockedConstants, initialConstants);
+packages/lib/server/__mocks__/serviceAccountKey.ts:11:insecure-deserialization:return JSON.parse(input);
+packages/testing/src/lib/__mocks__/prisma.ts:77:path-traversal-file:const schemaContent = readFileSync("packages/prisma/schema.prisma", "utf-8");
+packages/testing/src/lib/__mocks__/prisma.ts:87:sql-raw-injection:if (!prismockInstance.$queryRaw) {
+packages/testing/src/lib/__mocks__/prisma.ts:88:sql-raw-injection:Object.defineProperty(prismockInstance, "$queryRaw", {
+packages/testing/src/lib/__mocks__/prisma.ts:90:sql-raw-injection:throw new Error("$queryRaw is not implemented in prismock. Use vi.spyOn to mock it in your test.");
+packages/trpc/server/routers/viewer/bookings/editLocation.handler.test.ts:186:access-control-idor:const booking = await prisma.booking.findFirst({
+packages/trpc/server/routers/viewer/bookings/editLocation.handler.test.ts:200:access-control-idor:const organizerUser = await prisma.user.findFirst({
+packages/trpc/server/routers/viewer/bookings/editLocation.handler.test.ts:230:access-control-idor:const updatedBooking = await prisma.booking.findFirstOrThrow({
+packages/trpc/server/routers/viewer/bookings/get.handler.integration-test.ts:181:sensitive-data-exposure:console.warn("Test cleanup failed:", error);
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:123:sql-raw-injection:$queryRaw: vi.fn().mockResolvedValue([]),
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:358:sql-raw-injection:// PERFORMANCE: With the optimization, we no longer call $queryRaw to fetch event type IDs.
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.integration-test.ts:10:access-control-idor:const proUser = await prisma.user.findFirstOrThrow({ where: { email: "pro@example.com" } });
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.integration-test.ts:13:access-control-idor:const teamProUser = await prisma.user.findFirstOrThrow({ where: { email: "teampro@example.com" } });
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.integration-test.ts:14:access-control-idor:const teamProMembership = await prisma.membership.findFirstOrThrow({
+packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.integration-test.ts:158:access-control-idor:const managedEventType = await prisma.eventType.findFirstOrThrow({
+packages/trpc/server/routers/viewer/eventTypes/heavy/duplicate.handler.integration-test.ts:124:sensitive-data-exposure:console.warn("Test cleanup failed:", error);
+packages/trpc/server/routers/viewer/eventTypes/heavy/duplicate.handler.integration-test.ts:208:access-control-idor:const duplicated = await prisma.eventType.findUnique({
+packages/trpc/server/routers/viewer/eventTypes/listWithTeam.handler.integration-test.ts:178:sensitive-data-exposure:console.warn("Test cleanup failed:", error);
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:1005:access-control-idor:const movedTeam = await prismock.team.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:618:access-control-idor:const movedTeam = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:664:access-control-idor:const movedTeam = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:726:access-control-idor:const movedTeam1 = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:731:access-control-idor:const movedTeam2 = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:806:access-control-idor:const platformTeamAfter = await prismock.team.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:852:access-control-idor:const nonExistentTeam = await prismock.team.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:898:access-control-idor:const teamCreditBalance = await prismock.creditBalance.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:903:access-control-idor:const orgCreditBalance = await prismock.creditBalance.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:952:access-control-idor:const redirect = await prismock.tempOrgRedirect.findFirst({
+packages/trpc/server/routers/viewer/organizations/bulkDeleteUsers.test.ts:324:access-control-idor:const teamEvent = await prismock.eventType.findFirst({
+packages/trpc/server/routers/viewer/organizations/createWithPaymentIntent.handler.test.ts:156:crypto-misuse:Array.from({ length: count }, () => createTestUser({ email: `user${Math.random()}@example.com` }))
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:191:access-control-idor:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:422:access-control-idor:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:471:access-control-idor:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:525:access-control-idor:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:101:auth-session:const cookie = getCookieHeader();
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:102:csrf-state-change:expect(cookie).toMatch(/SameSite=Lax/);
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:4:csrf-state-change:// SameSite and Secure attributes depending on the environment (http vs https).
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:50:auth-session:return { prismaStub, resStub, reqStub, getCookieHeader: () => cookieHeaderValue };
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:66:csrf-state-change:it("sets SameSite=None and Secure when WEBAPP_URL is https", async () => {
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:70:auth-session:const { prismaStub, reqStub, resStub, getCookieHeader } = buildContext();
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:81:auth-session:const cookie = getCookieHeader();
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:82:csrf-state-change:expect(cookie).toMatch(/SameSite=None/);
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:86:csrf-state-change:it("falls back to SameSite=Lax and no Secure for http WEBAPP_URL", async () => {
+packages/trpc/server/routers/viewer/slots/reserveSlot.handler.test.ts:90:auth-session:const { prismaStub, reqStub, resStub, getCookieHeader } = buildContext();
+packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/inviteMemberUtils.ts:36:sensitive-data-exposure:console.log("Mock Error: Unhandled input", { teamId });
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:111:ssrf-outbound-fetch:vi.mock("node-fetch", () => ({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:12:access-control-idor:return await prisma.profile.findUnique({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:23:access-control-idor:return await prisma.membership.findUnique({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:35:crypto-misuse:return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:497:access-control-idor:const createdUser = await prisma.user.findUnique({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:511:access-control-idor:const host = await prisma.host.findFirst({
+packages/ui/components/editor/plugins/AutoLinkPlugin.test.tsx:20:sensitive-data-exposure:onError: (error: Error) => console.error(error),
+packages/ui/components/editor/plugins/EditablePlugin.test.tsx:23:sensitive-data-exposure:onError: (error: Error) => console.error(error),
+packages/ui/components/editor/plugins/ToolbarPlugin.test.tsx:40:sensitive-data-exposure:onError: (error: Error) => console.error(error),

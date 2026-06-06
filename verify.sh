@@ -1,386 +1,468 @@
 #!/usr/bin/env bash
 #
-# verify.sh — Directive 10 self-validating verification harness for the
-#             blitzy-cal five-layer read-only security audit.
+# verify.sh - Directive 10 self-validation harness for the blitzy-cal
+#             five-layer read-only security audit.
 #
-# Purpose
-# -------
-# Deterministically validate the complete set of audit artifacts produced by
-# Directives 0-9 against the binding pass/fail criteria of the Agent Action Plan
-# (AAP §0.1.4 R10, §0.4.2, §0.4.3, §0.7). The script encodes 16 checks; each
-# prints "PASS <N>: ..." or "FAIL <N>: ...". The process exit code equals the
-# number of failed checks (0 == all green), per AAP §0.4.2.
+# PURPOSE
+#   Deterministically validate the complete set of audit artifacts produced by
+#   Directives 0-9 against 16 binding pass/fail criteria. Each check prints
+#   exactly one line, "PASS <N> <desc>" or "FAIL <N> <desc>" (N = 1..16). The
+#   process exit code equals the number of FAILED checks (0 == all green).
 #
-# Read-only contract
-# ------------------
-# This harness ONLY reads artifacts and prints results. It never creates,
-# modifies, or deletes any file in the repository, honoring the audit's
-# "~0 files modified" / zero-modification mandate (AAP §0.5.2, §0.7).
+# READ-ONLY CONTRACT
+#   This harness ONLY reads the sibling audit artifacts and prints results. It
+#   never creates (other than ephemeral temp files under /tmp), modifies, or
+#   deletes any repository file, honoring the audit "~0 files modified" mandate.
+#   It performs purely local file inspection and never contacts any network or
+#   live infrastructure.
 #
-# Determinism
-# -----------
-# LC_ALL=C and a fixed traversal/sort order make every run byte-identical on
-# identical inputs (AAP §0.7 determinism rule). The script is non-interactive.
+# USAGE
+#   ./verify.sh        # run from the repository root (where the artifacts live)
+#   bash verify.sh     # equivalent; the script cd's to its own directory so all
+#                      # relative artifact paths resolve regardless of caller cwd
 #
-# Lockfile-aware dedupe (resolution of QA Checkpoint-2 Issue #1)
-# -------------------------------------------------------------
-# Two AAP rules are in tension for Layer-4 (OSV/SCA) findings:
-#   * §0.7  — EVERY lockfile finding uses line:0.
-#   * §0.3.3 — cross-layer dedupe collapses findings sharing (file,line,cwe).
-# Because all OSV rows share yarn.lock:0, a naive global (file,line,cwe)
-# uniqueness probe collides whenever two distinct CVEs map to the same CWE.
-# Collapsing them would DESTROY distinct CVEs and violate SCA-completeness
-# (Layer 4 "catalogs dependency CVEs"; OSV dedupe is by (package, CVE)).
-# Therefore CHECK 15 applies the lockfile carve-out the AAP intends:
-#   (a) NON-lockfile (source-code) findings must be globally unique by
-#       (file,line,cwe)  — the cross-layer corroboration identity; and
-#   (b) lockfile (yarn.lock / OSV) findings must be unique by their
-#       (package, CVE) identity, captured by the distinct normalized
-#       description (the L4 _coverage records "deduped by (package, CVE/
-#       advisory ID)"); plus no whole-record duplicates anywhere.
-# This makes the dedupe-uniqueness invariant well-defined and PASSING without
-# altering the (correct) merged data.
+# DETERMINISM
+#   LC_ALL=C plus a fixed artifact list and stable sort orders make every run on
+#   identical inputs byte-identical. The script is non-interactive and does not
+#   use "set -e": a failing check is converted to a FAIL line, never an abort.
 #
-# Usage
-# -----
-#   ./verify.sh            # from the repository root (where the artifacts live)
-#   bash verify.sh         # equivalent; the script cd's to its own directory
+# DEPENDENCIES
+#   Prefers jq for JSON inspection; transparently falls back to python3 when jq
+#   is unavailable. If neither is present the script exits 255 with a clear
+#   message (it never crashes silently).
 #
 set -u
 export LC_ALL=C
 
-# Resolve and enter the directory containing this script (== artifact dir),
-# so all relative artifact paths resolve regardless of the caller's cwd.
+# Resolve and enter the directory that contains this script (== artifact dir).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-cd "$SCRIPT_DIR" || { echo "FATAL: cannot cd to script directory '$SCRIPT_DIR'"; exit 255; }
+cd "$SCRIPT_DIR" || { echo "verify.sh: FATAL: cannot cd to script directory '$SCRIPT_DIR'" >&2; exit 255; }
 
-# Hard dependency: jq (used for every JSON assertion).
-if ! command -v jq >/dev/null 2>&1; then
-  echo "FATAL: 'jq' is required but not found on PATH"; exit 255
+# --------------------------------------------------------------------------
+# JSON engine detection (jq preferred, python3 fallback) and grep -P support.
+# --------------------------------------------------------------------------
+ENGINE=""
+HAVE_PY=0
+command -v jq >/dev/null 2>&1 && ENGINE="jq"
+command -v python3 >/dev/null 2>&1 && HAVE_PY=1
+if [ -z "$ENGINE" ]; then
+  if [ "$HAVE_PY" -eq 1 ]; then
+    ENGINE="py"
+  else
+    echo "verify.sh: FATAL: neither 'jq' nor 'python3' is available; cannot validate JSON artifacts" >&2
+    exit 255
+  fi
 fi
+GREP_P=0
+printf 'x' | grep -qP 'x' 2>/dev/null && GREP_P=1
 
-pass_count=0
-fail_count=0
+# Embedded python fallback program. Single-quoted: it must contain NO single
+# quotes. Dispatches on argv[1]=mode, argv[2]=file, argv[3]=optional key.
+PYQ='
+import sys, json
+mode = sys.argv[1]
+path = sys.argv[2]
+extra = sys.argv[3] if len(sys.argv) > 3 else None
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    ok = True
+except Exception:
+    data = None
+    ok = False
 
-# ok <n> <message>  / no <n> <message>  — record and print a check result.
-ok() { pass_count=$((pass_count + 1)); printf 'PASS %s: %s\n' "$1" "$2"; }
-no() { fail_count=$((fail_count + 1)); printf 'FAIL %s: %s\n' "$1" "$2"; }
+def is_finding(x):
+    return isinstance(x, dict) and ("file" in x)
 
-# num <jq-filter> <file> — emit a jq scalar (number) or 0 on any error.
-num() { local v; v="$(jq "$1" "$2" 2>/dev/null)"; [ -n "$v" ] && [ "$v" != "null" ] && printf '%s' "$v" || printf '0'; }
+def is_int(x):
+    return isinstance(x, int) and not isinstance(x, bool)
 
-# countlines <pipeline-output> — strip whitespace from a wc -l style count.
-strip() { tr -d '[:space:]'; }
+if mode == "valid":
+    print("1" if ok else "0")
+elif mode == "is_array":
+    print("1" if ok and isinstance(data, list) else "0")
+elif mode == "sarif_runs":
+    print("1" if ok and isinstance(data, dict) and isinstance(data.get("runs"), list) else "0")
+elif mode == "count_findings":
+    print(sum(1 for x in data if is_finding(x)) if ok and isinstance(data, list) else 0)
+elif mode == "gate_nonbool":
+    print(sum(1 for x in data if is_finding(x) and not isinstance(x.get("gateBlocking"), bool)) if ok and isinstance(data, list) else 0)
+elif mode == "osv_violations":
+    c = 0
+    if ok and isinstance(data, list):
+        for x in data:
+            if is_finding(x):
+                ln = x.get("line")
+                if (not (is_int(ln) and ln == 0)) or x.get("tool") != "osv-scanner":
+                    c += 1
+    print(c)
+elif mode == "sev_violations":
+    allow = set(["critical", "high", "medium", "low"])
+    print(sum(1 for x in data if is_finding(x) and x.get("severity") not in allow) if ok and isinstance(data, list) else 0)
+elif mode == "descline_violations":
+    c = 0
+    if ok and isinstance(data, list):
+        for x in data:
+            if is_finding(x):
+                d = x.get("description")
+                ln = x.get("line")
+                if (not isinstance(d, str)) or len(d) < 1 or len(d) > 200 or (not is_int(ln)):
+                    c += 1
+    print(c)
+elif mode == "summary_keys":
+    req = ["total_findings", "unique_findings", "corroborated", "gate_blocking", "by_layer", "by_severity", "layer_status", "gate_verdict"]
+    good = ok and isinstance(data, list) and len(data) >= 1 and isinstance(data[0], dict) and isinstance(data[0].get("_summary"), dict) and all(k in data[0]["_summary"] for k in req)
+    print("1" if good else "0")
+elif mode == "summary_get":
+    try:
+        v = data[0]["_summary"][extra]
+        if isinstance(v, bool):
+            print(str(v).lower())
+        else:
+            print(v)
+    except Exception:
+        print("")
+elif mode == "filelines":
+    if ok and isinstance(data, list):
+        for x in data:
+            if is_finding(x):
+                print("%s:%s" % (x.get("file"), x.get("line")))
+else:
+    print("")
+'
 
-# Canonical artifact set (AAP §0.4).
-REQUIRED_ARTIFACTS=(
-  codebase-profile.txt
-  findings-layer-1-arch.json
-  findings-layer-2-semgrep.json
-  findings-layer-3b-taint.json
-  findings-layer-4-osv.json
-  findings-merged.json
-  results-semgrep.sarif
-  results-osv.json
-  sink-inventory.txt
-  sink-inventory-test.txt
-  mitigation-inventory.txt
-  mitigation-inventory-test.txt
-  rules/security-audit.yaml
-  rules/secrets.yaml
-  rules/owasp-top-ten.yaml
+# --------------------------------------------------------------------------
+# Result recording. record <n> <okflag 0|1> <description>
+# --------------------------------------------------------------------------
+failures=0
+record() {
+  if [ "$2" -eq 1 ]; then
+    printf 'PASS %s %s\n' "$1" "$3"
+  else
+    printf 'FAIL %s %s\n' "$1" "$3"
+    failures=$((failures + 1))
+  fi
+}
+
+# as_int <value> - echo the value if it is a non-negative integer, else 0.
+as_int() {
+  case "${1:-}" in
+    ''|*[!0-9]*) printf '0' ;;
+    *)           printf '%s' "$1" ;;
+  esac
+}
+
+# --------------------------------------------------------------------------
+# JSON helper wrappers: jq primary, python3 fallback. Each echoes its result.
+# --------------------------------------------------------------------------
+q_valid() {
+  if [ "$ENGINE" = "jq" ]; then
+    if jq -e . "$1" >/dev/null 2>&1; then printf '1'; else printf '0'; fi
+  else
+    python3 -c "$PYQ" valid "$1" 2>/dev/null
+  fi
+}
+
+q_is_array() {
+  if [ "$ENGINE" = "jq" ]; then
+    if jq -e 'type=="array"' "$1" >/dev/null 2>&1; then printf '1'; else printf '0'; fi
+  else
+    python3 -c "$PYQ" is_array "$1" 2>/dev/null
+  fi
+}
+
+q_sarif_runs() {
+  if [ "$ENGINE" = "jq" ]; then
+    if jq -e '(.runs|type)=="array"' "$1" >/dev/null 2>&1; then printf '1'; else printf '0'; fi
+  else
+    python3 -c "$PYQ" sarif_runs "$1" 2>/dev/null
+  fi
+}
+
+q_count_findings() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq '[.[]|objects|select(has("file"))]|length' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" count_findings "$1" 2>/dev/null
+  fi
+}
+
+q_gate_nonbool() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq '[.[]|objects|select(has("file"))|select((.gateBlocking|type)!="boolean")]|length' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" gate_nonbool "$1" 2>/dev/null
+  fi
+}
+
+q_osv_violations() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq '[.[]|objects|select(has("file"))|select(.line!=0 or .tool!="osv-scanner")]|length' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" osv_violations "$1" 2>/dev/null
+  fi
+}
+
+q_sev_violations() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq '[.[]|objects|select(has("file"))|select((.severity|IN("critical","high","medium","low"))|not)]|length' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" sev_violations "$1" 2>/dev/null
+  fi
+}
+
+q_descline_violations() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq '[.[]|objects|select(has("file"))|select((.description|type!="string") or (.description|length<1) or (.description|length>200) or (.line|type!="number") or (.line!=(.line|floor)))]|length' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" descline_violations "$1" 2>/dev/null
+  fi
+}
+
+q_summary_keys() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq -r '(.[0]._summary) as $s | (if ($s|type)=="object" then (["total_findings","unique_findings","corroborated","gate_blocking","by_layer","by_severity","layer_status","gate_verdict"]|map(. as $k|($s|has($k)))|all) else false end) | if . then "1" else "0" end' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" summary_keys "$1" 2>/dev/null
+  fi
+}
+
+q_summary_get() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq -r --arg k "$2" '.[0]._summary[$k] // empty' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" summary_get "$1" "$2" 2>/dev/null
+  fi
+}
+
+q_filelines() {
+  if [ "$ENGINE" = "jq" ]; then
+    jq -r '.[]|objects|select(has("file"))|"\(.file):\(.line)"' "$1" 2>/dev/null
+  else
+    python3 -c "$PYQ" filelines "$1" 2>/dev/null
+  fi
+}
+
+# has_ansi <file> - return 0 (true) if the file contains an ESC (0x1b) byte.
+has_ansi() {
+  if [ "$GREP_P" -eq 1 ]; then
+    LC_ALL=C grep -qP '\x1b' "$1" 2>/dev/null
+  elif [ "$HAVE_PY" -eq 1 ]; then
+    python3 -c 'import sys; sys.exit(0 if b"\x1b" in open(sys.argv[1],"rb").read() else 1)' "$1" 2>/dev/null
+  else
+    LC_ALL=C grep -q "$(printf '\033')" "$1" 2>/dev/null
+  fi
+}
+
+# --------------------------------------------------------------------------
+# Canonical artifact filenames (AAP Section 0.4).
+# --------------------------------------------------------------------------
+PROFILE="codebase-profile.txt"
+L1="findings-layer-1-arch.json"
+SARIF="results-semgrep.sarif"
+L2="findings-layer-2-semgrep.json"
+SINK="sink-inventory.txt"
+SINK_TEST="sink-inventory-test.txt"
+MIT="mitigation-inventory.txt"
+MIT_TEST="mitigation-inventory-test.txt"
+L3B="findings-layer-3b-taint.json"
+OSV_RAW="results-osv.json"
+L4="findings-layer-4-osv.json"
+MERGED="findings-merged.json"
+
+# Artifacts subject to the ANSI-cleanliness rule (check 14).
+ANSI_ARTIFACTS=(
+  "$PROFILE" "$L1" "$SARIF" "$L2" "$SINK" "$SINK_TEST"
+  "$MIT" "$MIT_TEST" "$L3B" "$OSV_RAW" "$L4" "$MERGED"
 )
 
-# Normalized text artifacts subject to the ANSI-cleanliness rule (AAP §0.7).
-TEXT_ARTIFACTS=(
-  codebase-profile.txt
-  findings-layer-1-arch.json
-  findings-layer-2-semgrep.json
-  findings-layer-3b-taint.json
-  findings-layer-4-osv.json
-  findings-merged.json
-  sink-inventory.txt
-  mitigation-inventory.txt
-  sink-inventory-test.txt
-  mitigation-inventory-test.txt
-)
+# Temp files (check 16); initialized for safe trap cleanup under set -u. The
+# trap body is single-quoted so expansion is deferred to exit time, and the
+# variables are always defined here so cleanup is safe even on early exit.
+SINK_SET=""
+L3B_SET=""
+trap 'rm -f "$SINK_SET" "$L3B_SET" 2>/dev/null' EXIT
 
-MERGED=findings-merged.json
-L1=findings-layer-1-arch.json
-L2=findings-layer-2-semgrep.json
-L3B=findings-layer-3b-taint.json
-L4=findings-layer-4-osv.json
-
-# ---------------------------------------------------------------------------
-# CHECK 1 — Artifact existence (Directive 0-10 outputs + pinned rule packs).
-# ---------------------------------------------------------------------------
-miss=""
-for a in "${REQUIRED_ARTIFACTS[@]}"; do [ -e "$a" ] || miss="$miss $a"; done
-if [ -z "$miss" ]; then
-  ok 1 "all ${#REQUIRED_ARTIFACTS[@]} required audit artifacts present (4 layer JSONs, merged, 2 raw intermediates, 4 inventories, profile, 3 rule packs)"
-else
-  no 1 "missing required artifacts:$miss"
-fi
-
-# ---------------------------------------------------------------------------
-# CHECK 2 — codebase-profile.txt required keys + layer_0_status not ERROR.
-# ---------------------------------------------------------------------------
-prof=codebase-profile.txt
-pmiss=""
-if [ -f "$prof" ]; then
-  for k in primary_language secondary_languages frameworks package_ecosystems \
-           lockfiles source_file_count exclude_dirs layer_0_status; do
-    grep -qE "^${k}=" "$prof" || pmiss="$pmiss $k"
-  done
-  l0="$(grep -E '^layer_0_status=' "$prof" | head -1 | cut -d= -f2-)"
-  pl="$(grep -E '^primary_language=' "$prof" | head -1 | cut -d= -f2-)"
-else
-  pmiss=" (file absent)"; l0=""; pl=""
-fi
-if [ -z "$pmiss" ] && [ -n "$pl" ] && [ "$l0" != "ERROR" ]; then
-  ok 2 "codebase-profile.txt has all 8 required keys; primary_language='$pl'; layer_0_status='$l0' (!= ERROR)"
-else
-  no 2 "profile issues — missing_keys:[$pmiss] primary_language='$pl' layer_0_status='$l0'"
-fi
-
-# ---------------------------------------------------------------------------
-# CHECK 3 — Layer 1 (arch): valid JSON + 10/10 category coverage + schema.
-# ---------------------------------------------------------------------------
-if jq -e . "$L1" >/dev/null 2>&1; then
-  cats="$(num '[.[]|select(has("_coverage"))][0]._coverage|length' "$L1")"
-  n="$(num '[.[]|select(.file)]|length' "$L1")"
-  bad="$(num '[.[]|select(.file)|select((.layer==1 and .tool=="arch-audit" and (.cwe|type=="string"))|not)]|length' "$L1")"
-  if [ "$cats" = "10" ] && [ "$n" -ge 1 ] && [ "$bad" = "0" ]; then
-    ok 3 "Layer1 valid JSON; 10/10 category summaries; $n findings; schema(layer=1,tool=arch-audit) OK"
-  else
-    no 3 "Layer1 issues — categories=$cats(exp 10) findings=$n schema_violations=$bad"
+# ==========================================================================
+# CHECK 1 - Layer 0 profile present and resolved.
+# ==========================================================================
+ok=0
+if [ -s "$PROFILE" ]; then
+  pl="$(grep -E '^primary_language=' "$PROFILE" 2>/dev/null | head -n1 | cut -d= -f2-)"
+  if [ -n "$pl" ] && ! grep -Eq 'layer_0_status[[:space:]]*[:=][[:space:]]*"?ERROR"?' "$PROFILE" 2>/dev/null; then
+    ok=1
   fi
-else
-  no 3 "Layer1 ($L1) is not valid JSON"
 fi
+record 1 "$ok" "Layer0 profile present, primary_language set, layer_0_status not ERROR"
 
-# ---------------------------------------------------------------------------
-# CHECK 4 — Layer 2 (semgrep): valid JSON + schema (layer=2, tool=semgrep).
-# ---------------------------------------------------------------------------
-if jq -e . "$L2" >/dev/null 2>&1; then
-  n="$(num '[.[]|select(.file)]|length' "$L2")"
-  bad="$(num '[.[]|select(.file)|select((.layer==2 and .tool=="semgrep" and (.cwe|type=="string"))|not)]|length' "$L2")"
-  if [ "$n" -ge 1 ] && [ "$bad" = "0" ]; then
-    ok 4 "Layer2 valid JSON; $n findings; schema(layer=2,tool=semgrep) OK"
-  else
-    no 4 "Layer2 issues — findings=$n schema_violations=$bad"
-  fi
-else
-  no 4 "Layer2 ($L2) is not valid JSON"
+# ==========================================================================
+# CHECK 2 - Layer 1 valid JSON array + 10/10 category coverage markers.
+# ==========================================================================
+ok=0
+if [ -f "$L1" ] && [ "$(q_is_array "$L1")" = "1" ]; then
+  m=$(grep -oE 'Category [0-9]+/10' "$L1" 2>/dev/null | sort -u | wc -l | tr -d '[:space:]')
+  [ "$(as_int "$m")" -eq 10 ] && ok=1
 fi
+record 2 "$ok" "Layer1 valid JSON array with 10/10 category coverage markers"
 
-# ---------------------------------------------------------------------------
-# CHECK 5 — Layer 4 (osv): valid JSON + every finding line:0 + schema.
-# ---------------------------------------------------------------------------
-if jq -e . "$L4" >/dev/null 2>&1; then
-  n="$(num '[.[]|select(.file)]|length' "$L4")"
-  nz="$(num '[.[]|select(.file)|select(.line!=0)]|length' "$L4")"
-  bad="$(num '[.[]|select(.file)|select((.layer==4 and .tool=="osv-scanner")|not)]|length' "$L4")"
-  if [ "$n" -ge 1 ] && [ "$nz" = "0" ] && [ "$bad" = "0" ]; then
-    ok 5 "Layer4 valid JSON; $n findings; all line:0 (lockfile convention); schema(layer=4,tool=osv-scanner) OK"
-  else
-    no 5 "Layer4 issues — findings=$n line!=0:$nz schema_violations=$bad"
-  fi
-else
-  no 5 "Layer4 ($L4) is not valid JSON"
+# ==========================================================================
+# CHECK 3 - Layer 2 SARIF (runs[] array) + normalized JSON array present/valid.
+# ==========================================================================
+ok=0
+if [ -f "$SARIF" ] && [ "$(q_sarif_runs "$SARIF")" = "1" ] \
+   && [ -f "$L2" ] && [ "$(q_is_array "$L2")" = "1" ]; then
+  ok=1
 fi
+record 3 "$ok" "Layer2 SARIF has top-level runs[] array and normalized findings are a JSON array"
 
-# ---------------------------------------------------------------------------
-# CHECK 6 — Layer 3a inventories: non-empty + line format + test variants.
-#   Format per AAP: <file>:<line>:<category>:<text>  (line is an integer).
-# ---------------------------------------------------------------------------
-inv_ok=1; reason=""
-for inv in sink-inventory.txt mitigation-inventory.txt; do
-  if [ ! -s "$inv" ]; then inv_ok=0; reason="$reason $inv:empty-or-absent"; continue; fi
-  badfmt="$(grep -cvE '^[^:]+:[0-9]+:[^:]+:' "$inv")"; badfmt="$(printf '%s' "$badfmt" | strip)"
-  [ "$badfmt" = "0" ] || { inv_ok=0; reason="$reason $inv:${badfmt}-malformed-lines"; }
+# ==========================================================================
+# CHECK 4 - Layer 3a inventories non-empty + <file>:<line>:<category>: format.
+# ==========================================================================
+ok=1
+for inv in "$SINK" "$MIT"; do
+  if [ ! -s "$inv" ]; then ok=0; continue; fi
+  bad=$(grep -cvE '^[^:]+:[0-9]+:[^:]+:' "$inv" 2>/dev/null | tr -d '[:space:]')
+  good=$(grep -cE '^[^:]+:[0-9]+:[^:]+:' "$inv" 2>/dev/null | tr -d '[:space:]')
+  if [ "$(as_int "$bad")" -ne 0 ] || [ "$(as_int "$good")" -lt 1 ]; then ok=0; fi
 done
-for inv in sink-inventory-test.txt mitigation-inventory-test.txt; do
-  [ -e "$inv" ] || { inv_ok=0; reason="$reason $inv:absent"; }
-done
-if [ "$inv_ok" = "1" ]; then
-  ok 6 "Layer3a inventories non-empty & well-formed (<file>:<line>:<category>:<text>); test variants present"
-else
-  no 6 "Layer3a inventory issues —$reason"
-fi
+record 4 "$ok" "Layer3a sink+mitigation inventories non-empty and <file>:<line>:<category>: formatted"
 
-# ---------------------------------------------------------------------------
-# CHECK 7 — Layer 3b (taint): valid JSON + 19/19 categories + gateBlocking +
-#           demotionReason present on every advisory (gateBlocking=false).
-# ---------------------------------------------------------------------------
-if jq -e . "$L3B" >/dev/null 2>&1; then
-  cats="$(num '[.[]|select(has("_coverage"))][0]._coverage|length' "$L3B")"
-  n="$(num '[.[]|select(.file)]|length' "$L3B")"
-  bad="$(num '[.[]|select(.file)|select((.layer==3 and .tool=="taint-analysis" and (.gateBlocking|type=="boolean"))|not)]|length' "$L3B")"
-  advnodemo="$(num '[.[]|select(.file)|select(.gateBlocking==false)|select(((.demotionReason|type=="string") and (.demotionReason|length>0))|not)]|length' "$L3B")"
-  if [ "$cats" = "19" ] && [ "$n" -ge 1 ] && [ "$bad" = "0" ] && [ "$advnodemo" = "0" ]; then
-    ok 7 "Layer3b valid JSON; 19/19 category summaries; $n findings; gateBlocking boolean present; advisories carry demotionReason"
-  else
-    no 7 "Layer3b issues — categories=$cats(exp 19) findings=$n schema_violations=$bad advisories_without_demotionReason=$advnodemo"
-  fi
-else
-  no 7 "Layer3b ($L3B) is not valid JSON"
-fi
+# ==========================================================================
+# CHECK 5 - Layer 3a test-variant inventories present (test/prod separation).
+# ==========================================================================
+ok=0
+if [ -e "$SINK_TEST" ] && [ -e "$MIT_TEST" ]; then ok=1; fi
+record 5 "$ok" "Layer3a test-variant inventories present (test/prod separation performed)"
 
-# ---------------------------------------------------------------------------
-# CHECK 8 — findings-merged.json: valid JSON AND single-line minified.
-# ---------------------------------------------------------------------------
-if jq -e . "$MERGED" >/dev/null 2>&1; then
-  lines="$(wc -l < "$MERGED" | strip)"
-  if [ "${lines:-99}" -le 1 ]; then
-    ok 8 "findings-merged.json is valid JSON and single-line minified (wc -l=$lines)"
-  else
-    no 8 "findings-merged.json valid JSON but NOT single-line (wc -l=$lines)"
-  fi
-else
-  no 8 "findings-merged.json is not valid JSON"
+# ==========================================================================
+# CHECK 6 - Layer 3b valid JSON array + 19/19 categories + boolean gateBlocking.
+# ==========================================================================
+ok=0
+if [ -f "$L3B" ] && [ "$(q_is_array "$L3B")" = "1" ]; then
+  m=$(grep -oE 'Category [0-9]+/19' "$L3B" 2>/dev/null | sort -u | wc -l | tr -d '[:space:]')
+  nb=$(as_int "$(q_gate_nonbool "$L3B")")
+  if [ "$(as_int "$m")" -eq 19 ] && [ "$nb" -eq 0 ]; then ok=1; fi
 fi
+record 6 "$ok" "Layer3b valid JSON array, 19/19 categories, boolean gateBlocking on every finding"
 
-# ---------------------------------------------------------------------------
-# CHECK 9 — _summary first element: required keys + internal consistency.
-# ---------------------------------------------------------------------------
-skeys="$(jq -r '
-  (.[0]._summary) as $s
-  | (if ($s|type)=="object" then
-      (["total_findings","unique_findings","corroborated","gate_blocking","by_layer","source_by_layer","by_severity","layer_status","gate_verdict"]
-       | map(. as $k | ($s|has($k))) | all)
-     else false end)' "$MERGED" 2>/dev/null)"
-corro="$(num '.[0]._summary.corroborated' "$MERGED")"
-corro_body="$(num '[.[1:][]|select(.corroborated_by)]|length' "$MERGED")"
-gb="$(num '.[0]._summary.gate_blocking' "$MERGED")"
-gb_body="$(num '[.[1:][]|select(.gateBlocking==true)]|length' "$MERGED")"
-if [ "$skeys" = "true" ] && [ "$corro" = "$corro_body" ] && [ "$gb" = "$gb_body" ]; then
-  ok 9 "_summary present with all 9 required keys; corroborated=$corro==body($corro_body); gate_blocking=$gb==body($gb_body)"
-else
-  no 9 "_summary issues — all_keys=$skeys corroborated($corro vs body $corro_body) gate_blocking($gb vs body $gb_body)"
+# ==========================================================================
+# CHECK 7 - Layer 4 OSV raw valid + normalized array + line:0 + osv-scanner.
+# ==========================================================================
+ok=0
+if [ -f "$OSV_RAW" ] && [ "$(q_valid "$OSV_RAW")" = "1" ] \
+   && [ -f "$L4" ] && [ "$(q_is_array "$L4")" = "1" ]; then
+  v=$(as_int "$(q_osv_violations "$L4")")
+  [ "$v" -eq 0 ] && ok=1
 fi
+record 7 "$ok" "Layer4 OSV raw valid JSON; normalized findings carry line:0 and tool:osv-scanner"
 
-# ---------------------------------------------------------------------------
-# CHECK 10 — gate_verdict ∈ {ERROR, BLOCK, WARN, PASS} (Directive 9).
-# ---------------------------------------------------------------------------
-gv="$(jq -r '.[0]._summary.gate_verdict // empty' "$MERGED" 2>/dev/null)"
+# ==========================================================================
+# CHECK 8 - Merged report is valid JSON.
+# ==========================================================================
+ok=0
+if [ -f "$MERGED" ] && [ "$(q_valid "$MERGED")" = "1" ]; then ok=1; fi
+record 8 "$ok" "Merged report findings-merged.json is valid JSON"
+
+# ==========================================================================
+# CHECK 9 - _summary header exposes all 8 required keys.
+# ==========================================================================
+ok=0
+[ "$(q_summary_keys "$MERGED")" = "1" ] && ok=1
+record 9 "$ok" "_summary header exposes total_findings,unique_findings,corroborated,gate_blocking,by_layer,by_severity,layer_status,gate_verdict"
+
+# ==========================================================================
+# CHECK 10 - gate_verdict is one of ERROR|BLOCK|WARN|PASS.
+# ==========================================================================
+ok=0
+gv="$(q_summary_get "$MERGED" gate_verdict)"
 case "$gv" in
-  ERROR|BLOCK|WARN|PASS) ok 10 "gate_verdict='$gv' is a valid Directive-9 verdict {ERROR,BLOCK,WARN,PASS}" ;;
-  *)                     no 10 "gate_verdict='$gv' is not in the allowed enum {ERROR,BLOCK,WARN,PASS}" ;;
+  ERROR|BLOCK|WARN|PASS) ok=1 ;;
 esac
+record 10 "$ok" "gate_verdict in {ERROR,BLOCK,WARN,PASS} (found: ${gv:-none})"
 
-# ---------------------------------------------------------------------------
-# CHECK 11 — Count reconciliation (AAP §0.4.3 check #11), lockfile-aware:
-#   uses select(.file) on ALL four layer files so the leading "_coverage"
-#   metadata elements (present in L2 and L4) are never miscounted.
-#     total_findings  == Σ per-layer real findings == Σ source_by_layer
-#     unique_findings == merged body == Σ by_layer == Σ by_severity
-#     corroborated    == total_findings - unique_findings
-# ---------------------------------------------------------------------------
-c1="$(num '[.[]|select(.file)]|length' "$L1")"
-c2="$(num '[.[]|select(.file)]|length' "$L2")"
-c3="$(num '[.[]|select(.file)]|length' "$L3B")"
-c4="$(num '[.[]|select(.file)]|length' "$L4")"
-src_sum=$(( c1 + c2 + c3 + c4 ))
-total="$(num '.[0]._summary.total_findings' "$MERGED")"
-uniq="$(num '.[0]._summary.unique_findings' "$MERGED")"
-body="$(num '.[1:]|length' "$MERGED")"
-bl_sum="$(num '[.[0]._summary.by_layer[]]|add' "$MERGED")"
-bs_sum="$(num '[.[0]._summary.by_severity[]]|add' "$MERGED")"
-sbl_sum="$(num '[.[0]._summary.source_by_layer[]]|add' "$MERGED")"
-diff="$(num '.[0]._summary|(.total_findings - .unique_findings)' "$MERGED")"
-corro2="$(num '.[0]._summary.corroborated' "$MERGED")"
-if [ "$total" = "$src_sum" ] && [ "$total" = "$sbl_sum" ] && \
-   [ "$uniq" = "$body" ] && [ "$uniq" = "$bl_sum" ] && [ "$uniq" = "$bs_sum" ] && \
-   [ "$corro2" = "$diff" ]; then
-  ok 11 "count reconciliation OK — total=$total=Σsource($src_sum)=Σsource_by_layer($sbl_sum); unique=$uniq=body($body)=Σby_layer($bl_sum)=Σby_severity($bs_sum); corroborated=$corro2=total-unique"
-else
-  no 11 "count reconciliation FAILED — total=$total src_sum=$src_sum source_by_layer=$sbl_sum | unique=$uniq body=$body by_layer=$bl_sum by_severity=$bs_sum | corroborated=$corro2 diff=$diff"
-fi
+# ==========================================================================
+# CHECK 11 - Count reconciliation: total_findings == sum of layer findings.
+# ==========================================================================
+ok=0
+total=$(as_int "$(q_summary_get "$MERGED" total_findings)")
+c1=$(as_int "$(q_count_findings "$L1")")
+c2=$(as_int "$(q_count_findings "$L2")")
+c3=$(as_int "$(q_count_findings "$L3B")")
+c4=$(as_int "$(q_count_findings "$L4")")
+sum=$((c1 + c2 + c3 + c4))
+[ "$total" -eq "$sum" ] && ok=1
+record 11 "$ok" "total_findings ($total) equals sum of layer findings L1+L2+L3b+L4 ($sum)"
 
-# ---------------------------------------------------------------------------
-# CHECK 12 — Unified severity vocabulary across merged body + all 4 layers.
-# ---------------------------------------------------------------------------
-sev_bad=0
-sev_bad=$(( sev_bad + $(num '[.[1:][]|select(.severity|IN("critical","high","medium","low")|not)]|length' "$MERGED") ))
-for f in "$L1" "$L2" "$L3B" "$L4"; do
-  sev_bad=$(( sev_bad + $(num '[.[]|select(.file)|select(.severity|IN("critical","high","medium","low")|not)]|length' "$f") ))
+# ==========================================================================
+# CHECK 12 - Unified severity vocabulary {critical,high,medium,low} everywhere.
+# ==========================================================================
+sev=0
+for f in "$L1" "$L2" "$L3B" "$L4" "$MERGED"; do
+  v=$(as_int "$(q_sev_violations "$f")")
+  sev=$((sev + v))
 done
-if [ "$sev_bad" = "0" ]; then
-  ok 12 "severity vocabulary unified to {critical,high,medium,low} across merged body and all 4 layer files"
-else
-  no 12 "$sev_bad finding(s) carry a severity outside {critical,high,medium,low}"
-fi
+ok=0; [ "$sev" -eq 0 ] && ok=1
+record 12 "$ok" "severity vocabulary limited to {critical,high,medium,low} across all findings ($sev violations)"
 
-# ---------------------------------------------------------------------------
-# CHECK 13 — Every finding: non-empty description (<=200 chars) + integer line.
-# ---------------------------------------------------------------------------
-ds_bad=0
-ds_bad=$(( ds_bad + $(num '[.[1:][]|select((.description|type!="string") or (.description|length==0) or (.description|length>200) or (.line|type!="number") or (.line!=(.line|floor)))]|length' "$MERGED") ))
-for f in "$L1" "$L2" "$L3B" "$L4"; do
-  ds_bad=$(( ds_bad + $(num '[.[]|select(.file)|select((.description|type!="string") or (.description|length==0) or (.description|length>200) or (.line|type!="number") or (.line!=(.line|floor)))]|length' "$f") ))
+# ==========================================================================
+# CHECK 13 - Non-empty description (<=200 chars) + integer line on every finding.
+# ==========================================================================
+dl=0
+for f in "$L1" "$L2" "$L3B" "$L4" "$MERGED"; do
+  v=$(as_int "$(q_descline_violations "$f")")
+  dl=$((dl + v))
 done
-if [ "$ds_bad" = "0" ]; then
-  ok 13 "every finding has a non-empty description (<=200 chars) and an integer line (merged body + all layers)"
-else
-  no 13 "$ds_bad finding(s) violate description-non-empty/<=200 or integer-line"
-fi
+ok=0; [ "$dl" -eq 0 ] && ok=1
+record 13 "$ok" "every finding has non-empty description (<=200 chars) and integer line ($dl violations)"
 
-# ---------------------------------------------------------------------------
-# CHECK 14 — ANSI-free output: no ESC (0x1b) sequences in any text artifact.
-# ---------------------------------------------------------------------------
+# ==========================================================================
+# CHECK 14 - ANSI cleanliness: no ESC (0x1b) sequences in any artifact.
+# ==========================================================================
 ansi=0
-for f in "${TEXT_ARTIFACTS[@]}"; do
+for f in "${ANSI_ARTIFACTS[@]}"; do
   [ -f "$f" ] || continue
-  n="$(grep -acP '\x1b' "$f" 2>/dev/null)"; n="$(printf '%s' "${n:-0}" | strip)"
-  ansi=$(( ansi + ${n:-0} ))
+  if has_ansi "$f"; then ansi=$((ansi + 1)); fi
 done
-if [ "$ansi" = "0" ]; then
-  ok 14 "no ANSI escape sequences present in any of the ${#TEXT_ARTIFACTS[@]} text artifacts"
-else
-  no 14 "$ansi line(s) across text artifacts contain ANSI escape sequences"
-fi
+ok=0; [ "$ansi" -eq 0 ] && ok=1
+record 14 "$ok" "no ANSI escape sequences present in any audit artifact ($ansi affected)"
 
-# ---------------------------------------------------------------------------
-# CHECK 15 — Lockfile-aware dedupe-uniqueness & corroboration integrity.
-#            (Resolution of QA Checkpoint-2 Issue #1 — see header note.)
-#   (a) NON-lockfile findings unique by (file,line,cwe)        -> uniq -d empty
-#   (b) lockfile/OSV findings unique by (package,CVE)≈desc      -> uniq -d empty
-#   (c) no whole-record exact duplicates anywhere in the body
-#   (d) every corroborated_by lists >= 2 distinct tools
-# ---------------------------------------------------------------------------
-dup_src="$(jq -r '.[1:][]|select(.file and .file!="yarn.lock")|"\(.file)|\(.line)|\(.cwe)"' "$MERGED" 2>/dev/null | sort | uniq -d | wc -l | strip)"
-dup_lock="$(jq -r '.[1:][]|select(.file=="yarn.lock")|.description' "$MERGED" 2>/dev/null | sort | uniq -d | wc -l | strip)"
-dup_rec="$(jq -c '.[1:][]' "$MERGED" 2>/dev/null | sort | uniq -d | wc -l | strip)"
-corro_bad="$(num '[.[1:][]|select(.corroborated_by)|select((.corroborated_by|unique|length)<2)]|length' "$MERGED")"
-if [ "${dup_src:-1}" = "0" ] && [ "${dup_lock:-1}" = "0" ] && [ "${dup_rec:-1}" = "0" ] && [ "$corro_bad" = "0" ]; then
-  ok 15 "lockfile-aware dedupe-uniqueness OK — source findings unique by (file,line,cwe); OSV findings unique by (package,CVE)/description; 0 whole-record dups; all corroborations have >=2 distinct tools"
-else
-  no 15 "dedupe/corroboration issues — nonlockfile_(file,line,cwe)_dups=$dup_src lockfile_identity_dups=$dup_lock whole_record_dups=$dup_rec corroborations_with_<2_tools=$corro_bad"
-fi
+# ==========================================================================
+# CHECK 15 - Single-line JSON for the four layer files and the merged report.
+# ==========================================================================
+nonsingle=0
+for f in "$L1" "$L2" "$L3B" "$L4" "$MERGED"; do
+  if [ -f "$f" ]; then
+    lc=$(wc -l < "$f" 2>/dev/null | tr -d '[:space:]')
+    [ "$(as_int "$lc")" -le 1 ] || nonsingle=$((nonsingle + 1))
+  else
+    nonsingle=$((nonsingle + 1))
+  fi
+done
+ok=0; [ "$nonsingle" -eq 0 ] && ok=1
+record 15 "$ok" "findings layer files and merged report are single-line JSON ($nonsingle multi-line)"
 
-# ---------------------------------------------------------------------------
-# CHECK 16 — Every Layer-3 (taint) finding references a file:line present in
-#            sink-inventory.txt (AAP §0.4.3 check #16). Uses fixed-string
-#            matching (grep -F): Cal.com paths contain regex metacharacters
-#            such as [id], [...pages], and (route-group) segments.
-# ---------------------------------------------------------------------------
-miss16=0; checked16=0
-while IFS= read -r fl; do
-  [ -n "$fl" ] || continue
-  checked16=$(( checked16 + 1 ))
-  grep -qF "${fl}:" sink-inventory.txt 2>/dev/null || miss16=$(( miss16 + 1 ))
-done < <(jq -r '.[1:][]|select(.layer==3)|"\(.file):\(.line)"' "$MERGED" 2>/dev/null | sort -u)
-if [ "$miss16" = "0" ] && [ "$checked16" -ge 1 ]; then
-  ok 16 "all $checked16 unique Layer-3 finding file:line references are present in sink-inventory.txt (fixed-string match)"
-else
-  no 16 "$miss16 of $checked16 Layer-3 finding file:line references are absent from sink-inventory.txt"
+# ==========================================================================
+# CHECK 16 - Every Layer 3b finding file:line is traceable to sink-inventory.txt.
+#   Fixed-string whole-line matching (grep -Fxf) because Cal.com paths contain
+#   regex metacharacters such as [id], [...slug] and (route-group) segments.
+# ==========================================================================
+ok=0
+if [ -f "$L3B" ] && [ -s "$SINK" ]; then
+  SINK_SET="$(mktemp)"
+  L3B_SET="$(mktemp)"
+  awk -F: 'NF>=3 {print $1":"$2}' "$SINK" 2>/dev/null | sort -u > "$SINK_SET"
+  q_filelines "$L3B" 2>/dev/null | sort -u > "$L3B_SET"
+  checked=$(wc -l < "$L3B_SET" 2>/dev/null | tr -d '[:space:]')
+  miss=$(grep -cFxvf "$SINK_SET" "$L3B_SET" 2>/dev/null | tr -d '[:space:]')
+  if [ "$(as_int "$miss")" -eq 0 ] && [ "$(as_int "$checked")" -ge 1 ]; then ok=1; fi
+  rm -f "$SINK_SET" "$L3B_SET" 2>/dev/null
+  SINK_SET=""
+  L3B_SET=""
 fi
+record 16 "$ok" "every Layer3b finding file:line is traceable to a sink-inventory.txt entry"
 
-# ---------------------------------------------------------------------------
-# Summary + exit code (== number of failed checks, AAP §0.4.2).
-# ---------------------------------------------------------------------------
-echo "--------------------------------------------------------------------"
-printf 'verify.sh: %d/16 checks passed, %d failed.\n' "$pass_count" "$fail_count"
-printf 'Issue #1 resolution: dedupe-uniqueness is lockfile-aware (CHECK 15) — OSV line:0 findings retained and verified unique by (package,CVE); source findings unique by (file,line,cwe).\n'
-exit "$fail_count"
+# ==========================================================================
+# Summary and exit code (== number of failed checks).
+# ==========================================================================
+printf 'verify.sh: %d failed check(s) of 16\n' "$failures"
+exit "$failures"

@@ -2717,8 +2717,6 @@ packages/lib/cookie.ts:11:auth-session:export const setCookie = (name: string, v
 packages/lib/cookie.ts:1:auth-session:export const getCookie = (name: string) => {
 packages/lib/crypto.ts:18:crypto-misuse:const cipher = crypto.createCipheriv(ALGORITHM, _key, iv);
 packages/lib/crypto.ts:36:crypto-misuse:const decipher = crypto.createDecipheriv(ALGORITHM, _key, iv_from_ciphertext);
-packages/lib/crypto/keyring.ts:120:crypto-misuse:const decipher = createDecipheriv("aes-256-gcm", key, nonce);
-packages/lib/crypto/keyring.ts:89:crypto-misuse:const cipher = createCipheriv("aes-256-gcm", key, nonce);
 packages/lib/currencyConversions.ts:55:sensitive-data-exposure:console.warn(`Failed to get currency symbol for ${currencyCode}, falling back to $`);
 packages/lib/dayjs/index.ts:27:sensitive-data-exposure:// console.log(timeZone, date);
 packages/lib/default-cookies.ts:25:csrf-state-change:sameSite: useSecureCookies ? "none" : "lax",

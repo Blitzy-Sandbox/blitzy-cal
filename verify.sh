@@ -269,11 +269,22 @@ L3B="findings-layer-3b-taint.json"
 OSV_RAW="results-osv.json"
 L4="findings-layer-4-osv.json"
 MERGED="findings-merged.json"
+# Pinned Semgrep rule packs (Layer 2 reproducibility) and this verifier itself
+# are also canonical CREATE artifacts per AAP Section 0.4.1.
+RULES_OWASP="rules/owasp-top-ten.yaml"
+RULES_SECRETS="rules/secrets.yaml"
+RULES_SECAUDIT="rules/security-audit.yaml"
+SELF="verify.sh"
 
-# Artifacts subject to the ANSI-cleanliness rule (check 14).
+# Artifacts subject to the ANSI-cleanliness rule (check 14). Per AAP Section
+# 0.4.1 the canonical artifact set spans all 16 produced files: the 12 layer/
+# inventory/intermediate/merged outputs, the three pinned Semgrep rule packs,
+# and this verifier script itself. Every one must be ANSI-clean, so every one
+# is scanned here.
 ANSI_ARTIFACTS=(
   "$PROFILE" "$L1" "$SARIF" "$L2" "$SINK" "$SINK_TEST"
   "$MIT" "$MIT_TEST" "$L3B" "$OSV_RAW" "$L4" "$MERGED"
+  "$RULES_OWASP" "$RULES_SECRETS" "$RULES_SECAUDIT" "$SELF"
 )
 
 # Temp files (check 16); initialized for safe trap cleanup under set -u. The

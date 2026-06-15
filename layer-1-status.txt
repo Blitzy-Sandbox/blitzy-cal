@@ -1,0 +1,41 @@
+# Layer 1 -- Architectural Security Audit status and per-category coverage record (Directive 1).
+# Machine-readable key:value text (parse with grep/awk). ANSI-free.
+# Agent layer: records explicit status AND per-category coverage for all 10 mandatory
+# architectural categories so that no category can be silently dropped (user directive:
+# "No layer may silently fail or drop categories"). Each category line is:
+#   cat_<n>_<slug>: <covered|partial|none>,<finding_count>
+# coverage is one of: complete | partial. If ANY category is 'partial' or 'none' with an
+# expected finding, coverage becomes partial and Directive 9 must return ERROR
+# (a partial agent layer is never a clean pass). Finding indices below are 0-based positions
+# in findings-layer-1-arch.json; anchors give file:line(CWE) for audit traceability.
+layer_1_status: OK
+coverage: complete
+primary_language: typescript
+findings_artifact: findings-layer-1-arch.json
+total_findings: 19
+categories_total: 10
+categories_covered: 10
+categories_partial: 0
+categories_uncovered: 0
+# --- Per-category coverage (status,count) for all 10 architectural categories ---
+cat_1_cryptographic_key_management: covered,4
+cat_2_authentication_session: covered,2
+cat_3_transport_origin: covered,2
+cat_4_request_handling: covered,1
+cat_5_container_cicd: covered,2
+cat_6_incoming_webhook_integration_verification: covered,2
+cat_7_business_domain_input_validation: covered,1
+cat_8_embed_cross_origin_security: covered,2
+cat_9_api_version_security_parity: covered,1
+cat_10_framework_specific_misconfigurations: covered,2
+# --- Per-category finding anchors (file:line(CWE); ';'-separated; index = position in JSON) ---
+cat_1_findings: packages/lib/crypto.ts:3(CWE-327);packages/lib/crypto.ts:16(CWE-326);packages/lib/crypto.ts:32(CWE-326);apps/web/app/api/sync/helpscout/route.ts:42(CWE-323)
+cat_2_findings: apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts:186(CWE-208);apps/api/v2/src/modules/auth/strategies/api-auth/api-auth.strategy.ts:252(CWE-613)
+cat_3_findings: apps/web/lib/csp.ts:22(CWE-1021);packages/lib/getIP.ts:17(CWE-348)
+cat_4_findings: apps/web/proxy.ts:86(CWE-601)
+cat_5_findings: Dockerfile:12(CWE-798);Dockerfile:11(CWE-798)
+cat_6_findings: packages/features/webhooks/lib/sendPayload.ts:347(CWE-345);apps/web/app/api/sync/helpscout/route.ts:46(CWE-208)
+cat_7_findings: apps/api/v1/pages/api/bookings/_post.ts:220(CWE-20)
+cat_8_findings: packages/embeds/embed-core/src/embed-iframe.ts:597(CWE-346);packages/embeds/embed-core/src/embed.ts:1597(CWE-346)
+cat_9_findings: apps/api/v1/lib/helpers/verifyApiKey.ts:25(CWE-598)
+cat_10_findings: apps/api/v2/src/lib/throttler-guard.ts:57(CWE-348);packages/lib/default-cookies.ts:25(CWE-1275)

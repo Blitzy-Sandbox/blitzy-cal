@@ -16,12 +16,15 @@
 # CONTRACT VERIFIED
 #   * Line format file:::<int>:::[TAG] ... across all four inventories (exactly two ':::').
 #   * All 19 sink CWE categories accounted for (18 with hits; CWE-134 documented zero-hit) + 9 mitigation.
-#   * Test routing: the SAME six-pattern predicate (*.test.*, *.spec.*, *.e2e.*, __tests__/, __mocks__/,
-#     fixtures/) governs BOTH the sink and mitigation pairs; no six-pattern path leaks into a non-test
-#     inventory; no path appears in both halves of a pair.
-#   * Consistency (the Issue-1 anchor): neither non-test inventory contains any six-pattern file, AND
-#     non-six-pattern test-semantic files are retained (not dropped) by the sink inventory — i.e. sink
-#     and mitigation apply identical test-exclusion logic.
+#   * Test routing: the SAME predicate P (the six AAP patterns *.test.*, *.spec.*, *.e2e.*, __tests__/,
+#     __mocks__/, fixtures/ generalised to this repo's hyphenated conventions: *.e2e-spec.*,
+#     *-test.{ts,tsx,js,jsx,mts,cts}, /test/, /tests/, /e2e/, /mocks/, /__fixtures__/, test-setup.*)
+#     governs BOTH the sink and mitigation pairs; no predicate-P path leaks into a non-test inventory;
+#     no path appears in both halves of a pair.
+#   * Consistency: BOTH non-test inventories EXCLUDE every predicate-P (test-semantic) path -- the sink
+#     and mitigation pairs apply identical test-routing logic, so test sources (including hyphenated
+#     *-test / *.e2e-spec / /test/ files) live only in the '-test.txt' variants, never in a non-test
+#     inventory.
 #   * Recall (the Issue-1 anchor): for every representative pattern, EVERY fresh hit over the canonical
 #     git-tracked first-party universe is present in the corresponding sink inventory union (0 missed).
 #     Includes the word-boundary \bfetch\( pattern that must exclude refetch(/prefetch(.
@@ -45,8 +48,10 @@ STATUS_FILE="layer-3a-status.txt"
 PROFILE="codebase-profile.txt"
 
 EXCL='(^|/)(node_modules|\.next|dist|build|\.yarn|\.git|coverage|\.turbo)/'
-# Six-pattern test routing predicate (AAP Directive 4), expressed as an ERE over the file path.
-SIX='(\.test\.|\.spec\.|\.e2e\.|/__tests__/|/__mocks__/|/fixtures/)'
+# Test-routing predicate P (AAP Directive 4, generalised), an ERE over the file path. Generalises the
+# six AAP patterns (*.test.*, *.spec.*, *.e2e.*, __tests__/, __mocks__/, fixtures/) to this repo's
+# hyphenated test conventions. Applied IDENTICALLY to the sink and mitigation pairs (see layer-3a-retag.sh).
+P='(/(__tests__|__mocks__|__fixtures__|fixtures|test|tests|e2e|mocks)/|\.(test|spec|e2e)\.|\.e2e-spec\.|-test\.(ts|tsx|js|jsx|mts|cts)$|(^|/)test-setup\.)'
 
 SINK_CATS="CWE-601 CWE-918 CWE-117 CWE-807 CWE-338 CWE-843 CWE-862 CWE-79 CWE-134 CWE-250 CWE-912 CWE-1004 CWE-639 CWE-200 CWE-367 CWE-285 CWE-94 CWE-502 CWE-611"
 MIT_CATS="timing-safe auth-middleware rate-limiting csrf-protection webhook-signature schema-validation input-sanitization safe-query crypto-protection"
@@ -86,33 +91,38 @@ miss=0
 for c in $MIT_CATS; do grep -q "\[$c\]" "$MIT" "$MIT_TEST" || { miss=$((miss+1)); echo "  missing mitigation cat: $c"; }; done
 if [ "$miss" -eq 0 ]; then pass "all 9 mitigation categories present"; else fail "$miss mitigation category(ies) absent"; fi
 
-# C5 — test routing: every test-variant path matches SIX; no SIX path in non-test; no overlap
+# C5 — test routing: every test-variant path matches predicate P; no P path in non-test; no overlap
 check_routing() {
   local nontest="$1" test="$2" label="$3"
   awk -F':::' '{print $1}' "$test"    | sort -u > "$TMP/t.txt"
   awk -F':::' '{print $1}' "$nontest" | sort -u > "$TMP/n.txt"
-  local nonsix overlap leak
-  nonsix=$(grep -vE "$SIX" "$TMP/t.txt" | wc -l)
-  leak=$(grep -E "$SIX" "$TMP/n.txt" | wc -l)
+  local test_nonp overlap leak
+  test_nonp=$(grep -vE "$P" "$TMP/t.txt" | wc -l)
+  leak=$(grep -E "$P" "$TMP/n.txt" | wc -l)
   overlap=$(comm -12 "$TMP/t.txt" "$TMP/n.txt" | wc -l)
-  if [ "$nonsix" -eq 0 ] && [ "$leak" -eq 0 ] && [ "$overlap" -eq 0 ]; then
-    pass "test routing exclusive & six-pattern-correct: $label (test-only-nonsix=$nonsix nontest-leak=$leak overlap=$overlap)"
+  if [ "$test_nonp" -eq 0 ] && [ "$leak" -eq 0 ] && [ "$overlap" -eq 0 ]; then
+    pass "test routing exclusive & predicate-P-correct: $label (test-only-nonP=$test_nonp nontest-leak=$leak overlap=$overlap)"
   else
-    fail "test routing broken: $label (test-only-nonsix=$nonsix nontest-leak=$leak overlap=$overlap)"
+    fail "test routing broken: $label (test-only-nonP=$test_nonp nontest-leak=$leak overlap=$overlap)"
   fi
 }
 check_routing "$SINK" "$SINK_TEST" "sink pair"
 check_routing "$MIT"  "$MIT_TEST"  "mitigation pair"
 
-# C6 — CONSISTENCY (Issue-1): identical test predicate; non-six test-semantic files retained by sink.
-# Non-six test-semantic files = files whose path contains a test-semantic marker but does NOT match SIX.
+# C6 — CONSISTENCY: identical test-routing logic for both pairs. BOTH non-test inventories must EXCLUDE
+# every predicate-P (test-semantic) path, including the hyphenated conventions (*.e2e-spec.*, *-test.*,
+# *.integration-test.*, /test/, /e2e/, /__fixtures__/) that the narrow six-pattern rule alone would miss.
+# This is the corrected contract: test sources belong in the '-test.txt' variants, never in a non-test
+# inventory, applied identically to the sink and mitigation pairs.
 TESTSEM='(\.e2e-spec\.|-test\.|\.integration-test\.|/test/|/e2e/|/__fixtures__/)'
-sink_nt_nonsix=$(awk -F':::' '{print $1}' "$SINK" | sort -u | grep -E "$TESTSEM" | grep -vE "$SIX" | wc -l)
-mit_nt_nonsix=$( awk -F':::' '{print $1}' "$MIT"  | sort -u | grep -E "$TESTSEM" | grep -vE "$SIX" | wc -l)
-if [ "$sink_nt_nonsix" -gt 0 ] && [ "$mit_nt_nonsix" -gt 0 ]; then
-  pass "consistency: both non-test inventories retain non-six test-semantic files (sink=$sink_nt_nonsix mit=$mit_nt_nonsix) — sink no longer drops them"
+sink_nt_p=$(awk -F':::' '{print $1}' "$SINK" | sort -u | grep -E "$P" | wc -l)
+mit_nt_p=$( awk -F':::' '{print $1}' "$MIT"  | sort -u | grep -E "$P" | wc -l)
+sink_nt_testsem=$(awk -F':::' '{print $1}' "$SINK" | sort -u | grep -E "$TESTSEM" | wc -l)
+mit_nt_testsem=$( awk -F':::' '{print $1}' "$MIT"  | sort -u | grep -E "$TESTSEM" | wc -l)
+if [ "$sink_nt_p" -eq 0 ] && [ "$mit_nt_p" -eq 0 ] && [ "$sink_nt_testsem" -eq 0 ] && [ "$mit_nt_testsem" -eq 0 ]; then
+  pass "consistency: both non-test inventories exclude all predicate-P/test-semantic files (sink_P=$sink_nt_p mit_P=$mit_nt_p sink_testsem=$sink_nt_testsem mit_testsem=$mit_nt_testsem) -- identical routing"
 else
-  fail "consistency: divergent test handling (sink non-six test-semantic=$sink_nt_nonsix, mit=$mit_nt_nonsix); sink must not drop files the mitigation enumeration keeps"
+  fail "consistency: a non-test inventory still contains test-semantic file(s) (sink_P=$sink_nt_p mit_P=$mit_nt_p sink_testsem=$sink_nt_testsem mit_testsem=$mit_nt_testsem); route them into the -test.txt variants"
 fi
 
 # C7 — real-file references (tracked, existing, not excluded)

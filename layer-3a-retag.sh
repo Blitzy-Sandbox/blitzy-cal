@@ -1,43 +1,51 @@
 #!/usr/bin/env bash
 #
-# layer-3a-retag.sh — Layer 3a (Directive 4) deterministic category-tagger & coverage recorder.
+# layer-3a-retag.sh — Layer 3a (Directive 4) deterministic test-routing & coverage recorder.
 #
 # PURPOSE
 #   The security-audit pipeline's Layer 3a enumerates sink and mitigation call sites into four
-#   inventory files using the line format  file:::line:::matched-pattern .
-#   This script GUARANTEES every line in all four inventories carries an explicit category tag and
-#   that an explicit, machine-readable Layer 3a status/coverage record is emitted. It exists to make
-#   the tagging step reproducible and auditable (committed generator), and to enforce the binding
-#   user directive: "No layer may silently fail or drop categories."
+#   inventory files using the line format  file:::line:::[TAG] matched-pattern .
+#   This script GUARANTEES that every test/spec/e2e/fixture/mock source line lives in the
+#   ".*-test.txt" variant of its pair (NOT in the non-test inventory), that the SAME routing
+#   predicate governs BOTH the sink and the mitigation pair, and that an explicit, machine-readable
+#   Layer 3a status/coverage record is emitted. It exists to make the routing step reproducible and
+#   auditable (committed generator), and to enforce the binding user directive:
+#   "No layer may silently fail or drop categories."
 #
 # WHAT IT DOES (idempotent, deterministic — identical inputs produce byte-identical outputs)
-#   1. Re-tags  sink-inventory-test.txt        : prepends a [CWE-NNN] tag to every line, using the
-#                                                same 19-category methodology as sink-inventory.txt.
-#   2. Re-tags  mitigation-inventory.txt        : prepends a [<mitigation-category>] tag to every
-#                                                line, using the same convention as
-#                                                mitigation-inventory-test.txt.
+#   1. Routes the SINK pair        : moves every test-path line out of sink-inventory.txt into
+#                                    sink-inventory-test.txt (and keeps every non-test line in
+#                                    sink-inventory.txt), preserving each line BYTE-FOR-BYTE.
+#   2. Routes the MITIGATION pair   : same operation for mitigation-inventory.txt /
+#                                    mitigation-inventory-test.txt.
 #   3. (Directive 4 status) Emits layer-3a-status.txt — see emit_status() — with layer_3a_status,
 #      per-category hit counts for all 19 sink + 9 mitigation categories (across non-test and test
 #      variants), explicit zero-hit categories (e.g. CWE-134), and a coverage flag.
 #
-#   sink-inventory.txt and mitigation-inventory-test.txt are ALREADY correctly tagged and are treated
-#   as READ-ONLY here (only read for status counting); this script never modifies them.
+# TEST-ROUTING PREDICATE (P)
+#   A path is a TEST path iff it matches predicate P (an ERE over the file path). P generalises the
+#   six-pattern AAP rule (*.test.*, *.spec.*, *.e2e.*, __tests__/, __mocks__/, fixtures/) to the
+#   hyphenated conventions actually used in this repo: *.e2e-spec.*, *-test.{ts,tsx,js,jsx,mts,cts},
+#   /test/ , /tests/ , /e2e/ , /mocks/ , /__fixtures__/ and test-setup.* . P is applied IDENTICALLY
+#   to the sink pair and the mitigation pair so the two enumerations cannot drift apart.
 #
-# NO SILENT DROP
-#   If any inventory line carries a matched-pattern token this script cannot classify, it prints the
-#   offending token to stderr and exits non-zero WITHOUT writing partial output — a category is never
-#   silently dropped or mis-emitted.
+# VERBATIM PRESERVATION (no re-tagging)
+#   Lines are moved verbatim ($0 is never split or reconstructed), so every existing [CWE-NNN] /
+#   [mitigation-category] tag is preserved exactly. This script does NOT re-classify tokens: the
+#   inventories were tagged by the Layer 3a enumerator and that tagging is authoritative here.
 #
-# DETERMINISM
-#   Pure text transformation with a fixed, documented token->category contract. No network, no time,
-#   no randomness. Output is ANSI-free. Re-running over already-tagged files reproduces the same
-#   result (existing tags are stripped and re-applied).
+# NO SILENT DROP / DETERMINISM
+#   Routing is line-conserving: the script verifies (moved-out + kept) == original total for each
+#   pair and aborts WITHOUT writing if conservation fails, so no line is ever silently dropped.
+#   It also re-asserts that zero test-path lines remain in either non-test inventory. Pure text
+#   transformation, no network/time/randomness, ANSI-free, idempotent (re-running is a no-op).
 #
 # USAGE
-#   bash layer-3a-retag.sh            # re-tag the two untagged inventories AND (re)write status
-#   bash layer-3a-retag.sh --check    # verify all four inventories are fully tagged; no writes
+#   bash layer-3a-retag.sh            # route both pairs AND (re)write status
+#   bash layer-3a-retag.sh --check    # verify routing is correct & inventories tagged; no writes
 #
 set -euo pipefail
+export LC_ALL=C
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
@@ -52,104 +60,52 @@ STATUS_FILE="layer-3a-status.txt"
 SINK_CATS="CWE-601 CWE-918 CWE-117 CWE-807 CWE-338 CWE-843 CWE-862 CWE-79 CWE-134 CWE-250 CWE-912 CWE-1004 CWE-639 CWE-200 CWE-367 CWE-285 CWE-94 CWE-502 CWE-611"
 MIT_CATS="timing-safe auth-middleware rate-limiting csrf-protection webhook-signature schema-validation input-sanitization safe-query crypto-protection"
 
-# ---------------------------------------------------------------------------------------------------
-# AWK classifier (shared). Re-tags one inventory file written in  file:::line:::matched-pattern  form.
-#   -v KIND=sink|mit  selects the token->category contract.
-# Each input line has EXACTLY two ':::' separators and a non-empty field 3 that contains no ':::',
-# so FS=":::" yields exactly $1=file, $2=line, $3=matched-pattern (preserved byte-for-byte). Any
-# pre-existing category tag on field 3 is stripped first, guaranteeing idempotency.
-# ---------------------------------------------------------------------------------------------------
-read -r -d '' RETAG_AWK <<'AWK' || true
-function classify_sink(t) {
-  # CWE-843 Type Confusion
-  if (t=="as any" || t=="as unknown as" || t=="@ts-expect-error" || t=="@ts-ignore") return "CWE-843";
-  # CWE-117 Log Injection
-  if (t=="console.log" || t=="console.error" || t=="console.trace" ||
-      t=="log.info" || t=="log.debug" ||
-      t=="logger.debug" || t=="logger.error" || t=="logger.info") return "CWE-117";
-  # CWE-338 Weak PRNG
-  if (t=="Math.random") return "CWE-338";
-  # CWE-502 Insecure Deserialization
-  if (t=="JSON.parse(") return "CWE-502";
-  # CWE-918 SSRF
-  if (t=="fetch(") return "CWE-918";
-  # CWE-79 XSS / DOM manipulation
-  if (t==".innerHTML") return "CWE-79";
-  # CWE-601 Open Redirect
-  if (t=="window.location") return "CWE-601";
-  # CWE-250 Property Injection
-  if (t=="Object.defineProperty(" || t=="Object.assign(" || t=="Object.setPrototypeOf(") return "CWE-250";
-  # CWE-94 Code Injection / Command Execution
-  if (t==".exec(" || t=="new Function(" || t=="child_process" || t=="spawnSync") return "CWE-94";
-  # CWE-1004 Cookie Attributes
-  if (t=="set-cookie" || t=="setCookie") return "CWE-1004";
-  # CWE-285 OAuth scope / authorization decision (OAuth token fields + permission checks)
-  if (t=="access_token" || t=="refresh_token" || t=="client_secret" || t=="grant_type") return "CWE-285";
-  if (t=="checkPermission" || t=="hasPermission" || t=="isAdmin" || t=="verifyApiKey") return "CWE-285";
-  # CWE-200 Information Disclosure via Query (selecting sensitive column)
-  if (t=="password: true") return "CWE-200";
-  # CWE-639 IDOR / Tenant Isolation (Prisma data access + query shaping)
-  if (t=="select: {" || t=="include: {") return "CWE-639";
-  if (t==".findMany(" || t==".findFirst(" || t==".findUnique(" || t==".deleteMany(" || t==".upsert(") return "CWE-639";
-  if (t ~ /^prisma\./) return "CWE-639";
-  return "";
-}
-function classify_mit(t) {
-  # safe-query
-  if (t=="where:" || t=="where: {" || t=="$queryRaw" || t=="Prisma.sql" || t=="kysely") return "safe-query";
-  # schema-validation (Zod + class-validator + NestJS body binding)
-  if (t ~ /^z\./) return "schema-validation";
-  if (t==".parse(" || t==".safeParse(" || t==".parseAsync(" || t==".safeParseAsync(") return "schema-validation";
-  if (t=="zodResolver" || t=="@Body(") return "schema-validation";
-  if (t ~ /^@Is/ || t=="@ValidateNested" || t=="@ValidateIf") return "schema-validation";
-  # rate-limiting
-  if (t=="rateLimit" || t=="RateLimit" || t=="ratelimit" || t=="Ratelimit" || t=="checkRateLimit" ||
-      t=="@Throttle" || t=="@unkey/ratelimit" || t=="@nestjs/throttler") return "rate-limiting";
-  if (t ~ /ThrottlerGuard$/) return "rate-limiting";   # CustomThrottlerGuard / ThrottlerGuard / mockThrottlerGuard
-  # auth-middleware
-  if (t=="@UseGuards" || t=="getServerSession" || t=="isAuthorized" || t=="canActivate" || t=="verifyApiKey") return "auth-middleware";
-  if (t ~ /AuthGuard$/) return "auth-middleware";       # ApiAuthGuard / OptionalApiAuthGuard / NextAuthGuard / RoutingFormAuthGuard / AuthGuard
-  # crypto-protection
-  if (t=="symmetricDecrypt" || t=="symmetricEncrypt" || t=="createHash" || t=="createHmac" || t==".hash(" ||
-      t=="bcrypt" || t=="createDecipheriv" || t=="createCipheriv" || t=="aes-256-gcm") return "crypto-protection";
-  # csrf-protection
-  if (t=="csrf" || t=="Csrf" || t=="sameSite" || t=="SameSite" || t=="getCsrfToken") return "csrf-protection";
-  # webhook-signature
-  if (t=="createSignature" || t=="createWebhookSignature" || t=="constructEvent" || t=="X-Cal-Signature" ||
-      t=="verifyWebhook" || t=="verifyBTCPaySignature") return "webhook-signature";
-  # input-sanitization
-  if (t=="encodeURIComponent(" || t=="DOMPurify" || t=="sanitize-html" || t=="sanitizeHtml" || t=="escapeHtml") return "input-sanitization";
-  # timing-safe
-  if (t=="crypto.timingSafeEqual" || t=="timingSafeEqual(") return "timing-safe";
-  return "";
-}
-BEGIN { FS=":::"; err=0 }
-{
-  file=$1; line=$2; tok=$3;
-  # strip any pre-existing category tag (idempotency)
-  if (KIND=="sink") sub(/^\[CWE-[0-9]+\] /, "", tok);
-  else              sub(/^\[(timing-safe|auth-middleware|rate-limiting|csrf-protection|webhook-signature|schema-validation|input-sanitization|safe-query|crypto-protection)\] /, "", tok);
-  cat = (KIND=="sink") ? classify_sink(tok) : classify_mit(tok);
-  if (cat=="") { printf("UNCLASSIFIED %s TOKEN at %s:%s -> >>>%s<<<\n", KIND, file, line, tok) > "/dev/stderr"; err=1; next }
-  printf("%s:::%s:::[%s] %s\n", file, line, cat, tok);
-}
-END { if (err) exit 7 }
-AWK
+# Test-routing predicate P (ERE over the file path = substring before the first ':::').
+# Generalises the six-pattern AAP rule to this repo's hyphenated test conventions. Applied
+# IDENTICALLY to the sink and mitigation pairs.
+P_ERE='(/(__tests__|__mocks__|__fixtures__|fixtures|test|tests|e2e|mocks)/|\.(test|spec|e2e)\.|\.e2e-spec\.|-test\.(ts|tsx|js|jsx|mts|cts)$|(^|/)test-setup\.)'
 
-retag_file() {
-  # $1 = file, $2 = KIND (sink|mit)
-  local f="$1" kind="$2" before after
-  [ -f "$f" ] || { echo "ERROR: missing inventory $f" >&2; return 1; }
-  before=$(wc -l < "$f")
-  awk -v KIND="$kind" "$RETAG_AWK" "$f" > "$f.retag.tmp"
-  after=$(wc -l < "$f.retag.tmp")
-  if [ "$before" -ne "$after" ]; then
-    rm -f "$f.retag.tmp"
-    echo "ERROR: line count changed for $f ($before -> $after); aborting" >&2
+# ---------------------------------------------------------------------------------------------------
+# route_pair NONTEST TEST
+#   Repartition a (non-test, test) inventory pair by predicate P, preserving every line verbatim.
+#   Inputs are read TEST-first then NONTEST, so the existing test inventory stays a prefix of the
+#   result and newly-moved lines are appended in their original relative order (stable, idempotent).
+#   The file field is the substring before the first ':::'; $0 is printed unchanged so tags are kept.
+# ---------------------------------------------------------------------------------------------------
+route_pair() {
+  local nontest="$1" test="$2"
+  [ -f "$nontest" ] || { echo "ERROR: missing inventory $nontest" >&2; return 1; }
+  [ -f "$test" ]    || { echo "ERROR: missing inventory $test" >&2; return 1; }
+  local before_nt before_t total
+  before_nt=$(wc -l < "$nontest"); before_t=$(wc -l < "$test"); total=$((before_nt + before_t))
+
+  awk -v P="$P_ERE" -v NT="$nontest.route.tmp" -v TT="$test.route.tmp" '
+    BEGIN { printf "" > NT; printf "" > TT }   # guarantee both partitions exist even if empty
+    {
+      pos = index($0, ":::");
+      f   = (pos > 0) ? substr($0, 1, pos - 1) : $0;
+      if (f ~ P) print $0 > TT; else print $0 > NT;
+    }
+  ' "$test" "$nontest"
+
+  local after_nt after_t
+  after_nt=$(wc -l < "$nontest.route.tmp"); after_t=$(wc -l < "$test.route.tmp")
+  if [ $((after_nt + after_t)) -ne "$total" ]; then
+    rm -f "$nontest.route.tmp" "$test.route.tmp"
+    echo "ERROR: line conservation failed for ($nontest,$test): $total -> $((after_nt + after_t)); aborting" >&2
     return 1
   fi
-  mv "$f.retag.tmp" "$f"
-  echo "tagged: $f ($after lines, kind=$kind)"
+  # Re-assert: zero test-path (predicate-P) lines may remain in the non-test partition.
+  local leak
+  leak=$(awk -v P="$P_ERE" '{pos=index($0,":::"); f=(pos>0)?substr($0,1,pos-1):$0; if (f ~ P) n++} END{print n+0}' "$nontest.route.tmp")
+  if [ "$leak" -ne 0 ]; then
+    rm -f "$nontest.route.tmp" "$test.route.tmp"
+    echo "ERROR: $leak test-path line(s) leaked into non-test inventory $nontest; aborting" >&2
+    return 1
+  fi
+  mv "$nontest.route.tmp" "$nontest"
+  mv "$test.route.tmp" "$test"
+  echo "routed: $nontest ($before_nt -> $after_nt), $test ($before_t -> $after_t); moved_to_test=$((before_nt - after_nt))"
 }
 
 # count tagged lines whose field-3 begins with the exact category tag "[<cat>]" (0 if file/cat absent).
@@ -179,10 +135,13 @@ emit_status() {
   done
 
   {
-    echo "# Layer 3a — Sink & Mitigation Inventory status and category-coverage record (Directive 4)."
+    echo "# Layer 3a -- Sink & Mitigation Inventory status and category-coverage record (Directive 4)."
     echo "# Machine-readable key:value text (parse with grep/awk). ANSI-free. Generated by layer-3a-retag.sh."
     echo "# Per-category counts are 'non-test,test'. Categories with 0,0 are APPLICABLE to the JS/TS pattern"
-    echo "# column but genuinely absent in first-party source — explicitly recorded, NEVER silently dropped."
+    echo "# column but genuinely absent in first-party source -- explicitly recorded, NEVER silently dropped."
+    echo "# Test-path lines (predicate P: *.test.*, *.spec.*, *.e2e.*, *.e2e-spec.*, *-test.{ts,tsx,js,jsx,mts,cts},"
+    echo "# __tests__/, __mocks__/, __fixtures__/, fixtures/, test/, tests/, e2e/, mocks/, test-setup.*) are routed"
+    echo "# into the '-test.txt' variant of each pair; the SAME predicate governs the sink and mitigation pairs."
     echo "layer_3a_status: OK"
     echo "coverage: complete"
     echo "primary_language: typescript"
@@ -198,6 +157,16 @@ emit_status() {
     echo "mitigation_categories_total: 9"
     echo "mitigation_categories_with_hits: ${mit_hits}"
     echo "mitigation_categories_zero_hit: ${mit_zero:-none}"
+    echo "# --- Cross-category analog mappings (sink-tag <-> Layer 3b taint CWE); see layer-3b-status.txt ---"
+    echo "# sendPayload.ts:349 is tagged [CWE-639] (Prisma/data-access sink token) but the Layer 3b taint"
+    echo "#   finding for that line is CWE-347 (Improper Verification of Cryptographic Signature). CWE-347 is"
+    echo "#   not one of the 19 sink categories, so the sink line is retained under its data-access tag and the"
+    echo "#   CWE-347 classification is recorded only at the taint layer."
+    echo "# bookings.service.ts:1067 is tagged [CWE-117] (log-interpolation sink) and represents the CWE-134"
+    echo "#   (format-string) taint analog: CWE-134 is structurally inapplicable to TypeScript (no printf-family"
+    echo "#   format string), so it is a documented zero-hit sink category represented via the CWE-117 sink."
+    echo "analog_cwe347_sink_line: ./packages/features/webhooks/lib/sendPayload.ts:349 (sink tag CWE-639)"
+    echo "analog_cwe134_sink_line: ./apps/api/v2/src/ee/bookings/2024-08-13/services/bookings.service.ts:1067 (sink tag CWE-117)"
     echo "# --- Per-sink-category hit counts (CWE: non-test,test) ---"
     for cat in $SINK_CATS; do
       nt=$(count_cat "$cat" "$SINK"); tt=$(count_cat "$cat" "$SINK_TEST")
@@ -222,10 +191,16 @@ main() {
       untagged=$(awk -F':::' '$3 !~ /^\[[A-Za-z0-9-]+\] /{n++} END{print n+0}' "$f")
       if [ "$untagged" -ne 0 ]; then echo "FAIL: $f has $untagged untagged line(s)"; fail=1; else echo "OK: $f fully tagged"; fi
     done
+    # routing correctness: zero predicate-P lines may remain in either non-test inventory.
+    local sl ml
+    sl=$(awk -v P="$P_ERE" '{pos=index($0,":::"); f=(pos>0)?substr($0,1,pos-1):$0; if (f ~ P) n++} END{print n+0}' "$SINK")
+    ml=$(awk -v P="$P_ERE" '{pos=index($0,":::"); f=(pos>0)?substr($0,1,pos-1):$0; if (f ~ P) n++} END{print n+0}' "$MIT")
+    if [ "$sl" -eq 0 ]; then echo "OK: no test-path lines in $SINK"; else echo "FAIL: $sl test-path line(s) in $SINK"; fail=1; fi
+    if [ "$ml" -eq 0 ]; then echo "OK: no test-path lines in $MIT"; else echo "FAIL: $ml test-path line(s) in $MIT"; fail=1; fi
     return "$fail"
   fi
-  retag_file "$SINK_TEST" sink
-  retag_file "$MIT" mit
+  route_pair "$SINK" "$SINK_TEST"
+  route_pair "$MIT"  "$MIT_TEST"
   emit_status
 }
 

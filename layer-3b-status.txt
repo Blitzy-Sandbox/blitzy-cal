@@ -1,0 +1,58 @@
+# Layer 3b -- Taint Analysis status and per-category coverage record (Directive 5).
+# Machine-readable key:value text (parse with grep/awk). ANSI-free.
+# Agent layer: records explicit status AND per-category coverage for all 19 mandatory CWE sink
+# categories so that no category can be silently dropped (user directive: "No layer may silently
+# fail or drop categories"). Each taint_count line is:
+#   taint_count_<CWE>: <total> (gateBlocking=<n>,advisory=<n>)
+# coverage is one of: complete | partial. If ANY category is 'partial' (e.g. a sink-category budget
+# of 200 was exhausted) or yields zero findings where the sink inventory has hits, coverage becomes
+# partial and Directive 9 must return ERROR (a partial agent layer is never a clean pass).
+layer_3b_status: OK
+coverage: complete
+primary_language: typescript
+findings_artifact: findings-layer-3b-taint.json
+sink_inventory_source: sink-inventory.txt
+total_findings: 62
+sink_categories_total: 19
+sink_categories_covered: 19
+sink_categories_partial: 0
+sink_categories_uncovered: 0
+# --- gateBlocking summary (the reproducibility anchor; orthogonal to severity per the truth table) ---
+gate_blocking_total: 2
+gate_blocking_1: ./packages/features/webhooks/lib/sendPayload.ts:373 CWE-918 high (SSRF: webhook URL not validated against allowlist before outbound fetch)
+gate_blocking_2: ./packages/features/webhooks/lib/sendPayload.ts:349 CWE-347 high (signature omission: HMAC signing skipped when secret absent, payload sent unsigned)
+advisory_total: 60
+advisory_with_demotion_reason: 60
+advisory_missing_demotion_reason: 0
+# --- Per-CWE-category taint coverage (all 19 sink categories) ---
+taint_count_CWE-601: 4 (gateBlocking=0,advisory=4)
+taint_count_CWE-918: 5 (gateBlocking=1,advisory=4)
+taint_count_CWE-117: 4 (gateBlocking=0,advisory=4)
+taint_count_CWE-807: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-338: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-843: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-862: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-79: 4 (gateBlocking=0,advisory=4)
+taint_count_CWE-134: 1 (gateBlocking=0,advisory=1)
+taint_count_CWE-250: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-912: 2 (gateBlocking=0,advisory=2)
+taint_count_CWE-1004: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-639: 6 (gateBlocking=0,advisory=6)
+taint_count_CWE-200: 2 (gateBlocking=0,advisory=2)
+taint_count_CWE-367: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-285: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-94: 3 (gateBlocking=0,advisory=3)
+taint_count_CWE-502: 4 (gateBlocking=0,advisory=4)
+taint_count_CWE-611: 2 (gateBlocking=0,advisory=2)
+# --- Cross-category analog mappings (taint CWE vs sink-inventory tag); resolves review E1 & E2 ---
+# E1: The gate-blocking finding at sendPayload.ts:349 is classified CWE-347 (Improper Verification of
+#   Cryptographic Signature) by the taint layer. CWE-347 is NOT one of the 19 sink categories, so the
+#   underlying sink line is retained in sink-inventory.txt under tag [CWE-639] (its Prisma/data-access
+#   matched token). The CWE-347 classification therefore lives only at the taint layer; the file:line
+#   anchor (sendPayload.ts:349) is present in sink-inventory.txt as required.
+analog_cwe347_taint_finding: ./packages/features/webhooks/lib/sendPayload.ts:349 (taint CWE-347, sink tag CWE-639, gateBlocking=true)
+# E2: The CWE-134 (Format String) taint finding is the TypeScript ANALOG of a printf-family format
+#   string. TS has no printf-style format string, so CWE-134 is a documented zero-hit SINK category
+#   (sink-inventory has 0 [CWE-134] lines) and the analog is represented through the CWE-117 log-
+#   interpolation sink. The taint finding carries cwe=CWE-134 but anchors to a line tagged [CWE-117].
+analog_cwe134_taint_finding: ./apps/api/v2/src/ee/bookings/2024-08-13/services/bookings.service.ts:1067 (taint CWE-134, sink tag CWE-117)

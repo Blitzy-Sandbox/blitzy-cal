@@ -1,0 +1,38 @@
+# Layer 4 -- OSV-Scanner SCA status and coverage record (Directive 6).
+# Machine-readable key:value text (parse with grep/awk). ANSI-free.
+# Records explicit pre-agent layer status and no-silent-failure state for the
+# normalized dependency-CVE artifact so downstream verification (Directive 10)
+# and the CI/CD gate (Directive 9) can detect a silent scan failure.
+# coverage is one of: complete | partial. If partial, partial_reason is recorded
+# and Directive 9 must return ERROR (a partial scan is never a clean pass).
+layer_4_status: OK
+coverage: complete
+tool: osv-scanner
+tool_version: 2.3.8
+osv_scalibr_version: 0.4.5
+osv_database: osv.dev
+scan_format: json
+# --- Lockfile(s) scanned (from codebase-profile.txt) ---
+lockfiles: ./yarn.lock
+lockfile_count: 1
+# --- Raw -> normalized (Directive 6: dedup by package_name + advisory) ---
+raw_osv_artifact: results-osv.json
+normalized_artifact: findings-layer-4-osv.json
+packages_with_vulns: 104
+raw_vulnerability_objects: 263
+normalized_unique_findings: 176
+dedup_key: package_name+advisory_id
+# Descriptions are formatted advisory-front: "name@version (ADVISORY): summary",
+# truncated to 200 chars. Max anchor+advisory prefix length is 64, so the advisory
+# identifier(s) are always preserved even when the summary is truncated.
+description_format: name@version (advisory): summary
+description_max_len: 200
+advisory_identifiers_lost: 0
+# --- Severity distribution (database_specific.severity -> unified vocabulary) ---
+severity_count_critical: 5
+severity_count_high: 75
+severity_count_medium: 76
+severity_count_low: 20
+# --- Remediation policy (AAP dependency freeze) ---
+remediation: none
+version_bumps: none

@@ -3667,3 +3667,23 @@
 ./packages/ui/components/editor/plugins/ToolbarPlugin.test.tsx:::40:::[CWE-117] console.error
 ./packages/ui/components/form/datepicker/datepicker.test.tsx:::21:::[CWE-843] as unknown as
 ./packages/ui/components/scrollable/scrollablearea.test.tsx:::33:::[CWE-250] Object.defineProperty(
+./apps/web/app/api/auth/signup/handlers/calcomSignupHandler.test.ts:::41:::[CWE-639] prisma.mocks
+./apps/web/app/api/auth/signup/handlers/calcomSignupHandler.test.ts:::47:::[CWE-639] prisma.mocks
+./apps/web/app/api/auth/signup/handlers/calcomSignupHandler.test.ts:::5:::[CWE-639] prisma.mocks
+./apps/web/app/api/auth/signup/handlers/selfHostedHandler.test.ts:::25:::[CWE-639] prisma.mocks
+./apps/web/app/api/auth/signup/handlers/selfHostedHandler.test.ts:::31:::[CWE-639] prisma.mocks
+./apps/web/app/api/auth/signup/handlers/selfHostedHandler.test.ts:::7:::[CWE-639] prisma.mocks
+./apps/web/playwright/fixtures/users.ts:::711:::[CWE-639] prisma.$transaction
+./packages/app-store/_utils/payments/handlePaymentSuccess.test.ts:::210:::[CWE-639] prisma.$transaction
+./packages/features/auth/signup/handlers/__tests__/p2002.test-suite.ts:::10:::[CWE-639] prisma.mocks
+./packages/features/bookings/lib/host-filtering/filterHostsByLeadThreshold.test.ts:::24:::[CWE-639] prisma.booking.groupBy
+./packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:::133:::[CWE-639] prisma.$transaction
+./packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::178:::[CWE-639] prisma.seatChangeLog.groupBy
+./packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::199:::[CWE-639] prisma.seatChangeLog.groupBy
+./packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::219:::[CWE-639] prisma.seatChangeLog.groupBy
+./packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::239:::[CWE-639] prisma.seatChangeLog.groupBy
+./packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::263:::[CWE-639] prisma.seatChangeLog.groupBy
+./packages/testing/src/lib/__mocks__/prisma.d.ts:::4:::[CWE-639] prisma.d.ts
+./packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.test.ts:::32:::[CWE-639] prisma.outOfOfficeEntry
+./packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.test.ts:::33:::[CWE-639] prisma.outOfOfficeEntry
+./packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.test.ts:::34:::[CWE-639] prisma.outOfOfficeEntry

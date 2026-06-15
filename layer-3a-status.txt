@@ -7,8 +7,8 @@ coverage: complete
 primary_language: typescript
 sink_pattern_column: js/ts
 mitigation_pattern_column: js/ts
-sink_inventory_nontest_lines: 9083
-sink_inventory_test_lines: 3669
+sink_inventory_nontest_lines: 12282
+sink_inventory_test_lines: 3689
 mitigation_inventory_nontest_lines: 14582
 mitigation_inventory_test_lines: 1433
 sink_categories_total: 19
@@ -19,23 +19,23 @@ mitigation_categories_with_hits: 9
 mitigation_categories_zero_hit: none
 # --- Per-sink-category hit counts (CWE: non-test,test) ---
 sink_count_CWE-601: 271,14
-sink_count_CWE-918: 258,34
-sink_count_CWE-117: 2872,131
+sink_count_CWE-918: 259,34
+sink_count_CWE-117: 3197,131
 sink_count_CWE-807: 421,0
-sink_count_CWE-338: 59,27
-sink_count_CWE-843: 264,1355
+sink_count_CWE-338: 91,27
+sink_count_CWE-843: 309,1355
 sink_count_CWE-862: 119,0
 sink_count_CWE-79: 38,8
 sink_count_CWE-134: 0,0
-sink_count_CWE-250: 82,60
+sink_count_CWE-250: 84,60
 sink_count_CWE-912: 24,0
 sink_count_CWE-1004: 10,4
-sink_count_CWE-639: 3490,1494
-sink_count_CWE-200: 61,1
+sink_count_CWE-639: 5891,1514
+sink_count_CWE-200: 65,1
 sink_count_CWE-367: 17,0
-sink_count_CWE-285: 900,435
+sink_count_CWE-285: 1287,435
 sink_count_CWE-94: 44,21
-sink_count_CWE-502: 151,85
+sink_count_CWE-502: 153,85
 sink_count_CWE-611: 2,0
 # --- Per-mitigation-category hit counts (category: non-test,test) ---
 mitigation_count_timing-safe: 3,0

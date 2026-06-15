@@ -1,4 +1,7 @@
-# Blitzy Project Guide — Development Acceleration Measurement (`blitzy-cal`)
+# Blitzy Project Guide — `blitzy-cal` Read-Only Security Audit
+
+> Engagement type: **Read-only, report-only security audit** (six-layer SAST/SCA/taint pipeline). Application source is scanned but **not modified** (~0 files changed). Deliverable = a corpus of 14 machine-readable audit artifacts plus a deterministic verification suite and a CI/CD gate verdict.
+> Branch `blitzy-40443edc-02d1-4206-b692-e0f3d73f0856` · HEAD `b1a1b4f9b2` · working tree clean.
 
 ---
 
@@ -6,61 +9,66 @@
 
 ### 1.1 Project Overview
 
-This project delivers a read-only **Development Acceleration Measurement** of the `blitzy-cal` repository — a Cal.com-derived scheduling monorepo (Yarn Berry + Turborepo, ~16,880 commits, 2021-03-10 → 2026-05-15). The objective is to quantify the development-velocity acceleration attributable to AI engineering tooling by extracting twelve flow and operational metrics from version-control history, computing each as an *after ÷ before* ratio split at a detected **Tool Introduction Date (2025-04-08)**, and publishing two deliverables: a traceable eleven-section technical report (`acceleration-report.md`) and a self-contained reveal.js executive presentation. The intended audience is engineering leadership and stakeholders. The change is additive and output-only: two net-new files are created and zero existing repository files are modified or deleted.
+This engagement delivered a deterministic, reproducible **six-layer security audit** of `blitzy-cal`, a Cal.com-derived TypeScript scheduling monorepo (7,433 first-party source files). The audit emits a structured, machine-readable findings corpus — architectural review, Semgrep SAST, exhaustive sink/mitigation inventory, dataflow taint triage, and dependency CVE scanning — consolidated into a merged report, a CI/CD gate verdict, and a 16-check verification script. The target users are CI/CD gates and human security reviewers who consume the verdict to block risky merges. Business impact: an additive, automatable security gate that complements the repository's existing `npm audit` job. The engagement is intentionally non-mutating: it reports findings without remediating them.
 
 ### 1.2 Completion Status
 
+**Completion: 84.7%** — calculated on AAP-scoped work only (audit deliverables + path-to-production), using the hours formula `Completed / (Completed + Remaining)`.
+
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'pie1':'#5B39F3','pie2':'#FFFFFF','pieStrokeColor':'#333333','pieStrokeWidth':'2px','pieOuterStrokeWidth':'2px','pieTitleTextSize':'18px','pieSectionTextColor':'#333333','pieLegendTextColor':'#333333','pieOpacity':'1'}}}%%
-pie showData title Acceleration Measurement — 85.0% Complete (96h of 113h)
-    "Completed Work (AI)" : 96
-    "Remaining Work" : 17
+%%{init: {'theme':'base', 'themeVariables': {'pie1':'#5B39F3','pie2':'#FFFFFF','pieStrokeColor':'#5B39F3','pieStrokeWidth':'2px','pieOuterStrokeColor':'#5B39F3','pieOuterStrokeWidth':'2px','pieTitleTextSize':'16px','pieSectionTextColor':'#B23AF2','pieLegendTextColor':'#000000'}}}%%
+pie showData title Completion Status — 84.7% Complete
+    "Completed Work (AI)" : 100
+    "Remaining Work" : 18
 ```
 
 | Metric | Value |
 |--------|-------|
-| **Total Hours** | **113** |
-| **Completed Hours (AI + Manual)** | **96** (96 AI autonomous + 0 Manual) |
-| **Remaining Hours** | **17** |
-| **Percent Complete** | **85.0%** |
+| **Total Hours** | **118** |
+| **Completed Hours (AI + Manual)** | **100** (AI/Autonomous: 100 · Manual: 0) |
+| **Remaining Hours** | **18** |
+| **Percent Complete** | **84.7%** |
 
-> Completion is calculated using the AAP-scoped, hours-based methodology: `96 ÷ (96 + 17) = 96 ÷ 113 = 84.96% ≈ 85.0%`. All twelve autonomous deliverable and analytical requirements are complete and validated to production-ready; the remaining 17 hours is entirely the human path-to-production tail (technical review, acceptance, an optional confidence upgrade, risk sign-off, and publish). Per Blitzy honest-assessment policy, completion is never reported at 100% before human review.
+> Colour key — **Completed = Dark Blue `#5B39F3`**, **Remaining = White `#FFFFFF`**.
 
 ### 1.3 Key Accomplishments
 
-- ✅ **Two deliverables created and committed** — `acceleration-report.md` (888 lines) and `acceleration-report-executive-presentation.html` (884 lines) at the repository root; working tree clean.
-- ✅ **Tool Introduction Date detected** — 2025-04-08 (earliest AI `Co-authored-by:` trailer, Devin), with a deterministic pivot epoch (`1744125961`, commit `4753bd785a`) splitting Baseline (12,699 commits) from Accelerated (4,181 commits).
-- ✅ **All twelve metrics populated** — M1–M9 derived with High/Medium/Low confidence tags; M10/M12 and strict M3/M4/M5/M7 correctly reported as "Insufficient signal" per the no-fabrication rule; M11 reported as a snapshot.
-- ✅ **Engineering-actor framing applied** — AI cohort = 700 commits (Blitzy 597 + Devin 103), the single highest-volume author identity in the accelerated period (16.7% of 4,181).
-- ✅ **All six report Data-Integrity Rules satisfied** — provenance, factual-neutral tone (grep = 0 subjective qualifiers), confidence transparency, internal consistency, reproducibility, environment-first.
-- ✅ **Executive presentation rule (§0.8.2) satisfied** — 16 slides, inline Blitzy brand theme, 2 Mermaid diagrams + 29 Lucide icons, zero emoji, CDN pins exact (reveal.js 5.1.0 / Mermaid 11.4.0 / Lucide 0.460.0).
-- ✅ **Cross-deliverable consistency verified** — 106 slide numeric tokens + the 29-element acceleration-curve series match the report exactly.
-- ✅ **Runtime render verified** — deck served over http://, both Mermaid diagrams rendered to SVG, all 29 Lucide icons hydrated, 33 CDN requests HTTP 200, zero console errors.
-- ✅ **Reproducibility appendix independently re-verified** — canonical epoch-pivot commands reproduce 16,880 / 12,699 / 4,181 / 597 / 103 / 147 → 71 exactly against live git.
+- ✅ **All 11 directives (0–10) executed** and committed — the complete six-layer pipeline plus normalization, merge, gate, and verification.
+- ✅ **14 audit artifacts produced**, all well-formed, schema-conformant, and ANSI-free (0 `\x1b` bytes anywhere).
+- ✅ **`verify.sh` passes 16/16 deterministic checks** (exit 0) and is idempotent — independently re-run during this assessment.
+- ✅ **289 total findings** normalized (248 unique after dedup): 19 architectural, 32 Semgrep, 62 taint, 176 dependency CVEs.
+- ✅ **CI/CD gate verdict computed: `BLOCK`** — correctly driven by 2 gate-blocking taint findings (not a pipeline error); `verification_status = PASS`.
+- ✅ **Deterministic layers reproduce exactly** — OSV (63 packages), Semgrep (32 findings), Layer 3a grep (CWE-338 = 59, CWE-611 = 2) match committed artifacts.
+- ✅ **Zero application source modified** — the read-only constraint and dependency freeze were fully honoured.
+- ✅ **All 10 Layer-1 architectural categories** and **all 19 Layer-3b CWE sink categories** covered with no silent category drops.
 
 ### 1.4 Critical Unresolved Issues
 
+These are **operationalization / downstream** items (not defects in the audit artifacts, which are validated defect-free):
+
 | Issue | Impact | Owner | ETA |
 |-------|--------|-------|-----|
-| None — no autonomous defects remain | No blocking issue. All five autonomous validation gates pass; both deliverables are valid, numerically accurate, rule-compliant, and render cleanly. | — | — |
-
-> There are **no critical unresolved autonomous issues**. The three defects found during validation (M4 gap counts, M5 actor-density span, stale HTML line references) were corrected in commit `5e676c26d0`. All remaining work is human path-to-production (Section 2.2), not unresolved defects.
+| Audit gate not yet wired into CI/CD | `gate_verdict=BLOCK` does not actually block any merge today; the gate provides no automated protection until integrated | DevOps / Platform | ~5h |
+| 2 gate-blocking taint findings awaiting human triage | `BLOCK` verdict stands until reviewed; both in `packages/features/webhooks/lib/sendPayload.ts` (CWE-918 SSRF, CWE-347 silent HMAC drop) | Security / AppSec | ~4h |
+| 176 dependency CVEs reported, not yet triaged | 5 critical + 75 high advisories require disposition decisions (remediation itself is out of scope per dependency freeze) | Security / AppSec | ~6h |
 
 ### 1.5 Access Issues
 
-| System / Resource | Type of Access | Issue Description | Resolution Status | Owner |
-|-------------------|----------------|-------------------|-------------------|-------|
-| GitHub REST API | Authenticated read (token) | `gh` 2.46.0 and `jq` 1.8.1 are installed but `gh` is not authenticated (no read-only token). Blocks higher-confidence extraction for M6 (labels), M9 (releases), M10 (approved exceptions), M11 (CI test history), M12 (SLA). | Open — optional enhancement; metrics fall back to git proxies / "Insufficient signal" at lower confidence | Human reviewer / DevOps |
-| Issue tracker / PR-review API | Authenticated read | No issue-tracker or PR-review/approval data source is accessible, capping the confidence ceiling at Medium (no metric reaches High). | Open — inherent to the read-only git-only environment | Human reviewer |
-| SLA / severity data source | Any | No SLA, severity-policy, or runbook source exists in the repository or via API. | Open by design — M12 correctly reported "Insufficient signal" | N/A |
+**No access issues identified.** The audit executed end-to-end: the repository was fully readable, both third-party tools (Semgrep OSS, OSV-Scanner) installed and ran, and all artifacts committed successfully.
+
+| System/Resource | Type of Access | Issue Description | Resolution Status | Owner |
+|-----------------|----------------|-------------------|-------------------|-------|
+| `blitzy-cal` repository | Read/write (git) | None — full access confirmed | ✅ Resolved | — |
+| Semgrep registry (`semgrep.dev`) | Network egress (rule packs) | None during audit; **forward-looking**: CI runners will need egress or vendored rules | ⚠ To verify in CI | DevOps |
+| OSV.dev advisory DB | Network egress (OSV-Scanner) | None during audit; **forward-looking**: CI runners will need egress or an offline DB | ⚠ To verify in CI | DevOps |
 
 ### 1.6 Recommended Next Steps
 
-1. **[High]** Conduct a human technical review and acceptance of `acceleration-report.md` — verify provenance chains, confidence tags, factual-neutral tone, and the twelve-metric derivations against live git (~6h).
-2. **[High]** Present the executive deck to leadership — serve over http://, walk all 16 slides, confirm Mermaid + Lucide render and business messaging (~2h).
-3. **[Medium]** (Optional) Provision a read-only GitHub API token and re-run API-dependent extraction to raise M6/M9/M10/M11/M12 above proxy/Insufficient confidence (~6h). This is the single lever the AAP flags as materially changing outcomes.
-4. **[Medium]** Obtain formal risk-acceptance sign-off for the Mermaid 11.4.0 CDN pin and acknowledge the Devin-vs-Blitzy attribution framing in §10 (~1.5h).
-5. **[Medium]** Merge the pull request and distribute both deliverables to stakeholders (~1.5h).
+1. **[High]** Triage and disposition the 2 gate-blocking taint findings in `sendPayload.ts` (SSRF egress allow-list, webhook signature enforcement). *(~4h)*
+2. **[High]** Wire `verify.sh` + `gate_verdict` into a GitHub Actions workflow as an additive gate alongside `security-audit.yml`, failing the build on `BLOCK`. *(~5h)*
+3. **[Medium]** Triage the 176 dependency CVEs (group by package, assess reachability) and log the cryptographic advisories to the security backlog. *(~6h)*
+4. **[Medium]** Establish the finding-count baseline that the Directive-9 `WARN` threshold (>20% increase) compares against. *(~1h)*
+5. **[Low]** Author an operational runbook and schedule a periodic (e.g., weekly) re-scan to prevent the point-in-time snapshot from going stale. *(~2h)*
 
 ---
 
@@ -68,107 +76,99 @@ pie showData title Acceleration Measurement — 85.0% Complete (96h of 113h)
 
 ### 2.1 Completed Work Detail
 
+All completed work is AAP-specified and autonomously delivered. Each component traces to a directive in the Agent Action Plan.
+
 | Component | Hours | Description |
 |-----------|-------|-------------|
-| Repository discovery & Environment Verification (§2) | 3 | `origin` resolution + credential redaction; git version, commit/branch/tag counts, submodule state, date range, extraction timestamp (Rule 6). |
-| Tool Introduction Date detection & period split (§4.1–4.2) | 4 | Earliest AI `Co-authored-by:` trailer (2025-04-08); deterministic pivot epoch `1744125961`; velocity-inflection corroboration. |
-| Methodology design (§4.3–4.7) | 6 | Monday-aligned two-week windowing; Ramp-Up/Steady/Baseline classifier; actor framing; confidence model; weighted-aggregation and zero-baseline ratio rules. |
-| Twelve-metric extraction engine M1–M12 (§5) | 24 | Identical per-module before/after extraction for all twelve metrics; proxy selection; "Insufficient signal" handling; M11 snapshot. |
-| Actor identity resolution & per-engineer breakdown (§7.1) | 6 | Alias/bot de-duplication (e.g., zomars → Omar López); 735 baseline / 200 accelerated human identities; AI-actor row. |
-| Per-module commit-volume-weighted aggregation (§7.2) | 4 | Σ = 6,179 module-commit incidences; aggregate 3.97 files/commit across 20+ workspaces. |
-| Acceleration curve & 29-window velocity series (§8) | 4 | Baseline 119.0 / Ramp-Up 121.0 / Steady 150.1 commits per two-week window; rendered series. |
-| Data Source Inventory (§3) | 2 | Every system accessed and every system unavailable, with access method and confidence implication. |
-| Executive Summary (§1) | 2 | Headline twelve-metric table with before/after multipliers and confidence tags. |
-| Requirements Traceability Matrix (§6) | 3 | Requirement → command → derived value rows for every metric and methodology element. |
-| Risk Assessment & Limitations incl. Mermaid CVE analysis (§9–§10) | 5 | Per-metric risk register; Mermaid 11.4.0 CVE reachability analysis; Devin-vs-Blitzy attribution disclosure. |
-| Reproducibility Appendix (§11) | 6 | Complete, ordered, syntactically valid commands to re-derive every metric. |
-| Report assembly & Data-Integrity Rules 1–6 enforcement | 4 | Section composition; provenance/consistency/factual-neutral enforcement and grep verification. |
-| Executive presentation (D2) | 13 | 16 slides; inline Blitzy theme tokens; 2 Mermaid diagrams; 30 Lucide icon declarations; KPI cards; reveal config; all values sourced from the report. |
-| Autonomous validation & multi-cycle fixes | 10 | Five production-readiness gates; browser runtime render; three defect corrections (commit `5e676c26d0`). |
-| **Total Completed** | **96** | **Matches Completed Hours in Section 1.2** |
+| Layer 0 — Codebase Discovery (Directive 0) | 3 | `codebase-profile.txt` with all 8 fields; `primary_language=typescript`, `source_file_count=7433`, `layer_0_status=OK`. |
+| Layer 1 — Architectural Security Audit (Directive 1) | 16 | Context-aware reasoning across all 10 architectural categories with attack-chain narratives; 19 CWE-classified findings. |
+| Layer 2 — Semgrep SAST (Directives 2, 3) | 9 | Tool install + rule-pack pinning + SARIF scan + normalization; 32 findings; severity map `error→critical`(12), `warning→high`(20). |
+| Layer 3a — Sink & Mitigation Inventory (Directive 4) | 10 | Deterministic `grep`/`find` enumeration of 19 sink + 9 mitigation categories (+ test variants); 4 files, 0 malformed lines (9,083 + 13,933). |
+| Layer 3b — Taint / Exploitability Analysis (Directive 5) | 20 | Dataflow triage across all 19 CWE sink categories; 62 findings; `gateBlocking` flag + `demotionReason` on every advisory. |
+| Layer 4 — OSV-Scanner SCA (Directive 6) | 5 | Binary install + `yarn.lock` scan + normalization; 176 CVEs deduped by `(package, CVE)`. |
+| Normalization & Merge (Directives 7, 8) | 11 | Per-layer JSON normalization + `findings-merged.json` with `_summary`, corroboration annotation, severity escalation. |
+| CI/CD Gate Verdict (Directive 9) | 3 | `ERROR/BLOCK/WARN/PASS` precedence logic; verdict embedded in merged report. |
+| Verification Suite — `verify.sh` (Directive 10) | 9 | 870-line, 16-check deterministic verifier; idempotent; ANSI-safe; exit code = failure count. |
+| Validation, QA & Determinism Hardening | 14 | Multi-checkpoint review cycles (CP1/CP2/final), SARIF secret redaction, defensive ANSI stripping, 16-check conformance, determinism re-runs. |
+| **Total Completed** | **100** | |
 
 ### 2.2 Remaining Work Detail
 
+All remaining work is **path-to-production** (operationalizing and acting on the audit). It excludes finding remediation, which is explicitly out of scope (dependency freeze + `CALENDSO_ENCRYPTION_KEY` continuity).
+
 | Category | Hours | Priority |
 |----------|-------|----------|
-| Human technical review & acceptance of report findings + methodology | 6 | High |
-| Stakeholder/leadership review of executive presentation | 2 | High |
-| Optional confidence upgrade via read-only GitHub API token (M6/M9/M10/M11/M12) | 6 | Medium |
-| Formal risk-acceptance sign-off (Mermaid 11.4.0 pin + Devin-vs-Blitzy attribution) | 1.5 | Medium |
-| Publish / distribute (merge PR, share with leadership) | 1.5 | Medium |
-| **Total Remaining** | **17** | **Matches Remaining Hours in Section 1.2 and Section 7 pie chart** |
+| CI/CD Gate Integration (GitHub Actions, additive gate, fail on `BLOCK`) | 5 | High |
+| Gate-Blocking Finding Triage (2 webhook findings: CWE-918, CWE-347) | 4 | High |
+| Dependency CVE Triage & Crypto Advisory Disposition (176 CVEs + AES-256-CBC / key reuse) | 6 | Medium |
+| WARN Baseline Establishment (Directive-9 baseline for >20% threshold) | 1 | Medium |
+| Operational Runbook & Scheduled Re-scan | 2 | Low |
+| **Total Remaining** | **18** | |
 
 ### 2.3 Hours Reconciliation
 
-- **Completed (2.1):** 96h  
-- **Remaining (2.2):** 17h  
-- **Total Project Hours:** 96 + 17 = **113h**  
-- **Completion:** 96 ÷ 113 = **84.96% ≈ 85.0%**  
-- **Cross-section integrity:** Section 2.1 (96h) + Section 2.2 (17h) = Section 1.2 Total (113h) ✓; Remaining hours identical across Sections 1.2, 2.2, and 7 (17h) ✓.
+| Quantity | Hours | Check |
+|----------|-------|-------|
+| Section 2.1 — Completed | 100 | — |
+| Section 2.2 — Remaining | 18 | — |
+| **Total Project Hours** | **118** | 2.1 + 2.2 = 118 ✓ |
+| Completion % | 84.7% | 100 / 118 ✓ |
 
 ---
 
 ## 3. Test Results
 
-All results below originate from Blitzy's autonomous validation logs for this project and were independently re-verified during this assessment. This is a documentation/measurement deliverable, so "tests" are the autonomous validation gates and integrity assertions rather than a conventional unit-test suite — the repository's Vitest/Jest/Playwright suites do not cover root `.md`/`.html` files (the husky `lint-staged` patterns do not match them). Coverage % denotes the share of in-scope assertions that passed.
+For a read-only audit there is no in-scope application code to unit-test; the validation analogs are Blitzy's autonomous verification of the artifact corpus. **Every entry below originates from Blitzy's autonomous validation logs and was independently re-run during this assessment.** (The repository's own application unit tests are out of scope — see §5.)
 
 | Test Category | Framework | Total Tests | Passed | Failed | Coverage % | Notes |
-|---------------|-----------|-------------|--------|--------|------------|-------|
-| Markdown Structure Validity | Python + grep | 3 | 3 | 0 | 100% | 40 fence markers balanced; 14 tables, 0 column issues; 127 headers; parses clean. |
-| HTML Well-formedness & Structure | Python `html.parser` | 4 | 4 | 0 | 100% | 0 parse errors; exactly one html/head/body; 16 `<section>`; 2 `<pre class="mermaid">`. |
-| Measurement Integrity (12 metrics) | Live `git` re-derivation | 12 | 12 | 0 | 100% | All populated or "Insufficient signal" with confidence tags; figures re-derived from live git and matched. |
-| Report Data-Integrity Rules 1–6 | grep + inspection | 6 | 6 | 0 | 100% | Provenance, factual-neutral (grep = 0 qualifiers), confidence transparency, internal consistency, reproducibility, environment-first. |
-| Presentation Rules (§0.8.2) | Python + browser | 12 | 12 | 0 | 100% | 16 slides; ≥1 visual/slide; 0 emoji; CDN pins exact; reveal config (hash/transition/controlsTutorial/1920×1080); Mermaid startOnLoad:false + run hooks; Lucide createIcons hooks. |
-| Cross-Deliverable Consistency | Token diff | 135 | 135 | 0 | 100% | 106 slide numeric tokens + 29-element acceleration-curve series match the report exactly. |
-| Runtime Render & Console | Chrome browser | 5 | 5 | 0 | 100% | reveal.js ready (16 slides); 2 Mermaid → SVG; 29 Lucide hydrated (0 placeholders); 0 console messages; 33 CDN requests HTTP 200. |
-| **Total** | — | **177** | **177** | **0** | **100%** | All autonomous validation assertions pass. |
+|---------------|-----------|-------------|--------|--------|-----------|-------|
+| Verification Suite (Directive 10) | `verify.sh` (bash) | 16 | 16 | 0 | 100% | Deterministic checks; exit 0; idempotent (byte-identical on re-run). |
+| Artifact Well-Formedness | Python `json` + SARIF parse | 7 | 7 | 0 | 100% | 6 JSON arrays + 1 SARIF (single `run`) all strict-parse valid. |
+| Schema Conformance | Custom validators (in `verify.sh`) | 537 | 537 | 0 | 100% | Every finding: unified severity vocab, non-empty `description` ≤200 chars, integer `line`; all L3b have `gateBlocking`. |
+| Determinism Re-runs | OSV-Scanner / Semgrep / `grep` | 3 | 3 | 0 | 100% | OSV 63 pkgs; Semgrep 32 findings; Layer 3a CWE-338=59, CWE-611=2 — reproduce committed artifacts. |
+| Cross-Layer Reconciliation | `findings-merged.json` `_summary` | 1 | 1 | 0 | 100% | `by_layer` sum (19+32+62+176)=289=`total_findings`; body=248=`unique_findings`. |
+| **Total** | — | **564** | **564** | **0** | **100%** | Zero defects across all in-scope audit artifacts. |
 
 ---
 
 ## 4. Runtime Validation & UI Verification
 
-**Document & deck runtime health:**
+This engagement has **no UI and runs no services** — it is offline static analysis. "Runtime" validation therefore means end-to-end pipeline execution and verifier behaviour.
 
-- ✅ **Operational** — `acceleration-report.md` renders as valid Markdown in any viewer (no build, no dependencies).
-- ✅ **Operational** — Presentation served over `http://127.0.0.1:8127/...` returns HTTP 200 (39,399 bytes).
-- ✅ **Operational** — reveal.js 5.1.0 initializes; 16 slides navigable; fonts (Inter / Space Grotesk / Fira Code) loaded.
-- ✅ **Operational** — Mermaid 11.4.0: both diagrams render to SVG (pipeline flowchart on slide 3; acceleration xychart on slide 10).
-- ✅ **Operational** — Lucide 0.460.0: all 29 icons hydrated to `svg.lucide`; 0 un-hydrated placeholders; zero emoji.
-- ✅ **Operational** — Console clean: zero messages (including error/warn/assert) across a full 16-slide walk.
-- ✅ **Operational** — Network: all 33 CDN/runtime requests returned HTTP 200.
-
-**API integration outcomes:**
-
-- ⚠ **Partial** — GitHub REST API not exercised: `gh` is installed (2.46.0) but unauthenticated. Metrics M6/M9/M10/M11/M12 therefore rely on git proxies or are reported "Insufficient signal." Providing a read-only token would raise these to higher confidence.
-
-**Visual evidence:** Screenshots for Title, KPI, Architecture, Flow-Metrics, Curve, and Closing slides were captured by the autonomous validation system under `blitzy/screenshots/` (untracked QA artifacts, by design out of write scope).
+- ✅ **Operational** — Full six-layer pipeline executes end-to-end and reproduces committed outputs.
+- ✅ **Operational** — `verify.sh` runs to completion: **16 PASS / 0 FAIL**, exit code 0.
+- ✅ **Operational** — Gate verdict computed: `gate_verdict = BLOCK`, `verification_status = PASS`.
+- ✅ **Operational** — Semgrep OSS 1.166.0 and OSV-Scanner 2.3.8 present, on `PATH`, and functional (confirmed via determinism re-runs).
+- ✅ **Operational** — All 6 layer statuses `OK`; no `coverage:partial` flags; no silent category drops.
+- ➖ **Not Applicable** — No web UI to verify (read-only audit deliverable; no front-end emitted).
+- ➖ **Not Applicable** — No live API/runtime integration to exercise (the pipeline reads files and queries OSV/Semgrep rule sources only).
 
 ---
 
 ## 5. Compliance & Quality Review
 
-The following matrix cross-maps AAP deliverables and rules to their validation status. Fixes applied during autonomous validation are noted.
+Cross-mapping of AAP deliverables and global constraints to Blitzy's quality/compliance benchmarks.
 
-| Deliverable / Rule | Benchmark | Status | Progress | Notes |
-|--------------------|-----------|--------|----------|-------|
-| D1 `acceleration-report.md` | 11 mandated sections, valid Markdown | ✅ Pass | 100% | §1–§11 all present; 40 fences balanced. |
-| D2 executive presentation | 12–18 slides, self-contained, brand-compliant | ✅ Pass | 100% | 16 slides; inline theme; CDN-pinned; renders cleanly. |
-| Repository discovery + credential redaction | `origin` resolved, credential scrubbed | ✅ Pass | 100% | Redacted to `https://github.com/Blitzy-Sandbox/blitzy-cal.git`; 0 credential patterns in outputs. |
-| Tool Introduction Date detection | Earliest AI trailer + corroboration | ✅ Pass | 100% | 2025-04-08; pivot epoch `1744125961`. |
-| Twelve-metric extraction (M1–M12) | All populated or "Insufficient signal" | ✅ Pass | 100% | M1–M9 derived; M10/M12 + strict M3/M4/M5/M7 Insufficient (correct per no-fabrication); M11 snapshot. |
-| Engineering-actor framing | AI as actor in after period | ✅ Pass | 100% | AI cohort 700 = Blitzy 597 + Devin 103. |
-| Temporal phase analysis | Ramp-Up / Steady / Baseline, 2-week Monday windows | ✅ Pass | 100% | 119.0 / 121.0 / 150.1 commits per window. |
-| Confidence model | High/Medium/Low tags | ✅ Pass | 100% | All 12 tagged; ceiling Medium, disclosed. |
-| Multi-module weighted aggregation | Per-workspace, commit-volume weighted | ✅ Pass | 100% | Σ = 6,179 module-commit incidences. |
-| Rule 1 — Data Provenance | Full chain per figure | ✅ Pass | 100% | Fixed M4 gap counts (11363/3959) during validation. |
-| Rule 2 — Factual-Neutral Tone | Zero subjective qualifiers | ✅ Pass | 100% | grep = 0 matches. |
-| Rule 3 — Confidence Transparency | Tag + Low caveats | ✅ Pass | 100% | Caveats present for all Low metrics. |
-| Rule 4 — Internal Consistency | Identical values across sections | ✅ Pass | 100% | Fixed M5 actor-density span (50-day, 46.0%) during validation. |
-| Rule 5 — Reproducibility | Complete ordered commands | ✅ Pass | 100% | Re-verified live; fixed stale HTML line refs during validation. |
-| Rule 6 — Environment First | Env documented before metrics | ✅ Pass | 100% | §2 complete and timestamped. |
-| Presentation rule §0.8.2 | Brand theme, Mermaid, Lucide, 0 emoji, CDN pins | ✅ Pass | 100% | All sub-checks verified. |
-| Cross-deliverable consistency | Slide values = report values | ✅ Pass | 100% | 106 tokens + 29-element series match. |
-| Human technical review & acceptance | Stakeholder verification | ⬜ Outstanding | 0% | Path-to-production (Section 2.2); not an autonomous gap. |
+| Benchmark / AAP Requirement | Status | Progress | Evidence |
+|------------------------------|--------|----------|----------|
+| All 11 directives (0–10) executed | ✅ Pass | 100% | All per-layer artifacts present and committed. |
+| 14 audit artifacts produced | ✅ Pass | 100% | Enumerated in §10-C; all present on disk. |
+| Layer 1 — all 10 architectural categories | ✅ Pass | 100% | `_summary.layer_1_categories`: all 10 `covered`. |
+| Layer 3b — all 19 CWE sink categories | ✅ Pass | 100% | `verify.sh` Check 7: 62 findings cover all 19. |
+| Layer 3a — 100% recall, line format | ✅ Pass | 100% | 0 malformed lines; `file:::line:::pattern`; CWE-134 correctly language-exempt. |
+| Unified severity vocabulary | ✅ Pass | 100% | Check 9: only `critical\|high\|medium\|low`. |
+| ANSI escape sequences stripped | ✅ Pass | 100% | Check 12: 0 `\x1b` bytes in any artifact. |
+| `description` ≤200 chars + integer `line` | ✅ Pass | 100% | Check 13: all 537 findings have non-empty descriptions. |
+| No silent failure / category drop | ✅ Pass | 100% | All `layer_N_status` present and `OK` (Check 15). |
+| Determinism (layers 0, 2, 3a, 4) | ✅ Pass | 100% | Re-runs reproduce committed counts exactly. |
+| `gateBlocking` reproducibility anchor | ✅ Pass | 100% | Check 8: all L3b have boolean `gateBlocking`; advisories have `demotionReason`. |
+| L3b → sink-inventory traceability | ✅ Pass | 100% | Check 16: all 62 L3b findings map to a `file:line` in `sink-inventory.txt`. |
+| ~0 application source modified | ✅ Pass | 100% | `git diff --stat`: only audit artifacts added; no app `UPDATE`/`DELETE`. |
+| CI/CD gate integration | ⚠ Outstanding | 0% | No workflow references the pipeline yet (path-to-production). |
+
+**Fixes applied during autonomous validation:** SARIF secret redaction; defensive ANSI stripping on all reads in `verify.sh`; conforming `verify.sh` to the exact 16-check AAP specification; Layer-3a deterministic 100%-recall restoration; multi-checkpoint review findings resolved.
+
+**Out-of-scope context (not counted against this AAP):** ~47 pre-existing TypeScript type-check errors and 68 pre-existing failing application unit tests (7,301/7,436 pass) clustered in `packages/features/bookings/lib/handleNewBooking/test/*`. These are pre-existing **application** issues unrelated to the static audit (which scans source as text/AST and does not require the app to compile); they do not affect any audit artifact.
 
 ---
 
@@ -176,187 +176,175 @@ The following matrix cross-maps AAP deliverables and rules to their validation s
 
 | Risk | Category | Severity | Probability | Mitigation | Status |
 |------|----------|----------|-------------|------------|--------|
-| Confidence ceiling at Medium (no issue-tracker / PR API) | Technical | Medium | High | Confidence tags + §10 disclosure; resolvable via API token | Open / Disclosed |
-| Proxy-vs-strict definition gap (M3/M4/M5/M7) | Technical | Medium | Medium | Strict variants marked Insufficient; proxies Low-tagged with caveats | Mitigated |
-| Boundary/cutoff effects on final accelerated windows (M3, §8) | Technical | Low | Medium | Disclosed in §5.3/§8.3; per-day M2 unaffected | Mitigated |
-| M1 baseline reconciliation (6.17 vs 8.39 discovery note) | Technical | Low | Low | Single-method provenance; disclosed in §10 | Mitigated |
-| Mermaid 11.4.0 CDN advisory (6 Moderate CVEs) | Security | Moderate (rating) / Negligible (reachability) | Low | All affected code paths absent; securityLevel strict; htmlLabels false; no user-input channel; formally risk-accepted §9.1 | Accepted |
-| Credential embedded in `origin` URL | Security | High (if leaked) | Low | Redacted in every output; 0 credential patterns found | Resolved |
-| CDN supply-chain dependency (3 libs + 3 fonts at runtime) | Security | Low | Low | Versions pinned; could add SRI hashes / vendor locally for air-gapped use | Open (low) |
-| Presentation requires internet + http:// server to render | Operational | Low–Medium | Medium | Documented run instructions; vendor libs locally for offline use | Mitigated / Documented |
-| Reproducibility depends on stable git history; branch count varies | Operational | Low | Low | Pivot-epoch determinism; analyzed tip pinned (`a116e152e4`); branch-count variance disclosed | Mitigated |
-| No automated CI/regression for docs deliverables | Operational | Low | Low | Manual + autonomous validation performed; outputs are static | Accepted |
-| GitHub REST API unavailable (no token) blocks M6/M9/M10/M11/M12 | Integration | Medium | High | Git proxies / "Insufficient signal" fallback; resolve via read-only token | Open (path-to-production lever) |
-| Devin-vs-Blitzy attribution ambiguity (two AI signals) | Integration | Medium | High | Pivot = earliest trailer; full-cohort framing with per-actor rows; disclosed §10 | Disclosed / Accepted |
-| Source-doc discrepancy (AAP-cited `blitzy-docs` §6.6 figures absent) | Integration | Low | Low | Workflow retention-days cited instead; disclosed §10 | Mitigated |
-
-> Note: the majority of these risks are **disclosed measurement-interpretation limitations**, not open code defects. The single genuinely actionable open lever is the GitHub API token (Integration/Technical), which maps to the 6h optional confidence-upgrade item in Section 2.2.
+| Agent-layer finding variance between runs (L1/L3b) | Technical | Low | Medium | Reproducibility anchor is the `gateBlocking` decision boundary, not the exact finding set; `verify.sh` enforces structural consistency. | Mitigated |
+| Semgrep rule-pack drift (pinned packs are gitignored) | Technical | Medium | Medium | Vendor the pinned `rules/` packs into the repo for long-term reproducibility. | Open |
+| Tool-version drift (Semgrep/OSV not pinned in a manifest) | Technical | Low | Medium | Pin tool versions in CI provisioning. | Open |
+| Semgrep CLI flag nuance (`--dryrun` vs documented `--dry-run`) | Technical | Low | Low | Runbook uses `--dryrun` (installed 1.166.0); documented in §9. | Documented |
+| 2 gate-blocking webhook findings (CWE-918 SSRF, CWE-347 silent HMAC drop) | Security | High | High | Reported with source-to-sink path; human triage required (HT-1). Remediation out of scope. | Open |
+| 176 dependency CVEs (5 critical, 75 high) | Security | Critical | High | Reported per-package with advisory IDs; triage via HT-3. Remediation frozen by AAP constraint. | Open |
+| Cryptographic concerns (AES-256-CBC, `CALENDSO_ENCRYPTION_KEY` reuse) | Security | Medium | Medium | Reported as advisory; key-continuity constraint forbids change. | Open |
+| Gate computed but not enforced in CI | Operational | High | High | Wire into GitHub Actions (HT-2). | Open |
+| No `WARN` baseline established | Operational | Low | High | Record current counts as baseline (HT-4). | Open |
+| Point-in-time snapshot goes stale | Operational | Medium | Medium | Schedule periodic re-scan (HT-5). | Open |
+| CI runner must provision Semgrep + OSV-Scanner | Integration | Medium | Medium | Add tool install to workflow (binary path; `go` absent). | Open |
+| Network egress to `semgrep.dev` / `osv.dev` required in CI | Integration | Medium | Medium | Allow egress or vendor rules + offline advisory DB. | Open |
+| Downstream `gate_verdict` parsing contract | Integration | Low | Low | Implement `BLOCK ⇒ fail` consistently (HT-2). | Open |
 
 ---
 
 ## 7. Visual Project Status
 
-**Overall completion (hours):**
+### 7.1 Project Hours Breakdown
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'pie1':'#5B39F3','pie2':'#FFFFFF','pieStrokeColor':'#333333','pieStrokeWidth':'2px','pieOuterStrokeWidth':'2px','pieTitleTextSize':'18px','pieSectionTextColor':'#333333','pieLegendTextColor':'#333333','pieOpacity':'1'}}}%%
-pie showData title Project Hours — 85.0% Complete
-    "Completed Work" : 96
-    "Remaining Work" : 17
+%%{init: {'theme':'base', 'themeVariables': {'pie1':'#5B39F3','pie2':'#FFFFFF','pieStrokeColor':'#5B39F3','pieStrokeWidth':'2px','pieOuterStrokeColor':'#5B39F3','pieOuterStrokeWidth':'2px','pieTitleTextSize':'16px','pieSectionTextColor':'#B23AF2','pieLegendTextColor':'#000000'}}}%%
+pie showData title Project Hours (Total 118h)
+    "Completed Work" : 100
+    "Remaining Work" : 18
 ```
 
-**Remaining hours by task category (Section 2.2 — totals 17h):**
+> **Completed = Dark Blue `#5B39F3` · Remaining = White `#FFFFFF`.** "Remaining Work" (18h) equals the Section 1.2 Remaining Hours and the sum of the Section 2.2 Hours column.
+
+### 7.2 Remaining Hours by Category (Section 2.2)
 
 ```mermaid
-xychart-beta
-    title "Remaining Hours by Task (17h total)"
-    x-axis ["Tech Review", "Stakeholder", "API Upgrade", "Sign-off", "Publish"]
-    y-axis "Hours" 0 --> 8
-    bar [6, 2, 6, 1.5, 1.5]
+%%{init: {'theme':'base', 'themeVariables': {'pie1':'#5B39F3','pie2':'#7B5CF5','pie3':'#9D86F8','pie4':'#C0B0FB','pie5':'#A8FDD9','pieStrokeColor':'#5B39F3','pieOuterStrokeColor':'#5B39F3','pieTitleTextSize':'15px','pieLegendTextColor':'#000000'}}}%%
+pie showData title Remaining Work by Category (Total 18h)
+    "CI/CD Gate Integration" : 5
+    "Gate-Blocking Triage" : 4
+    "Dependency CVE Triage" : 6
+    "WARN Baseline" : 1
+    "Runbook & Re-scan" : 2
 ```
 
-| Task Category | Hours | Priority |
-|---------------|-------|----------|
-| Human technical review & acceptance | 6 | High |
-| Stakeholder presentation review | 2 | High |
-| Optional API-token confidence upgrade | 6 | Medium |
-| Risk-acceptance sign-off | 1.5 | Medium |
-| Publish / distribute | 1.5 | Medium |
-| **Total** | **17** | — |
+### 7.3 Findings by Severity (Merged Corpus, informational)
 
-> Integrity: pie "Remaining Work" (17) = Section 1.2 Remaining Hours (17) = Section 2.2 "Hours" sum (17). Completed = Dark Blue `#5B39F3`; Remaining = White `#FFFFFF`.
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'pie1':'#5B39F3','pie2':'#B23AF2','pie3':'#9D86F8','pie4':'#A8FDD9','pieStrokeColor':'#5B39F3','pieOuterStrokeColor':'#5B39F3','pieTitleTextSize':'15px','pieLegendTextColor':'#000000'}}}%%
+pie showData title Findings by Severity (289 total)
+    "Critical" : 17
+    "High" : 104
+    "Medium" : 108
+    "Low" : 60
+```
 
 ---
 
 ## 8. Summary & Recommendations
 
-**Achievements.** The autonomous work is complete and validated to production-ready. Both deliverables — the eleven-section `acceleration-report.md` and the 16-slide reveal.js executive presentation — exist, are committed (HEAD `5e676c26d0`), and pass all five autonomous validation gates. Every numeric figure traces to a reproducible git command and was re-derived against live history; the report and presentation are numerically consistent with each other (106 slide tokens + the 29-element acceleration curve match).
+**Achievements.** The autonomous engagement is **84.7% complete** against AAP scope. All 11 directives executed and all 14 artifacts were produced, validated, and committed. The pipeline is deterministic, ANSI-free, schema-conformant, and passes its own 16-check verification suite with zero failures. The audit surfaced a complete, machine-readable security posture: **289 findings** (17 critical, 104 high, 108 medium, 60 low) across architectural, SAST, taint, and dependency dimensions, and produced a defensible CI/CD gate verdict of `BLOCK` driven by 2 exploitable webhook findings.
 
-**Remaining gaps.** The project is **85.0% complete** (96 of 113 hours). The remaining 17 hours is exclusively the human path-to-production tail: technical review and acceptance of the findings (6h, High), stakeholder review of the presentation (2h, High), an optional GitHub-API-token confidence upgrade (6h, Medium), risk-acceptance sign-off (1.5h, Medium), and publish/distribute (1.5h, Medium). No autonomous code defects remain.
+**Remaining gaps (18h, all path-to-production).** The audit is a finished deliverable but is not yet *operationalized*: the gate is not wired into CI, the 2 gate-blocking findings and 176 dependency CVEs await human triage, and no re-scan cadence or `WARN` baseline exists. None of these are defects in the audit artifacts; they are the standard handoff activities that turn a validated audit into an enforced gate.
 
-**Critical path to production.** Human technical review → stakeholder presentation → (optional) confidence upgrade → risk sign-off → merge/distribute. Only the first two are strictly required to release the findings; the API-token upgrade is the single lever that would materially raise metric confidence beyond the Medium ceiling.
+**Critical path to production.** (1) Triage the 2 gate-blocking webhook findings → (2) wire the gate into GitHub Actions as an additive check → (3) triage dependency CVEs → (4) set the `WARN` baseline → (5) schedule recurring scans.
 
-**Production-readiness assessment.** The deliverables are READY for human review. The confidence ceiling (Medium) and the "Insufficient signal" metrics are inherent properties of the read-only, git-only data environment and are fully disclosed — they are correct outputs under the no-fabrication rule, not deficiencies. Recommended success metric for sign-off: a reviewer confirms a sample of provenance chains reproduce against live git (the appendix commands do, as independently verified here).
+**Success metrics.** `verify.sh` = 16/16; `gate_verdict` reproducible; `verification_status = PASS`; zero application files modified — **all met.**
+
+**Production readiness.** The **audit deliverable is production-ready and validated.** Its **enforcement in CI is not yet live**; completing the 18h of path-to-production work will make the gate operational. Remediation of the findings themselves remains intentionally out of scope per the dependency freeze and encryption-key-continuity constraints.
 
 | Dimension | Status |
 |-----------|--------|
-| Completion | 85.0% (96h / 113h) |
-| Autonomous defects outstanding | 0 |
-| Validation gates | 5 / 5 pass |
-| Confidence ceiling | Medium (disclosed) |
-| Blocking issues | None |
+| Audit artifact corpus | ✅ Complete & validated (100h) |
+| Verification (`verify.sh`) | ✅ 16/16 PASS |
+| Determinism / reproducibility | ✅ Confirmed |
+| CI/CD enforcement | ⚠ Not yet integrated (18h remaining) |
+| Finding remediation | ➖ Out of scope (report-only) |
 
 ---
 
 ## 9. Development Guide
 
-This is a read-only documentation/measurement deliverable — there is no application to build, deploy, or run. "Running" the project means **opening the report**, **rendering the presentation**, and optionally **re-deriving the metrics** from git. All commands below were tested during this assessment.
+> All commands are copy-pasteable and were tested during this assessment. Run from the repository root. The pipeline is **offline static analysis** — it starts no servers and exposes no ports.
 
 ### 9.1 System Prerequisites
 
-- **git** ≥ 2.43 (verified with 2.51.0) — primary extraction tool.
-- **python3** ≥ 3.12 (verified with 3.13.7) — windowing math and a zero-config static web server.
-- **A modern web browser** (verified with Google Chrome 148) — to render the reveal.js deck.
-- **Internet access** — the presentation loads reveal.js, Mermaid, Lucide, and Google Fonts from pinned CDNs at runtime.
-- **Optional:** `gh` (2.46.0) + `jq` (1.8.1) **and a read-only GitHub token** — only needed to raise API-dependent metric confidence (M6/M9/M10/M11/M12).
+| Software | Version (verified) | Notes |
+|----------|--------------------|-------|
+| Node.js | v20.20.2 | For workspace/ecosystem detection only; the app is not built. |
+| Python | 3.13.7 | Drives Semgrep + JSON normalization helpers. |
+| Semgrep OSS | 1.166.0 | Layer 2 SAST. |
+| OSV-Scanner | 2.3.8 | Layer 4 SCA (prebuilt binary; `go` not required). |
+| `grep` / `find` | GNU grep 3.11 / findutils 4.10 | Deterministic Layer 3a enumeration. |
+
+`go`, `java`, and `docker` are **not required**.
 
 ### 9.2 Environment Setup
 
 ```bash
-# Clone (use a credential-scrubbed remote) and select the deliverable branch
-git clone <repository-url>
-cd blitzy-cal
-git checkout blitzy-66a0cf37-b099-41af-ab48-6833a9b7ef1c
+# Confirm the toolchain is present
+semgrep --version          # -> 1.166.0
+osv-scanner --version      # -> osv-scanner version: 2.3.8
+node --version             # -> v20.20.2
+python3 --version          # -> Python 3.13.7
 
-# Confirm both deliverables are present at the repository root
-ls -l acceleration-report.md acceleration-report-executive-presentation.html
+# If Semgrep is missing:
+pip install --break-system-packages semgrep    # or: python3 -m venv .venv && source .venv/bin/activate && pip install semgrep
+
+# If OSV-Scanner is missing (no go/brew): download the prebuilt SLSA3 Linux binary
+#   from https://github.com/google/osv-scanner/releases, chmod +x, and place on PATH.
 ```
 
-> **No dependency installation is required.** This task adds nothing to `package.json` or `yarn.lock` (manifests are pristine). The presentation's runtime libraries are CDN-pinned, and the analysis uses only system `git` and `python3`.
-
-### 9.3 Dependency Notes
-
-- **Repository manifests:** unchanged — `git diff --name-status` for the task shows only two added files.
-- **Presentation runtime (CDN-pinned, no install):** reveal.js 5.1.0, Mermaid 11.4.0, Lucide 0.460.0, plus Google Fonts (Inter / Space Grotesk / Fira Code).
-- **Analysis toolchain (system):** `git`, `python3`.
-
-### 9.4 Application Startup (Open & Render)
+### 9.3 Running the Audit Pipeline (canonical sequence)
 
 ```bash
-# 1. Read the report — open in any Markdown viewer (no server needed)
-#    e.g., VS Code preview, or:
-less acceleration-report.md
+# Layer 0 — Discovery (produces codebase-profile.txt)
+find . -type f | grep -oE '\.[^./]+$' | sort | uniq -c | sort -rn | head -20
+ls package.json yarn.lock pnpm-lock.yaml go.mod requirements.txt 2>/dev/null
 
-# 2. Render the presentation — http:// is REQUIRED (Mermaid uses an ESM import
-#    that fails on file://). Start a local static server from the repo root:
-python3 -m http.server 8127 --bind 127.0.0.1 &
-SRV=$!
+# Layer 2 — Semgrep SAST (gate uses --dryrun; full scan emits SARIF)
+semgrep scan --metrics=off \
+  --config=p/security-audit --config=p/secrets --config=p/owasp-top-ten \
+  --dryrun .                                   # Directive-2 gate: must exit 0
+semgrep scan --metrics=off \
+  --config=p/security-audit --config=p/secrets --config=p/owasp-top-ten \
+  --sarif -o results-semgrep.sarif .           # Directive-3 scan
 
-# 3. Open in a browser:
-#    http://127.0.0.1:8127/acceleration-report-executive-presentation.html
+# Layer 4 — OSV-Scanner SCA over the sole lockfile
+osv-scanner --lockfile=./yarn.lock --format json > results-osv.json
 
-# 4. When finished, stop the server (use the captured PID — never pkill):
-kill "$SRV"
+# (Layer 3a grep/find inventory and agent Layers 1 & 3b produce the remaining
+#  per-layer JSON; Directives 7/8/9 normalize, merge, and compute the gate.)
+
+# Directive 10 — Verification
+bash verify.sh                                 # -> 16 PASS / 0 FAIL, exit 0
 ```
 
-### 9.5 Verification Steps
+### 9.4 Verification & Downstream Consumption
 
 ```bash
-# Markdown fence balance (expect an even number => BALANCED)
-grep -c '^```' acceleration-report.md
+# Re-run the full verification suite (idempotent)
+bash verify.sh; echo "exit=$?"                 # exit=0 means all 16 checks passed
 
-# HTML well-formedness & structure (expect: sections=16, lucide-icons=29, mermaid-blocks=2)
-python3 - <<'PY'
-from html.parser import HTMLParser
-class P(HTMLParser):
-    def __init__(self): super().__init__(); self.s=self.l=self.m=0
-    def handle_starttag(self,t,a):
-        d=dict(a)
-        if t=='section': self.s+=1
-        if t=='i' and d.get('data-lucide'): self.l+=1
-        if t=='pre' and 'mermaid' in (d.get('class') or ''): self.m+=1
-p=P(); p.feed(open('acceleration-report-executive-presentation.html',encoding='utf-8').read())
-print('sections=%d lucide-icons=%d mermaid-blocks=%d'%(p.s,p.l,p.m))
-PY
+# Read the gate verdict the way CI should (BLOCK => fail the build)
+python3 -c "import json; d=json.load(open('findings-merged.json'))[0]; \
+print('gate_verdict =', d['gate_verdict'], '| verification_status =', d['verification_status'])"
+#   -> gate_verdict = BLOCK | verification_status = PASS
 
-# CDN pins must be exact
-grep -oE 'reveal\.js@[0-9.]+|mermaid@[0-9.]+|lucide@[0-9.]+' \
-  acceleration-report-executive-presentation.html | sort -u
-
-# Zero emoji (expect: 0)
-python3 -c "import re;t=open('acceleration-report-executive-presentation.html',encoding='utf-8').read();print(len(re.findall(r'[\U0001F000-\U0001FAFF\u2600-\u27BF]',t)))"
+# Validate any single artifact is well-formed JSON
+python3 -c "import json; json.load(open('findings-merged.json')); print('valid JSON')"
 ```
 
-In the browser, confirm: 16 slides navigate; slide 3 shows the pipeline flowchart; slide 10 shows the acceleration line chart; all icons render as SVG; the developer console is clean.
-
-### 9.6 Example Usage — Re-deriving Metrics from Git
-
-These canonical, epoch-pivot commands were re-verified live and reproduce the report's figures exactly. Use the report's `git log --since/--until` only where the appendix specifies; otherwise prefer the deterministic epoch partition below.
+### 9.5 Example Usage — inspecting findings
 
 ```bash
-P=1744125961   # pivot author epoch (2025-04-08 15:26:01 UTC), commit 4753bd785a
+# Summary header (totals, by-layer, by-severity, layer statuses)
+python3 -c "import json; print(json.dumps(json.load(open('findings-merged.json'))[0]['_summary'], indent=2))"
 
-git rev-list --count main                                   # 16880 (total commits)
-git log --reverse --date=short --format='%ad' main | head -1 # 2021-03-10 (earliest)
-git log -1 --date=short --format='%ad' main                  # 2026-05-15 (latest)
-
-git log main --format='%at' | awk -v p=$P '$1<p'  | wc -l    # 12699 (Baseline)
-git log main --format='%at' | awk -v p=$P '$1>=p' | wc -l    # 4181  (Accelerated)
-
-git log main --author='agent@blitzy.com' --format='%at' | awk -v p=$P '$1>=p' | wc -l  # 597 (Blitzy)
-git log main --author='devin' -i --format='%at'        | awk -v p=$P '$1>=p' | wc -l  # 103 (Devin)
-
-git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1<p'  | wc -l  # 147 (M8 baseline)
-git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1>=p' | wc -l  # 71  (M8 accelerated)
+# List the gate-blocking taint findings
+python3 -c "import json; [print(f\"{x['cwe']} {x['severity']} {x['file']}:{x['line']}\") \
+for x in json.load(open('findings-layer-3b-taint.json')) if isinstance(x,dict) and x.get('gateBlocking')]"
 ```
 
-### 9.7 Troubleshooting
+### 9.6 Troubleshooting
 
-- **Diagrams are blank / Mermaid does not render** — you opened the file via `file://`. Serve it over `http://` (step 9.4).
-- **Icons or diagrams missing, network errors** — no internet access; the CDN libraries/fonts cannot load. Vendor the libraries locally for air-gapped environments.
-- **`Address already in use` on port 8127** — choose another port: `python3 -m http.server 8128 --bind 127.0.0.1 &`.
-- **API-dependent metrics stay "Insufficient signal" / Low** — `gh` is not authenticated. Run `gh auth login` with a read-only token, then re-run the API-dependent extraction (Section 2.2, M-1).
-- **Metric counts drift by a few commits** — you used `--since/--until` date boundaries; prefer the deterministic epoch-pivot commands in §9.6, which match the report exactly.
+| Symptom | Cause | Resolution |
+|---------|-------|------------|
+| `semgrep: unrecognized arguments: --dry-run` | Installed 1.166.0 uses `--dryrun` | Use `--dryrun` (one word) for the Directive-2 gate. |
+| Semgrep findings differ between runs | Rule packs pulled live (pins are gitignored) | Vendor `rules/` packs into the repo and `--config=./rules`. |
+| `osv-scanner: command not found` in CI | Tool not provisioned on the runner | Install the prebuilt binary in the workflow before scanning. |
+| OSV-Scanner returns no data | No network egress to `osv.dev` | Allow egress or supply an offline advisory database. |
+| `verify.sh` reports a non-zero exit | A check failed (exit = failure count) | Read the `FAIL:` line(s); each names the artifact/check at fault. |
+| Expected-empty sink categories | Python/Go/Java patterns inapplicable to TS | Expected; these are language-exempt and never fail verification. |
 
 ---
 
@@ -366,70 +354,70 @@ git log main -i --grep='^Revert' --format='%at' | awk -v p=$P '$1>=p' | wc -l  #
 
 | Purpose | Command |
 |---------|---------|
-| Total commits on `main` | `git rev-list --count main` |
-| Earliest / latest commit date | `git log --reverse --date=short --format='%ad' main \| head -1` / `git log -1 --date=short --format='%ad' main` |
-| Baseline vs Accelerated split | `git log main --format='%at' \| awk -v p=1744125961 '$1<p\|$1>=p' \| wc -l` |
-| AI cohort (Blitzy / Devin) | `git log main --author='agent@blitzy.com'` / `git log main --author='devin' -i` |
-| M8 reverts | `git log main -i --grep='^Revert' --format='%at' \| awk -v p=1744125961 ...` |
-| Task footprint | `git diff --name-status 5cac40c4aa~1 HEAD` |
-| Markdown fence balance | `grep -c '^```' acceleration-report.md` |
-| Serve presentation | `python3 -m http.server 8127 --bind 127.0.0.1 &` |
+| Semgrep gate (must exit 0) | `semgrep scan --metrics=off --config=p/security-audit --config=p/secrets --config=p/owasp-top-ten --dryrun .` |
+| Semgrep SARIF scan | `semgrep scan --metrics=off --config=p/security-audit --config=p/secrets --config=p/owasp-top-ten --sarif -o results-semgrep.sarif .` |
+| OSV-Scanner SCA | `osv-scanner --lockfile=./yarn.lock --format json > results-osv.json` |
+| Run verification | `bash verify.sh` |
+| Read gate verdict | `python3 -c "import json;print(json.load(open('findings-merged.json'))[0]['gate_verdict'])"` |
+| Count ANSI bytes (should be 0) | `grep -cP '\x1b' findings-merged.json` |
 
 ### B. Port Reference
 
-| Port | Purpose | Notes |
-|------|---------|-------|
-| 8127 | Local static web server for the presentation | Example only; any free port works. http:// is required for Mermaid ESM import. |
+**None.** The audit pipeline runs no services and binds no ports — it is offline static analysis over the filesystem and lockfile.
 
-### C. Key File Locations
+### C. Key File Locations (all at repository root)
 
-| Path | Role |
-|------|------|
-| `acceleration-report.md` | Deliverable D1 — eleven-section measurement report (888 lines). |
-| `acceleration-report-executive-presentation.html` | Deliverable D2 — self-contained reveal.js deck (884 lines, 16 slides). |
-| `.changeset/config.json` | Release-model context (changeset-driven; 0 git tags) — metrics 8, 9. |
-| `.github/workflows/` | Release, CI, and Devin AI workflows (reference inputs). |
-| `AGENTS.md` | PR-size convention (5–7 files / 500 lines) — metric 1 context. |
-| `blitzy/screenshots/` | Autonomous QA screenshots (untracked; out of write scope). |
+| Artifact | Role |
+|----------|------|
+| `codebase-profile.txt` | Layer 0 discovery profile |
+| `findings-layer-1-arch.json` | Layer 1 architectural findings (19) |
+| `results-semgrep.sarif` → `findings-layer-2-semgrep.json` | Layer 2 raw SARIF → normalized (32) |
+| `sink-inventory.txt`, `sink-inventory-test.txt` | Layer 3a sink enumeration |
+| `mitigation-inventory.txt`, `mitigation-inventory-test.txt` | Layer 3a mitigation enumeration |
+| `findings-layer-3b-taint.json` | Layer 3b taint findings (62) |
+| `results-osv.json` → `findings-layer-4-osv.json` | Layer 4 raw OSV → normalized (176) |
+| `findings-merged.json` | Merged corpus + `_summary` + `gate_verdict` + `verification_status` |
+| `verify.sh` | 16-check verification suite |
+| `rules/` | Pinned Semgrep rule packs (gitignored placeholder) |
 
 ### D. Technology Versions
 
-| Tool | Version |
-|------|---------|
-| git | 2.51.0 |
-| python3 | 3.13.7 |
-| Google Chrome | 148.0.7778.215 |
-| gh (optional) | 2.46.0 |
-| jq (optional) | 1.8.1 |
-| reveal.js (CDN) | 5.1.0 |
-| Mermaid (CDN) | 11.4.0 |
-| Lucide (CDN) | 0.460.0 |
+| Component | Version |
+|-----------|---------|
+| Semgrep OSS | 1.166.0 |
+| OSV-Scanner | 2.3.8 (osv-scalibr 0.4.5) |
+| Node.js | v20.20.2 |
+| Python | 3.13.7 |
+| GNU grep / findutils | 3.11 / 4.10.0 |
+| Target repo HEAD | `b1a1b4f9b2` |
+| Primary language | TypeScript (6,917 `.ts` + 1,678 `.tsx`; 7,433 source files) |
 
 ### E. Environment Variable Reference
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `GITHUB_TOKEN` / `GH_TOKEN` | Read-only GitHub API token to raise M6/M9/M10/M11/M12 confidence | Optional (enhancement only) |
-| `P` (shell convenience) | Pivot author epoch `1744125961` used in re-derivation commands | Convenience only |
-
-> No environment variables are required to read the report or render the presentation.
+The audit pipeline itself requires **no environment variables**. For reference, security-relevant variables of the *scanned* application (read-only context for Layer 1) include `CALENDSO_ENCRYPTION_KEY` (subject to a continuity constraint — must not be changed) and the webhook signing secret referenced by `sendPayload.ts`. Templates: `.env.example`, `.env.appStore.example`.
 
 ### F. Developer Tools Guide
 
-- **Markdown viewer** — any (VS Code preview, `less`, GitHub render). No build step.
-- **Static server** — `python3 -m http.server` is sufficient; required because the deck's Mermaid loads via an ESM import that browsers block on `file://`.
-- **Browser DevTools** — confirm a clean console and that all CDN requests return HTTP 200; inspect rendered `svg.lucide` icons and Mermaid `<svg>` output.
-- **`gh` / `jq`** — only for the optional API-confidence upgrade; authenticate with a read-only token first.
+| Tool | Role in pipeline |
+|------|------------------|
+| Semgrep OSS | Layer 2 SAST; rule packs `p/security-audit`, `p/secrets`, `p/owasp-top-ten`; `--sarif` output; `--metrics=off`. |
+| OSV-Scanner | Layer 4 SCA; queries the OSV.dev aggregate DB; `--lockfile` + `--format json`. |
+| `grep` / `find` | Layer 3a deterministic 100%-recall inventory; `file:::line:::pattern` format. |
+| Python 3 | JSON normalization, dedup, merge, and verification helpers. |
+| `verify.sh` | Self-contained 16-check verifier; exit code = failure count. |
 
 ### G. Glossary
 
 | Term | Definition |
 |------|------------|
-| Tool Introduction Date | The pivot date (2025-04-08) separating Baseline from Accelerated periods, detected from the earliest AI `Co-authored-by:` trailer. |
-| Pivot epoch | Unix author timestamp `1744125961` (commit `4753bd785a`) used for deterministic before/after partitioning. |
-| Baseline / Accelerated | Commit periods before / on-or-after the pivot (12,699 / 4,181 commits). |
-| Ramp-Up / Steady State | Accelerated sub-phases: first 90 days / 90+ days after the pivot. |
-| AI cohort | Combined AI-actor commits in the accelerated period: Blitzy (597) + Devin (103) = 700. |
-| Insufficient signal | The mandated output when a metric's data source is unavailable — a correct result, not a gap. |
-| Confidence (High/Medium/Low) | Tag reflecting the data source: issue-tracker direct counts (High), git patterns (Medium), indirect proxies (Low). |
-| Flow metrics (M1–M7) | Flow Framework / SAFe measures: Load, Velocity, Predictability, Active Time, Efficiency, Distribution, Time. |
+| **Sink** | A code location where untrusted data may cause harm (e.g., redirect, raw query, `fetch`). |
+| **Mitigation** | A control that neutralizes a sink (e.g., Zod validation, timing-safe compare, auth middleware). |
+| **`gateBlocking`** | Boolean on a taint finding marking it as merge-blocking; the reproducibility anchor of the audit. |
+| **`demotionReason`** | Required text explaining why a non-blocking (advisory) finding was demoted. |
+| **Gate verdict** | `ERROR` (pipeline broken) · `BLOCK` (≥1 gate-blocking finding) · `WARN` (>20% over baseline) · `PASS`. |
+| **Corroboration** | A finding surfaced by two independent layers (e.g., Semgrep + taint) — highest confidence. |
+| **SARIF** | Static Analysis Results Interchange Format — Semgrep's machine-readable output. |
+
+---
+
+*Generated by the Blitzy Platform · AAP-scoped completion: **84.7%** (100h completed / 18h remaining / 118h total).*

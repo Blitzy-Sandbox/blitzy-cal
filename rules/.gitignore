@@ -1,0 +1,16 @@
+# rules/ - Pinned Semgrep OSS rule packs (security-audit pipeline, Directive 2 reproducibility pin).
+#
+# INTERMEDIATE artifact. At audit runtime the Layer 2 SAST step materializes the
+# three registry rule packs into this directory for reproducible scans, e.g.:
+#   semgrep --metrics=off --config=p/security-audit --dump-config > rules/
+#   semgrep --metrics=off --config=p/secrets        --dump-config > rules/
+#   semgrep --metrics=off --config=p/owasp-top-ten  --dump-config > rules/
+#
+# The dumped packs are generated deterministically by the Semgrep CLI from the
+# external semgrep.dev registry (not hand-authored, not in-repo source), so they
+# are NOT committed. This .gitignore keeps the otherwise-empty directory tracked
+# in version control while excluding all generated rule content.
+#
+# Ignore everything in this directory except this .gitignore itself.
+*
+!.gitignore

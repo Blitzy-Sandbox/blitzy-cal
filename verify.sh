@@ -3,7 +3,7 @@
 # verify.sh -- Directive 10: Deterministic Verification Suite
 # =============================================================================
 # Reviewer-facing, re-runnable proof that the six-layer security audit ran to
-# completion and emitted a gate-ready artifact corpus. Encodes 16 deterministic
+# completion and emitted a gate-ready artifact corpus. Encodes 17 deterministic
 # checks over the audit artifacts. Each check prints exactly one line:
 #     PASS: <description>   or   FAIL: <description>
 # The script maintains a FAILURES counter and EXITS with the COUNT of failed
@@ -26,17 +26,28 @@
 #     documented ERROR status.
 #   * ANSI hygiene: artifact text is ANSI-stripped on read (defensive; a no-op
 #     on the guaranteed-ANSI-free corpus) so value extraction is robust, and
-#     check 12 independently DETECTS any ANSI in the raw artifacts. This script
-#     itself emits NO ANSI escape sequences (ESC / 0x1b): every escape pattern
-#     below is written as the literal text "\x1b" (backslash-x-1-b), never a raw
-#     ESC byte.
+#     check 12 independently DETECTS any ANSI in the raw artifacts. check 12
+#     scans the COMPLETE declared-artifact universe (all 14 artifacts, incl. the
+#     raw intermediates results-semgrep.sarif / results-osv.json, rules/.gitignore
+#     and this verify.sh itself). This script itself emits NO ANSI escape
+#     sequences (ESC / 0x1b): every escape pattern below is written as the
+#     literal text "\x1b" (backslash-x-1-b), never a raw ESC byte.
+#   * Secret-value hygiene: check 17 scans the same complete artifact universe for
+#     committed credential VALUES (Google OAuth/refresh tokens, PEM private keys,
+#     AWS/Slack/GitHub tokens) so no raw secret can ship in any deliverable -- raw
+#     tool output (SARIF) included.
+#   * Self-contained: every check reads ONLY the 14 declared artifacts. Pre-agent
+#     layer statuses are sourced from findings-merged.json (_summary.layer_status)
+#     and codebase-profile.txt; the Layer-1 per-category coverage oracle is sourced
+#     from findings-merged.json (_summary.layer_1_categories). No undeclared
+#     side-car status files or helper scripts are required.
 #   * Read-only: only repo-root artifacts are read; application source and the
 #     audit exclude_dirs (node_modules, .next, dist, build, .yarn, .git,
 #     coverage, .turbo) are never touched. The sole write is verification_status
 #     into findings-merged.json.
 #
 # NOTE: 'set -e' is intentionally NOT used. A failing check must not abort the
-# suite -- every one of the 16 checks must run so the exit code reflects the
+# suite -- every one of the 17 checks must run so the exit code reflects the
 # true failure count. 'set -u'/'pipefail' are likewise avoided to keep the
 # harness maximally robust against partial/edge-case inputs.
 # =============================================================================
@@ -77,6 +88,10 @@ ansi_strip() {
 }
 
 # ---- Artifact file names (read-only; all at repo root) ----------------------
+# The 14 declared audit artifacts (AAP 0.6.1). Pre-agent layer statuses and the
+# Layer-1 per-category coverage oracle live INSIDE these declared artifacts
+# (findings-merged.json / codebase-profile.txt), so the suite is self-contained:
+# it depends on NO undeclared side-car status files or helper scripts.
 PROFILE="codebase-profile.txt"
 L1_JSON="findings-layer-1-arch.json"
 L2_JSON="findings-layer-2-semgrep.json"
@@ -87,24 +102,29 @@ SINK="sink-inventory.txt"
 SINK_TEST="sink-inventory-test.txt"
 MIT="mitigation-inventory.txt"
 MIT_TEST="mitigation-inventory-test.txt"
-
-# Auxiliary per-layer coverage/status records emitted by the pipeline. These are
-# the agent layers' mandated "no silent failure / no dropped category" records
-# (AAP 0.2.1) and serve as deterministic coverage oracles for checks 2 and 15.
-L1_STATUS="layer-1-status.txt"
-L2_STATUS="layer-2-status.txt"
-L3A_STATUS="layer-3a-status.txt"
-L4_STATUS="layer-4-status.txt"
+# Raw tool intermediates + pinned-rules marker (declared artifacts; subject to
+# the ANSI (12) and secret-value (17) hygiene checks).
+SARIF="results-semgrep.sarif"
+OSV_RAW="results-osv.json"
+RULES_GI="rules/.gitignore"
+# This verification script itself -- a declared artifact, hence subject to the
+# ANSI (12) and secret-value (17) checks (it must never embed an ESC byte or a
+# raw credential value).
+SELF="$(basename "${BASH_SOURCE[0]:-$0}")"
 
 # Normalized findings JSON files subject to the severity (9) and description
 # (13) checks. Raw intermediates (results-semgrep.sarif, results-osv.json) use
 # tool-native severity vocabularies and are intentionally excluded.
 FINDING_JSON_FILES=("$L1_JSON" "$L2_JSON" "$L3B_JSON" "$L4_JSON" "$MERGED")
 
-# All deliverable artifacts subject to the ANSI-free check (12).
+# All 14 declared deliverable artifacts, subject to the ANSI-free check (12) and
+# the credential-value check (17). The list is authoritative for the complete
+# artifact universe -- raw intermediates and this script are intentionally
+# included so neither check can pass while a declared artifact is unscanned.
 ALL_ARTIFACTS=(
   "$PROFILE" "$L1_JSON" "$L2_JSON" "$L3B_JSON" "$L4_JSON" "$MERGED"
   "$SINK" "$SINK_TEST" "$MIT" "$MIT_TEST"
+  "$SARIF" "$OSV_RAW" "$RULES_GI" "$SELF"
 )
 
 # ---- Canonical category definitions (single source of truth) ----------------
@@ -145,8 +165,9 @@ MITIGATION_CATEGORIES=(
   "webhook-signature" "timing-safe"
 )
 
-# The 10 Layer-1 architectural categories. Slugs match the cat_<n>_<slug> lines
-# emitted in layer-1-status.txt (the L1 per-category coverage oracle).
+# The 10 Layer-1 architectural categories. Slugs match the keys of the L1
+# per-category coverage oracle in findings-merged.json _summary.layer_1_categories
+# (read by check 2).
 L1_CATEGORIES=(
   "cat_1_cryptographic_key_management"
   "cat_2_authentication_session"
@@ -187,11 +208,12 @@ PYEOF
 }
 
 # Prints the status string for a layer key (layer_0|layer_2|layer_3a|layer_4).
-# Resolution order: findings-merged.json _summary.layer_status[key], then the
-# canonical pre-agent text record (codebase-profile.txt / layer-N-status.txt).
+# Self-contained resolution order, reading ONLY declared artifacts:
+#   1. findings-merged.json  _summary.layer_status[key]   (authoritative)
+#   2. codebase-profile.txt  layer_0_status               (layer_0 fallback only)
 # All inputs are ANSI-stripped on read. Prints "" when no status is recorded.
 get_layer_status() {
-  "$PY" - "$1" "$MERGED" "$PROFILE" "$L2_STATUS" "$L3A_STATUS" "$L4_STATUS" 2>/dev/null <<'PYEOF'
+  "$PY" - "$1" "$MERGED" "$PROFILE" 2>/dev/null <<'PYEOF'
 import sys, json, re
 _ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 
@@ -200,7 +222,7 @@ def _read(p):
         return _ANSI.sub('', fh.read())
 
 key = sys.argv[1]
-merged, profile, l2s, l3as, l4s = sys.argv[2:7]
+merged, profile = sys.argv[2:4]
 
 def from_merged():
     try:
@@ -222,17 +244,17 @@ def from_text(path, field):
     return ""
 
 status = from_merged()
-if not status:
-    field = key + "_status"
-    src = {"layer_0": profile, "layer_2": l2s, "layer_3a": l3as, "layer_4": l4s}.get(key, "")
-    if src:
-        status = from_text(src, field)
+# Layer 0 is additionally guaranteed directly in the codebase-profile.txt
+# declared artifact; use it as the sole text fallback when the merged summary
+# has not recorded the status.
+if not status and key == "layer_0":
+    status = from_text(profile, "layer_0_status")
 sys.stdout.write(status)
 PYEOF
 }
 
 # =============================================================================
-# The 16 deterministic checks
+# The 17 deterministic checks
 # =============================================================================
 
 # Check 1 -- codebase-profile.txt exists AND primary_language is populated.
@@ -249,8 +271,11 @@ check_1() {
 }
 
 # Check 2 -- findings-layer-1-arch.json is a valid, non-empty JSON array AND all
-# 10 Layer-1 architectural categories are covered (per the layer-1-status.txt
-# per-category coverage oracle; L1 findings carry no category field).
+# 10 Layer-1 architectural categories are covered. L1 findings carry no category
+# field, so coverage is read from the declared merged report's coverage oracle:
+# findings-merged.json _summary.layer_1_categories[<cat>] == "covered". This
+# keeps the check self-contained within the 14-artifact contract (no undeclared
+# side-car status file is required).
 check_2() {
   if ! is_json_array "$L1_JSON"; then
     record 1 "Check 2: $L1_JSON valid JSON array + all 10 L1 categories ($L1_JSON is not a valid JSON array)"
@@ -271,24 +296,33 @@ PYEOF
     record 1 "Check 2: $L1_JSON is an empty JSON array (no L1 findings)"
     return
   fi
-  if [ ! -f "$L1_STATUS" ]; then
-    record 1 "Check 2: L1 category coverage oracle $L1_STATUS is missing"
-    return
-  fi
-  # ANSI-strip the coverage oracle once, then check each category is 'covered'.
-  local l1_status_clean
-  l1_status_clean="$(ansi_strip < "$L1_STATUS" 2>/dev/null)"
-  local missing=()
-  local cat
-  for cat in "${L1_CATEGORIES[@]}"; do
-    if ! printf '%s\n' "$l1_status_clean" | grep -Eq "^[[:space:]]*${cat}[[:space:]]*:[[:space:]]*covered"; then
-      missing+=("$cat")
-    fi
-  done
-  if [ "${#missing[@]}" -eq 0 ]; then
+  # Read the L1 per-category coverage oracle from the merged report and report
+  # any of the 10 mandatory categories not marked "covered". Inputs ANSI-stripped.
+  local missing
+  missing="$("$PY" - "$MERGED" "${L1_CATEGORIES[@]}" 2>/dev/null <<'PYEOF'
+import sys, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
+merged, cats = sys.argv[1], sys.argv[2:]
+try:
+    with open(merged, encoding="utf-8", errors="replace") as fh:
+        d = json.loads(_ANSI.sub('', fh.read()))
+    cov = d[0].get("_summary", {}).get("layer_1_categories", {})
+    if not isinstance(cov, dict):
+        cov = {}
+except Exception:
+    cov = None
+if cov is None:
+    print("ORACLE_MISSING"); sys.exit(0)
+miss = [c for c in cats if str(cov.get(c, "")).strip().lower() != "covered"]
+print(" ".join(miss))
+PYEOF
+)"
+  if [ "$missing" = "ORACLE_MISSING" ]; then
+    record 1 "Check 2: L1 category coverage oracle (_summary.layer_1_categories) is missing from $MERGED"
+  elif [ -z "$missing" ]; then
     record 0 "Check 2: $L1_JSON valid non-empty array; all 10 L1 architectural categories covered"
   else
-    record 1 "Check 2: L1 categories not covered: ${missing[*]}"
+    record 1 "Check 2: L1 categories not covered: $missing"
   fi
 }
 
@@ -775,6 +809,55 @@ PYEOF
   fi
 }
 
+# Check 17 -- NO committed credential VALUE appears in ANY declared artifact.
+# Scans the complete artifact universe (ALL_ARTIFACTS, all 14 declared
+# artifacts) on RAW bytes for industry-standard credential-value formats. Raw
+# tool output (results-semgrep.sarif, results-osv.json) is included so a secret
+# matched by a scanner can never ship unredacted -- this is the deterministic
+# guard for the binding "no secret VALUES leaked in any artifact" requirement.
+# The patterns are prefix-anchored and high-signal: they match actual secret
+# material, NOT key names, CWE ids, file paths, fingerprints, or prose, so the
+# check is deterministic with no false positives on the clean corpus. The FAIL
+# message names only the artifact + credential TYPE, never the matched value, so
+# the verifier itself can never leak a secret.
+check_17() {
+  local detail
+  if detail="$("$PY" - "${ALL_ARTIFACTS[@]}" 2>/dev/null <<'PYEOF'
+import sys, os, re
+PATTERNS = [
+    ("google-oauth-access-token",  re.compile(r"ya29\.[0-9A-Za-z._\-]{20,}")),
+    ("google-oauth-refresh-token", re.compile(r"1//[0-9A-Za-z_\-]{30,}")),
+    ("pem-private-key",            re.compile(r"-----BEGIN[ A-Za-z]*PRIVATE KEY-----")),
+    ("aws-access-key-id",          re.compile(r"AKIA[0-9A-Z]{16}")),
+    ("slack-token",                re.compile(r"xox[baprs]-[0-9A-Za-z\-]{10,}")),
+    ("github-token",               re.compile(r"gh[pousr]_[0-9A-Za-z]{36,}")),
+]
+hits = []
+scanned = 0
+for path in sys.argv[1:]:
+    if not os.path.isfile(path):
+        continue
+    scanned += 1
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except Exception:
+        continue
+    for label, rx in PATTERNS:
+        if rx.search(text):
+            # Record artifact + credential TYPE only -- never the matched value.
+            hits.append("%s:%s" % (os.path.basename(path), label))
+if hits:
+    print("; ".join(sorted(set(hits)))); sys.exit(1)
+print("no credential values across %d artifacts" % scanned); sys.exit(0)
+PYEOF
+)"; then
+    record 0 "Check 17: no committed credential values in any output artifact [$detail]"
+  else
+    record 1 "Check 17: credential value(s) detected in: $detail"
+  fi
+}
+
 # =============================================================================
 # Run all checks in order, then record verification_status and exit.
 # =============================================================================
@@ -796,6 +879,7 @@ check_13
 check_14
 check_15
 check_16
+check_17
 
 printf -- '----------------------------------------\n'
 if [ "$FAILURES" -eq 0 ]; then

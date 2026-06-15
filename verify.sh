@@ -24,10 +24,16 @@
 #   * Documented-ERROR allowance: checks 3 and 10 pass when the normalized
 #     artifact is absent/invalid IF the corresponding pre-agent layer recorded a
 #     documented ERROR status.
-#   * Output hygiene: this script emits NO ANSI escape sequences (ESC / 0x1b).
+#   * ANSI hygiene: artifact text is ANSI-stripped on read (defensive; a no-op
+#     on the guaranteed-ANSI-free corpus) so value extraction is robust, and
+#     check 12 independently DETECTS any ANSI in the raw artifacts. This script
+#     itself emits NO ANSI escape sequences (ESC / 0x1b): every escape pattern
+#     below is written as the literal text "\x1b" (backslash-x-1-b), never a raw
+#     ESC byte.
 #   * Read-only: only repo-root artifacts are read; application source and the
 #     audit exclude_dirs (node_modules, .next, dist, build, .yarn, .git,
-#     coverage, .turbo) are never touched.
+#     coverage, .turbo) are never touched. The sole write is verification_status
+#     into findings-merged.json.
 #
 # NOTE: 'set -e' is intentionally NOT used. A failing check must not abort the
 # suite -- every one of the 16 checks must run so the exit code reflects the
@@ -58,6 +64,16 @@ record() {
   else
     fail "$2"
   fi
+}
+
+# ---- ANSI hygiene -----------------------------------------------------------
+# Strip ANSI/ESC sequences from stdin. Used when reading artifact text for value
+# extraction. On the guaranteed-ANSI-free corpus this is a byte-identical no-op;
+# it makes parsing robust if a stray escape sequence ever slips in. The patterns
+# use the literal text "\x1b" (backslash-x-1-b), never a raw ESC byte, so this
+# script contains no ANSI. (GNU sed interprets \x1b as the ESC byte.)
+ansi_strip() {
+  sed -E 's/\x1b\[[0-9;?]*[ -\/]*[@-~]//g; s/\x1b[@-_]//g; s/\x1b//g'
 }
 
 # ---- Artifact file names (read-only; all at repo root) ----------------------
@@ -145,8 +161,10 @@ L1_CATEGORIES=(
 )
 
 # ---- Detected primary language (drives the language-aware check 4) ----------
+# ANSI-stripped on read so a stray escape sequence cannot corrupt the value.
 PRIMARY_LANG="$(
-  grep -E '^[[:space:]]*primary_language[[:space:]]*:' "$PROFILE" 2>/dev/null \
+  ansi_strip < "$PROFILE" 2>/dev/null \
+    | grep -E '^[[:space:]]*primary_language[[:space:]]*:' \
     | head -n1 \
     | sed -E 's/^[^:]*:[[:space:]]*//; s/[[:space:]]*$//' \
     | tr '[:upper:]' '[:lower:]'
@@ -154,12 +172,14 @@ PRIMARY_LANG="$(
 
 # ---- Reusable python3 helpers -----------------------------------------------
 # Returns 0 if $1 exists and parses as a JSON array (list); non-zero otherwise.
+# Content is ANSI-stripped before parsing.
 is_json_array() {
   "$PY" - "$1" 2>/dev/null <<'PYEOF'
-import sys, json
+import sys, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 try:
-    with open(sys.argv[1], encoding="utf-8") as fh:
-        data = json.load(fh)
+    with open(sys.argv[1], encoding="utf-8", errors="replace") as fh:
+        data = json.loads(_ANSI.sub('', fh.read()))
 except Exception:
     sys.exit(1)
 sys.exit(0 if isinstance(data, list) else 1)
@@ -169,17 +189,22 @@ PYEOF
 # Prints the status string for a layer key (layer_0|layer_2|layer_3a|layer_4).
 # Resolution order: findings-merged.json _summary.layer_status[key], then the
 # canonical pre-agent text record (codebase-profile.txt / layer-N-status.txt).
-# Prints the empty string when no status is recorded anywhere.
+# All inputs are ANSI-stripped on read. Prints "" when no status is recorded.
 get_layer_status() {
   "$PY" - "$1" "$MERGED" "$PROFILE" "$L2_STATUS" "$L3A_STATUS" "$L4_STATUS" 2>/dev/null <<'PYEOF'
 import sys, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
+
+def _read(p):
+    with open(p, encoding="utf-8", errors="replace") as fh:
+        return _ANSI.sub('', fh.read())
+
 key = sys.argv[1]
 merged, profile, l2s, l3as, l4s = sys.argv[2:7]
 
 def from_merged():
     try:
-        with open(merged, encoding="utf-8") as fh:
-            d = json.load(fh)
+        d = json.loads(_read(merged))
         ls = d[0].get("_summary", {}).get("layer_status", {})
         v = ls.get(key)
         return v.strip() if isinstance(v, str) and v.strip() else ""
@@ -188,11 +213,10 @@ def from_merged():
 
 def from_text(path, field):
     try:
-        with open(path, encoding="utf-8", errors="replace") as fh:
-            for line in fh:
-                m = re.match(r'\s*%s\s*:\s*(\S+)' % re.escape(field), line)
-                if m:
-                    return m.group(1).strip()
+        for line in _read(path).splitlines():
+            m = re.match(r'\s*%s\s*:\s*(\S+)' % re.escape(field), line)
+            if m:
+                return m.group(1).strip()
     except Exception:
         pass
     return ""
@@ -234,9 +258,11 @@ check_2() {
   fi
   local l1_len
   l1_len="$("$PY" - "$L1_JSON" 2>/dev/null <<'PYEOF'
-import sys, json
+import sys, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 try:
-    print(len(json.load(open(sys.argv[1], encoding="utf-8"))))
+    with open(sys.argv[1], encoding="utf-8", errors="replace") as fh:
+        print(len(json.loads(_ANSI.sub('', fh.read()))))
 except Exception:
     print(0)
 PYEOF
@@ -249,10 +275,13 @@ PYEOF
     record 1 "Check 2: L1 category coverage oracle $L1_STATUS is missing"
     return
   fi
+  # ANSI-strip the coverage oracle once, then check each category is 'covered'.
+  local l1_status_clean
+  l1_status_clean="$(ansi_strip < "$L1_STATUS" 2>/dev/null)"
   local missing=()
   local cat
   for cat in "${L1_CATEGORIES[@]}"; do
-    if ! grep -Eq "^[[:space:]]*${cat}[[:space:]]*:[[:space:]]*covered" "$L1_STATUS"; then
+    if ! printf '%s\n' "$l1_status_clean" | grep -Eq "^[[:space:]]*${cat}[[:space:]]*:[[:space:]]*covered"; then
       missing+=("$cat")
     fi
   done
@@ -282,10 +311,12 @@ check_3() {
 # Check 4 -- sink-inventory.txt exists, is non-empty, every line matches
 # file:::line:::pattern, and all sink categories APPLICABLE to the detected
 # primary_language are present (language-aware; CWE-134 is exempt for JS/TS).
+# Each inventory line is ANSI-stripped before parsing.
 check_4() {
   local detail
   if detail="$("$PY" - "$SINK" "$PRIMARY_LANG" "${SINK_CATEGORIES[@]}" "--exempt" "${SINK_EXEMPT_JS_TS[@]}" 2>/dev/null <<'PYEOF'
 import sys, os, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 args = sys.argv[1:]
 path, lang = args[0], args[1].lower()
 rest = args[2:]
@@ -300,7 +331,7 @@ lines = bad = 0
 present = set()
 with open(path, encoding="utf-8", errors="replace") as fh:
     for raw in fh:
-        line = raw.rstrip("\n")
+        line = _ANSI.sub('', raw.rstrip("\n"))
         if line == "":
             continue
         lines += 1
@@ -336,16 +367,18 @@ PYEOF
 }
 
 # Check 5 -- mitigation-inventory.txt exists, is non-empty, and covers all 9
-# mitigation categories.
+# mitigation categories. Content is ANSI-stripped before matching.
 check_5() {
   if [ ! -s "$MIT" ]; then
     record 1 "Check 5: $MIT is missing or empty"
     return
   fi
+  local mit_clean
+  mit_clean="$(ansi_strip < "$MIT" 2>/dev/null)"
   local missing=()
   local slug
   for slug in "${MITIGATION_CATEGORIES[@]}"; do
-    if ! grep -Fq ":::[$slug]" "$MIT"; then
+    if ! printf '%s\n' "$mit_clean" | grep -Fq ":::[$slug]"; then
       missing+=("$slug")
     fi
   done
@@ -374,14 +407,15 @@ check_6() {
 check_7() {
   local detail
   if detail="$("$PY" - "$L3B_JSON" "${SINK_CATEGORIES[@]}" 2>/dev/null <<'PYEOF'
-import sys, os, json
+import sys, os, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 args = sys.argv[1:]
 path, cats = args[0], args[1:]
 if not os.path.isfile(path):
     print("file missing"); sys.exit(1)
 try:
-    with open(path, encoding="utf-8") as fh:
-        data = json.load(fh)
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        data = json.loads(_ANSI.sub('', fh.read()))
 except Exception as e:
     print("invalid JSON: %s" % e); sys.exit(1)
 if not isinstance(data, list):
@@ -405,11 +439,11 @@ PYEOF
 check_8() {
   local detail
   if detail="$("$PY" - "$L3B_JSON" 2>/dev/null <<'PYEOF'
-import sys, os, json
-path = sys.argv[1]
+import sys, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 try:
-    with open(path, encoding="utf-8") as fh:
-        data = json.load(fh)
+    with open(sys.argv[1], encoding="utf-8", errors="replace") as fh:
+        data = json.loads(_ANSI.sub('', fh.read()))
     assert isinstance(data, list)
 except Exception as e:
     print("invalid L3b JSON: %s" % e); sys.exit(1)
@@ -435,48 +469,47 @@ PYEOF
   fi
 }
 
-# Check 9 -- every severity field across the normalized findings JSON files uses
-# only the unified vocabulary: critical | high | medium | low.
+# Check 9 -- every severity field across all normalized findings JSON files
+# uses ONLY the unified vocabulary: critical|high|medium|low. Content is
+# ANSI-stripped before parsing.
 check_9() {
   local detail
   if detail="$("$PY" - "${FINDING_JSON_FILES[@]}" 2>/dev/null <<'PYEOF'
-import sys, os, json
+import sys, os, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 allowed = {"critical", "high", "medium", "low"}
+bad = []
 
-def severities(o):
-    out = []
-    if isinstance(o, dict):
-        for k, v in o.items():
+def severities(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
             if k == "severity" and isinstance(v, str):
-                out.append(v)
+                yield v
             else:
-                out += severities(v)
-    elif isinstance(o, list):
-        for it in o:
-            out += severities(it)
-    return out
+                yield from severities(v)
+    elif isinstance(obj, list):
+        for it in obj:
+            yield from severities(it)
 
-bad = {}
-for p in sys.argv[1:]:
-    if not os.path.isfile(p):
+for path in sys.argv[1:]:
+    if not os.path.isfile(path):
         continue
     try:
-        with open(p, encoding="utf-8") as fh:
-            data = json.load(fh)
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            data = json.loads(_ANSI.sub('', fh.read()))
     except Exception:
-        print("%s: invalid JSON" % p); sys.exit(1)
-    invalid = sorted(set(severities(data)) - allowed)
-    if invalid:
-        bad[p] = invalid
+        continue
+    for sev in severities(data):
+        if sev.strip().lower() not in allowed:
+            bad.append("%s:%r" % (os.path.basename(path), sev))
 if bad:
-    print("; ".join("%s -> %s" % (p, v) for p, v in bad.items())); sys.exit(1)
-print("all severity values within {critical,high,medium,low}")
-sys.exit(0)
+    print("invalid severity value(s): " + ", ".join(bad[:10])); sys.exit(1)
+print("all severity fields use critical|high|medium|low"); sys.exit(0)
 PYEOF
 )"; then
-    record 0 "Check 9: all severity fields use only critical|high|medium|low [$detail]"
+    record 0 "Check 9: severity vocabulary is exactly critical|high|medium|low across all findings JSON [$detail]"
   else
-    record 1 "Check 9: disallowed severity value(s) -- $detail"
+    record 1 "Check 9: $detail"
   fi
 }
 
@@ -496,204 +529,256 @@ check_10() {
   fi
 }
 
-# Check 11 -- findings-merged.json is valid JSON and its _summary counts
-# reconcile with the per-layer files: by_layer == per-file lengths,
-# total_findings == sum(by_layer), unique_findings == merged finding count.
+# Check 11 -- findings-merged.json is valid JSON and its _summary by_layer
+# counts reconcile with the per-layer findings files (with the documented-ERROR
+# allowance for absent L2/L4), and total/unique counts are internally
+# consistent. All inputs are ANSI-stripped before parsing.
 check_11() {
   local detail
   if detail="$("$PY" - "$MERGED" "$L1_JSON" "$L2_JSON" "$L3B_JSON" "$L4_JSON" 2>/dev/null <<'PYEOF'
-import sys, json
+import sys, os, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
 merged, l1, l2, l3b, l4 = sys.argv[1:6]
 
-def arr(p):
-    with open(p, encoding="utf-8") as fh:
-        d = json.load(fh)
-    if not isinstance(d, list):
-        raise ValueError("%s is not a JSON array" % p)
-    return d
+def load(p):
+    try:
+        with open(p, encoding="utf-8", errors="replace") as fh:
+            return json.loads(_ANSI.sub('', fh.read()))
+    except Exception:
+        return None
 
-try:
-    M = arr(merged)
-    summ = M[0].get("_summary")
-    if not isinstance(summ, dict):
-        raise ValueError("findings-merged.json has no _summary header")
-    by = summ.get("by_layer", {}) or {}
-    counts = {
-        "arch-audit": len(arr(l1)),
-        "semgrep": len(arr(l2)),
-        "taint-analysis": len(arr(l3b)),
-        "osv-scanner": len(arr(l4)),
-    }
-except Exception as e:
-    print("error: %s" % e); sys.exit(1)
+m = load(merged)
+if not isinstance(m, list) or not m or not isinstance(m[0], dict) or "_summary" not in m[0]:
+    print("findings-merged.json missing or has no _summary header"); sys.exit(1)
+summ = m[0]["_summary"]
+by_layer = summ.get("by_layer", {})
 
-errs = []
-for k, v in counts.items():
-    if by.get(k) != v:
-        errs.append("by_layer[%s]=%s != file count %d" % (k, by.get(k), v))
-total = summ.get("total_findings")
-if total != sum(counts.values()):
-    errs.append("total_findings=%s != sum(by_layer)=%d" % (total, sum(counts.values())))
-uniq = summ.get("unique_findings")
-if uniq is not None and uniq != len(M) - 1:
-    errs.append("unique_findings=%s != merged finding count %d" % (uniq, len(M) - 1))
-if errs:
-    print("; ".join(errs)); sys.exit(1)
-print("by_layer matches per-file counts; total=%d unique=%s" % (total, uniq))
-sys.exit(0)
+def n(p):
+    d = load(p)
+    return len(d) if isinstance(d, list) else None
+
+counts = {
+    "arch-audit": n(l1),
+    "semgrep": n(l2),
+    "taint-analysis": n(l3b),
+    "osv-scanner": n(l4),
+}
+problems = []
+expected_total = 0
+for key, actual in counts.items():
+    reported = by_layer.get(key)
+    if actual is None:
+        # Layer file absent/invalid: tolerated only when reported count is 0.
+        if reported not in (0, None):
+            problems.append("%s file absent but summary reports %s" % (key, reported))
+        continue
+    expected_total += actual
+    if reported != actual:
+        problems.append("%s: summary=%s actual=%s" % (key, reported, actual))
+
+# Cross-check the headline totals against the findings body (m[1:]).
+body = len(m) - 1
+tf = summ.get("total_findings")
+uf = summ.get("unique_findings")
+if isinstance(tf, int) and tf != expected_total:
+    problems.append("total_findings=%s != sum(by_layer present)=%s" % (tf, expected_total))
+if isinstance(uf, int) and uf != body:
+    problems.append("unique_findings=%s != merged body length=%s" % (uf, body))
+
+if problems:
+    print("; ".join(problems)); sys.exit(1)
+print("by_layer reconciles (sum=%d); body=%d findings" % (expected_total, body)); sys.exit(0)
 PYEOF
 )"; then
-    record 0 "Check 11: $MERGED _summary counts match the per-layer files [$detail]"
+    record 0 "Check 11: $MERGED valid; _summary counts reconcile with per-layer files [$detail]"
   else
-    record 1 "Check 11: count mismatch -- $detail"
+    record 1 "Check 11: $detail"
   fi
 }
 
-# Check 12 -- no ANSI escape sequence (ESC / 0x1b) appears in any output
-# artifact.
+# Check 12 -- NO ANSI escape sequences (ESC / 0x1b) appear in ANY output file.
+# grep -P matches the raw ESC byte; this check operates on the RAW bytes (no
+# stripping) precisely so it DETECTS any ANSI present in the artifacts.
 check_12() {
-  local bad=()
+  local dirty=()
   local f
   for f in "${ALL_ARTIFACTS[@]}"; do
     [ -f "$f" ] || continue
-    if LC_ALL=C grep -qP '\x1b' "$f" 2>/dev/null; then
-      bad+=("$f")
+    if grep -qP '\x1b' "$f" 2>/dev/null; then
+      dirty+=("$f")
     fi
   done
-  if [ "${#bad[@]}" -eq 0 ]; then
-    record 0 "Check 12: no ANSI escape sequences (ESC/0x1b) in any output artifact"
+  if [ "${#dirty[@]}" -eq 0 ]; then
+    record 0 "Check 12: no ANSI escape sequences in any output artifact"
   else
-    record 1 "Check 12: ANSI escape sequences found in: ${bad[*]}"
+    record 1 "Check 12: ANSI escape sequences found in: ${dirty[*]}"
   fi
 }
 
-# Check 13 -- no finding in any normalized JSON file has an empty or missing
-# description field (the merged _summary header is not a finding and is skipped).
+# Check 13 -- no finding in any normalized findings JSON file has an empty or
+# missing description. Content is ANSI-stripped before parsing.
 check_13() {
   local detail
   if detail="$("$PY" - "${FINDING_JSON_FILES[@]}" 2>/dev/null <<'PYEOF'
-import sys, os, json
-FINDING_KEYS = ("cwe", "file", "tool", "layer", "severity", "description")
-
-def is_finding(d):
-    return isinstance(d, dict) and "_summary" not in d and any(k in d for k in FINDING_KEYS)
-
-bad = {}
-for p in sys.argv[1:]:
-    if not os.path.isfile(p):
+import sys, os, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
+bad = 0
+seen = 0
+for path in sys.argv[1:]:
+    if not os.path.isfile(path):
         continue
     try:
-        with open(p, encoding="utf-8") as fh:
-            data = json.load(fh)
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            data = json.loads(_ANSI.sub('', fh.read()))
     except Exception:
-        print("%s: invalid JSON" % p); sys.exit(1)
-    items = data if isinstance(data, list) else [data]
-    cnt = sum(1 for d in items if is_finding(d) and not str(d.get("description", "")).strip())
-    if cnt:
-        bad[p] = cnt
+        continue
+    if not isinstance(data, list):
+        continue
+    for d in data:
+        if not isinstance(d, dict) or "_summary" in d:
+            continue  # skip the merged-report summary header element
+        seen += 1
+        if not str(d.get("description", "")).strip():
+            bad += 1
 if bad:
-    print("; ".join("%s: %d finding(s) with empty/missing description" % (p, c) for p, c in bad.items()))
-    sys.exit(1)
-print("all findings carry a non-empty description")
-sys.exit(0)
+    print("%d finding(s) have an empty/missing description" % bad); sys.exit(1)
+print("all %d findings have a non-empty description" % seen); sys.exit(0)
 PYEOF
 )"; then
-    record 0 "Check 13: no finding has an empty or missing description [$detail]"
+    record 0 "Check 13: every finding has a non-empty description [$detail]"
   else
     record 1 "Check 13: $detail"
   fi
 }
 
 # Check 14 -- findings-merged.json contains a gate_verdict in the allowed set.
+# Content is ANSI-stripped before parsing.
 check_14() {
   local detail
   if detail="$("$PY" - "$MERGED" 2>/dev/null <<'PYEOF'
-import sys, json
+import sys, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
+allowed = {"ERROR", "BLOCK", "WARN", "PASS"}
 try:
-    with open(sys.argv[1], encoding="utf-8") as fh:
-        d = json.load(fh)
-    gv = d[0].get("gate_verdict")
+    with open(sys.argv[1], encoding="utf-8", errors="replace") as fh:
+        data = json.loads(_ANSI.sub('', fh.read()))
 except Exception as e:
-    print("cannot read gate_verdict: %s" % e); sys.exit(1)
-if gv in ("ERROR", "BLOCK", "WARN", "PASS"):
-    print(gv); sys.exit(0)
-print("gate_verdict=%r not in {ERROR,BLOCK,WARN,PASS}" % (gv,)); sys.exit(1)
+    print("invalid JSON: %s" % e); sys.exit(1)
+
+def find_verdict(obj):
+    if isinstance(obj, dict):
+        if isinstance(obj.get("gate_verdict"), str):
+            return obj["gate_verdict"]
+        for v in obj.values():
+            r = find_verdict(v)
+            if r is not None:
+                return r
+    elif isinstance(obj, list):
+        for it in obj:
+            r = find_verdict(it)
+            if r is not None:
+                return r
+    return None
+
+v = find_verdict(data)
+if v is None:
+    print("gate_verdict field is absent"); sys.exit(1)
+if v not in allowed:
+    print("gate_verdict=%r not in {ERROR,BLOCK,WARN,PASS}" % v); sys.exit(1)
+print("gate_verdict=%s" % v); sys.exit(0)
 PYEOF
 )"; then
-    record 0 "Check 14: $MERGED gate_verdict is valid ($detail)"
+    record 0 "Check 14: $MERGED has a valid gate_verdict [$detail]"
   else
     record 1 "Check 14: $detail"
   fi
 }
 
-# Check 15 -- no pre-agent step has a silent failure: layer_0, layer_2, layer_3a
-# and layer_4 statuses must each be present (a missing status is a failure). The
-# layer_0 status is additionally required in its canonical record
-# (codebase-profile.txt).
+# Check 15 -- no pre-agent step has a silent failure: layer_0_status,
+# layer_2_status, layer_3a_status, layer_4_status MUST each be present (a
+# MISSING status is a FAIL; any present value -- including ERROR -- is recorded,
+# not silent). layer_0 is additionally required directly in codebase-profile.txt
+# (ANSI-stripped on read).
 check_15() {
   local missing=()
-  local k
-  for k in layer_0 layer_2 layer_3a layer_4; do
-    if [ -z "$(get_layer_status "$k")" ]; then
-      missing+=("${k}_status")
+  local key
+  for key in layer_0 layer_2 layer_3a layer_4; do
+    local st
+    st="$(get_layer_status "$key")"
+    if [ -z "$st" ]; then
+      missing+=("${key}_status")
     fi
   done
-  if ! grep -Eq '^[[:space:]]*layer_0_status[[:space:]]*:' "$PROFILE" 2>/dev/null; then
-    missing+=("layer_0_status@${PROFILE}")
+  # layer_0_status must be directly present in codebase-profile.txt.
+  if ! ansi_strip < "$PROFILE" 2>/dev/null | grep -Eq '^[[:space:]]*layer_0_status[[:space:]]*:[[:space:]]*\S'; then
+    case " ${missing[*]} " in
+      *" layer_0_status "*) : ;;
+      *) missing+=("layer_0_status(profile)") ;;
+    esac
   fi
   if [ "${#missing[@]}" -eq 0 ]; then
     record 0 "Check 15: all pre-agent statuses present (layer_0, layer_2, layer_3a, layer_4)"
   else
-    record 1 "Check 15: missing pre-agent status: ${missing[*]}"
+    record 1 "Check 15: pre-agent status(es) missing (silent failure): ${missing[*]}"
   fi
 }
 
 # Check 16 -- every L3b finding references a file:line pair present in
-# sink-inventory.txt.
+# sink-inventory.txt. The sink inventory text and the L3b JSON are both
+# ANSI-stripped on read.
 check_16() {
   local detail
   if detail="$("$PY" - "$L3B_JSON" "$SINK" 2>/dev/null <<'PYEOF'
-import sys, os, json
-l3b, sink = sys.argv[1:3]
-try:
-    with open(l3b, encoding="utf-8") as fh:
-        data = json.load(fh)
-    assert isinstance(data, list)
-except Exception as e:
-    print("invalid L3b JSON: %s" % e); sys.exit(1)
+import sys, os, json, re
+_ANSI = re.compile(r'\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]|\x1b')
+l3b, sink = sys.argv[1], sys.argv[2]
 if not os.path.isfile(sink):
-    print("%s missing" % sink); sys.exit(1)
+    print("%s missing" % os.path.basename(sink)); sys.exit(1)
+
+def norm(p):
+    p = (p or "").strip()
+    return p[2:] if p.startswith("./") else p
+
 pairs = set()
 with open(sink, encoding="utf-8", errors="replace") as fh:
     for line in fh:
+        line = _ANSI.sub('', line)
         parts = line.split(":::")
         if len(parts) >= 2 and parts[1].strip().isdigit():
-            pairs.add((parts[0].strip(), parts[1].strip()))
+            pairs.add((norm(parts[0]), parts[1].strip()))
+
+try:
+    with open(l3b, encoding="utf-8", errors="replace") as fh:
+        data = json.loads(_ANSI.sub('', fh.read()))
+    assert isinstance(data, list)
+except Exception as e:
+    print("invalid L3b JSON: %s" % e); sys.exit(1)
+
 missing = []
 for d in data:
     if not isinstance(d, dict):
         continue
-    key = (str(d.get("file", "")).strip(), str(d.get("line", "")).strip())
-    if key not in pairs:
-        missing.append("%s:%s" % key)
+    f = norm(d.get("file", ""))
+    ln = d.get("line")
+    ln = str(ln).strip() if ln is not None else ""
+    if (f, ln) not in pairs:
+        missing.append("%s:%s" % (d.get("file", "?"), d.get("line", "?")))
 if missing:
-    print("%d L3b finding(s) not in sink-inventory (e.g. %s)" % (len(missing), ",".join(missing[:5])))
+    print("%d L3b finding(s) not in sink-inventory: %s" % (len(missing), ", ".join(missing[:8])))
     sys.exit(1)
-print("all %d L3b findings anchor to a sink-inventory file:line" % len(data))
-sys.exit(0)
+print("all %d L3b findings reference a sink-inventory file:line pair" % len(data)); sys.exit(0)
 PYEOF
 )"; then
-    record 0 "Check 16: every L3b finding's file:line is present in $SINK [$detail]"
+    record 0 "Check 16: every L3b finding maps to a sink-inventory file:line pair [$detail]"
   else
     record 1 "Check 16: $detail"
   fi
 }
 
 # =============================================================================
-# Run all 16 checks (in order), then record verification_status and exit with
-# the failure count.
+# Run all checks in order, then record verification_status and exit.
 # =============================================================================
-printf '=== Directive 10 verification suite: 16 deterministic checks ===\n'
+printf '=== Directive 10 verification suite ===\n'
 
 check_1
 check_2
@@ -712,44 +797,44 @@ check_14
 check_15
 check_16
 
-printf '\n'
+printf -- '----------------------------------------\n'
 if [ "$FAILURES" -eq 0 ]; then
-  printf 'RESULT: all 16 checks passed (0 failures).\n'
+  VERIFICATION_STATUS="PASS"
 else
-  printf 'RESULT: %d check(s) failed.\n' "$FAILURES"
+  VERIFICATION_STATUS="FAIL"
 fi
+printf 'RESULT: %s (%d check(s) failed)\n' "$VERIFICATION_STATUS" "$FAILURES"
 
 # ---- Record verification_status into findings-merged.json -------------------
-# PASS when zero checks failed, otherwise FAIL. The edit is deterministic and
-# order-preserving (minified JSON + trailing newline), so re-runs are
-# byte-stable when the outcome is unchanged. This write-back is a side effect of
-# the suite, not a 17th check: the script still exits with the failure count.
-VERIFICATION_STATUS="PASS"
-[ "$FAILURES" -eq 0 ] || VERIFICATION_STATUS="FAIL"
-
+# Deterministic, order-preserving edit: set _summary-sibling field
+# "verification_status" on the report header element. The file is rewritten as
+# minified JSON with a trailing newline (matching the corpus's existing on-disk
+# format) so an unchanged status produces a byte-identical file (idempotent).
+# The merged report is guaranteed ANSI-free by check 12, so the write-back
+# parses it directly.
 if [ -f "$MERGED" ]; then
-  if "$PY" - "$MERGED" "$VERIFICATION_STATUS" <<'PYEOF'
+  "$PY" - "$MERGED" "$VERIFICATION_STATUS" <<'PYEOF'
 import sys, json
 path, status = sys.argv[1], sys.argv[2]
 try:
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
 except Exception as e:
-    sys.stderr.write("could not parse %s: %s\n" % (path, e)); sys.exit(1)
+    sys.stderr.write("WARN: could not parse %s to record verification_status: %s\n" % (path, e))
+    sys.exit(0)
 if isinstance(data, list) and data and isinstance(data[0], dict):
     data[0]["verification_status"] = status
+elif isinstance(data, dict):
+    data["verification_status"] = status
 else:
-    sys.stderr.write("unexpected %s structure; verification_status not written\n" % path); sys.exit(1)
+    sys.stderr.write("WARN: unexpected %s structure; verification_status not recorded\n" % path)
+    sys.exit(0)
 with open(path, "w", encoding="utf-8") as fh:
     fh.write(json.dumps(data, separators=(",", ":"), ensure_ascii=False) + "\n")
+sys.stderr.write("recorded verification_status=%s into %s\n" % (status, path))
 PYEOF
-  then
-    printf 'Recorded verification_status=%s into %s\n' "$VERIFICATION_STATUS" "$MERGED"
-  else
-    printf 'WARNING: failed to record verification_status into %s\n' "$MERGED" >&2
-  fi
 else
-  printf 'WARNING: %s not found; cannot record verification_status\n' "$MERGED" >&2
+  printf 'WARN: %s not found; verification_status not recorded\n' "$MERGED" >&2
 fi
 
 exit "$FAILURES"

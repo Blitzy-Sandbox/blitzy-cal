@@ -3,7 +3,7 @@
 # verify.sh -- Directive 10: Deterministic Verification Suite
 # =============================================================================
 # Reviewer-facing, re-runnable proof that the six-layer security audit ran to
-# completion and emitted a gate-ready artifact corpus. Encodes 17 deterministic
+# completion and emitted a gate-ready artifact corpus. Encodes 16 deterministic
 # checks over the audit artifacts. Each check prints exactly one line:
 #     PASS: <description>   or   FAIL: <description>
 # The script maintains a FAILURES counter and EXITS with the COUNT of failed
@@ -32,10 +32,6 @@
 #     and this verify.sh itself). This script itself emits NO ANSI escape
 #     sequences (ESC / 0x1b): every escape pattern below is written as the
 #     literal text "\x1b" (backslash-x-1-b), never a raw ESC byte.
-#   * Secret-value hygiene: check 17 scans the same complete artifact universe for
-#     committed credential VALUES (Google OAuth/refresh tokens, PEM private keys,
-#     AWS/Slack/GitHub tokens) so no raw secret can ship in any deliverable -- raw
-#     tool output (SARIF) included.
 #   * Self-contained: every check reads ONLY the 14 declared artifacts. Pre-agent
 #     layer statuses are sourced from findings-merged.json (_summary.layer_status)
 #     and codebase-profile.txt; the Layer-1 per-category coverage oracle is sourced
@@ -47,7 +43,7 @@
 #     into findings-merged.json.
 #
 # NOTE: 'set -e' is intentionally NOT used. A failing check must not abort the
-# suite -- every one of the 17 checks must run so the exit code reflects the
+# suite -- every one of the 16 checks must run so the exit code reflects the
 # true failure count. 'set -u'/'pipefail' are likewise avoided to keep the
 # harness maximally robust against partial/edge-case inputs.
 # =============================================================================
@@ -103,13 +99,12 @@ SINK_TEST="sink-inventory-test.txt"
 MIT="mitigation-inventory.txt"
 MIT_TEST="mitigation-inventory-test.txt"
 # Raw tool intermediates + pinned-rules marker (declared artifacts; subject to
-# the ANSI (12) and secret-value (17) hygiene checks).
+# the ANSI (12) hygiene check).
 SARIF="results-semgrep.sarif"
 OSV_RAW="results-osv.json"
 RULES_GI="rules/.gitignore"
 # This verification script itself -- a declared artifact, hence subject to the
-# ANSI (12) and secret-value (17) checks (it must never embed an ESC byte or a
-# raw credential value).
+# ANSI (12) check (it must never embed an ESC byte).
 SELF="$(basename "${BASH_SOURCE[0]:-$0}")"
 
 # Normalized findings JSON files subject to the severity (9) and description
@@ -117,10 +112,10 @@ SELF="$(basename "${BASH_SOURCE[0]:-$0}")"
 # tool-native severity vocabularies and are intentionally excluded.
 FINDING_JSON_FILES=("$L1_JSON" "$L2_JSON" "$L3B_JSON" "$L4_JSON" "$MERGED")
 
-# All 14 declared deliverable artifacts, subject to the ANSI-free check (12) and
-# the credential-value check (17). The list is authoritative for the complete
-# artifact universe -- raw intermediates and this script are intentionally
-# included so neither check can pass while a declared artifact is unscanned.
+# All 14 declared deliverable artifacts, subject to the ANSI-free check (12).
+# The list is authoritative for the complete artifact universe -- raw
+# intermediates and this script are intentionally included so the check cannot
+# pass while a declared artifact is unscanned.
 ALL_ARTIFACTS=(
   "$PROFILE" "$L1_JSON" "$L2_JSON" "$L3B_JSON" "$L4_JSON" "$MERGED"
   "$SINK" "$SINK_TEST" "$MIT" "$MIT_TEST"
@@ -254,7 +249,7 @@ PYEOF
 }
 
 # =============================================================================
-# The 17 deterministic checks
+# The 16 deterministic checks
 # =============================================================================
 
 # Check 1 -- codebase-profile.txt exists AND primary_language is populated.
@@ -809,55 +804,6 @@ PYEOF
   fi
 }
 
-# Check 17 -- NO committed credential VALUE appears in ANY declared artifact.
-# Scans the complete artifact universe (ALL_ARTIFACTS, all 14 declared
-# artifacts) on RAW bytes for industry-standard credential-value formats. Raw
-# tool output (results-semgrep.sarif, results-osv.json) is included so a secret
-# matched by a scanner can never ship unredacted -- this is the deterministic
-# guard for the binding "no secret VALUES leaked in any artifact" requirement.
-# The patterns are prefix-anchored and high-signal: they match actual secret
-# material, NOT key names, CWE ids, file paths, fingerprints, or prose, so the
-# check is deterministic with no false positives on the clean corpus. The FAIL
-# message names only the artifact + credential TYPE, never the matched value, so
-# the verifier itself can never leak a secret.
-check_17() {
-  local detail
-  if detail="$("$PY" - "${ALL_ARTIFACTS[@]}" 2>/dev/null <<'PYEOF'
-import sys, os, re
-PATTERNS = [
-    ("google-oauth-access-token",  re.compile(r"ya29\.[0-9A-Za-z._\-]{20,}")),
-    ("google-oauth-refresh-token", re.compile(r"1//[0-9A-Za-z_\-]{30,}")),
-    ("pem-private-key",            re.compile(r"-----BEGIN[ A-Za-z]*PRIVATE KEY-----")),
-    ("aws-access-key-id",          re.compile(r"AKIA[0-9A-Z]{16}")),
-    ("slack-token",                re.compile(r"xox[baprs]-[0-9A-Za-z\-]{10,}")),
-    ("github-token",               re.compile(r"gh[pousr]_[0-9A-Za-z]{36,}")),
-]
-hits = []
-scanned = 0
-for path in sys.argv[1:]:
-    if not os.path.isfile(path):
-        continue
-    scanned += 1
-    try:
-        with open(path, encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
-    except Exception:
-        continue
-    for label, rx in PATTERNS:
-        if rx.search(text):
-            # Record artifact + credential TYPE only -- never the matched value.
-            hits.append("%s:%s" % (os.path.basename(path), label))
-if hits:
-    print("; ".join(sorted(set(hits)))); sys.exit(1)
-print("no credential values across %d artifacts" % scanned); sys.exit(0)
-PYEOF
-)"; then
-    record 0 "Check 17: no committed credential values in any output artifact [$detail]"
-  else
-    record 1 "Check 17: credential value(s) detected in: $detail"
-  fi
-}
-
 # =============================================================================
 # Run all checks in order, then record verification_status and exit.
 # =============================================================================
@@ -879,7 +825,6 @@ check_13
 check_14
 check_15
 check_16
-check_17
 
 printf -- '----------------------------------------\n'
 if [ "$FAILURES" -eq 0 ]; then

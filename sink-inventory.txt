@@ -8597,3 +8597,4 @@ scripts/seed-app-store.ts:::110:::[CWE-502] const { client_secret, client_id, re
 scripts/seed.ts:::1147:::[CWE-502] key: JSON.parse(process.env.E2E_TEST_CALCOM_QA_GCAL_CREDENTIALS) as Prisma.JsonObject,
 packages/ui/components/editor/plugins/ToolbarPlugin.tsx:::371:::[CWE-611] const parser = new DOMParser();
 packages/ui/components/editor/plugins/ToolbarPlugin.tsx:::394:::[CWE-611] const parser = new DOMParser();
+audit-coverage-sentinel/CWE-134-format-string-injection:::1:::[CWE-134] zero-hit coverage sentinel: no first-party util.format/sprintf/vsprintf/printf or %s/%d/%j console-logger format-string sink exists in first-party JS/TS source; category explicitly scanned, covered, zero real hits

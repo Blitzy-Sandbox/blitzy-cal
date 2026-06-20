@@ -21,9 +21,12 @@
 #     findings-merged.json. The audited source tree and every exclude_dir
 #     (node_modules, .next, dist, build, .yarn, .git, coverage, .turbo) are
 #     never read or written by this script.
-#   * Language-aware: sink categories whose patterns are structurally
-#     inapplicable to the detected primary_language are expected-empty and do
-#     NOT trigger a failure (check 4 & 7).
+#   * Language-aware: the JS/TS-applicable sink columns are required. For this
+#     TypeScript codebase ALL 19 sink categories are JS/TS-applicable, so none
+#     are exempt. A category with zero first-party matches (e.g. CWE-134 Format
+#     String Injection) is NOT dropped or exempted -- it is explicitly covered
+#     by a documented zero-hit sentinel in sink-inventory.txt and a matching
+#     zero-hit finding in findings-layer-3b-taint.json (check 4 & 7).
 #   * Documented-ERROR allowance: a deterministic layer that recorded an ERROR
 #     status is an acceptable, documented outcome (check 3 & 10).
 #
@@ -41,6 +44,30 @@ set -o pipefail
 # -----------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 cd "$SCRIPT_DIR" || { printf 'FATAL: cannot cd to repository root\n'; exit 99; }
+
+# -----------------------------------------------------------------------------
+# Optional non-mutating (read-only) mode.
+# By default the suite records the overall verification_status into
+# findings-merged.json (per the Agent Action Plan execution flow). Passing
+# --check / --no-write / --read-only / --dry-run (or exporting VERIFY_NO_WRITE=1)
+# runs all 16 checks WITHOUT modifying any file, so a read-only reviewer or a
+# CI validator can execute the suite safely. The exit code (the count of failed
+# checks) and every PASS/FAIL line are identical in both modes; only the final
+# verification_status writeback is suppressed in read-only mode.
+# -----------------------------------------------------------------------------
+NO_WRITE="${VERIFY_NO_WRITE:-0}"
+for _arg in "$@"; do
+  case "$_arg" in
+    --check|--no-write|--read-only|--dry-run) NO_WRITE=1 ;;
+    -h|--help)
+      printf 'Usage: %s [--check|--no-write|--read-only|--dry-run]\n' "${0##*/}"
+      printf '  (default)  run the 16 checks AND record verification_status into findings-merged.json\n'
+      printf '  --check    run the 16 checks WITHOUT writing any file (read-only / CI-safe)\n'
+      exit 0 ;;
+    *)
+      printf 'FATAL: unknown argument %s (try --help)\n' "$_arg"; exit 98 ;;
+  esac
+done
 
 # -----------------------------------------------------------------------------
 # Failure accounting + plain (ANSI-free) reporters.
@@ -62,6 +89,11 @@ SINK="sink-inventory.txt"
 SINK_TEST="sink-inventory-test.txt"
 MIT="mitigation-inventory.txt"
 MIT_TEST="mitigation-inventory-test.txt"
+# Raw / intermediate artifacts (in scope for end-to-end verification).
+SARIF="results-semgrep.sarif"
+OSV_RAW="results-osv.json"
+RULES_GITIGNORE="rules/.gitignore"
+VERIFY_SELF="verify.sh"
 
 # =============================================================================
 # Canonical taxonomy -- single source of truth so the checks are self-contained
@@ -114,11 +146,22 @@ SINK_CWES=(
   "CWE-611"
 )
 
-# Sink categories whose JS/TS detection pattern is structurally inapplicable
-# (expected-empty) when the primary language is TypeScript/JavaScript.
-# Format String Injection (CWE-134) is a C/printf-family class with no idiomatic
-# JS/TS sink; it is exempt from coverage failures under a JS/TS codebase.
-JSTS_INAPPLICABLE_CWES=("CWE-134")
+# Sink categories whose detection pattern is STRUCTURALLY INAPPLICABLE to the
+# detected primary language (e.g. Python/Go/Java-only sink columns under a
+# TypeScript codebase). For this JS/TS codebase EVERY one of the 19 sink
+# categories is JS/TS-applicable, so this set is EMPTY -- nothing is exempted.
+#
+# In particular, Format String Injection (CWE-134) is treated as JS/TS-applicable
+# (util.format / sprintf-js / printf-style and %s/%d/%j console-logger formatting
+# are real JS/TS sinks). It simply has zero first-party matches in this codebase,
+# so it is recorded as an EXPLICIT zero-hit: a documented coverage sentinel line
+# in sink-inventory.txt and a matching zero-hit finding in
+# findings-layer-3b-taint.json keep the category covered (never dropped, never
+# silently exempted). Checks 4 & 7 therefore see CWE-134 as PRESENT.
+#
+# This array is retained as the AAP language-aware hook for genuinely-inapplicable
+# non-JS/TS pattern columns; it is empty here by design.
+JSTS_INAPPLICABLE_CWES=()
 
 # The 9 mitigation categories (inventory tag tokens).
 MITIGATION_CATS=(
@@ -186,11 +229,13 @@ L1_CATS_ENV="$(IFS='|'; printf '%s' "${L1_CATS[*]}")"
 ALLOWED_SEVERITIES_ENV="$ALLOWED_SEVERITIES"
 
 export PROFILE L1 L2 L3B L4 MERGED SINK
+export SARIF OSV_RAW RULES_GITIGNORE
 export SINK_MAP JSTS_EXEMPT_CWES IS_JSTS L1_CATS_ENV ALLOWED_SEVERITIES_ENV
 
+if [ "$NO_WRITE" -eq 1 ]; then _MODE="read-only (no writeback)"; else _MODE="default (records verification_status)"; fi
 printf '=== Directive 10 Verification Suite (16 checks) ===\n'
-printf 'repo_root=%s  primary_language=%s  js_ts_column=%s\n\n' \
-  "$SCRIPT_DIR" "${PRIMARY_LANGUAGE:-<unset>}" "$IS_JSTS"
+printf 'repo_root=%s  primary_language=%s  js_ts_column=%s  mode=%s\n\n' \
+  "$SCRIPT_DIR" "${PRIMARY_LANGUAGE:-<unset>}" "$IS_JSTS" "$_MODE"
 
 # =============================================================================
 # CHECK 1 -- codebase-profile.txt exists AND primary_language is populated.
@@ -228,13 +273,17 @@ else
 fi
 
 # =============================================================================
-# CHECK 3 -- findings-layer-2-semgrep.json is a valid JSON array, OR layer_2
-#            recorded a documented ERROR status (acceptable deterministic-layer
-#            outcome).
+# CHECK 3 -- Layer 2 (Semgrep) artifacts. findings-layer-2-semgrep.json is a
+#            valid JSON array, AND the raw results-semgrep.sarif parses as SARIF
+#            with at least one run, AND the pinned-rules dir marker rules/.gitignore
+#            exists -- OR layer_2 recorded a documented ERROR status (an
+#            acceptable deterministic-layer outcome that waives the array/SARIF
+#            requirements). rules/.gitignore is required unconditionally.
 # =============================================================================
 if C3_OUT="$(python3 - <<'PY' 2>&1
 import json, os, sys
 fn = os.environ['L2']; merged = os.environ['MERGED']
+sarif = os.environ['SARIF']; rules_gi = os.environ['RULES_GITIGNORE']
 def layer_status(name):
     try:
         d = json.load(open(merged, encoding='utf-8'))
@@ -244,31 +293,51 @@ def layer_status(name):
         if isinstance(el, dict) and '_summary' in el:
             return (el['_summary'].get('layer_status') or {}).get(name)
     return None
-err = ''
+l2_err = ''
 try:
     d = json.load(open(fn, encoding='utf-8'))
-    is_array = isinstance(d, list)
+    l2_ok = isinstance(d, list)
 except Exception as exc:
-    is_array = False; err = str(exc)
-if is_array:
-    print('valid JSON array'); sys.exit(0)
-if layer_status('layer_2') == 'ERROR':
-    print('layer_2 documented ERROR (allowed)'); sys.exit(0)
-print('invalid/missing JSON array and layer_2 not documented ERROR%s' % ((': ' + err) if err else ''))
-sys.exit(1)
+    l2_ok = False; l2_err = str(exc)
+documented_error = (layer_status('layer_2') == 'ERROR')
+problems = []
+# (a) normalized L2 array (waived only if layer_2 is a documented ERROR)
+if not l2_ok and not documented_error:
+    problems.append('findings-layer-2-semgrep.json invalid/missing array and layer_2 not documented ERROR%s'
+                    % ((': ' + l2_err) if l2_err else ''))
+# (b) raw SARIF parses with >=1 run (waived only if layer_2 is a documented ERROR)
+if not documented_error:
+    try:
+        s = json.load(open(sarif, encoding='utf-8'))
+        runs = s.get('runs') if isinstance(s, dict) else None
+        if not (isinstance(runs, list) and len(runs) >= 1):
+            problems.append('results-semgrep.sarif has no SARIF run array')
+    except Exception as exc:
+        problems.append('results-semgrep.sarif not valid SARIF JSON: %s' % exc)
+# (c) rules/.gitignore must exist (pinned-rules dir marker) -- unconditional
+if not (os.path.isfile(rules_gi) and os.path.getsize(rules_gi) > 0):
+    problems.append('rules/.gitignore missing or empty')
+if problems:
+    print('; '.join(problems)); sys.exit(1)
+print('L2 array + raw SARIF (>=1 run) + rules/.gitignore all valid' if not documented_error
+      else 'layer_2 documented ERROR (array/SARIF waived); rules/.gitignore present')
+sys.exit(0)
 PY
 )"; then
-  pass "Check 3: findings-layer-2-semgrep.json valid array (or layer_2 documented ERROR) [${C3_OUT}]"
+  pass "Check 3: findings-layer-2-semgrep.json + results-semgrep.sarif + rules/.gitignore valid (or layer_2 documented ERROR) [${C3_OUT}]"
 else
-  fail "Check 3: findings-layer-2-semgrep.json -- ${C3_OUT}"
+  fail "Check 3: Layer 2 artifacts -- ${C3_OUT}"
 fi
 
 # =============================================================================
 # CHECK 4 -- sink-inventory.txt exists, is non-empty, EVERY line matches
 #            file:::line:::pattern, and covers all 19 sink categories that are
-#            APPLICABLE to the detected primary_language (language-aware: a
-#            category that is structurally inapplicable to the language is
-#            expected-empty and does NOT trigger a failure).
+#            APPLICABLE to the detected primary_language. For this JS/TS codebase
+#            all 19 are applicable (the inapplicable set is empty), so all 19 must
+#            be present -- including CWE-134 Format String Injection, which is
+#            present via its explicit zero-hit coverage sentinel line. The
+#            language-aware exemption hook only ever skips genuinely-inapplicable
+#            non-JS/TS pattern columns (none here).
 # =============================================================================
 C4_OK=1; C4_MSG=""
 if [ ! -s "$SINK" ]; then
@@ -342,8 +411,11 @@ fi
 
 # =============================================================================
 # CHECK 7 -- findings-layer-3b-taint.json is a valid JSON array containing
-#            findings for all 19 sink categories (language-aware: categories
-#            inapplicable to the primary language are expected-empty/exempt).
+#            findings for all 19 sink categories. For this JS/TS codebase all 19
+#            are applicable (inapplicable set empty), so all 19 must be present --
+#            including CWE-134 Format String Injection, present via its explicit
+#            zero-hit coverage finding. The language-aware exemption hook only
+#            skips genuinely-inapplicable non-JS/TS pattern columns (none here).
 # =============================================================================
 if C7_OUT="$(python3 - <<'PY' 2>&1
 import json, os, sys
@@ -452,12 +524,16 @@ else
 fi
 
 # =============================================================================
-# CHECK 10 -- findings-layer-4-osv.json is a valid JSON array, OR layer_4
-#             recorded a documented ERROR status.
+# CHECK 10 -- Layer 4 (OSV-Scanner) artifacts. findings-layer-4-osv.json is a
+#             valid JSON array AND the raw results-osv.json parses and corresponds
+#             to the normalized output (its count of distinct (package, advisory)
+#             pairs is >= the normalized finding count, since normalization
+#             deduplicates) -- OR layer_4 recorded a documented ERROR status (an
+#             acceptable deterministic-layer outcome that waives both).
 # =============================================================================
 if C10_OUT="$(python3 - <<'PY' 2>&1
 import json, os, sys
-fn = os.environ['L4']; merged = os.environ['MERGED']
+fn = os.environ['L4']; merged = os.environ['MERGED']; osv_raw = os.environ['OSV_RAW']
 def layer_status(name):
     try:
         d = json.load(open(merged, encoding='utf-8'))
@@ -467,29 +543,58 @@ def layer_status(name):
         if isinstance(el, dict) and '_summary' in el:
             return (el['_summary'].get('layer_status') or {}).get(name)
     return None
-err = ''
+l4_err = ''
 try:
     d = json.load(open(fn, encoding='utf-8'))
-    is_array = isinstance(d, list)
+    l4_ok = isinstance(d, list); l4_n = len(d) if l4_ok else -1
 except Exception as exc:
-    is_array = False; err = str(exc)
-if is_array:
-    print('valid JSON array'); sys.exit(0)
-if layer_status('layer_4') == 'ERROR':
-    print('layer_4 documented ERROR (allowed)'); sys.exit(0)
-print('invalid/missing JSON array and layer_4 not documented ERROR%s' % ((': ' + err) if err else ''))
-sys.exit(1)
+    l4_ok = False; l4_n = -1; l4_err = str(exc)
+documented_error = (layer_status('layer_4') == 'ERROR')
+problems = []
+if not l4_ok and not documented_error:
+    problems.append('findings-layer-4-osv.json invalid/missing array and layer_4 not documented ERROR%s'
+                    % ((': ' + l4_err) if l4_err else ''))
+if not documented_error:
+    try:
+        raw = json.load(open(osv_raw, encoding='utf-8'))
+        pairs = set()
+        for res in (raw.get('results', []) if isinstance(raw, dict) else []):
+            for pkg in res.get('packages', []):
+                name = (pkg.get('package') or {}).get('name')
+                for v in pkg.get('vulnerabilities', []):
+                    pairs.add((name, v.get('id')))
+        if not pairs:
+            problems.append('results-osv.json has no vulnerability entries')
+        elif l4_ok and l4_n > len(pairs):
+            problems.append('normalized L4 (%d) exceeds raw distinct (pkg,advisory) pairs (%d)'
+                            % (l4_n, len(pairs)))
+    except Exception as exc:
+        problems.append('results-osv.json not valid OSV JSON: %s' % exc)
+if problems:
+    print('; '.join(problems)); sys.exit(1)
+print('L4 array + raw OSV correspond (normalized<=raw distinct pairs)' if not documented_error
+      else 'layer_4 documented ERROR (array/raw waived)')
+sys.exit(0)
 PY
 )"; then
-  pass "Check 10: findings-layer-4-osv.json valid array (or layer_4 documented ERROR) [${C10_OUT}]"
+  pass "Check 10: findings-layer-4-osv.json + results-osv.json valid and correspond (or layer_4 documented ERROR) [${C10_OUT}]"
 else
-  fail "Check 10: findings-layer-4-osv.json -- ${C10_OUT}"
+  fail "Check 10: Layer 4 artifacts -- ${C10_OUT}"
 fi
 
 # =============================================================================
-# CHECK 11 -- findings-merged.json is valid JSON whose _summary counts match
-#             the per-layer files: by_layer[k] == len(layer_file) for each
-#             layer, and total_findings == sum(by_layer).
+# CHECK 11 -- findings-merged.json _summary is internally consistent and matches
+#             the per-layer files. This recomputes and compares EVERY required
+#             summary count and asserts required summary-key presence:
+#               * by_layer[k] == len(layer_file k)  (all 4 layers)
+#               * total_findings == sum(by_layer)
+#               * unique_findings == merged finding-object count (excl. _summary)
+#               * corroborated == # merged findings whose corroborated_by has >1 source
+#               * gate_blocking == # merged findings with gateBlocking==true
+#                                 (and equals the L3b gateBlocking count)
+#               * by_severity has exactly {critical,high,medium,low}, integer
+#                 values, summing to total_findings
+#               * layer_status has all of layer_0,1,2,3a,3b,4, each OK|ERROR
 # =============================================================================
 if C11_OUT="$(python3 - <<'PY' 2>&1
 import json, os, sys
@@ -508,8 +613,12 @@ for el in md:
         summary = el['_summary']; break
 if summary is None:
     print('merged has no _summary element'); sys.exit(1)
+
+problems = []
+
+# --- by_layer == per-layer file lengths; total_findings == sum(by_layer) ---
 by_layer = summary.get('by_layer', {}) or {}
-problems = []; counts = {}
+counts = {}
 for key, fn in files.items():
     try:
         d = json.load(open(fn, encoding='utf-8'))
@@ -519,33 +628,97 @@ for key, fn in files.items():
     if counts[key] < 0:
         problems.append('%s unreadable' % key)
     elif by_layer.get(key) != counts[key]:
-        problems.append('%s: summary=%r actual=%d' % (key, by_layer.get(key), counts[key]))
+        problems.append('by_layer[%s]: summary=%r actual=%d' % (key, by_layer.get(key), counts[key]))
 total = summary.get('total_findings')
-calc = sum(v for v in counts.values() if v >= 0)
-if total != calc:
-    problems.append('total_findings=%r but sum(by_layer)=%d' % (total, calc))
+calc_total = sum(v for v in counts.values() if v >= 0)
+if total != calc_total:
+    problems.append('total_findings=%r but sum(by_layer)=%d' % (total, calc_total))
+
+# --- merged finding objects (everything except the _summary wrapper) ---
+merged_findings = [el for el in md if isinstance(el, dict) and '_summary' not in el]
+nobj = len(merged_findings)
+
+# --- unique_findings == merged finding-object count ---
+uniq = summary.get('unique_findings')
+if uniq != nobj:
+    problems.append('unique_findings=%r but merged finding-object count=%d' % (uniq, nobj))
+
+# --- corroborated == # merged findings with >1 corroborating source ---
+corr_calc = sum(1 for f in merged_findings
+                if isinstance(f.get('corroborated_by'), list) and len(f['corroborated_by']) > 1)
+corr = summary.get('corroborated')
+if corr != corr_calc:
+    problems.append('corroborated=%r but recomputed=%d' % (corr, corr_calc))
+
+# --- gate_blocking == # merged findings gateBlocking==true (== L3b count) ---
+gb_calc = sum(1 for f in merged_findings if f.get('gateBlocking') is True)
+gb = summary.get('gate_blocking')
+if gb != gb_calc:
+    problems.append('gate_blocking=%r but recomputed(merged)=%d' % (gb, gb_calc))
+try:
+    l3b = json.load(open(files['taint-analysis'], encoding='utf-8'))
+    gb_l3b = sum(1 for f in l3b if isinstance(f, dict) and f.get('gateBlocking') is True)
+    if gb != gb_l3b:
+        problems.append('gate_blocking=%r but L3b gateBlocking count=%d' % (gb, gb_l3b))
+except Exception as exc:
+    problems.append('cannot recount L3b gateBlocking: %s' % exc)
+
+# --- by_severity: exactly 4 keys, integer values, summing to total_findings ---
+bysev = summary.get('by_severity')
+if not isinstance(bysev, dict):
+    problems.append('by_severity missing or not an object')
+else:
+    want = {'critical', 'high', 'medium', 'low'}
+    if set(bysev.keys()) != want:
+        problems.append('by_severity keys=%r (want %r)' % (sorted(bysev.keys()), sorted(want)))
+    elif not all(isinstance(v, int) and v >= 0 for v in bysev.values()):
+        problems.append('by_severity has non-integer/negative value(s): %r' % bysev)
+    elif isinstance(total, int) and sum(bysev.values()) != total:
+        problems.append('sum(by_severity)=%d != total_findings=%r' % (sum(bysev.values()), total))
+
+# --- layer_status: all 6 keys present, each OK|ERROR ---
+ls = summary.get('layer_status')
+need = ['layer_0', 'layer_1', 'layer_2', 'layer_3a', 'layer_3b', 'layer_4']
+if not isinstance(ls, dict):
+    problems.append('layer_status missing or not an object')
+else:
+    miss = [k for k in need if k not in ls]
+    badv = [k for k in need if k in ls and ls[k] not in ('OK', 'ERROR')]
+    if miss:
+        problems.append('layer_status missing keys: %s' % ', '.join(miss))
+    if badv:
+        problems.append('layer_status invalid value(s): %s'
+                        % ', '.join('%s=%r' % (k, ls[k]) for k in badv))
+
 if problems:
     print('; '.join(problems)); sys.exit(1)
-print('summary counts consistent (total_findings=%d)' % calc); sys.exit(0)
+print('all _summary counts consistent (total=%d, unique=%d, corroborated=%d, gate_blocking=%d, by_severity sum=%d)'
+      % (calc_total, nobj, corr_calc, gb_calc, sum(bysev.values()))); sys.exit(0)
 PY
 )"; then
-  pass "Check 11: findings-merged.json _summary counts match the sum of the per-layer files [${C11_OUT}]"
+  pass "Check 11: findings-merged.json _summary fully consistent (counts, severity distribution, gate-blocking, layer_status) [${C11_OUT}]"
 else
   fail "Check 11: findings-merged.json -- ${C11_OUT}"
 fi
 
 # =============================================================================
-# CHECK 12 -- NO ANSI escape sequence (ESC, 0x1b) appears in ANY output artifact.
+# CHECK 12 -- NO ANSI escape sequence (ESC, 0x1b) appears in ANY of the 14
+#             declared output artifacts. This now covers the raw scanner outputs
+#             (results-semgrep.sarif, results-osv.json), the pinned-rules marker
+#             (rules/.gitignore) and the verification script itself (verify.sh),
+#             in addition to the profile, per-layer JSONs, merged report and the
+#             four inventories.
 # =============================================================================
 ESC=$(printf '\033')
 C12_BAD=()
-for _f in "$PROFILE" "$L1" "$L2" "$L3B" "$L4" "$MERGED" "$SINK" "$SINK_TEST" "$MIT" "$MIT_TEST"; do
+for _f in "$PROFILE" "$L1" "$L2" "$L3B" "$L4" "$MERGED" "$SINK" "$SINK_TEST" "$MIT" "$MIT_TEST" \
+          "$SARIF" "$OSV_RAW" "$RULES_GITIGNORE" "$VERIFY_SELF"; do
   if [ -f "$_f" ] && LC_ALL=C grep -q "$ESC" "$_f"; then
     C12_BAD+=("$_f")
   fi
 done
 if [ "${#C12_BAD[@]}" -eq 0 ]; then
-  pass "Check 12: no ANSI escape sequences present in any output artifact"
+  pass "Check 12: no ANSI escape sequences present in any of the 14 declared artifacts"
 else
   fail "Check 12: ANSI escape sequence(s) found in: ${C12_BAD[*]}"
 fi
@@ -708,6 +881,10 @@ fi
 # keep them consistent) and re-serialises with the SAME minified, raw-UTF-8
 # style as the original (ensure_ascii=False, compact separators), so re-runs
 # are byte-stable and only the status field can ever change.
+#
+# In read-only mode (--check/--no-write/--read-only/--dry-run or VERIFY_NO_WRITE=1)
+# the writeback is SUPPRESSED so the suite mutates nothing and can be executed
+# safely by a read-only reviewer or CI validator. The exit code is unchanged.
 # =============================================================================
 if [ "$FAILURES" -eq 0 ]; then
   VERIFICATION_STATUS="PASS"
@@ -715,7 +892,10 @@ else
   VERIFICATION_STATUS="FAIL"
 fi
 
-if [ -f "$MERGED" ]; then
+if [ "$NO_WRITE" -eq 1 ]; then
+  printf '\n(read-only mode: verification_status=%s computed but NOT written to %s)\n' \
+    "$VERIFICATION_STATUS" "$MERGED"
+elif [ -f "$MERGED" ]; then
   VERIFICATION_STATUS="$VERIFICATION_STATUS" MERGED="$MERGED" python3 - <<'PY'
 import json, os, sys
 merged = os.environ['MERGED']

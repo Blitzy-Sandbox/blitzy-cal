@@ -2104,66 +2104,6 @@ packages/features/ee/api-keys/lib/autoLock.ts:::73:::[CWE-117] log.warn(
 packages/features/ee/api-keys/lib/autoLock.ts:::88:::[CWE-117] log.error(`Error in auto-lock: No user found for API key: ${identifier}`);
 packages/features/ee/api-keys/lib/autoLock.ts:::91:::[CWE-117] log.error(`Error in auto-lock process: ${err instanceof Error ? err.message : String(err)}`);
 packages/features/ee/api-keys/lib/autoLock.ts:::173:::[CWE-117] log.warn(lockReason, {
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::107:::[CWE-117] console.log("Skipping Stripe API calls (--skip-stripe flag)");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::111:::[CWE-117] console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::118:::[CWE-117] console.log("Cleaning up Stripe resources...");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::124:::[CWE-117] console.log(`  Deleted test clock: ${clock.id}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::139:::[CWE-117] console.log(`  Deleted customer: ${customer.id}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::147:::[CWE-117] console.log("Cleaning up database resources...");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::167:::[CWE-117] console.log(`  Deleted ${bookingIds.length} bookings`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::175:::[CWE-117] console.log(`  Deleted org (ID: ${org.id})`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::179:::[CWE-117] if (deleteResult.count > 0) console.log(`  Deleted ${deleteResult.count} users`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::181:::[CWE-117] console.log("  Database cleanup complete");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::216:::[CWE-117] console.log("Enabled active-user-billing feature flag");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::224:::[CWE-117] console.log("\nCreating organization...");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::231:::[CWE-117] console.log(`  Organization: ${org.name} (ID: ${org.id})`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::245:::[CWE-117] console.log(`Creating ${TOTAL_MEMBERS + 1} users...`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::256:::[CWE-117] if ((i + 1) % 25 === 0) console.log(`  ... created ${i + 1}/${TOTAL_MEMBERS} members`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::258:::[CWE-117] console.log(`  Created admin + ${members.length} members = ${members.length + 1} total`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::261:::[CWE-117] console.log("Adding memberships...");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::291:::[CWE-117] console.log("\nCreating Stripe resources...");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::303:::[CWE-117] console.log(`  Test clock: ${testClock.id}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::333:::[CWE-117] console.log(`  Customer: ${customer.id}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::334:::[CWE-117] console.log(`  Subscription: ${subscription.id} (${totalMembers} seats)`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::335:::[CWE-117] console.log(`  Product: ${product.id} (${product.name})`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::336:::[CWE-117] console.log(`  Stripe period: ${periodStart.toISOString()} - ${periodEnd.toISOString()}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::337:::[CWE-117] console.log(
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::353:::[CWE-117] console.log(`Creating bookings in period ${periodStart.toISOString()} - ${periodEnd.toISOString()}...`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::414:::[CWE-117] console.log(`  Created ${bookingIds.length} bookings`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::469:::[CWE-117] console.log(
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::486:::[CWE-117] console.log("=== Active User Billing (AUB) Seed Script ===\n");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::487:::[CWE-117] console.log("Options:");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::488:::[CWE-117] console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::489:::[CWE-117] console.log(`  --cleanup: ${CLEANUP_FIRST}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::490:::[CWE-117] console.log("");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::496:::[CWE-117] console.log("\n--- Running ActiveUserBillingService ---\n");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::510:::[CWE-117] console.log("=== Summary ===\n");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::511:::[CWE-117] console.log(`  Organization ID:    ${result.orgId}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::512:::[CWE-117] console.log(`  Subscription ID:    ${result.subscriptionId}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::513:::[CWE-117] console.log(
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::516:::[CWE-117] console.log(`  Total members:      ${result.totalMembers}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::517:::[CWE-117] console.log("");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::519:::[CWE-117] console.log(`  Active hosts (${result.expectedActiveHosts.length}):`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::521:::[CWE-117] console.log(`    - ${email}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::524:::[CWE-117] console.log(`  Active attendees only (${result.expectedActiveAttendees.length}):`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::526:::[CWE-117] console.log(`    - ${email}`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::529:::[CWE-117] console.log(`  Inactive (${result.expectedInactive.length}):`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::530:::[CWE-117] console.log(`    (${result.expectedInactive.length} members with no in-period bookings)`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::532:::[CWE-117] console.log("");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::533:::[CWE-117] console.log("  +--------------------------+---------+");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::534:::[CWE-117] console.log("  | Category                 | Count   |");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::535:::[CWE-117] console.log("  +--------------------------+---------+");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::536:::[CWE-117] console.log(`  | Total org members        | ${String(result.totalMembers).padStart(7)} |`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::537:::[CWE-117] console.log(`  | Active hosts (created)   | ${String(result.expectedActiveHosts.length).padStart(7)} |`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::538:::[CWE-117] console.log(`  | Active attendees (created)| ${String(result.expectedActiveAttendees.length).padStart(6)} |`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::539:::[CWE-117] console.log(`  | Total active (created)   | ${String(expectedTotal).padStart(7)} |`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::540:::[CWE-117] console.log(`  | Inactive (created)       | ${String(result.expectedInactive.length).padStart(7)} |`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::541:::[CWE-117] console.log(`  | Service counted          | ${String(serviceCount).padStart(7)} |`);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::542:::[CWE-117] console.log("  +--------------------------+---------+");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::545:::[CWE-117] console.log("\n  [PASS] Service count matches expected count.");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::547:::[CWE-117] console.log(
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::552:::[CWE-117] console.log("\n=== Done ===\n");
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::555:::[CWE-117] console.error("Seed failed:", error);
 packages/features/ee/billing/api/webhook/__handler.ts:::58:::[CWE-117] console.log("Unhandled Stripe Webhook event type", event.type);
 packages/features/ee/billing/api/webhook/__handler.ts:::67:::[CWE-117] console.log("Unhandled Stripe Webhook event type", event.type);
 packages/features/ee/billing/api/webhook/_checkout.session.completed.ts:::40:::[CWE-117] log.error("Failed to update Stripe customer metadata with ad tracking data", { error });
@@ -2247,140 +2187,6 @@ packages/features/ee/billing/service/billingPeriod/BillingPeriodService.ts:::205
 packages/features/ee/billing/service/billingProvider/StripeBillingService.ts:::242:::[CWE-117] log.warn(`Unhandled status for ${stripeStatus} and sub id ${subscriptionId}`);
 packages/features/ee/billing/service/billingProvider/StripeBillingService.ts:::310:::[CWE-117] log.warn("Failed to void invoice", { invoiceId, error });
 packages/features/ee/billing/service/billingProvider/StripeBillingService.ts:::320:::[CWE-117] log.warn("Failed to retrieve payment intent failure reason", { paymentIntentId, error });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::26:::[CWE-117] console.log("Skipping Stripe cleanup (--skip-stripe flag)");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::31:::[CWE-117] console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe cleanup");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::41:::[CWE-117] console.log("\nCleaning up Stripe resources...");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::60:::[CWE-117] console.log(`  Cancelled subscription: ${sub.id}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::73:::[CWE-117] console.log(`  Voided invoice: ${invoice.id}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::75:::[CWE-117] console.log(`  Could not void invoice ${invoice.id}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::81:::[CWE-117] console.log(`  Deleted customer: ${customer.id}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::83:::[CWE-117] console.log(`  Error cleaning up customer ${customer.id}:`, error);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::94:::[CWE-117] console.log(`  Archived product: ${product.id}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::96:::[CWE-117] console.log(`  Could not archive product ${product.id}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::101:::[CWE-117] console.log("Stripe cleanup complete");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::105:::[CWE-117] console.log("\nCleaning up database resources...");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::113:::[CWE-117] console.log("  No test organization found");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::117:::[CWE-117] console.log(`  Found test organization: ${org.name} (ID: ${org.id})`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::123:::[CWE-117] console.log(`  Deleted ${deletedProrations.count} proration records`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::129:::[CWE-117] console.log(`  Deleted ${deletedLogs.count} seat change logs`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::134:::[CWE-117] .catch(() => console.log("  No organization billing to delete"));
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::139:::[CWE-117] .catch(() => console.log("  No organization settings to delete"));
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::143:::[CWE-117] console.log("  Deleted profiles");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::153:::[CWE-117] console.log(`  Deleted team: ${team.name}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::160:::[CWE-117] console.log(`  Deleted ${deletedMemberships.count} memberships`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::164:::[CWE-117] console.log(`  Deleted organization: ${org.name}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::179:::[CWE-117] console.log(`  Deleted user: ${email}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::186:::[CWE-117] console.log("Database cleanup complete");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::190:::[CWE-117] console.log("=== Proration Test Cleanup Script ===");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::191:::[CWE-117] console.log("\nOptions:");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::192:::[CWE-117] console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::203:::[CWE-117] console.log("\n=== Cleanup Complete ===");
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::205:::[CWE-117] console.error("\nCleanup failed:", error);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::91:::[CWE-117] console.log("Skipping Stripe API calls (--skip-stripe flag)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::96:::[CWE-117] console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::148:::[CWE-117] console.log("Cleaning up existing Stripe test resources...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::168:::[CWE-117] console.log(`  Cancelled subscription: ${sub.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::173:::[CWE-117] console.log(`  Deleted customer: ${customer.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::175:::[CWE-117] console.log(`  Could not delete customer ${customer.id}:`, error);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::191:::[CWE-117] console.log(`  Archived product: ${product.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::197:::[CWE-117] console.log("Creating Stripe resources...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::208:::[CWE-117] console.log(`  Created product: ${product.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::223:::[CWE-117] console.log(`  Created price: ${price.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::235:::[CWE-117] console.log(`  Created customer: ${customer.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::254:::[CWE-117] console.log(`  Attached payment method: ${paymentMethod.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::270:::[CWE-117] console.log(`  Created subscription: ${subscription.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::281:::[CWE-117] console.log(`Creating invoice for $${(amount / 100).toFixed(2)}...`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::302:::[CWE-117] console.log(`  Created invoice: ${finalizedInvoice.id} (status: ${finalizedInvoice.status})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::308:::[CWE-117] console.log("Creating Stripe resources for trigger org (annual)...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::318:::[CWE-117] console.log(`  Created product: ${product.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::331:::[CWE-117] console.log(`  Created price: ${price.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::342:::[CWE-117] console.log(`  Created customer: ${customer.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::353:::[CWE-117] console.log(`  Attached payment method: ${paymentMethod.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::364:::[CWE-117] console.log(`  Created subscription: ${subscription.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::370:::[CWE-117] console.log("Cleaning up database test resources...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::406:::[CWE-117] console.log("  Trigger org cleanup complete");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::415:::[CWE-117] console.log("  No test organization found");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::461:::[CWE-117] console.log("  Database cleanup complete");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::466:::[CWE-117] console.log(`\nCreating trigger-ready organization (monthKey: ${monthKey})...`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::482:::[CWE-117] console.log(`  Organization created: ${org.name} (ID: ${org.id})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::510:::[CWE-117] console.log(`  Team created: ${team.name} (ID: ${team.id})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::554:::[CWE-117] console.log("  Users and memberships created (5 org members, 3 team members)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::605:::[CWE-117] console.log("  OrganizationBilling created (ANNUALLY, $150/seat, 3 paid seats, no trial)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::652:::[CWE-117] console.log(`  Created 2 unprocessed SeatChangeLog entries (monthKey: ${monthKey})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::653:::[CWE-117] console.log("  NO MonthlyProration records created (trigger-ready state)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::674:::[CWE-117] console.log("\nCreating test organization...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::694:::[CWE-117] console.log(`Organization created: ${org.name} (ID: ${org.id})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::708:::[CWE-117] console.log("Organization settings created");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::728:::[CWE-117] console.log(`Team created: ${team.name} (ID: ${team.id})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::731:::[CWE-117] console.log("Creating test users...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::823:::[CWE-117] console.log("Users added to organization and team (8 org members, 4 team members)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::868:::[CWE-117] console.log("Organization billing created");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::883:::[CWE-117] console.log("Organization team metadata updated with subscriptionId");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::891:::[CWE-117] console.log("Creating test proration and seat change records...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::954:::[CWE-117] console.log("Creating seat change logs...");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1013:::[CWE-117] console.log("Proration and seat change records created");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1035:::[CWE-117] console.log("=== Proration Test Seed Script ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1036:::[CWE-117] console.log("Options:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1037:::[CWE-117] console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1038:::[CWE-117] console.log(`  --cleanup: ${CLEANUP_FIRST}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1039:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1044:::[CWE-117] console.log("\n=== Seed Complete ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1045:::[CWE-117] console.log("Organization:", result.organization);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1046:::[CWE-117] console.log("Team:", result.team);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1048:::[CWE-117] console.log("\nTest Users:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1050:::[CWE-117] console.log(`  - ${u.name} (${u.email}) - Role: ${u.role}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1052:::[CWE-117] console.log(`  Password for all users: ${TEST_PASSWORD}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1054:::[CWE-117] console.log("\nProration Records:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1056:::[CWE-117] console.log(`  - ${p.id}: ${p.status} (blocking: ${p.isBlocking})`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1060:::[CWE-117] console.log("\nStripe Resources:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1061:::[CWE-117] console.log(`  Customer: ${result.stripe.customer.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1062:::[CWE-117] console.log(`  Subscription: ${result.stripe.subscription?.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1063:::[CWE-117] console.log(`  Product: ${result.stripe.product?.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1064:::[CWE-117] console.log(`  Price: ${result.stripe.price?.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1067:::[CWE-117] console.log("\n=== Testing Instructions ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1068:::[CWE-117] console.log("1. Login as proration-admin@example.com");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1069:::[CWE-117] console.log("   - Should see the due invoice banner (error variant - blocking)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1070:::[CWE-117] console.log("   - Should be blocked from inviting new members");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1071:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1072:::[CWE-117] console.log("2. Login as proration-member@example.com");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1073:::[CWE-117] console.log("   - Should NOT see the due invoice banner (not a billing admin)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1074:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1075:::[CWE-117] console.log("3. To test sub-team exception:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1076:::[CWE-117] console.log("   - Try inviting proration-member@example.com to the sub-team");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1077:::[CWE-117] console.log("   - This should succeed (existing org member)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1078:::[CWE-117] console.log("   - Try inviting a new email - this should be blocked");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1079:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1082:::[CWE-117] console.log("=== Stripe Dashboard (Proration Org) ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1083:::[CWE-117] console.log(`Customer: https://dashboard.stripe.com/test/customers/${result.stripe.customer.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1084:::[CWE-117] console.log(
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1087:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1093:::[CWE-117] console.log("=== Trigger-Ready Organization ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1094:::[CWE-117] console.log("Organization:", t.organization);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1095:::[CWE-117] console.log("Team:", t.team);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1096:::[CWE-117] console.log(`MonthKey: ${t.monthKey}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1097:::[CWE-117] console.log(`Unprocessed SeatChangeLogs: ${t.unprocessedSeatChanges}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1098:::[CWE-117] console.log("MonthlyProration records: 0 (intentionally absent)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1101:::[CWE-117] console.log(`\nStripe (Trigger Org):`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1102:::[CWE-117] console.log(`  Customer: https://dashboard.stripe.com/test/customers/${t.stripe.customer.id}`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1103:::[CWE-117] console.log(
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1108:::[CWE-117] console.log("\n=== Trigger Testing Instructions ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1109:::[CWE-117] console.log("When scheduleMonthlyProration runs, it will:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1110:::[CWE-117] console.log(`  1. Query for annual orgs with unprocessed seat changes for monthKey "${t.monthKey}"`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1111:::[CWE-117] console.log(`  2. Find trigger-test-org with ${t.unprocessedSeatChanges} additions, 0 removals`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1112:::[CWE-117] console.log("  3. Calculate prorated amount based on remaining annual subscription days");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1113:::[CWE-117] console.log("  4. Create a MonthlyProration record");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1114:::[CWE-117] console.log("  5. Mark SeatChangeLog entries as processed");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1115:::[CWE-117] console.log("  6. Create a Stripe invoice (if amount > 0)");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1116:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1117:::[CWE-117] console.log("To verify after trigger runs:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1118:::[CWE-117] console.log(`  SELECT * FROM "MonthlyProration" WHERE "teamId" = ${t.organization.id};`);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1119:::[CWE-117] console.log(
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1122:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1125:::[CWE-117] console.log("=== Cleanup ===\n");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1126:::[CWE-117] console.log("To clean up all test data, run:");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1127:::[CWE-117] console.log(
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1130:::[CWE-117] console.log("");
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1132:::[CWE-117] console.error("Error seeding data:", error);
 packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::56:::[CWE-117] this.logger.error(`Failed to check if high water mark should apply for team ${teamId}`, { error });
 packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::74:::[CWE-117] this.logger.warn(`No billing record found for team ${teamId}`);
 packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::81:::[CWE-117] this.logger.warn(`Could not get member count for team ${teamId}`);
@@ -2407,99 +2213,6 @@ packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::309
 packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::315:::[CWE-117] this.logger.debug(`No reset needed for team ${teamId} - already at correct quantity`, {
 packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::331:::[CWE-117] this.logger.info(`Resetting subscription for team ${teamId} after renewal`, {
 packages/features/ee/billing/service/highWaterMark/HighWaterMarkService.ts:::361:::[CWE-117] this.logger.info(`Successfully reset subscription for team ${teamId}`, {
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::95:::[CWE-117] console.log("Skipping Stripe API calls (--skip-stripe flag)");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::100:::[CWE-117] console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::152:::[CWE-117] console.log("Cleaning up existing Stripe test resources...");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::160:::[CWE-117] console.log(`  Deleted test clock: ${clock.id} (${clock.name})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::162:::[CWE-117] console.log(`  Could not delete test clock ${clock.id}:`, error);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::185:::[CWE-117] console.log(`  Cancelled subscription: ${sub.id}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::190:::[CWE-117] console.log(`  Deleted customer: ${customer.id}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::192:::[CWE-117] console.log(`  Could not delete customer ${customer.id}:`, error);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::206:::[CWE-117] console.log(`Creating Stripe resources for ${name}...`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::214:::[CWE-117] console.log(`  Using existing price: ${price.id} ($${pricePerSeatCents / 100}/seat)`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::221:::[CWE-117] console.log(`  Using existing product: ${product.id} (${product.name})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::228:::[CWE-117] console.log(`  Created test clock: ${testClock.id}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::241:::[CWE-117] console.log(`  Created customer: ${customer.id} (attached to test clock)`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::253:::[CWE-117] console.log(`  Attached payment method: ${paymentMethod.id}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::264:::[CWE-117] console.log(`  Created subscription: ${subscription.id} (${seatCount} seats)`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::270:::[CWE-117] console.log("Cleaning up database test resources...");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::283:::[CWE-117] console.log(`  Deleted ${deleteResult.count} test users`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::296:::[CWE-117] console.log(`  Deleted HWM test team (ID: ${team.id})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::318:::[CWE-117] console.log(`  Deleted HWM test org (ID: ${org.id})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::321:::[CWE-117] console.log("  Database cleanup complete");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::325:::[CWE-117] console.log("\nCreating HWM test team (standalone)...");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::341:::[CWE-117] console.log(`  Team created: ${team.name} (ID: ${team.id})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::378:::[CWE-117] console.log(`  Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::453:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::500:::[CWE-117] console.log(`  SeatChangeLog entries created (5 additions, 1 removal)`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::512:::[CWE-117] console.log("\nCreating HWM test organization...");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::528:::[CWE-117] console.log(`  Organization created: ${org.name} (ID: ${org.id})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::578:::[CWE-117] console.log(`  Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::664:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::713:::[CWE-117] console.log(`  SeatChangeLog entries created (8 additions, 2 removals)`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::739:::[CWE-117] console.log("Enabled hwm-seating feature flag");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::774:::[CWE-117] console.log("=== High Water Mark (HWM) Test Seed Script ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::775:::[CWE-117] console.log("Options:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::776:::[CWE-117] console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::777:::[CWE-117] console.log(`  --cleanup: ${CLEANUP_FIRST}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::778:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::783:::[CWE-117] console.log("\n=== Seed Complete ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::823:::[CWE-117] console.log("=== Summary Table ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::824:::[CWE-117] console.log("| Entity | Qty | Members | HWM | invoice.upcoming | After Renewal | Price |");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::825:::[CWE-117] console.log("|--------|-----|---------|-----|------------------|---------------|-------|");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::826:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::829:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::833:::[CWE-117] console.log("\n=== Test Clock Dates ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::834:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::837:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::841:::[CWE-117] console.log("\n=== Stripe Resources ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::842:::[CWE-117] console.log("Team:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::843:::[CWE-117] console.log(`  Subscription: ${teamSubUrl}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::844:::[CWE-117] console.log(`  Customer:     ${teamCustUrl}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::845:::[CWE-117] console.log(`  Test Clock:   ${teamClockUrl}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::846:::[CWE-117] console.log("\nOrg:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::847:::[CWE-117] console.log(`  Subscription: ${orgSubUrl}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::848:::[CWE-117] console.log(`  Customer:     ${orgCustUrl}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::849:::[CWE-117] console.log(`  Test Clock:   ${orgClockUrl}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::852:::[CWE-117] console.log("\n=== Test Users ===");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::853:::[CWE-117] console.log(`Total test users created: ${result.testUsers.length}`);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::854:::[CWE-117] console.log("User credentials are defined in the seed script constants.");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::856:::[CWE-117] console.log("\n=== Testing Instructions ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::857:::[CWE-117] console.log("1. ADVANCE TEST CLOCK to trigger invoice.upcoming:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::858:::[CWE-117] console.log("   Go to the Test Clock URL above and click 'Advance time'");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::859:::[CWE-117] console.log("   Advance to ~3 days before the billing period ends (e.g., +27 days)");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::860:::[CWE-117] console.log("   This will trigger the invoice.upcoming webhook");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::861:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::862:::[CWE-117] console.log("   Or use Stripe CLI:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::865:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::869:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::870:::[CWE-117] console.log("2. invoice.upcoming webhook flow:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::871:::[CWE-117] console.log("   - Stripe sends invoice.upcoming ~3 days before renewal");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::872:::[CWE-117] console.log("   - The webhook calls HighWaterMarkService.applyHighWaterMarkToSubscription()");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::873:::[CWE-117] console.log("   - This updates the subscription quantity to the HWM value");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::874:::[CWE-117] console.log("   - Team: subscription quantity updated from 4 to 5");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::875:::[CWE-117] console.log("   - Org: subscription quantity updated from 6 to 8");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::876:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::877:::[CWE-117] console.log("3. ADVANCE TEST CLOCK again to trigger renewal:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::878:::[CWE-117] console.log("   Advance to after the billing period ends (e.g., +31 days from start)");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::879:::[CWE-117] console.log("   This will trigger customer.subscription.updated webhook");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::880:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::881:::[CWE-117] console.log("4. customer.subscription.updated webhook flow:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::882:::[CWE-117] console.log("   - After renewal completes, this webhook fires");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::883:::[CWE-117] console.log("   - For MONTHLY billing, it calls resetSubscriptionAfterRenewal()");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::884:::[CWE-117] console.log("   - This resets subscription quantity AND HWM to current member count");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::885:::[CWE-117] console.log("   - Team: subscription quantity reset from 5 to 4, HWM reset to 4");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::886:::[CWE-117] console.log("   - Org: subscription quantity reset from 8 to 6, HWM reset to 6");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::887:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::888:::[CWE-117] console.log("5. To verify HWM in database:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::889:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::892:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::895:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::897:::[CWE-117] console.log("=== Cleanup ===\n");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::898:::[CWE-117] console.log("To clean up all test data, run:");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::899:::[CWE-117] console.log(
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::902:::[CWE-117] console.log("");
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::904:::[CWE-117] console.error("Error seeding data:", error);
 packages/features/ee/billing/service/proration/MonthlyProrationService.ts:::72:::[CWE-117] this.logger.info("Monthly proration feature is not enabled, skipping batch processing", { monthKey });
 packages/features/ee/billing/service/proration/MonthlyProrationService.ts:::80:::[CWE-117] this.logger.info("Monthly proration batch started", {
 packages/features/ee/billing/service/proration/MonthlyProrationService.ts:::98:::[CWE-117] this.logger.info("Monthly proration batch finished", {
@@ -4287,7 +4000,6 @@ apps/web/components/getting-started/components/AppConnectionItem.tsx:::120:::[CW
 apps/web/modules/onboarding/personal/_components/InstallableAppCard.tsx:::56:::[CWE-1004] document.cookie = `return-to=${window.location.href};path=/;max-age=3600;SameSite=Lax`;
 apps/web/modules/settings/components/TimezoneChangeDialog.tsx:::16:::[CWE-1004] document.cookie = `calcom-timezone-dialog=1;max-age=${
 apps/web/modules/settings/my-account/general-view.tsx:::78:::[CWE-1004] document.cookie = `calNewLocale=${res.locale}; path=/`;
-packages/emails/templates/workflow-email.ts:::89:::[CWE-1004] return dom.serialize();
 packages/lib/cookie.ts:::15:::[CWE-1004] document.cookie = `${name}=${value}; ${options}`;
 packages/trpc/server/routers/viewer/slots/reserveSlot.handler.ts:::116:::[CWE-1004] "Set-Cookie",
 apps/api/v1/lib/utils/isAdmin.ts:::15:::[CWE-639] const orgOwnerOrAdminMemberships = await prisma.membership.findMany({
@@ -5872,33 +5584,6 @@ packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepositor
 packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepository.ts:::157:::[CWE-639] return this.prismaClient.booking.findMany({
 packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepository.ts:::195:::[CWE-639] return this.prismaClient.booking.findMany({
 packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepository.ts:::227:::[CWE-639] return this.prismaClient.attendee.findMany({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::75:::[CWE-639] const user = await prisma.user.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::90:::[CWE-639] await prisma.profile.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::149:::[CWE-639] const org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::152:::[CWE-639] const memberUsers = await prisma.user.findMany({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::159:::[CWE-639] const bookings = await prisma.booking.findMany({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::165:::[CWE-639] await prisma.attendee.deleteMany({ where: { bookingId: { in: bookingIds } } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::166:::[CWE-639] await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::171:::[CWE-639] await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::172:::[CWE-639] await prisma.organizationSettings.deleteMany({ where: { organizationId: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::173:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::174:::[CWE-639] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::178:::[CWE-639] const deleteResult = await prisma.user.deleteMany({ where: { email: { in: ALL_EMAILS } } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::205:::[CWE-639] await prisma.feature.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::225:::[CWE-639] let org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::227:::[CWE-639] org = await prisma.team.create({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::233:::[CWE-639] await prisma.organizationSettings.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::262:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::268:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::299:::[CWE-639] const testClock = await stripe.testHelpers.testClocks.create({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::305:::[CWE-639] const customer = await stripe.customers.create({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::312:::[CWE-639] const pm = await stripe.paymentMethods.create({ type: "card", card: { token: "tok_visa" } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::314:::[CWE-639] await stripe.customers.update(customer.id, {
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::319:::[CWE-639] const subscription = await stripe.subscriptions.create({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::362:::[CWE-639] const booking = await prisma.booking.create({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::375:::[CWE-639] await prisma.attendee.create({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::428:::[CWE-639] await prisma.organizationBilling.upsert({
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::459:::[CWE-639] await prisma.team.update({
 packages/features/ee/billing/api/webhook/_checkout.session.completed.ts:::35:::[CWE-639] await stripe.customers.update(customerId, {
 packages/features/ee/billing/api/webhook/_checkout.session.completed.ts:::210:::[CWE-639] await prisma.calAiPhoneNumber.update({
 packages/features/ee/billing/api/webhook/_customer.subscription.updated.ts:::62:::[CWE-639] await prisma.calAiPhoneNumber.update({
@@ -5975,150 +5660,6 @@ packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::39:::[CWE
 packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::98:::[CWE-639] const orgMembers = await this.prisma.membership.findMany({
 packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::139:::[CWE-639] const overdueProrations = await this.prisma.monthlyProration.findMany({
 packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::178:::[CWE-639] const memberships = await this.prisma.membership.findMany({
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::93:::[CWE-639] await stripe.products.update(product.id, { active: false });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::108:::[CWE-639] const org = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::120:::[CWE-639] const deletedProrations = await prisma.monthlyProration.deleteMany({
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::126:::[CWE-639] const deletedLogs = await prisma.seatChangeLog.deleteMany({
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::132:::[CWE-639] await prisma.organizationBilling
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::133:::[CWE-639] .delete({ where: { teamId: org.id } })
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::137:::[CWE-639] await prisma.organizationSettings
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::138:::[CWE-639] .delete({ where: { organizationId: org.id } })
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::142:::[CWE-639] await prisma.profile.deleteMany({ where: { organizationId: org.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::146:::[CWE-639] const childTeams = await prisma.team.findMany({
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::151:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::152:::[CWE-639] await prisma.team.delete({ where: { id: team.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::157:::[CWE-639] const deletedMemberships = await prisma.membership.deleteMany({
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::163:::[CWE-639] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::174:::[CWE-639] const user = await prisma.user.findUnique({ where: { email } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::176:::[CWE-639] await prisma.password.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::177:::[CWE-639] await prisma.membership.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::178:::[CWE-639] await prisma.user.delete({ where: { id: user.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::208:::[CWE-639] await prisma.$disconnect();
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::108:::[CWE-639] const user = await prisma.user.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::127:::[CWE-639] await prisma.profile.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::190:::[CWE-639] await stripe.products.update(product.id, { active: false });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::200:::[CWE-639] const product = await stripe.products.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::211:::[CWE-639] const price = await stripe.prices.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::226:::[CWE-639] const customer = await stripe.customers.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::238:::[CWE-639] const paymentMethod = await stripe.paymentMethods.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::249:::[CWE-639] await stripe.customers.update(customer.id, {
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::257:::[CWE-639] const subscription = await stripe.subscriptions.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::284:::[CWE-639] await stripe.invoiceItems.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::292:::[CWE-639] const invoice = await stripe.invoices.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::310:::[CWE-639] const product = await stripe.products.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::321:::[CWE-639] const price = await stripe.prices.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::333:::[CWE-639] const customer = await stripe.customers.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::344:::[CWE-639] const paymentMethod = await stripe.paymentMethods.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::350:::[CWE-639] await stripe.customers.update(customer.id, {
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::356:::[CWE-639] const subscription = await stripe.subscriptions.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::373:::[CWE-639] const triggerOrg = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::378:::[CWE-639] await prisma.monthlyProration.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::379:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::380:::[CWE-639] await prisma.organizationBilling.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::382:::[CWE-639] const triggerChildTeams = await prisma.team.findMany({ where: { parentId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::384:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: t.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::385:::[CWE-639] await prisma.team.delete({ where: { id: t.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::388:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::389:::[CWE-639] await prisma.team.delete({ where: { id: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::394:::[CWE-639] const user = await prisma.user.findUnique({ where: { email } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::396:::[CWE-639] await prisma.password.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::397:::[CWE-639] await prisma.membership.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::398:::[CWE-639] await prisma.profile.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::399:::[CWE-639] await prisma.user.delete({ where: { id: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::410:::[CWE-639] const org = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::420:::[CWE-639] await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::423:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::426:::[CWE-639] await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::429:::[CWE-639] const childTeams = await prisma.team.findMany({ where: { parentId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::431:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::432:::[CWE-639] await prisma.team.delete({ where: { id: team.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::436:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::439:::[CWE-639] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::449:::[CWE-639] const user = await prisma.user.findUnique({ where: { email } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::451:::[CWE-639] await prisma.password.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::452:::[CWE-639] await prisma.membership.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::453:::[CWE-639] await prisma.profile.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::454:::[CWE-639] await prisma.user.delete({ where: { id: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::469:::[CWE-639] let org = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::474:::[CWE-639] org = await prisma.team.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::485:::[CWE-639] await prisma.organizationSettings.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::497:::[CWE-639] let team = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::502:::[CWE-639] team = await prisma.team.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::526:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::533:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::541:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::547:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::577:::[CWE-639] await prisma.organizationBilling.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::608:::[CWE-639] await prisma.team.update({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::619:::[CWE-639] const orgBilling = await prisma.organizationBilling.findUnique({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::624:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::625:::[CWE-639] await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::636:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::677:::[CWE-639] let org = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::685:::[CWE-639] org = await prisma.team.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::697:::[CWE-639] await prisma.organizationSettings.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::711:::[CWE-639] let team = await prisma.team.findFirst({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::719:::[CWE-639] team = await prisma.team.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::760:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::772:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::785:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::798:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::811:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::848:::[CWE-639] await prisma.organizationBilling.upsert({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::873:::[CWE-639] await prisma.team.update({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::886:::[CWE-639] const orgBilling = await prisma.organizationBilling.findUnique({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::898:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::899:::[CWE-639] await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::902:::[CWE-639] const blockingProration = await prisma.monthlyProration.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::929:::[CWE-639] const warningProration = await prisma.monthlyProration.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::961:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::978:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::997:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::1135:::[CWE-639] await prisma.$disconnect();
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::112:::[CWE-639] const user = await prisma.user.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::131:::[CWE-639] await prisma.profile.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::224:::[CWE-639] const testClock = await stripe.testHelpers.testClocks.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::231:::[CWE-639] const customer = await stripe.customers.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::244:::[CWE-639] const paymentMethod = await stripe.paymentMethods.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::250:::[CWE-639] await stripe.customers.update(customer.id, {
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::256:::[CWE-639] const subscription = await stripe.subscriptions.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::279:::[CWE-639] const deleteResult = await prisma.user.deleteMany({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::287:::[CWE-639] const team = await prisma.team.findFirst({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::292:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::293:::[CWE-639] await prisma.teamBilling.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::294:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::295:::[CWE-639] await prisma.team.delete({ where: { id: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::300:::[CWE-639] const org = await prisma.team.findFirst({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::305:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::306:::[CWE-639] await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::307:::[CWE-639] await prisma.organizationSettings.deleteMany({ where: { organizationId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::310:::[CWE-639] const childTeams = await prisma.team.findMany({ where: { parentId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::312:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: t.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::313:::[CWE-639] await prisma.team.delete({ where: { id: t.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::316:::[CWE-639] await prisma.membership.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::317:::[CWE-639] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::328:::[CWE-639] let team = await prisma.team.findFirst({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::333:::[CWE-639] team = await prisma.team.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::358:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::367:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::420:::[CWE-639] await prisma.teamBilling.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::458:::[CWE-639] const teamBilling = await prisma.teamBilling.findUnique({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::461:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::469:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::486:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::515:::[CWE-639] let org = await prisma.team.findFirst({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::520:::[CWE-639] org = await prisma.team.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::531:::[CWE-639] await prisma.organizationSettings.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::558:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::567:::[CWE-639] await prisma.membership.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::620:::[CWE-639] await prisma.organizationBilling.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::654:::[CWE-639] await prisma.team.update({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::669:::[CWE-639] const orgBilling = await prisma.organizationBilling.findUnique({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::672:::[CWE-639] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::680:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::698:::[CWE-639] await prisma.seatChangeLog.create({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::728:::[CWE-639] await prisma.feature.upsert({
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::907:::[CWE-639] await prisma.$disconnect();
 packages/features/ee/billing/service/seatTracking/SeatChangeTrackingService.ts:::84:::[CWE-639] await this.repository.create({
 packages/features/ee/billing/service/seatTracking/SeatChangeTrackingService.ts:::169:::[CWE-639] await this.repository.create({
 packages/features/ee/billing/service/teams/TeamBillingService.ts:::97:::[CWE-639] const membershipCount = await prisma.membership.count({ where: { teamId } });
@@ -8874,7 +8415,6 @@ packages/trpc/server/routers/viewer/phoneNumber/list.schema.ts:::6:::[CWE-285] s
 packages/trpc/server/routers/viewer/slots/util.ts:::974:::[CWE-285] * 1. Request context (orgSlug) - most accurate for the current request scope
 packages/trpc/server/routers/viewer/slots/util.ts:::1487:::[CWE-285] // This should never happen. Just for type safety, we already check in the upper scope
 packages/types/oauth.d.ts:::5:::[CWE-285] scope: string[];
-packages/ui/components/table/Table.tsx:::19:::[CWE-285] scope="col"
 apps/api/v2/scripts/docker-start.ts:::1:::[CWE-94] import { execSync } from "node:child_process";
 apps/api/v2/scripts/docker-start.ts:::5:::[CWE-94] execSync(`${command} --version`, { stdio: "ignore" });
 apps/api/v2/scripts/docker-start.ts:::20:::[CWE-94] execSync("docker compose version", { stdio: "ignore" });
@@ -8902,23 +8442,12 @@ packages/app-store-cli/src/core.ts:::151:::[CWE-94] await execSync(IS_WINDOWS_PL
 packages/app-store-cli/src/core.ts:::156:::[CWE-94] await execSync(`yarn ts-node --transpile-only src/build.ts`);
 packages/app-store-cli/src/utils/execSync.ts:::1:::[CWE-94] import child_process from "node:child_process";
 packages/app-store-cli/src/utils/execSync.ts:::10:::[CWE-94] child_process.exec(cmd, (err, stdout, stderr) => {
-packages/app-store/BookingPageTagManager.tsx:::110:::[CWE-94] while ((matches = regex.exec(val))) {
-packages/app-store/giphy/api/get.ts:::32:::[CWE-94] const matches = giphyUrlRegexp.exec(sanitisedUrl);
-packages/config/theme/generateColor.ts:::5:::[CWE-94] const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex) || [];
 packages/features/ee/billing/seed.ts:::20:::[CWE-94] import { spawn } from "node:child_process";
 packages/features/ee/billing/seed.ts:::35:::[CWE-94] const child = spawn("npx", args, { stdio: "inherit", shell: true });
-packages/lib/components/ServerTrans.tsx:::250:::[CWE-94] while ((match = placeholderRegex.exec(processedContent)) !== null) {
-packages/lib/components/ServerTrans.tsx:::351:::[CWE-94] while ((match2 = placeholderRegex.exec(processedContent)) !== null) {
-packages/lib/getBrandColours.tsx:::47:::[CWE-94] const colorParts = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(sanitizedHex);
 packages/platform/libraries/scripts/postpublish.js:::1:::[CWE-94] import { spawn } from "node:child_process";
 packages/platform/libraries/scripts/postpublish.js:::47:::[CWE-94] const yarnInstall = spawn("yarn", ["install"], {
 packages/prisma/auto-migrations.ts:::2:::[CWE-94] import { exec as execCb } from "node:child_process";
 packages/prisma/auto-migrations.ts:::34:::[CWE-94] const { stdout, stderr } = await exec("yarn prisma migrate deploy", {
-packages/ui/components/editor/plugins/AddVariablesPlugin.tsx:::28:::[CWE-94] match = regex.exec(text);
-packages/ui/components/editor/plugins/AutoLinkPlugin.tsx:::11:::[CWE-94] const match = URL_MATCHER.exec(text);
-packages/ui/components/editor/plugins/AutoLinkPlugin.tsx:::22:::[CWE-94] const match = EMAIL_MATCHER.exec(text);
-scripts/devin/parse-local-knowledge.ts:::95:::[CWE-94] while ((match = sectionRegex.exec(content)) !== null) {
-scripts/devin/validate-local-knowledge.ts:::96:::[CWE-94] while ((match = sectionRegex.exec(content)) !== null) {
 apps/api/v1/lib/helpers/safeParseJSON.ts:::3:::[CWE-502] return JSON.parse(str);
 apps/api/v1/pages/api/credential-sync/_patch.ts:::63:::[CWE-502] const decryptedKey = JSON.parse(
 apps/api/v1/pages/api/credential-sync/_post.ts:::70:::[CWE-502] const decryptedKey = JSON.parse(

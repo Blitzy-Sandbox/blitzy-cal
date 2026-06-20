@@ -1,4 +1,4 @@
-# rules/ — Pinned Semgrep OSS rule packs (security-audit pipeline, Directive 2 reproducibility pin).
+# rules/ - Pinned Semgrep OSS rule packs (security-audit pipeline, Directive 2 reproducibility pin).
 #
 # INTERMEDIATE artifact. At audit runtime the Layer 2 SAST step materializes the
 # three registry rule packs into this directory for reproducible scans, e.g.:

@@ -4,7 +4,6 @@ apps/api/v1/lib/helpers/rateLimitApiKey.ts:::7:::[rate-limiting] export const ra
 apps/api/v1/lib/helpers/rateLimitApiKey.ts:::14:::[rate-limiting] await checkRateLimitAndThrowError({
 apps/api/v1/lib/helpers/rateLimitApiKey.ts:::16:::[rate-limiting] rateLimitingType: "api",
 apps/api/v1/lib/helpers/rateLimitApiKey.ts:::26:::[rate-limiting] rateLimitResponse: response,
-apps/api/v1/lib/helpers/safeParseJSON.ts:::3:::[schema-validation] return JSON.parse(str);
 apps/api/v1/lib/helpers/verifyApiKey.ts:::16:::[auth-middleware] export const verifyApiKey: NextMiddleware = async (req, res, next) => {
 apps/api/v1/lib/helpers/withMiddleware.ts:::15:::[rate-limiting] import { rateLimitApiKey } from "./rateLimitApiKey";
 apps/api/v1/lib/helpers/withMiddleware.ts:::16:::[auth-middleware] import { verifyApiKey } from "./verifyApiKey";
@@ -296,14 +295,12 @@ apps/api/v1/pages/api/credential-sync/_get.ts:::41:::[parameterized-query] where
 apps/api/v1/pages/api/credential-sync/_patch.ts:::4:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
 apps/api/v1/pages/api/credential-sync/_patch.ts:::59:::[schema-validation] const { userId, credentialId } = schemaCredentialPatchParams.parse(req.query);
 apps/api/v1/pages/api/credential-sync/_patch.ts:::61:::[schema-validation] const { encryptedKey } = schemaCredentialPatchBody.parse(req.body);
-apps/api/v1/pages/api/credential-sync/_patch.ts:::63:::[schema-validation] const decryptedKey = JSON.parse(
 apps/api/v1/pages/api/credential-sync/_patch.ts:::64:::[crypto-protection] symmetricDecrypt(encryptedKey, process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY || "")
 apps/api/v1/pages/api/credential-sync/_patch.ts:::67:::[schema-validation] const key = OAuth2UniversalSchema.parse(decryptedKey);
 apps/api/v1/pages/api/credential-sync/_patch.ts:::70:::[parameterized-query] where: {
 apps/api/v1/pages/api/credential-sync/_post.ts:::6:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
 apps/api/v1/pages/api/credential-sync/_post.ts:::64:::[schema-validation] const { userId, createSelectedCalendar, createDestinationCalendar } = schemaCredentialPostParams.parse(
 apps/api/v1/pages/api/credential-sync/_post.ts:::68:::[schema-validation] const { appSlug, encryptedKey } = schemaCredentialPostBody.parse(req.body);
-apps/api/v1/pages/api/credential-sync/_post.ts:::70:::[schema-validation] const decryptedKey = JSON.parse(
 apps/api/v1/pages/api/credential-sync/_post.ts:::71:::[crypto-protection] symmetricDecrypt(encryptedKey, process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY || "")
 apps/api/v1/pages/api/credential-sync/_post.ts:::74:::[schema-validation] const key = OAuth2UniversalSchema.parse(decryptedKey);
 apps/api/v1/pages/api/credential-sync/_post.ts:::78:::[parameterized-query] where: { slug: appSlug },
@@ -866,7 +863,6 @@ apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::147:::[auth-m
 apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::199:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::225:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::226:::[auth-middleware] @ApiAuthGuardOnlyAllow(["API_KEY", "ACCESS_TOKEN", "THIRD_PARTY_ACCESS_TOKEN"])
-apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::275:::[schema-validation] stateObj = JSON.parse(state) as CalendarState;
 apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::280:::[schema-validation] const parsedState = calendarStateSchema.parse({
 apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::309:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/ee/calendars/controllers/calendars.controller.ts:::325:::[schema-validation] @Body() body: CreateCalendarCredentialsInput
@@ -984,7 +980,6 @@ apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::8:::[crypto-pr
 apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::31:::[crypto-protection] * - Credential encryption/decryption via `symmetricEncrypt`/`symmetricDecrypt` with
 apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::108:::[crypto-protection] * - Credential encryption: `symmetricEncrypt(JSON.stringify({ username, password }), CALENDSO_ENCRYPTION_KEY)`
 apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::110:::[crypto-protection] * - Credential decryption: `symmetricDecrypt(calendarCredential.key, CALENDSO_ENCRYPTION_KEY)`
-apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::145:::[schema-validation] const decryptedKey = JSON.parse(
 apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::146:::[crypto-protection] symmetricDecrypt(calendarCredential.key as string, process.env.CALENDSO_ENCRYPTION_KEY || "")
 apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::168:::[crypto-protection] symmetricEncrypt(JSON.stringify({ username, password }), process.env.CALENDSO_ENCRYPTION_KEY || ""),
 apps/api/v2/src/ee/calendars/services/apple-calendar.service.ts:::182:::[crypto-protection] key: symmetricEncrypt(
@@ -1914,16 +1909,13 @@ apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:::16:::[auth-middleware
 apps/api/v2/src/modules/auth/guards/or-guard/or.guard.ts:::21:::[auth-middleware] const result = await Promise.resolve(guardInstance.canActivate(context));
 apps/api/v2/src/modules/auth/guards/organization-roles/organization-roles.guard.ts:::20:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
 apps/api/v2/src/modules/auth/guards/organizations/is-admin-api-enabled.guard.ts:::20:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
-apps/api/v2/src/modules/auth/guards/organizations/is-admin-api-enabled.guard.ts:::48:::[schema-validation] const { org: cachedOrg, canAccess: cachedCanAccess } = JSON.parse(cachedData) as CachedData;
 apps/api/v2/src/modules/auth/guards/organizations/is-managed-org-in-manager-org.guard.ts:::11:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
 apps/api/v2/src/modules/auth/guards/organizations/is-org.guard.ts:::20:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
-apps/api/v2/src/modules/auth/guards/organizations/is-org.guard.ts:::49:::[schema-validation] const { org: cachedOrg, canAccess: cachedCanAccess } = JSON.parse(cachedData) as CachedData;
 apps/api/v2/src/modules/auth/guards/organizations/is-user-routing-form.guard.ts:::1:::[auth-middleware] import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 apps/api/v2/src/modules/auth/guards/organizations/is-user-routing-form.guard.ts:::12:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
 apps/api/v2/src/modules/auth/guards/organizations/is-user-routing-form.guard.ts:::15:::[auth-middleware] const user = request.user as ApiAuthGuardUser;
 apps/api/v2/src/modules/auth/guards/organizations/is-user-routing-form.guard.ts:::21:::[parameterized-query] where: {
 apps/api/v2/src/modules/auth/guards/organizations/is-webhook-in-org.guard.ts:::22:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
-apps/api/v2/src/modules/auth/guards/organizations/is-webhook-in-org.guard.ts:::39:::[schema-validation] const { org: cachedOrg, canAccess: cachedCanAccess } = JSON.parse(cachedData) as CachedData;
 apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:::2:::[auth-middleware] import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
 apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:::37:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
 apps/api/v2/src/modules/auth/guards/pbac/pbac.guard.ts:::39:::[auth-middleware] const user = request.user as ApiAuthGuardUser;
@@ -1933,7 +1925,6 @@ apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:::19:::[auth-middleware
 apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:::29:::[auth-middleware] const user = request.user as ApiAuthGuardUser;
 apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:::40:::[auth-middleware] throwForbiddenError(user: ApiAuthGuardUser, orgId: string, teamId: string, allowedRole: string) {
 apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:::54:::[auth-middleware] user: ApiAuthGuardUser,
-apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts:::62:::[schema-validation] const cachedAccess = JSON.parse((await this.redisService.redis.get(REDIS_CACHE_KEY)) ?? "false");
 apps/api/v2/src/modules/auth/guards/routing-forms/is-routing-form-in-team.guard.ts:::11:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
 apps/api/v2/src/modules/auth/guards/teams/is-team-in-org.guard.ts:::17:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
 apps/api/v2/src/modules/auth/guards/users/is-user-in-org-team.guard.ts:::11:::[auth-middleware] async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -2117,7 +2108,6 @@ apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::4:
 apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::69:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::88:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::131:::[auth-middleware] @UseGuards()
-apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::151:::[schema-validation] const decodedCallbackState: OAuthCallbackState = JSON.parse(state);
 apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::187:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::202:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/conferencing/controllers/conferencing.controller.ts:::221:::[auth-middleware] @UseGuards(ApiAuthGuard)
@@ -2166,7 +2156,6 @@ apps/api/v2/src/modules/credentials/credentials.repository.ts:::107:::[parameter
 apps/api/v2/src/modules/credentials/credentials.repository.ts:::119:::[parameterized-query] where: {
 apps/api/v2/src/modules/credentials/credentials.repository.ts:::143:::[parameterized-query] where: { id: credentialId, userId },
 apps/api/v2/src/modules/deployments/deployments.repository.ts:::10:::[parameterized-query] return this.dbRead.prisma.deployment.findFirst({ where: { id: 1 } });
-apps/api/v2/src/modules/deployments/deployments.service.ts:::39:::[schema-validation] return (JSON.parse(cachedData) as LicenseCheckResponse)?.status;
 apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.ts:::4:::[auth-middleware] import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.ts:::24:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/destination-calendars/controllers/destination-calendars.controller.ts:::31:::[schema-validation] @Body() input: DestinationCalendarsInputBodyDto,
@@ -2409,7 +2398,6 @@ apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.co
 apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:::183:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
 apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:::206:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
 apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:::232:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
-apps/api/v2/src/modules/organizations/conferencing/organizations-conferencing.controller.ts:::249:::[schema-validation] const decodedCallbackState: OAuthCallbackState = JSON.parse(state);
 apps/api/v2/src/modules/organizations/conferencing/services/organizations-conferencing.service.ts:::62:::[schema-validation] return teamMetadataSchema.parse(team?.metadata)?.defaultConferencingApp;
 apps/api/v2/src/modules/organizations/delegation-credentials/inputs/create-delegation-credential.input.ts:::13:::[schema-validation] @IsString()
 apps/api/v2/src/modules/organizations/delegation-credentials/inputs/create-delegation-credential.input.ts:::14:::[schema-validation] @IsNotEmpty()
@@ -2452,7 +2440,6 @@ apps/api/v2/src/modules/organizations/delegation-credentials/outputs/delegation-
 apps/api/v2/src/modules/organizations/delegation-credentials/outputs/delegation-credential.output.ts:::53:::[schema-validation] @IsDate()
 apps/api/v2/src/modules/organizations/delegation-credentials/outputs/update-delegation-credential.output.ts:::10:::[schema-validation] @IsEnum([SUCCESS_STATUS, ERROR_STATUS])
 apps/api/v2/src/modules/organizations/delegation-credentials/outputs/update-delegation-credential.output.ts:::16:::[schema-validation] @IsNotEmptyObject()
-apps/api/v2/src/modules/organizations/delegation-credentials/services/organizations-delegation-credential.service.ts:::243:::[schema-validation] const prismaJsonValue = JSON.parse(JSON.stringify(encryptedServiceAccountKey));
 apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:::12:::[auth-middleware] import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:::80:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
 apps/api/v2/src/modules/organizations/event-types/organizations-event-types.controller.ts:::87:::[schema-validation] @Body() bodyEventType: CreateTeamEventTypeInput_2024_06_14
@@ -2704,7 +2691,6 @@ apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:
 apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:::65:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
 apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:::104:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
 apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:::116:::[auth-middleware] @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
-apps/api/v2/src/modules/organizations/stripe/organizations-stripe.controller.ts:::131:::[schema-validation] const decodedCallbackState: OAuthCallbackState = JSON.parse(state);
 apps/api/v2/src/modules/organizations/teams/bookings/inputs/get-organizations-teams-bookings.input.ts:::34:::[schema-validation] @IsOptional()
 apps/api/v2/src/modules/organizations/teams/bookings/inputs/get-organizations-teams-bookings.input.ts:::42:::[schema-validation] @IsEnum(Status, {
 apps/api/v2/src/modules/organizations/teams/bookings/inputs/get-organizations-teams-bookings.input.ts:::56:::[schema-validation] @IsString()
@@ -2940,8 +2926,6 @@ apps/api/v2/src/modules/organizations/webhooks/organizations-webhooks.repository
 apps/api/v2/src/modules/organizations/webhooks/organizations-webhooks.repository.ts:::64:::[parameterized-query] where: {
 apps/api/v2/src/modules/profiles/profiles.repository.ts:::13:::[parameterized-query] where: {
 apps/api/v2/src/modules/profiles/profiles.repository.ts:::37:::[parameterized-query] where: {
-apps/api/v2/src/modules/redis/redis.service.ts:::63:::[schema-validation] return JSON.parse(data) as TData;
-apps/api/v2/src/modules/redis/redis.service.ts:::143:::[schema-validation] return results.map((item) => JSON.parse(item) as TResult);
 apps/api/v2/src/modules/router/controllers/router.controller.ts:::26:::[schema-validation] @Body() body?: Record<string, string>
 apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts:::22:::[auth-middleware] import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 apps/api/v2/src/modules/routing-forms/controllers/routing-forms.controller.ts:::80:::[auth-middleware] @UseGuards(ApiAuthGuard)
@@ -3069,7 +3053,6 @@ apps/api/v2/src/modules/slots/slots-2024-09-04/slots.repository.ts:::185:::[para
 apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:::4:::[auth-middleware] import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:::50:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:::80:::[auth-middleware] @UseGuards()
-apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:::101:::[schema-validation] const decodedCallbackState: OAuthCallbackState = JSON.parse(state);
 apps/api/v2/src/modules/stripe/controllers/stripe.controller.ts:::151:::[auth-middleware] @UseGuards(ApiAuthGuard)
 apps/api/v2/src/modules/stripe/inputs/stripe.input.ts:::4:::[schema-validation] @IsString()
 apps/api/v2/src/modules/stripe/inputs/stripe.input.ts:::5:::[schema-validation] @IsOptional()
@@ -3078,9 +3061,6 @@ apps/api/v2/src/modules/stripe/outputs/stripe.output.ts:::15:::[schema-validatio
 apps/api/v2/src/modules/stripe/outputs/stripe.output.ts:::30:::[schema-validation] @IsString()
 apps/api/v2/src/modules/stripe/stripe.service.ts:::77:::[schema-validation] const params = z.record(z.any()).parse(stripeConnectParams);
 apps/api/v2/src/modules/stripe/stripe.service.ts:::87:::[schema-validation] const { client_id, client_secret } = stripeKeysResponseSchema.parse(app?.keys);
-apps/api/v2/src/modules/stripe/stripe.service.ts:::157:::[schema-validation] const stripeKeyObject = JSON.parse(stripeKey);
-apps/api/v2/src/modules/stripe/utils/getReturnToValueFromQueryState.ts:::4:::[schema-validation] returnTo = JSON.parse(`${queryState}`).returnTo;
-apps/api/v2/src/modules/stripe/utils/getReturnToValueFromQueryState.ts:::14:::[schema-validation] returnTo = JSON.parse(`${queryState}`).onErrorReturnTo;
 apps/api/v2/src/modules/stripe/utils/stripeDataSchemas.ts:::3:::[schema-validation] export const stripeOAuthTokenSchema = z.object({
 apps/api/v2/src/modules/stripe/utils/stripeDataSchemas.ts:::4:::[schema-validation] access_token: z.string().optional(),
 apps/api/v2/src/modules/stripe/utils/stripeDataSchemas.ts:::5:::[schema-validation] scope: z.string().optional(),
@@ -3293,7 +3273,6 @@ apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.contro
 apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:::103:::[schema-validation] @Body() body: VerifyEmailInput,
 apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:::126:::[rate-limiting] @Throttle({ limit: 3, ttl: 60000, blockDuration: 60000, name: "teams_verified_resources_phones_verify" })
 apps/api/v2/src/modules/teams/verified-resources/teams-verified-resources.controller.ts:::129:::[schema-validation] @Body() body: VerifyPhoneInput,
-apps/api/v2/src/modules/timezones/services/timezones.service.ts:::21:::[schema-validation] return JSON.parse(cachedTimezones) as CityTimezones;
 apps/api/v2/src/modules/tokens/tokens.repository.ts:::40:::[parameterized-query] where: {
 apps/api/v2/src/modules/tokens/tokens.repository.ts:::48:::[parameterized-query] where: {
 apps/api/v2/src/modules/tokens/tokens.repository.ts:::102:::[parameterized-query] where: { client: { id: clientId }, userId: ownerId },
@@ -3664,7 +3643,6 @@ apps/api/v2/src/modules/workflows/workflows.repository.ts:::62:::[parameterized-
 apps/api/v2/src/modules/workflows/workflows.repository.ts:::80:::[parameterized-query] where: {
 apps/api/v2/src/vercel-webhook.controller.ts:::28:::[auth-middleware] @UseGuards(VercelWebhookGuard)
 apps/api/v2/src/vercel-webhook.controller.ts:::31:::[schema-validation] @Body() rawBody: Buffer | VercelWebhookPayload
-apps/api/v2/src/vercel-webhook.controller.ts:::38:::[schema-validation] payload = JSON.parse(rawBody.toString("utf-8")) as VercelWebhookPayload;
 apps/api/v2/src/vercel-webhook.guard.ts:::8:::[auth-middleware] canActivate(context: ExecutionContext): boolean {
 apps/api/v2/src/vercel-webhook.guard.ts:::44:::[webhook-signature] const expectedSignature = crypto.createHmac("sha1", webhookSecret).update(bodyForSignature).digest("hex");
 apps/api/v2/src/vercel-webhook.guard.ts:::46:::[timing-safe-comparison] // Check signature length first (timingSafeEqual throws if lengths differ)
@@ -3926,7 +3904,6 @@ apps/web/app/api/auth/two-factor/totp/disable/route.ts:::31:::[rate-limiting] aw
 apps/web/app/api/auth/two-factor/totp/disable/route.ts:::32:::[rate-limiting] rateLimitingType: "core",
 apps/web/app/api/auth/two-factor/totp/disable/route.ts:::36:::[parameterized-query] const user = await prisma.user.findUnique({ where: { id: session.user.id }, include: { password: true } });
 apps/web/app/api/auth/two-factor/totp/disable/route.ts:::69:::[crypto-protection] const backupCodes = JSON.parse(symmetricDecrypt(user.backupCodes, process.env.CALENDSO_ENCRYPTION_KEY));
-apps/web/app/api/auth/two-factor/totp/disable/route.ts:::69:::[schema-validation] const backupCodes = JSON.parse(symmetricDecrypt(user.backupCodes, process.env.CALENDSO_ENCRYPTION_KEY));
 apps/web/app/api/auth/two-factor/totp/disable/route.ts:::95:::[crypto-protection] const secret = symmetricDecrypt(user.twoFactorSecret, process.env.CALENDSO_ENCRYPTION_KEY);
 apps/web/app/api/auth/two-factor/totp/disable/route.ts:::112:::[parameterized-query] where: {
 apps/web/app/api/auth/two-factor/totp/enable/route.ts:::8:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
@@ -4024,7 +4001,6 @@ apps/web/app/api/link/route.ts:::28:::[schema-validation] platformRescheduleUrl:
 apps/web/app/api/link/route.ts:::29:::[schema-validation] platformCancelUrl: z.string().optional(),
 apps/web/app/api/link/route.ts:::30:::[schema-validation] platformBookingUrl: z.string().optional(),
 apps/web/app/api/link/route.ts:::36:::[schema-validation] const { action, token, reason } = querySchema.parse(Object.fromEntries(searchParams.entries()));
-apps/web/app/api/link/route.ts:::38:::[schema-validation] const decryptedData = JSON.parse(
 apps/web/app/api/link/route.ts:::39:::[crypto-protection] symmetricDecrypt(decodeURIComponent(token), process.env.CALENDSO_ENCRYPTION_KEY || "")
 apps/web/app/api/link/route.ts:::49:::[schema-validation] } = decryptedSchema.parse(decryptedData);
 apps/web/app/api/link/route.ts:::52:::[parameterized-query] where: { uid: bookingUid },
@@ -4164,7 +4140,6 @@ apps/web/app/api/webhook/app-credential/route.ts:::17:::[schema-validation] keys
 apps/web/app/api/webhook/app-credential/route.ts:::32:::[schema-validation] const reqBodyParsed = appCredentialWebhookRequestBodySchema.safeParse(body);
 apps/web/app/api/webhook/app-credential/route.ts:::40:::[parameterized-query] const user = await prisma.user.findUnique({ where: { id: reqBody.userId } });
 apps/web/app/api/webhook/app-credential/route.ts:::47:::[parameterized-query] where: { slug: reqBody.appSlug },
-apps/web/app/api/webhook/app-credential/route.ts:::64:::[schema-validation] const keys = JSON.parse(
 apps/web/app/api/webhook/app-credential/route.ts:::65:::[crypto-protection] symmetricDecrypt(reqBody.keys, process.env.CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY || "")
 apps/web/app/api/webhook/app-credential/route.ts:::70:::[parameterized-query] where: {
 apps/web/app/api/webhook/app-credential/route.ts:::81:::[parameterized-query] where: {
@@ -4194,13 +4169,11 @@ apps/web/app/api/webhooks/retell-ai/route.ts:::55:::[schema-validation] call_sum
 apps/web/app/api/webhooks/retell-ai/route.ts:::56:::[schema-validation] in_voicemail: z.boolean().optional(),
 apps/web/app/api/webhooks/retell-ai/route.ts:::57:::[schema-validation] user_sentiment: z.string().optional(),
 apps/web/app/api/webhooks/retell-ai/route.ts:::58:::[schema-validation] call_successful: z.boolean().optional(),
-apps/web/app/api/webhooks/retell-ai/route.ts:::224:::[schema-validation] const body = JSON.parse(rawBody);
 apps/web/app/api/webhooks/retell-ai/route.ts:::263:::[schema-validation] const payload = RetellWebhookSchema.parse(body);
 apps/web/app/page.tsx:::5:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 apps/web/app/page.tsx:::10:::[auth-middleware] const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
 apps/web/app/routing-forms/[...pages]/page.tsx:::7:::[schema-validation] pages: z.array(z.string()),
 apps/web/app/routing-forms/[...pages]/page.tsx:::14:::[schema-validation] const { pages } = paramsSchema.parse(await params);
-apps/web/components/GTM.tsx:::13:::[schema-validation] const { country, timestamp } = JSON.parse(cachedData);
 apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx:::52:::[schema-validation] const validatedReminderValue = reminderSchema.safeParse(
 apps/web/components/apps/alby/AlbyPaymentComponent.tsx:::27:::[schema-validation] const PaymentAlbyDataSchema = z.object({
 apps/web/components/apps/alby/AlbyPaymentComponent.tsx:::30:::[schema-validation] paymentRequest: z.string(),
@@ -4420,7 +4393,6 @@ apps/web/lib/signup/getServerSideProps.tsx:::34:::[schema-validation] const toke
 apps/web/lib/signup/getServerSideProps.tsx:::42:::[schema-validation] .safeParse(ctx.query.redirect);
 apps/web/lib/signup/getServerSideProps.tsx:::46:::[auth-middleware] const session = await getServerSession({
 apps/web/lib/signup/getServerSideProps.tsx:::80:::[schema-validation] const queryData = querySchema.safeParse(ctx.query);
-apps/web/lib/signup/getServerSideProps.tsx:::82:::[schema-validation] props: JSON.parse(
 apps/web/lib/signup/getServerSideProps.tsx:::95:::[parameterized-query] where: {
 apps/web/lib/signup/getServerSideProps.tsx:::139:::[parameterized-query] where: {
 apps/web/lib/signup/getServerSideProps.tsx:::175:::[schema-validation] metadata: teamMetadataSchema.parse(verificationToken.team.metadata ?? null),
@@ -4492,10 +4464,7 @@ apps/web/modules/bookings/components/BookingDetailsSheet.tsx:::256:::[schema-val
 apps/web/modules/bookings/components/BookingDetailsSheet.tsx:::766:::[schema-validation] ? EventTypeMetaDataSchema.safeParse(booking.eventType.metadata)
 apps/web/modules/bookings/components/BookingDetailsSheet.tsx:::832:::[schema-validation] const parsed = eventTypeBookingFields.safeParse(rawBookingFields);
 apps/web/modules/bookings/components/useJoinableLocation.tsx:::27:::[schema-validation] const parsedMetadata = bookingMetadataSchema.safeParse(metadata ?? null);
-apps/web/modules/bookings/hooks/useBookings.ts:::128:::[schema-validation] return raw ? (JSON.parse(raw) as InstantBookingCooldownMap) : {};
-apps/web/modules/bookings/hooks/useBookings.ts:::205:::[schema-validation] const parsedInfo = JSON.parse(storedInfo);
 apps/web/modules/bookings/hooks/useBookings.ts:::239:::[schema-validation] const locationVideoCallUrl: string | undefined = bookingMetadataSchema.parse(
-apps/web/modules/bookings/hooks/useCalendars.ts:::26:::[schema-validation] return storedValue ? new Set(JSON.parse(storedValue)) : new Set([]);
 apps/web/modules/bookings/views/bookings-single-view.getServerSideProps.tsx:::7:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 apps/web/modules/bookings/views/bookings-single-view.getServerSideProps.tsx:::28:::[schema-validation] const querySchema = z.object({
 apps/web/modules/bookings/views/bookings-single-view.getServerSideProps.tsx:::29:::[schema-validation] uid: z.string(),
@@ -4527,7 +4496,6 @@ apps/web/modules/data-table/hooks/useColumnFilters.ts:::27:::[schema-validation]
 apps/web/modules/data-table/hooks/useFilterValue.ts:::16:::[schema-validation] const result = schema.safeParse(value);
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::3:::[schema-validation] import { zodResolver } from "@hookform/resolvers/zod";
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::210:::[schema-validation] resolver: zodResolver(z.object({ defaultServiceAccountKey: z.string() })),
-apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::227:::[schema-validation] const parsedKey = JSON.parse(values.defaultServiceAccountKey);
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::228:::[schema-validation] const validatedKey = serviceAccountKeySchema.safeParse(parsedKey);
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::311:::[schema-validation] resolver: zodResolver(
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::312:::[schema-validation] z.object({
@@ -4535,7 +4503,6 @@ apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::313:::
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::314:::[schema-validation] description: z.string(),
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::315:::[schema-validation] slug: z.string(),
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::316:::[schema-validation] defaultServiceAccountKey: z.string().optional(),
-apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::337:::[schema-validation] const parsedKey = JSON.parse(values.defaultServiceAccountKey);
 apps/web/modules/ee/organizations/admin/views/WorkspacePlatformPage.tsx:::338:::[schema-validation] const validatedKey = serviceAccountKeySchema.safeParse(parsedKey);
 apps/web/modules/ee/organizations/attributes/AttributesForm.tsx:::1:::[schema-validation] import { zodResolver } from "@hookform/resolvers/zod";
 apps/web/modules/ee/organizations/attributes/AttributesForm.tsx:::14:::[schema-validation] const attributeFormSchema = z.object({
@@ -4560,7 +4527,6 @@ apps/web/modules/ee/organizations/attributes/attributes-edit-view.tsx:::16:::[sc
 apps/web/modules/ee/organizations/attributes/attributes-edit-view.tsx:::18:::[schema-validation] attrName: z.string().min(1),
 apps/web/modules/ee/organizations/attributes/attributes-edit-view.tsx:::19:::[schema-validation] type: z.enum(["TEXT", "NUMBER", "SINGLE_SELECT", "MULTI_SELECT"]),
 apps/web/modules/ee/organizations/attributes/attributes-edit-view.tsx:::20:::[schema-validation] options: z.array(z.object({ value: z.string(), id: z.string() })),
-apps/web/modules/ee/organizations/delegationCredential.tsx:::164:::[schema-validation] const parsedKey = JSON.parse(values.serviceAccountKey);
 apps/web/modules/ee/organizations/delegationCredential.tsx:::165:::[schema-validation] const validatedKey = serviceAccountKeySchema.safeParse(parsedKey);
 apps/web/modules/ee/organizations/new/_components/AddNewTeamsForm.tsx:::20:::[schema-validation] const schema = z.object({
 apps/web/modules/ee/organizations/new/_components/AddNewTeamsForm.tsx:::21:::[schema-validation] teams: z.array(
@@ -4666,9 +4632,7 @@ apps/web/modules/event-types/views/event-types-listing-view.tsx:::113:::[schema-
 apps/web/modules/event-types/views/event-types-listing-view.tsx:::718:::[input-sanitization] embedUrl={encodeURIComponent(embedLink)}
 apps/web/modules/feature-opt-in/lib/feature-opt-in-storage.ts:::10:::[schema-validation] const booleanFeaturesMapSchema: z.ZodSchema<Record<string, boolean>> = z.record(z.string(), z.boolean());
 apps/web/modules/feature-opt-in/lib/feature-opt-in-storage.ts:::11:::[schema-validation] const timestampFeaturesMapSchema: z.ZodSchema<Record<string, number>> = z.record(z.string(), z.number());
-apps/web/modules/feature-opt-in/lib/feature-opt-in-storage.ts:::20:::[schema-validation] const parsed = JSON.parse(stored);
 apps/web/modules/feature-opt-in/lib/feature-opt-in-storage.ts:::21:::[schema-validation] const result = booleanFeaturesMapSchema.safeParse(parsed);
-apps/web/modules/feature-opt-in/lib/feature-opt-in-storage.ts:::35:::[schema-validation] const parsed = JSON.parse(stored);
 apps/web/modules/feature-opt-in/lib/feature-opt-in-storage.ts:::36:::[schema-validation] const result = timestampFeaturesMapSchema.safeParse(parsed);
 apps/web/modules/getting-started/[[...step]]/onboarding-view.tsx:::78:::[schema-validation] const stepRouteSchema = z.object({
 apps/web/modules/getting-started/[[...step]]/onboarding-view.tsx:::81:::[schema-validation] z.enum(["user-settings", "setup-availability", "user-profile", "connected-calendar", "connected-video"])
@@ -4742,7 +4706,6 @@ apps/web/modules/settings/teams/new/invite/email/team-invite-email-view.tsx:::63
 apps/web/modules/settings/teams/new/invite/email/team-invite-email-view.tsx:::64:::[schema-validation] role: z.enum(["MEMBER", "ADMIN"]),
 apps/web/modules/settings/teams/new/invite/email/team-invite-email-view.tsx:::70:::[schema-validation] resolver: zodResolver(formSchema),
 apps/web/modules/shell/Kbar.tsx:::436:::[input-sanitization] const helpUrl = `https://cal.com/help/welcome?search=${encodeURIComponent(searchQuery)}`;
-apps/web/modules/shell/navigation/NavigationItem.tsx:::24:::[schema-validation] setIsExpanded(JSON.parse(stored));
 apps/web/modules/signup-view.tsx:::42:::[schema-validation] import { zodResolver } from "@hookform/resolvers/zod";
 apps/web/modules/signup-view.tsx:::57:::[schema-validation] apiError: z.string().optional(), // Needed to display API errors doesn't get passed to the API
 apps/web/modules/signup-view.tsx:::58:::[schema-validation] cfToken: z.string().optional(),
@@ -4769,9 +4732,7 @@ apps/web/modules/users/components/UserTable/EditSheet/EditUserForm.tsx:::89:::[s
 apps/web/modules/videos/views/videos-single-view.tsx:::358:::[csrf-protection] const csrfResponse = await fetch("/api/csrf", { cache: "no-store" });
 apps/web/modules/videos/views/videos-single-view.tsx:::359:::[csrf-protection] const { csrfToken } = await csrfResponse.json();
 apps/web/modules/videos/views/videos-single-view.tsx:::368:::[csrf-protection] csrfToken,
-apps/web/modules/webhooks/components/WebhookForm.tsx:::326:::[schema-validation] const parsed = JSON.parse(current || "{}");
 apps/web/modules/webhooks/components/WebhookTestDisclosure.tsx:::37:::[schema-validation] ZTestTriggerInputSchema.parse({
-apps/web/next.config.ts:::112:::[schema-validation] const o = JSON.parse(jsonString);
 apps/web/pages/api/book/event.ts:::3:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 apps/web/pages/api/book/event.ts:::9:::[rate-limiting] import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 apps/web/pages/api/book/event.ts:::38:::[rate-limiting] await checkRateLimitAndThrowError({
@@ -4809,8 +4770,6 @@ apps/web/pages/api/twilio/webhook.ts:::26:::[schema-validation] bookingUid: z.st
 apps/web/pages/api/twilio/webhook.ts:::71:::[schema-validation] } = InputSchema.parse(req.query);
 apps/web/pages/api/twilio/webhook.ts:::85:::[parameterized-query] where: {
 apps/web/pages/api/twilio/webhook.ts:::116:::[parameterized-query] where: {
-apps/web/scripts/check-missing-translations.ts:::11:::[schema-validation] const templateJson: { [key: string]: string } = JSON.parse(readFileSync(templateJsonPath, "utf-8"));
-apps/web/scripts/check-missing-translations.ts:::27:::[schema-validation] const localeJson: { [key: string]: string } = JSON.parse(readFileSync(localeJsonPath, "utf8"));
 apps/web/scripts/copy-app-store-static.js:::35:::[crypto-protection] const hash = crypto.createHash("md5").update(content).digest("hex").slice(0, 8);
 apps/web/server/lib/[user]/[type]/getServerSideProps.ts:::5:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 apps/web/server/lib/[user]/[type]/getServerSideProps.ts:::74:::[parameterized-query] where: {
@@ -4841,19 +4800,12 @@ apps/web/server/lib/auth/sso/[provider]/getServerSideProps.tsx:::29:::[auth-midd
 apps/web/server/lib/auth/verify-email-change/getServerSideProps.tsx:::6:::[schema-validation] const tokenSchema = z.object({
 apps/web/server/lib/auth/verify-email-change/getServerSideProps.tsx:::7:::[schema-validation] token: z.string(),
 apps/web/server/lib/auth/verify-email-change/getServerSideProps.tsx:::11:::[schema-validation] const parsed = tokenSchema.safeParse(context.query);
-apps/web/server/lib/constants.ts:::3:::[schema-validation] JSON.parse(GOOGLE_API_CREDENTIALS)?.web || {};
 apps/web/server/lib/setup/getServerSideProps.tsx:::3:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 apps/web/server/lib/setup/getServerSideProps.tsx:::15:::[auth-middleware] const session = await getServerSession({ req });
 apps/web/server/lib/setup/getServerSideProps.tsx:::29:::[parameterized-query] where: { id: 1 },
 example-apps/credential-sync/pages/api/setTokenInCalCom.ts:::3:::[crypto-protection] import { symmetricEncrypt } from "@calcom/lib/crypto";
 example-apps/credential-sync/pages/api/setTokenInCalCom.ts:::42:::[crypto-protection] encryptedKey: symmetricEncrypt(
-packages/app-store-cli/src/build.ts:::90:::[schema-validation] const parsedConfig = JSON.parse(rawConfig);
 packages/app-store-cli/src/build.ts:::91:::[schema-validation] app = AppMetaSchema.parse(parsedConfig);
-packages/app-store-cli/src/components/AppCreateUpdateForm.tsx:::41:::[schema-validation] const config = JSON.parse(
-packages/app-store-cli/src/core.ts:::41:::[schema-validation] const packageJsonConfig = JSON.parse(fs.readFileSync(packageJsonPath).toString());
-packages/app-store-cli/src/core.ts:::120:::[schema-validation] const currentConfig = JSON.parse(fs.readFileSync(`${appDirPath}/config.json`).toString());
-packages/app-store-cli/src/utils/getApp.ts:::19:::[schema-validation] return JSON.parse(fs.readFileSync(path.join(base, foundApp, "config.json")).toString());
-packages/app-store-cli/src/utils/templates.ts:::16:::[schema-validation] const config = JSON.parse(fs.readFileSync(path.join(TEMPLATES_PATH, dir, "config.json")).toString());
 packages/app-store/_appRegistry.ts:::42:::[parameterized-query] where: { enabled: true },
 packages/app-store/_appRegistry.ts:::69:::[parameterized-query] where: { enabled: true },
 packages/app-store/_appRegistry.ts:::73:::[parameterized-query] where: { OR: [{ userId }, { teamId: { in: userAdminTeams } }] },
@@ -4894,11 +4846,9 @@ packages/app-store/_utils/invalidateCredential.ts:::13:::[parameterized-query] w
 packages/app-store/_utils/oauth/OAuthManager.ts:::551:::[schema-validation] const parsedToken = OAuth2UniversalSchemaWithCalcomBackwardCompatibility.safeParse(json);
 packages/app-store/_utils/oauth/decodeOAuthState.ts:::1:::[timing-safe-comparison] import { createHmac, timingSafeEqual } from "node:crypto";
 packages/app-store/_utils/oauth/decodeOAuthState.ts:::1:::[webhook-signature] import { createHmac, timingSafeEqual } from "node:crypto";
-packages/app-store/_utils/oauth/decodeOAuthState.ts:::12:::[schema-validation] const state: IntegrationOAuthCallbackState = JSON.parse(req.query.state);
 packages/app-store/_utils/oauth/decodeOAuthState.ts:::26:::[webhook-signature] const expected = createHmac("sha256", process.env.NEXTAUTH_SECRET)
 packages/app-store/_utils/oauth/decodeOAuthState.ts:::30:::[timing-safe-comparison] if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
 packages/app-store/_utils/oauth/encodeOAuthState.ts:::1:::[webhook-signature] import { createHmac, randomUUID } from "node:crypto";
-packages/app-store/_utils/oauth/encodeOAuthState.ts:::10:::[schema-validation] const state: IntegrationOAuthCallbackState = JSON.parse(req.query.state);
 packages/app-store/_utils/oauth/encodeOAuthState.ts:::15:::[webhook-signature] state.nonceHash = createHmac("sha256", process.env.NEXTAUTH_SECRET)
 packages/app-store/_utils/oauth/getTokenObjectFromCredential.ts:::8:::[schema-validation] const parsedTokenResponse = OAuth2TokenResponseInDbSchema.safeParse(credential.key);
 packages/app-store/_utils/oauth/markTokenAsExpired.ts:::10:::[parameterized-query] where: {
@@ -4973,7 +4923,6 @@ packages/app-store/applecalendar/api/add.ts:::3:::[crypto-protection] import { s
 packages/app-store/applecalendar/api/add.ts:::18:::[crypto-protection] * - `symmetricEncrypt`/`symmetricDecrypt` from `@calcom/lib/crypto` uses AES-256-CBC
 packages/app-store/applecalendar/api/add.ts:::62:::[parameterized-query] where: {
 packages/app-store/applecalendar/api/add.ts:::69:::[parameterized-query] where: {
-packages/app-store/applecalendar/api/add.ts:::79:::[schema-validation] const decryptedCredential = JSON.parse(
 packages/app-store/applecalendar/api/add.ts:::80:::[crypto-protection] symmetricDecrypt(credential.key?.toString() || "", process.env.CALENDSO_ENCRYPTION_KEY || "")
 packages/app-store/applecalendar/api/add.ts:::95:::[crypto-protection] key: symmetricEncrypt(
 packages/app-store/applecalendar/api/add.ts:::115:::[parameterized-query] where: {
@@ -5044,7 +4993,6 @@ packages/app-store/closecom/lib/CrmService.ts:::17:::[schema-validation] refresh
 packages/app-store/closecom/lib/CrmService.ts:::18:::[schema-validation] expires_at: z.number().optional(),
 packages/app-store/closecom/lib/CrmService.ts:::69:::[schema-validation] const parsedKey = credentialSchema.safeParse(credential.key);
 packages/app-store/closecom/lib/CrmService.ts:::80:::[crypto-protection] const decrypted = symmetricDecrypt(parsedKey.data.encrypted, CALENDSO_ENCRYPTION_KEY);
-packages/app-store/closecom/lib/CrmService.ts:::81:::[schema-validation] const { api_key } = JSON.parse(decrypted);
 packages/app-store/closecom/zod.ts:::7:::[schema-validation] export const appKeysSchema = z.object({
 packages/app-store/closecom/zod.ts:::8:::[schema-validation] client_id: z.string(),
 packages/app-store/closecom/zod.ts:::9:::[schema-validation] client_secret: z.string(),
@@ -5057,7 +5005,6 @@ packages/app-store/dailyvideo/lib/getDailyAppKeys.ts:::5:::[schema-validation] c
 packages/app-store/dailyvideo/lib/getDailyAppKeys.ts:::6:::[schema-validation] api_key: z.string(),
 packages/app-store/dailyvideo/lib/getDailyAppKeys.ts:::7:::[schema-validation] scale_plan: z.string().default("false"),
 packages/app-store/dailyvideo/lib/getDailyAppKeys.ts:::12:::[schema-validation] return dailyAppKeysSchema.parse(appKeys);
-packages/app-store/dailyvideo/lib/scripts/deleteRecordings.ts:::326:::[schema-validation] const recordings = JSON.parse(fileContent) as Array<{
 packages/app-store/dailyvideo/lib/types.ts:::4:::[schema-validation] export const dailyReturnTypeSchema = z.object({
 packages/app-store/dailyvideo/lib/types.ts:::6:::[schema-validation] id: z.string(),
 packages/app-store/dailyvideo/lib/types.ts:::8:::[schema-validation] name: z.string(),
@@ -5153,7 +5100,6 @@ packages/app-store/exchange2013calendar/api/add.ts:::22:::[schema-validation] co
 packages/app-store/exchange2013calendar/api/add.ts:::25:::[parameterized-query] where: {
 packages/app-store/exchange2013calendar/api/add.ts:::36:::[crypto-protection] key: symmetricEncrypt(JSON.stringify(body), process.env.CALENDSO_ENCRYPTION_KEY || ""),
 packages/app-store/exchange2013calendar/lib/CalendarService.ts:::23:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
-packages/app-store/exchange2013calendar/lib/CalendarService.ts:::49:::[schema-validation] const decryptedCredential = JSON.parse(
 packages/app-store/exchange2013calendar/lib/CalendarService.ts:::50:::[crypto-protection] symmetricDecrypt(credential.key?.toString() || "", process.env.CALENDSO_ENCRYPTION_KEY || "")
 packages/app-store/exchange2016calendar/api/add.ts:::4:::[crypto-protection] import { symmetricEncrypt } from "@calcom/lib/crypto";
 packages/app-store/exchange2016calendar/api/add.ts:::15:::[schema-validation] username: z.string(),
@@ -5163,7 +5109,6 @@ packages/app-store/exchange2016calendar/api/add.ts:::22:::[schema-validation] co
 packages/app-store/exchange2016calendar/api/add.ts:::25:::[parameterized-query] where: {
 packages/app-store/exchange2016calendar/api/add.ts:::36:::[crypto-protection] key: symmetricEncrypt(JSON.stringify(body), process.env.CALENDSO_ENCRYPTION_KEY || ""),
 packages/app-store/exchange2016calendar/lib/CalendarService.ts:::23:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
-packages/app-store/exchange2016calendar/lib/CalendarService.ts:::50:::[schema-validation] const decryptedCredential = JSON.parse(
 packages/app-store/exchange2016calendar/lib/CalendarService.ts:::51:::[crypto-protection] symmetricDecrypt(credential.key?.toString() || "", process.env.CALENDSO_ENCRYPTION_KEY || "")
 packages/app-store/exchangecalendar/api/_postAdd.ts:::5:::[crypto-protection] import { symmetricEncrypt } from "@calcom/lib/crypto";
 packages/app-store/exchangecalendar/api/_postAdd.ts:::17:::[schema-validation] url: z.string().url(),
@@ -5174,7 +5119,6 @@ packages/app-store/exchangecalendar/api/_postAdd.ts:::22:::[schema-validation] u
 packages/app-store/exchangecalendar/api/_postAdd.ts:::28:::[schema-validation] const body = formSchema.parse(req.body);
 packages/app-store/exchangecalendar/api/_postAdd.ts:::29:::[crypto-protection] const encrypted = symmetricEncrypt(JSON.stringify(body), process.env.CALENDSO_ENCRYPTION_KEY || "");
 packages/app-store/exchangecalendar/lib/CalendarService.ts:::29:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
-packages/app-store/exchangecalendar/lib/CalendarService.ts:::52:::[schema-validation] this.payload = JSON.parse(
 packages/app-store/exchangecalendar/lib/CalendarService.ts:::53:::[crypto-protection] symmetricDecrypt(credential.key?.toString() || "", process.env.CALENDSO_ENCRYPTION_KEY || "")
 packages/app-store/fathom/zod.ts:::6:::[schema-validation] z.object({
 packages/app-store/fathom/zod.ts:::7:::[schema-validation] trackingId: z.string().default("").optional(),
@@ -5335,7 +5279,6 @@ packages/app-store/ics-feedcalendar/api/add.ts:::16:::[parameterized-query] wher
 packages/app-store/ics-feedcalendar/api/add.ts:::27:::[crypto-protection] key: symmetricEncrypt(JSON.stringify({ urls }), process.env.CALENDSO_ENCRYPTION_KEY || ""),
 packages/app-store/ics-feedcalendar/lib/CalendarService.ts:::6:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
 packages/app-store/ics-feedcalendar/lib/CalendarService.ts:::48:::[crypto-protection] const { urls } = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
-packages/app-store/ics-feedcalendar/lib/CalendarService.ts:::48:::[schema-validation] const { urls } = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
 packages/app-store/ics-feedcalendar/lib/CalendarService.ts:::94:::[schema-validation] const jcalData = ICAL.parse(x[1]);
 packages/app-store/ics-feedcalendar/lib/CalendarService.ts:::116:::[parameterized-query] where: {
 packages/app-store/insihts/zod.ts:::6:::[schema-validation] z.object({
@@ -5475,14 +5418,10 @@ packages/app-store/nextcloudtalk/zod.ts:::6:::[schema-validation] nextcloudTalkC
 packages/app-store/nextcloudtalk/zod.ts:::7:::[schema-validation] nextcloudTalkClientSecret: z.string(),
 packages/app-store/nextcloudtalk/zod.ts:::10:::[schema-validation] export const appDataSchema = z.object({});
 packages/app-store/office365calendar/api/callback.ts:::45:::[input-sanitization] .map((key) => `${key}=${encodeURIComponent(payload[key])}`)
-packages/app-store/office365calendar/api/callback.ts:::111:::[schema-validation] calBody = JSON.parse(responseBody) as { value: OfficeCalendar[] };
 packages/app-store/office365calendar/api/callback.ts:::172:::[parameterized-query] await prisma.credential.delete({ where: { id: credential.id } });
 packages/app-store/office365calendar/lib/CalendarService.ts:::226:::[input-sanitization] const encodedFilter = encodeURIComponent(`mail eq '${email}'`);
 packages/app-store/office365calendar/lib/CalendarService.ts:::387:::[input-sanitization] const filter = `?startDateTime=${encodeURIComponent(
 packages/app-store/office365calendar/lib/CalendarService.ts:::389:::[input-sanitization] )}&endDateTime=${encodeURIComponent(dateToParsed.toISOString())}`;
-packages/app-store/office365calendar/lib/CalendarService.ts:::458:::[schema-validation] responseBody = JSON.parse(responseBody) as { value: OfficeCalendar[] };
-packages/app-store/office365calendar/lib/CalendarService.ts:::729:::[schema-validation] const parsedJson = JSON.parse(response);
-packages/app-store/office365calendar/lib/CalendarService.ts:::741:::[schema-validation] return JSON.parse(resultString);
 packages/app-store/office365calendar/lib/getOfficeAppKeys.ts:::15:::[schema-validation] const officeAppKeysSchema = z.object({
 packages/app-store/office365calendar/lib/getOfficeAppKeys.ts:::16:::[schema-validation] client_id: z.string(),
 packages/app-store/office365calendar/lib/getOfficeAppKeys.ts:::17:::[schema-validation] client_secret: z.string(),
@@ -5499,8 +5438,6 @@ packages/app-store/office365video/lib/VideoApiAdapter.ts:::31:::[schema-validati
 packages/app-store/office365video/lib/VideoApiAdapter.ts:::32:::[schema-validation] client_id: z.string(),
 packages/app-store/office365video/lib/VideoApiAdapter.ts:::33:::[schema-validation] client_secret: z.string(),
 packages/app-store/office365video/lib/VideoApiAdapter.ts:::192:::[input-sanitization] const encodedFilter = encodeURIComponent(`mail eq '${email}'`);
-packages/app-store/office365video/lib/VideoApiAdapter.ts:::248:::[schema-validation] const resultObject = JSON.parse(resultString);
-packages/app-store/office365video/lib/VideoApiAdapter.ts:::290:::[schema-validation] const resultObject = JSON.parse(resultString);
 packages/app-store/office365video/zod.ts:::3:::[schema-validation] export const appKeysSchema = z.object({
 packages/app-store/office365video/zod.ts:::4:::[schema-validation] client_id: z.string().min(1),
 packages/app-store/office365video/zod.ts:::5:::[schema-validation] client_secret: z.string().min(1),
@@ -5625,7 +5562,6 @@ packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponse
 packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponseRepository.ts:::46:::[parameterized-query] where: {
 packages/app-store/routing-forms/lib/queuedFormResponse/QueuedFormResponseRepository.interface.ts:::9:::[parameterized-query] where: QueuedFormResponseRepositoryFindManyWhere;
 packages/app-store/routing-forms/lib/queuedFormResponse/QueuedFormResponseService.ts:::20:::[parameterized-query] where: {
-packages/app-store/routing-forms/lib/resolveQueryValue.ts:::43:::[schema-validation] return JSON.parse(queryValueWithLabels) as AttributesQueryValue;
 packages/app-store/routing-forms/lib/substituteVariables.ts:::37:::[input-sanitization] const valueToSubstitute = encodeURIComponent(humanReadableValues.toString());
 packages/app-store/routing-forms/zod.ts:::23:::[schema-validation] routerId: z.string(),
 packages/app-store/routing-forms/zod.ts:::30:::[schema-validation] export const zodField: z.ZodType<TField> = z.union([zodRouterField, zodNonRouterField]);
@@ -5735,7 +5671,6 @@ packages/app-store/sendgrid/lib/CalendarService.ts:::17:::[schema-validation] co
 packages/app-store/sendgrid/lib/CalendarService.ts:::18:::[schema-validation] encrypted: z.string(),
 packages/app-store/sendgrid/lib/CalendarService.ts:::39:::[schema-validation] const parsedCredentialKey = apiKeySchema.safeParse(credential.key);
 packages/app-store/sendgrid/lib/CalendarService.ts:::43:::[crypto-protection] decrypted = symmetricDecrypt(parsedCredentialKey.data.encrypted, CALENDSO_ENCRYPTION_KEY);
-packages/app-store/sendgrid/lib/CalendarService.ts:::44:::[schema-validation] const { api_key } = JSON.parse(decrypted);
 packages/app-store/server.ts:::38:::[parameterized-query] where: {
 packages/app-store/server.ts:::59:::[parameterized-query] where: {
 packages/app-store/server.ts:::66:::[parameterized-query] where: {
@@ -5895,7 +5830,6 @@ packages/app-store/webex/lib/VideoApiAdapter.ts:::115:::[schema-validation] cred
 packages/app-store/webex/lib/VideoApiAdapter.ts:::169:::[schema-validation] const data = webexMeetingsSchema.passthrough().parse(responseBody);
 packages/app-store/webex/lib/VideoApiAdapter.ts:::195:::[schema-validation] const result = webexEventResultSchema.parse(response);
 packages/app-store/webex/lib/VideoApiAdapter.ts:::242:::[schema-validation] const result = webexEventResultSchema.parse(response);
-packages/app-store/webex/lib/VideoApiAdapter.ts:::261:::[schema-validation] _response = JSON.parse(responseString);
 packages/app-store/webex/lib/VideoApiAdapter.ts:::280:::[parameterized-query] where: {
 packages/app-store/webex/lib/VideoApiAdapter.ts:::287:::[parameterized-query] where: {
 packages/app-store/webex/lib/getWebexAppKeys.ts:::5:::[schema-validation] const webexAppKeysSchema = z.object({
@@ -5940,7 +5874,6 @@ packages/app-store/zoho-bigin/zod.ts:::6:::[schema-validation] client_id: z.stri
 packages/app-store/zoho-bigin/zod.ts:::7:::[schema-validation] client_secret: z.string().min(1),
 packages/app-store/zohocalendar/api/add.ts:::17:::[schema-validation] const { client_id } = zohoKeysSchema.parse(appKeys);
 packages/app-store/zohocalendar/api/callback.ts:::46:::[schema-validation] const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
-packages/app-store/zohocalendar/api/callback.ts:::75:::[schema-validation] const responseBody = await JSON.parse(await response.text());
 packages/app-store/zohocalendar/api/callback.ts:::143:::[parameterized-query] await prisma.credential.delete({ where: { id: credential.id } });
 packages/app-store/zohocalendar/lib/CalendarService.ts:::41:::[schema-validation] const { client_id, client_secret } = zohoKeysSchema.parse(appKeys);
 packages/app-store/zohocalendar/lib/CalendarService.ts:::73:::[parameterized-query] where: { id: credential.id },
@@ -6011,7 +5944,6 @@ packages/emails/src/templates/OrganizerRequestEmail.tsx:::2:::[crypto-protection
 packages/emails/src/templates/OrganizerRequestEmail.tsx:::16:::[crypto-protection] const token = symmetricEncrypt(JSON.stringify(seedData), process.env.CALENDSO_ENCRYPTION_KEY || "");
 packages/emails/src/templates/OrganizerRequestEmail.tsx:::18:::[input-sanitization] const actionHref = `${WEBAPP_URL}/api/link/?token=${encodeURIComponent(token)}`;
 packages/emails/templates/_base-email.ts:::64:::[schema-validation] const parseSubject = z.string().safeParse(payload?.subject);
-packages/embeds/embed-core/src/embed.ts:::1630:::[schema-validation] config = JSON.parse(configString);
 packages/embeds/embed-core/src/lib/utils.ts:::120:::[input-sanitization] function escapeHtmlAttribute(value: string): string {
 packages/embeds/embed-core/src/lib/utils.ts:::132:::[input-sanitization] .map(([key, value]) => `data-${hyphenate(key)}="${escapeHtmlAttribute(value)}"`)
 packages/features/CalendarEventBuilder.ts:::133:::[schema-validation] const parsedBookingResponses = bookingResponsesSchema.safeParse(responses);
@@ -6046,13 +5978,11 @@ packages/features/auth/lib/next-auth-custom-adapter.ts:::134:::[parameterized-qu
 packages/features/auth/lib/next-auth-custom-adapter.ts:::154:::[parameterized-query] where: getAccountWhere(providerAccountId.provider, providerAccountId.providerAccountId),
 packages/features/auth/lib/next-auth-options.ts:::31:::[rate-limiting] import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 packages/features/auth/lib/next-auth-options.ts:::39:::[crypto-protection] import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
-packages/features/auth/lib/next-auth-options.ts:::98:::[schema-validation] JSON.parse(GOOGLE_API_CREDENTIALS)?.web || {};
 packages/features/auth/lib/next-auth-options.ts:::108:::[input-sanitization] `/auth/login?totp=${encodeURIComponent(await (await import("./signJwt")).default({ email }))}`;
 packages/features/auth/lib/next-auth-options.ts:::122:::[schema-validation] const metadata = teamMetadataSchema.safeParse(m.team.metadata);
 packages/features/auth/lib/next-auth-options.ts:::131:::[parameterized-query] where: {
 packages/features/auth/lib/next-auth-options.ts:::171:::[rate-limiting] await checkRateLimitAndThrowError({
 packages/features/auth/lib/next-auth-options.ts:::194:::[crypto-protection] const backupCodes = JSON.parse(symmetricDecrypt(user.backupCodes, process.env.CALENDSO_ENCRYPTION_KEY));
-packages/features/auth/lib/next-auth-options.ts:::194:::[schema-validation] const backupCodes = JSON.parse(symmetricDecrypt(user.backupCodes, process.env.CALENDSO_ENCRYPTION_KEY));
 packages/features/auth/lib/next-auth-options.ts:::203:::[parameterized-query] where: {
 packages/features/auth/lib/next-auth-options.ts:::207:::[crypto-protection] backupCodes: symmetricEncrypt(JSON.stringify(backupCodes), process.env.CALENDSO_ENCRYPTION_KEY),
 packages/features/auth/lib/next-auth-options.ts:::225:::[crypto-protection] const secret = symmetricDecrypt(user.twoFactorSecret, process.env.CALENDSO_ENCRYPTION_KEY);
@@ -6273,10 +6203,8 @@ packages/features/bookingReport/repositories/PrismaBookingReportRepository.ts:::
 packages/features/bookings/Booker/hooks/useBookingForm.ts:::1:::[schema-validation] import { zodResolver } from "@hookform/resolvers/zod";
 packages/features/bookings/Booker/hooks/useBookingForm.ts:::54:::[schema-validation] z.object({}),
 packages/features/bookings/Booker/hooks/useBookingForm.ts:::83:::[schema-validation] resolver: zodResolver(
-packages/features/bookings/Booker/hooks/useLocalSet.tsx:::12:::[schema-validation] return storedValue ? new Set(JSON.parse(storedValue)) : new Set(initialValue);
 packages/features/bookings/lib/EventManager.ts:::17:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
 packages/features/bookings/lib/EventManager.ts:::224:::[crypto-protection] const decryptedData = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
-packages/features/bookings/lib/EventManager.ts:::224:::[schema-validation] const decryptedData = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
 packages/features/bookings/lib/EventManager.ts:::342:::[parameterized-query] where: {
 packages/features/bookings/lib/EventManager.ts:::351:::[schema-validation] const calVideoKeys = calVideoKeysSchema.safeParse(calVideo?.keys);
 packages/features/bookings/lib/EventManager.ts:::444:::[schema-validation] createdEventObj = createdEventSchema.parse(JSON.parse(result.createdEvent));
@@ -6346,8 +6274,6 @@ packages/features/bookings/lib/bookingCreateBodySchema.ts:::107:::[schema-valida
 packages/features/bookings/lib/bookingCreateBodySchema.ts:::108:::[schema-validation] smsReminderNumber: z.string().optional().nullable(),
 packages/features/bookings/lib/bookingCreateBodySchema.ts:::109:::[schema-validation] rescheduleReason: z.string().optional(),
 packages/features/bookings/lib/bookingCreateBodySchema.ts:::110:::[schema-validation] customInputs: z.array(z.object({ label: z.string(), value: z.union([z.string(), z.boolean()]) })),
-packages/features/bookings/lib/client/booking-event-form/booking-to-mutation-input-mapper.tsx:::100:::[schema-validation] reroutingFormResponses: reroutingFormResponses ? JSON.parse(reroutingFormResponses) : undefined,
-packages/features/bookings/lib/client/decoyBookingStore.ts:::55:::[schema-validation] const data: DecoyBookingData = JSON.parse(dataStr);
 packages/features/bookings/lib/dto/schema.ts:::3:::[schema-validation] export const instantMeetingSubscriptionSchema = z.object({
 packages/features/bookings/lib/dto/schema.ts:::4:::[schema-validation] endpoint: z.string(),
 packages/features/bookings/lib/dto/schema.ts:::6:::[schema-validation] keys: z.object({
@@ -6376,7 +6302,6 @@ packages/features/bookings/lib/getBookingFields.ts:::100:::[schema-validation] c
 packages/features/bookings/lib/getBookingFields.ts:::101:::[schema-validation] const parsedBookingFields = eventTypeBookingFields.parse(bookingFields || []);
 packages/features/bookings/lib/getBookingFields.ts:::102:::[schema-validation] const parsedCustomInputs = customInputSchema.array().parse(customInputs || []);
 packages/features/bookings/lib/getBookingFields.ts:::406:::[schema-validation] return eventTypeBookingFields.brand<"HAS_SYSTEM_FIELDS">().parse(bookingFields);
-packages/features/bookings/lib/getBookingResponsesSchema.ts:::66:::[schema-validation] parsedValue = JSON.parse(value);
 packages/features/bookings/lib/getBookingResponsesSchema.ts:::107:::[schema-validation] const stringSchema = z.string();
 packages/features/bookings/lib/getBookingResponsesSchema.ts:::108:::[schema-validation] const emailSchema = isPartialSchema ? z.string() : z.string().refine(emailSchemaRefinement);
 packages/features/bookings/lib/getBookingResponsesSchema.ts:::110:::[schema-validation] ? z.string()
@@ -6774,10 +6699,7 @@ packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts:::215:::[p
 packages/features/calendars/lib/buffer-sync/BufferTimeEventService.ts:::237:::[parameterized-query] where: { id: ref.id },
 packages/features/calendars/lib/cancellation-sync/CalendarCancellationSyncService.ts:::131:::[parameterized-query] where: {
 packages/features/calendars/lib/getCalendarsEvents.ts:::3:::[crypto-protection] import { symmetricDecrypt } from "@calcom/lib/crypto";
-packages/features/calendars/lib/getCalendarsEvents.ts:::111:::[schema-validation] key = JSON.parse(
-packages/features/calendars/lib/getCalendarsEvents.ts:::113:::[schema-validation] envelope: JSON.parse(credential.encryptedKey),
 packages/features/calendars/lib/getCalendarsEvents.ts:::248:::[crypto-protection] const decryptedData = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
-packages/features/calendars/lib/getCalendarsEvents.ts:::248:::[schema-validation] const decryptedData = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
 packages/features/calendars/lib/getConnectedDestinationCalendars.ts:::74:::[parameterized-query] where: { userId: user.id },
 packages/features/calendars/lib/getConnectedDestinationCalendars.ts:::182:::[parameterized-query] where: { userId: user.id },
 packages/features/calendars/lib/getConnectedDestinationCalendars.ts:::292:::[parameterized-query] where: {
@@ -6987,28 +6909,6 @@ packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepositor
 packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepository.ts:::158:::[parameterized-query] where: {
 packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepository.ts:::196:::[parameterized-query] where: {
 packages/features/ee/billing/active-user/repositories/ActiveUserBillingRepository.ts:::229:::[parameterized-query] where: {
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::30:::[crypto-protection] import bcrypt from "bcryptjs";
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::61:::[crypto-protection] const salt = await bcrypt.genSalt(10);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::62:::[crypto-protection] hashedPasswordCache = await bcrypt.hash("password123", salt);
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::76:::[parameterized-query] where: { email },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::91:::[parameterized-query] where: { userId_organizationId: { userId: user.id, organizationId } },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::149:::[parameterized-query] const org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::153:::[parameterized-query] where: { email: { in: ALL_EMAILS } },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::160:::[parameterized-query] where: { userId: { in: memberIds } },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::165:::[parameterized-query] await prisma.attendee.deleteMany({ where: { bookingId: { in: bookingIds } } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::166:::[parameterized-query] await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::171:::[parameterized-query] await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::172:::[parameterized-query] await prisma.organizationSettings.deleteMany({ where: { organizationId: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::173:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::174:::[parameterized-query] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::178:::[parameterized-query] const deleteResult = await prisma.user.deleteMany({ where: { email: { in: ALL_EMAILS } } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::206:::[parameterized-query] where: { slug: "active-user-billing" },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::225:::[parameterized-query] let org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::234:::[parameterized-query] where: { organizationId: org.id },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::263:::[parameterized-query] where: { userId_teamId: { userId: admin.id, teamId: org.id } },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::269:::[parameterized-query] where: { userId_teamId: { userId: member.id, teamId: org.id } },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::429:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/active-user/seed-active-user-test.ts:::460:::[parameterized-query] where: { id: org.id },
 packages/features/ee/billing/api/webhook/__handler.ts:::51:::[webhook-signature] const event = stripe.webhooks.constructEvent(
 packages/features/ee/billing/api/webhook/_checkout.session.completed.ts:::211:::[parameterized-query] where: { id: newNumber.id },
 packages/features/ee/billing/api/webhook/_customer.subscription.deleted.team-plan.ts:::8:::[schema-validation] const metadataSchema = z.object({
@@ -7088,114 +6988,6 @@ packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::40:::[par
 packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::99:::[parameterized-query] where: {
 packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::140:::[parameterized-query] where: {
 packages/features/ee/billing/service/dueInvoice/DueInvoiceService.ts:::179:::[parameterized-query] where: {
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::109:::[parameterized-query] where: { slug: "proration-test-org" },
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::121:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::127:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::133:::[parameterized-query] .delete({ where: { teamId: org.id } })
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::138:::[parameterized-query] .delete({ where: { organizationId: org.id } })
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::142:::[parameterized-query] await prisma.profile.deleteMany({ where: { organizationId: org.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::147:::[parameterized-query] where: { parentId: org.id },
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::151:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::152:::[parameterized-query] await prisma.team.delete({ where: { id: team.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::158:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::163:::[parameterized-query] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::174:::[parameterized-query] const user = await prisma.user.findUnique({ where: { email } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::176:::[parameterized-query] await prisma.password.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::177:::[parameterized-query] await prisma.membership.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:::178:::[parameterized-query] await prisma.user.delete({ where: { id: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::30:::[crypto-protection] import bcrypt from "bcryptjs";
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::37:::[crypto-protection] const salt = await bcrypt.genSalt(10);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::38:::[crypto-protection] return bcrypt.hash(password, salt);
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::109:::[parameterized-query] where: { email },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::128:::[parameterized-query] where: {
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::374:::[parameterized-query] where: { slug: TRIGGER_ORG_SLUG },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::378:::[parameterized-query] await prisma.monthlyProration.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::379:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::380:::[parameterized-query] await prisma.organizationBilling.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::382:::[parameterized-query] const triggerChildTeams = await prisma.team.findMany({ where: { parentId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::384:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: t.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::385:::[parameterized-query] await prisma.team.delete({ where: { id: t.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::388:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::389:::[parameterized-query] await prisma.team.delete({ where: { id: triggerOrg.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::394:::[parameterized-query] const user = await prisma.user.findUnique({ where: { email } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::396:::[parameterized-query] await prisma.password.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::397:::[parameterized-query] await prisma.membership.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::398:::[parameterized-query] await prisma.profile.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::399:::[parameterized-query] await prisma.user.delete({ where: { id: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::411:::[parameterized-query] where: { slug: "proration-test-org" },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::420:::[parameterized-query] await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::423:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::426:::[parameterized-query] await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::429:::[parameterized-query] const childTeams = await prisma.team.findMany({ where: { parentId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::431:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::432:::[parameterized-query] await prisma.team.delete({ where: { id: team.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::436:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::439:::[parameterized-query] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::449:::[parameterized-query] const user = await prisma.user.findUnique({ where: { email } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::451:::[parameterized-query] await prisma.password.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::452:::[parameterized-query] await prisma.membership.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::453:::[parameterized-query] await prisma.profile.deleteMany({ where: { userId: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::454:::[parameterized-query] await prisma.user.delete({ where: { id: user.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::470:::[parameterized-query] where: { slug: TRIGGER_ORG_SLUG, isOrganization: true },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::486:::[parameterized-query] where: { organizationId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::498:::[parameterized-query] where: { slug: TRIGGER_TEAM_SLUG, parentId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::527:::[parameterized-query] where: { userId_teamId: { userId: adminUser.id, teamId: org.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::534:::[parameterized-query] where: { userId_teamId: { userId: user.id, teamId: org.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::542:::[parameterized-query] where: { userId_teamId: { userId: adminUser.id, teamId: team.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::548:::[parameterized-query] where: { userId_teamId: { userId: members[i].id, teamId: team.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::578:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::609:::[parameterized-query] where: { id: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::620:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::624:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::625:::[parameterized-query] await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::678:::[parameterized-query] where: {
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::698:::[parameterized-query] where: { organizationId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::712:::[parameterized-query] where: {
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::761:::[parameterized-query] where: { userId_teamId: { userId: adminUser.id, teamId: org.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::773:::[parameterized-query] where: { userId_teamId: { userId: memberUser.id, teamId: org.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::786:::[parameterized-query] where: { userId_teamId: { userId: user.id, teamId: org.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::799:::[parameterized-query] where: { userId_teamId: { userId: adminUser.id, teamId: team.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::812:::[parameterized-query] where: { userId_teamId: { userId: additionalMembers[i].id, teamId: team.id } },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::849:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::874:::[parameterized-query] where: { id: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::887:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::898:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:::899:::[parameterized-query] await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::29:::[crypto-protection] import bcrypt from "bcryptjs";
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::45:::[crypto-protection] const salt = await bcrypt.genSalt(10);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::46:::[crypto-protection] return bcrypt.hash(password, salt);
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::113:::[parameterized-query] where: { email },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::132:::[parameterized-query] where: {
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::280:::[parameterized-query] where: { email: { in: testEmails } },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::288:::[parameterized-query] where: { slug: HWM_TEAM_SLUG, isOrganization: false },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::292:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::293:::[parameterized-query] await prisma.teamBilling.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::294:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::295:::[parameterized-query] await prisma.team.delete({ where: { id: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::301:::[parameterized-query] where: { slug: HWM_ORG_SLUG, isOrganization: true },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::305:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::306:::[parameterized-query] await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::307:::[parameterized-query] await prisma.organizationSettings.deleteMany({ where: { organizationId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::310:::[parameterized-query] const childTeams = await prisma.team.findMany({ where: { parentId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::312:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: t.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::313:::[parameterized-query] await prisma.team.delete({ where: { id: t.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::316:::[parameterized-query] await prisma.membership.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::317:::[parameterized-query] await prisma.team.delete({ where: { id: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::329:::[parameterized-query] where: { slug: HWM_TEAM_SLUG, isOrganization: false },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::359:::[parameterized-query] where: { userId_teamId: { userId: adminUser.id, teamId: team.id } },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::368:::[parameterized-query] where: { userId_teamId: { userId: members[i].id, teamId: team.id } },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::421:::[parameterized-query] where: { teamId: team.id },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::458:::[parameterized-query] const teamBilling = await prisma.teamBilling.findUnique({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::461:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: team.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::516:::[parameterized-query] where: { slug: HWM_ORG_SLUG, isOrganization: true },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::532:::[parameterized-query] where: { organizationId: org.id },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::559:::[parameterized-query] where: { userId_teamId: { userId: adminUser.id, teamId: org.id } },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::568:::[parameterized-query] where: { userId_teamId: { userId: members[i].id, teamId: org.id } },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::621:::[parameterized-query] where: { teamId: org.id },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::655:::[parameterized-query] where: { id: org.id },
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::669:::[parameterized-query] const orgBilling = await prisma.organizationBilling.findUnique({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::672:::[parameterized-query] await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
-packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:::729:::[parameterized-query] where: { slug: "hwm-seating" },
 packages/features/ee/billing/service/proration/tasker/trigger/emailSchemas.ts:::3:::[schema-validation] export const sendInvoiceEmailSchema = z.object({
 packages/features/ee/billing/service/proration/tasker/trigger/emailSchemas.ts:::4:::[schema-validation] prorationId: z.string().uuid(),
 packages/features/ee/billing/service/proration/tasker/trigger/emailSchemas.ts:::5:::[schema-validation] teamId: z.number().int().positive(),
@@ -7372,7 +7164,6 @@ packages/features/ee/payments/api/webhook.ts:::68:::[parameterized-query] where:
 packages/features/ee/payments/api/webhook.ts:::94:::[schema-validation] const metadata = eventTypeMetaDataSchemaWithTypedApps.parse(eventType?.metadata);
 packages/features/ee/payments/api/webhook.ts:::117:::[parameterized-query] where: {
 packages/features/ee/payments/api/webhook.ts:::136:::[schema-validation] const apps = eventTypeAppMetadataOptionalSchema.parse(eventType?.metadata?.apps);
-packages/features/ee/payments/api/webhook.ts:::192:::[schema-validation] const parsedPayload = JSON.parse(payload);
 packages/features/ee/payments/api/webhook.ts:::201:::[webhook-signature] event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
 packages/features/ee/payments/pages/payment.tsx:::4:::[auth-middleware] import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 packages/features/ee/payments/pages/payment.tsx:::15:::[schema-validation] const querySchema = z.object({
@@ -7886,7 +7677,6 @@ packages/features/form-builder/schema.ts:::216:::[schema-validation] if (!schema
 packages/features/form-builder/schema.ts:::262:::[schema-validation] const urlSchema = z.string().url();
 packages/features/form-builder/schema.ts:::274:::[schema-validation] if (urlSchema.safeParse(value).success) {
 packages/features/form-builder/schema.ts:::282:::[schema-validation] if (urlSchema.safeParse(valueWithHttps).success) {
-packages/features/form-builder/utils.ts:::36:::[schema-validation] newValue = JSON.parse(value);
 packages/features/handleCreatePhoneCall.ts:::5:::[rate-limiting] import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 packages/features/handleCreatePhoneCall.ts:::22:::[rate-limiting] await checkRateLimitAndThrowError({
 packages/features/handleCreatePhoneCall.ts:::23:::[rate-limiting] rateLimitingType: "core",
@@ -8445,7 +8235,6 @@ packages/features/tasker/tasks/analytics/schema.ts:::8:::[schema-validation] id:
 packages/features/tasker/tasks/analytics/schema.ts:::9:::[schema-validation] eventName: z.string(),
 packages/features/tasker/tasks/analytics/schema.ts:::10:::[schema-validation] externalId: z.string().optional(),
 packages/features/tasker/tasks/analytics/sendAnalyticsEvent.ts:::12:::[schema-validation] const parsedPayload = sendAnalyticsEventSchema.safeParse(JSON.parse(payload));
-packages/features/tasker/tasks/bookingAudit.ts:::20:::[schema-validation] const parsedPayload: unknown = JSON.parse(payload);
 packages/features/tasker/tasks/bookingAudit.ts:::22:::[schema-validation] const parseResult = BookingAuditTaskConsumerSchema.safeParse(parsedPayload);
 packages/features/tasker/tasks/cancelProrationReminder.ts:::7:::[schema-validation] export const cancelProrationReminderPayloadSchema = z.object({
 packages/features/tasker/tasks/cancelProrationReminder.ts:::8:::[schema-validation] prorationId: z.string(),
@@ -8460,7 +8249,6 @@ packages/features/tasker/tasks/crm/lib/buildCalendarEvent.ts:::9:::[parameterize
 packages/features/tasker/tasks/crm/schema.ts:::3:::[schema-validation] export const createCRMEventSchema = z.object({
 packages/features/tasker/tasks/crm/schema.ts:::4:::[schema-validation] bookingUid: z.string(),
 packages/features/tasker/tasks/executeAIPhoneCall.ts:::13:::[rate-limiting] import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-packages/features/tasker/tasks/executeAIPhoneCall.ts:::124:::[schema-validation] data = JSON.parse(payload);
 packages/features/tasker/tasks/executeAIPhoneCall.ts:::182:::[rate-limiting] const rateLimitIdentifier = data.teamId
 packages/features/tasker/tasks/executeAIPhoneCall.ts:::188:::[rate-limiting] if (!rateLimitIdentifier) {
 packages/features/tasker/tasks/executeAIPhoneCall.ts:::198:::[rate-limiting] await checkRateLimitAndThrowError({
@@ -8473,7 +8261,6 @@ packages/features/tasker/tasks/scanWorkflowBody.ts:::19:::[schema-validation] wo
 packages/features/tasker/tasks/scanWorkflowBody.ts:::20:::[schema-validation] createdAt: z.string().optional(),
 packages/features/tasker/tasks/scanWorkflowBody.ts:::46:::[parameterized-query] where: { id: workflowStep.id },
 packages/features/tasker/tasks/scanWorkflowBody.ts:::53:::[schema-validation] const { workflowStepIds, userId, createdAt, workflowStepId } = scanWorkflowBodySchema.parse(
-packages/features/tasker/tasks/scanWorkflowBody.ts:::54:::[schema-validation] JSON.parse(payload)
 packages/features/tasker/tasks/scanWorkflowBody.ts:::74:::[parameterized-query] where: {
 packages/features/tasker/tasks/scanWorkflowBody.ts:::98:::[parameterized-query] where: {
 packages/features/tasker/tasks/scanWorkflowBody.ts:::128:::[parameterized-query] where: {
@@ -8498,13 +8285,11 @@ packages/features/tasker/tasks/sendAwaitingPaymentEmail.ts:::16:::[schema-valida
 packages/features/tasker/tasks/sendAwaitingPaymentEmail.ts:::17:::[schema-validation] paymentId: z.number(),
 packages/features/tasker/tasks/sendAwaitingPaymentEmail.ts:::18:::[schema-validation] attendeeSeatId: z.string().nullable().optional(),
 packages/features/tasker/tasks/sendAwaitingPaymentEmail.ts:::25:::[schema-validation] const { bookingId, paymentId, attendeeSeatId } = sendAwaitingPaymentEmailPayloadSchema.parse(
-packages/features/tasker/tasks/sendAwaitingPaymentEmail.ts:::26:::[schema-validation] JSON.parse(payload)
 packages/features/tasker/tasks/sendProrationInvoiceEmail.ts:::7:::[schema-validation] export const sendProrationInvoiceEmailPayloadSchema = z.object({
 packages/features/tasker/tasks/sendProrationInvoiceEmail.ts:::8:::[schema-validation] prorationId: z.string(),
 packages/features/tasker/tasks/sendProrationInvoiceEmail.ts:::9:::[schema-validation] teamId: z.number(),
 packages/features/tasker/tasks/sendProrationInvoiceEmail.ts:::10:::[schema-validation] isAutoCharge: z.boolean(),
 packages/features/tasker/tasks/sendProrationInvoiceEmail.ts:::15:::[schema-validation] const { prorationId, teamId, isAutoCharge } = sendProrationInvoiceEmailPayloadSchema.parse(
-packages/features/tasker/tasks/sendProrationInvoiceEmail.ts:::16:::[schema-validation] JSON.parse(payload)
 packages/features/tasker/tasks/sendProrationReminderEmail.ts:::7:::[schema-validation] export const sendProrationReminderEmailPayloadSchema = z.object({
 packages/features/tasker/tasks/sendProrationReminderEmail.ts:::8:::[schema-validation] prorationId: z.string(),
 packages/features/tasker/tasks/sendProrationReminderEmail.ts:::9:::[schema-validation] teamId: z.number(),
@@ -8518,7 +8303,6 @@ packages/features/tasker/tasks/sendWebook.ts:::11:::[schema-validation] subscrib
 packages/features/tasker/tasks/sendWebook.ts:::12:::[schema-validation] appId: z.string().nullable(),
 packages/features/tasker/tasks/sendWebook.ts:::13:::[schema-validation] payloadTemplate: z.string().nullable(),
 packages/features/tasker/tasks/sendWebook.ts:::22:::[schema-validation] const { secretKey, triggerEvent, createdAt, webhook, data } = sendWebhookPayloadSchema.parse(
-packages/features/tasker/tasks/sendWebook.ts:::23:::[schema-validation] JSON.parse(payload)
 packages/features/tasker/tasks/sendWorkflowEmails.ts:::12:::[schema-validation] export const ZSendWorkflowEmailsSchemaEager = z.object({
 packages/features/tasker/tasks/sendWorkflowEmails.ts:::13:::[schema-validation] to: z.array(z.string()),
 packages/features/tasker/tasks/sendWorkflowEmails.ts:::14:::[schema-validation] subject: z.string(),
@@ -8540,7 +8324,6 @@ packages/features/tasker/tasks/translateEventTypeData.ts:::11:::[schema-validati
 packages/features/tasker/tasks/translateEventTypeData.ts:::12:::[schema-validation] title: z.string().optional(),
 packages/features/tasker/tasks/translateEventTypeData.ts:::13:::[schema-validation] userLocale: z.string(),
 packages/features/tasker/tasks/translateEventTypeData.ts:::89:::[schema-validation] const { eventTypeId, description, title, userLocale, userId } = ZTranslateEventDataPayloadSchema.parse(
-packages/features/tasker/tasks/translateEventTypeData.ts:::90:::[schema-validation] JSON.parse(payload)
 packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.ts:::24:::[schema-validation] export const ZTriggerFormSubmittedNoEventWebhookPayloadSchema = z.object({
 packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.ts:::25:::[schema-validation] webhook: z.object({
 packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.ts:::26:::[schema-validation] subscriberUrl: z.string().url(),
@@ -8722,7 +8505,6 @@ packages/features/webhooks/lib/scheduleTrigger.ts:::575:::[parameterized-query] 
 packages/features/webhooks/lib/scheduleTrigger.ts:::615:::[parameterized-query] where: {
 packages/features/webhooks/lib/scheduleTrigger.ts:::627:::[parameterized-query] where: {
 packages/features/webhooks/lib/sendPayload.ts:::1:::[webhook-signature] import { createHmac } from "node:crypto";
-packages/features/webhooks/lib/sendPayload.ts:::226:::[schema-validation] return JSON.parse(jsonString);
 packages/features/webhooks/lib/sendPayload.ts:::251:::[schema-validation] const webhookAssignmentReasonSchema = z.union([
 packages/features/webhooks/lib/sendPayload.ts:::252:::[schema-validation] z.string(),
 packages/features/webhooks/lib/sendPayload.ts:::253:::[schema-validation] z.array(z.object({ reasonEnum: z.string(), reasonString: z.string() })),
@@ -8732,7 +8514,6 @@ packages/features/webhooks/lib/sendPayload.ts:::370:::[webhook-signature] header
 packages/features/webhooks/lib/service/WebhookService.ts:::1:::[webhook-signature] import { createHmac } from "node:crypto";
 packages/features/webhooks/lib/service/WebhookService.ts:::95:::[webhook-signature] ? createHmac("sha256", subscriber.secret).update(body).digest("hex")
 packages/features/webhooks/lib/service/WebhookService.ts:::104:::[webhook-signature] headers["X-Cal-Signature-256"] = signature;
-packages/features/webhooks/lib/service/WebhookService.ts:::129:::[schema-validation] JSON.parse(template);
 packages/features/webhooks/lib/types/webhookTask.ts:::7:::[schema-validation] const baseWebhookTaskSchema = z.object({
 packages/features/webhooks/lib/types/webhookTask.ts:::8:::[schema-validation] operationId: z.string(),
 packages/features/webhooks/lib/types/webhookTask.ts:::9:::[schema-validation] timestamp: z.string(),
@@ -8783,7 +8564,6 @@ packages/kysely/utils/json/traverse/index.ts:::1:::[parameterized-query] import 
 packages/kysely/utils/json/traverse/index.ts:::2:::[parameterized-query] import { sql } from "kysely";
 packages/lib/CalendarService.ts:::35:::[crypto-protection] import { symmetricDecrypt } from "./crypto";
 packages/lib/CalendarService.ts:::403:::[crypto-protection] } = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
-packages/lib/CalendarService.ts:::403:::[schema-validation] } = JSON.parse(symmetricDecrypt(credential.key as string, CALENDSO_ENCRYPTION_KEY));
 packages/lib/CalendarService.ts:::659:::[parameterized-query] where: {
 packages/lib/CalendarService.ts:::711:::[schema-validation] const jcalData = ICAL.parse(sanitizeCalendarObject(object));
 packages/lib/CalendarService.ts:::985:::[schema-validation] const jcalData = ICAL.parse(sanitizeCalendarObject(object));
@@ -8807,9 +8587,6 @@ packages/lib/checkRateLimitAndThrowError.ts:::6:::[rate-limiting] rateLimitingTy
 packages/lib/checkRateLimitAndThrowError.ts:::11:::[rate-limiting] const response = await rateLimiter()({ rateLimitingType, identifier, opts });
 packages/lib/connectedCalendar.ts:::16:::[parameterized-query] where: {
 packages/lib/connectedCalendar.ts:::25:::[parameterized-query] where: {
-packages/lib/constants.ts:::140:::[schema-validation] export const ALLOWED_HOSTNAMES = JSON.parse(`[${process.env.ALLOWED_HOSTNAMES || ""}]`) as string[];
-packages/lib/constants.ts:::141:::[schema-validation] export const RESERVED_SUBDOMAINS = JSON.parse(`[${process.env.RESERVED_SUBDOMAINS || ""}]`) as string[];
-packages/lib/constants.ts:::255:::[schema-validation] return JSON.parse(process.env.RETELL_AI_TEST_EVENT_TYPE_MAP);
 packages/lib/crypto.ts:::15:::[crypto-protection] export const symmetricEncrypt = function (text: string, key: string) {
 packages/lib/crypto.ts:::18:::[crypto-protection] const cipher = crypto.createCipheriv(ALGORITHM, _key, iv);
 packages/lib/crypto.ts:::31:::[crypto-protection] export const symmetricDecrypt = function (text: string, key: string) {
@@ -8861,7 +8638,6 @@ packages/lib/dto/UserFeaturesDto.ts:::11:::[schema-validation] userId: z.number(
 packages/lib/dto/UserFeaturesDto.ts:::12:::[schema-validation] featureId: z.string(),
 packages/lib/dto/UserFeaturesDto.ts:::13:::[schema-validation] enabled: z.boolean(),
 packages/lib/dto/UserFeaturesDto.ts:::14:::[schema-validation] assignedBy: z.string(),
-packages/lib/errors.ts:::60:::[schema-validation] return new Promise((resolve) => resolve(JSON.parse(responseText)));
 packages/lib/getAvatarUrl.ts:::6:::[schema-validation] const isAbsolute = z.string().url().safeParse(url).success;
 packages/lib/getBooking.tsx:::46:::[parameterized-query] where: {
 packages/lib/getIP.ts:::27:::[schema-validation] const banlistSchema = z.array(z.string());
@@ -8889,7 +8665,6 @@ packages/lib/intervalLimits/isBookingLimits.ts:::5:::[schema-validation] return 
 packages/lib/intervalLimits/isDurationLimits.ts:::5:::[schema-validation] return intervalLimitsType.safeParse(obj).success;
 packages/lib/isEventTypeColor.ts:::7:::[schema-validation] return eventTypeColorSchema.safeParse(obj).success;
 packages/lib/isRecurringEvent.ts:::5:::[schema-validation] const parsed = recurringEventSchema.safeParse(obj);
-packages/lib/jsonUtils.ts:::3:::[schema-validation] const o = JSON.parse(jsonString);
 packages/lib/markdownToSafeHTML.ts:::1:::[input-sanitization] import sanitizeHtml from "sanitize-html";
 packages/lib/markdownToSafeHTML.ts:::16:::[input-sanitization] const safeHTML = sanitizeHtml(html);
 packages/lib/markdownToSafeHTMLClient.ts:::1:::[input-sanitization] import DOMPurify from "dompurify";
@@ -8928,8 +8703,6 @@ packages/lib/rateLimit.ts:::115:::[rate-limiting] smsMonth: new Ratelimit({
 packages/lib/rateLimit.ts:::125:::[rate-limiting] async function rateLimit({ rateLimitingType = "core", identifier, opts }: RateLimitHelper) {
 packages/lib/rateLimit.ts:::130:::[rate-limiting] return await limiter[rateLimitingType].limit(identifier, opts);
 packages/lib/rateLimit.ts:::133:::[rate-limiting] return rateLimit;
-packages/lib/recentImpersonations.ts:::15:::[schema-validation] return JSON.parse(stored);
-packages/lib/redactSensitiveData.ts:::84:::[schema-validation] return JSON.parse(jsonString);
 packages/lib/server/PiiHasher.ts:::13:::[input-sanitization] const data = unescape(encodeURIComponent(str));
 packages/lib/server/PiiHasher.ts:::36:::[crypto-protection] return `${hasher.hash(localPart)}@${domain}`;
 packages/lib/server/avatar.ts:::12:::[parameterized-query] where: {
@@ -8943,7 +8716,6 @@ packages/lib/server/serviceAccountKey.ts:::15:::[schema-validation] encrypted_cr
 packages/lib/server/serviceAccountKey.ts:::16:::[schema-validation] tenant_id: z.string().optional(),
 packages/lib/server/serviceAccountKey.ts:::34:::[crypto-protection] encrypted_credentials: symmetricEncrypt(JSON.stringify(sensitiveData), SERVICE_ACCOUNT_ENCRYPTION_KEY),
 packages/lib/server/serviceAccountKey.ts:::44:::[schema-validation] const parsedEncrypted = encryptedServiceAccountKeySchema.safeParse(encryptedServiceAccountKey);
-packages/lib/server/serviceAccountKey.ts:::52:::[schema-validation] const decryptedData = JSON.parse(
 packages/lib/server/serviceAccountKey.ts:::53:::[crypto-protection] symmetricDecrypt(encrypted_credentials, SERVICE_ACCOUNT_ENCRYPTION_KEY)
 packages/lib/server/serviceAccountKey.ts:::62:::[schema-validation] const parsedDecrypted = serviceAccountKeySchema.safeParse(decrypted);
 packages/lib/server/username.ts:::127:::[parameterized-query] where: {
@@ -8975,7 +8747,6 @@ packages/lib/stripe-error.ts:::17:::[schema-validation] requestId: z.string(),
 packages/lib/stripe-error.ts:::18:::[schema-validation] param: z.string().optional(),
 packages/lib/sync/ISyncService.ts:::73:::[parameterized-query] where: {
 packages/lib/telemetry.ts:::109:::[auth-middleware] isAuthorized: !!cookies["next-auth.session-token"] || !!cookies["__Secure-next-auth.session-token"],
-packages/lib/tracing/index.ts:::82:::[schema-validation] const parsed = JSON.parse(payload);
 packages/lib/tracking/server.ts:::4:::[schema-validation] const utmTrackingDataSchema = z.object({
 packages/lib/tracking/server.ts:::5:::[schema-validation] utm_source: z.string().optional(),
 packages/lib/tracking/server.ts:::6:::[schema-validation] utm_medium: z.string().optional(),
@@ -8986,7 +8757,6 @@ packages/lib/tracking/server.ts:::10:::[schema-validation] utm_id: z.string().op
 packages/lib/tracking/server.ts:::11:::[schema-validation] utm_referral: z.string().optional(),
 packages/lib/tracking/server.ts:::12:::[schema-validation] landing_page: z.string().optional(),
 packages/lib/tracking/server.ts:::54:::[schema-validation] const parsed = utmTrackingDataSchema.safeParse(input);
-packages/lib/tracking/server.ts:::70:::[schema-validation] utmData = parseUtm(JSON.parse(cookies.utm_data));
 packages/lib/videoTokens.ts:::1:::[webhook-signature] import { createHmac } from "node:crypto";
 packages/lib/videoTokens.ts:::9:::[webhook-signature] const hmac = createHmac("sha256", secret).update(payload).digest("hex");
 packages/lib/videoTokens.ts:::28:::[webhook-signature] const expectedHmac = createHmac("sha256", secret).update(payload).digest("hex");
@@ -9021,27 +8791,18 @@ packages/platform/atoms/hooks/event-types/public/useEventType.ts:::34:::[input-s
 packages/platform/atoms/lib/markdownToSafeHTML.ts:::1:::[input-sanitization] import DOMPurify from "dompurify";
 packages/platform/atoms/lib/markdownToSafeHTML.ts:::7:::[schema-validation] const parsedMd = marked.parse(markdown) as string;
 packages/platform/atoms/lib/markdownToSafeHTML.ts:::8:::[input-sanitization] return DOMPurify.sanitize(parsedMd);
-packages/platform/atoms/scripts/dev-on.js:::10:::[schema-validation] const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
 packages/platform/atoms/vite.config.ts:::29:::[parameterized-query] // Check if the content includes the broken path from kysely
 packages/platform/atoms/vite.config.ts:::30:::[parameterized-query] if (content.includes(`kysely/types.ts').$Enums`)) {
 packages/platform/atoms/vite.config.ts:::34:::[parameterized-query] content: content.replaceAll(`kysely/types.ts').$Enums`, `kysely/types.ts')`),
 packages/platform/atoms/vite.config.ts:::93:::[parameterized-query] "@calcom/prisma/client": path.resolve(__dirname, "../../kysely/types.ts"),
 packages/platform/atoms/vite.config.ts:::94:::[parameterized-query] kysely: path.resolve(__dirname, "./kysely-types/index.ts"),
 packages/platform/examples/base/src/pages/api/managed-user.ts:::50:::[parameterized-query] where: { id: localUser.id },
-packages/platform/examples/base/src/pages/api/managed-user.ts:::60:::[schema-validation] const { emails } = JSON.parse(req.body);
-packages/platform/examples/base/src/pages/api/oauth2-user.ts:::17:::[schema-validation] const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 packages/platform/examples/base/src/pages/api/oauth2-user.ts:::99:::[parameterized-query] where: { id: localUser.id },
 packages/platform/examples/base/src/pages/api/refresh.ts:::20:::[parameterized-query] where: {
 packages/platform/examples/base/src/pages/api/refresh.ts:::49:::[parameterized-query] where: { id: localUser.id },
 packages/platform/examples/base/src/pages/api/refresh.ts:::84:::[parameterized-query] where: { id: localUser.id },
 packages/platform/libraries/index.ts:::15:::[crypto-protection] import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
 packages/platform/libraries/index.ts:::73:::[crypto-protection] export { symmetricEncrypt, symmetricDecrypt };
-packages/platform/libraries/scripts/local.js:::13:::[schema-validation] const librariesPackageJson = JSON.parse(fs.readFileSync(librariesPackageJsonPath, "utf8"));
-packages/platform/libraries/scripts/local.js:::21:::[schema-validation] const apiV2PackageJson = JSON.parse(fs.readFileSync(apiV2PackageJsonPath, "utf8"));
-packages/platform/libraries/scripts/postpublish.js:::18:::[schema-validation] const librariesPackageJson = JSON.parse(fs.readFileSync(librariesPackageJsonPath, "utf8"));
-packages/platform/libraries/scripts/postpublish.js:::39:::[schema-validation] const apiV2PackageJson = JSON.parse(fs.readFileSync(apiV2PackageJsonPath, "utf8"));
-packages/platform/libraries/scripts/prepublish.js:::23:::[schema-validation] const packageInfo = JSON.parse(data);
-packages/platform/libraries/scripts/prepublish.js:::53:::[schema-validation] const librariesPackageJson = JSON.parse(fs.readFileSync(librariesPackageJsonPath, "utf8"));
 packages/platform/libraries/vite.config.js:::112:::[input-sanitization] "sanitize-html",
 packages/platform/libraries/vite.config.js:::185:::[input-sanitization] "sanitize-html": "sanitize-html",
 packages/platform/types/api.ts:::41:::[schema-validation] @IsEnum([SUCCESS_STATUS, ERROR_STATUS])
@@ -12661,7 +12422,6 @@ packages/types/AppMetaSchema.ts:::114:::[schema-validation] linkType: z.string()
 packages/types/AppMetaSchema.ts:::117:::[schema-validation] url: z.string(),
 packages/types/AppMetaSchema.ts:::118:::[schema-validation] newTab: z.boolean().optional(),
 packages/ui/components/file-uploader/FileUploader.tsx:::31:::[schema-validation] const zAcceptedFileTypes = z.enum(["any", "images", "videos", "csv", "documents"]);
-scripts/devin/sync-knowledge-to-devin.ts:::128:::[schema-validation] const localData: DevinKnowledgeOutput = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
 scripts/prepare-local-for-delegation-credentials-testing.js:::19:::[parameterized-query] where: { email: "owner1-acme@example.com" },
 scripts/prepare-local-for-delegation-credentials-testing.js:::23:::[parameterized-query] user = await prisma.user.findUnique({ where: { email: newEmail } });
 scripts/prepare-local-for-delegation-credentials-testing.js:::35:::[parameterized-query] where: { id: user.id },
@@ -12671,13 +12431,11 @@ scripts/prepare-local-for-delegation-credentials-testing.js:::78:::[parameterize
 scripts/prepare-local-for-delegation-credentials-testing.js:::100:::[parameterized-query] where: { slug: "google" },
 scripts/prepare-local-for-delegation-credentials-testing.js:::120:::[parameterized-query] const feature = await prisma.feature.findUnique({ where: { slug } });
 scripts/prepare-local-for-delegation-credentials-testing.js:::126:::[parameterized-query] await prisma.feature.update({ where: { slug }, data: { enabled: true } });
-scripts/pull-coss-ui-components.ts:::88:::[schema-validation] const json = JSON.parse(data) as T;
 scripts/reassign-attributes.ts:::14:::[parameterized-query] where: {
 scripts/seed-app-store.ts:::40:::[parameterized-query] where: {
 scripts/seed-app-store.ts:::73:::[parameterized-query] where: { slug: foundApp.slug },
 scripts/seed-app-store.ts:::77:::[parameterized-query] where: { dirName: foundApp.dirName },
 scripts/seed-app-store.ts:::86:::[parameterized-query] where: { type },
-scripts/seed-app-store.ts:::110:::[schema-validation] const { client_secret, client_id, redirect_uris } = JSON.parse(
 scripts/seed-booking-audit.ts:::8:::[parameterized-query] where: { userUuid },
 scripts/seed-booking-audit.ts:::17:::[parameterized-query] where: { attendeeId },
 scripts/seed-booking-audit.ts:::27:::[parameterized-query] where: { email: systemEmail },
@@ -12734,6 +12492,5 @@ scripts/seed.ts:::387:::[parameterized-query] where: {
 scripts/seed.ts:::499:::[parameterized-query] where: {
 scripts/seed.ts:::666:::[parameterized-query] where: { hashedKey },
 scripts/seed.ts:::689:::[parameterized-query] where: { email: "owner1-acme@example.com" },
-scripts/seed.ts:::1147:::[schema-validation] key: JSON.parse(process.env.E2E_TEST_CALCOM_QA_GCAL_CREDENTIALS) as Prisma.JsonObject,
 scripts/seed.ts:::1475:::[parameterized-query] where: {
 scripts/seed.ts:::1483:::[parameterized-query] where: {

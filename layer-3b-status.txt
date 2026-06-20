@@ -1,0 +1,57 @@
+layer_3b_status: OK
+layer: 3b
+method: taint/dataflow analysis (agent)
+tool: taint-analysis
+artifact: findings-layer-3b-taint.json
+input_inventories: sink-inventory.txt, mitigation-inventory.txt
+primary_language: typescript
+pattern_column: js/ts
+coverage: full
+partial: false
+sink_categories_total: 19
+sink_categories_with_findings: 18
+sink_categories_zero_hit: 1
+sink_zero_hit_categories: CWE-134
+total_findings: 212
+gate_blocking_findings: 1
+findings_by_severity: critical=12, high=92, medium=86, low=22
+
+# Layer 3b evaluates every inventoried sink against inventoried mitigations across ALL 19 CWE
+# sink categories and attaches gateBlocking (exploitability) plus, for advisories, a non-empty
+# demotionReason. No category is silently dropped: a category with zero first-party JS/TS sinks
+# is recorded here with an explicit zero-hit status (consistent with layer-3a-status.txt) rather
+# than fabricated as a taint finding. Every finding's file:line is present in sink-inventory.txt
+# (authoritative inventory traceability is enforced for all 212 findings).
+
+# === CWE sink category coverage (19 categories) ===
+sink CWE-601 Open Redirect: covered, 13 findings
+sink CWE-918 SSRF: covered, 13 findings
+sink CWE-117 Log Injection: covered, 14 findings
+sink CWE-807 Auth Decision on User Input: covered, 10 findings
+sink CWE-338 Weak PRNG: covered, 12 findings
+sink CWE-843 Type Confusion: covered, 13 findings
+sink CWE-862 Missing Authorization: covered, 13 findings
+sink CWE-79 XSS / DOM Manipulation: covered, 12 findings
+sink CWE-134 Format String Injection: covered (zero-hit), 0 findings  (no first-party JS/TS printf-style format-string sinks exist; category explicitly scanned and covered per layer-3a-status.txt, neither silently dropped nor fabricated)
+sink CWE-250 Property Injection: covered, 12 findings
+sink CWE-912 File System Write: covered, 12 findings
+sink CWE-1004 Cookie Attributes (CWE-1004/614/1275): covered, 8 findings
+sink CWE-639 IDOR / Tenant Isolation: covered, 16 findings
+sink CWE-200 Information Disclosure via Query: covered, 12 findings
+sink CWE-367 TOCTOU Race Conditions: covered, 12 findings
+sink CWE-285 OAuth Scope Validation: covered, 13 findings
+sink CWE-94 Code Injection: covered, 12 findings
+sink CWE-502 Insecure Deserialization: covered, 13 findings
+sink CWE-611 XML External Entity Injection: covered, 2 findings
+
+# === Gate-blocking summary (the reproducibility anchor) ===
+# gateBlocking reflects exploitability (orthogonal to severity); only gateBlocking:true blocks a merge.
+gate_blocking_total: 1
+gate_blocking_1: packages/features/webhooks/lib/sendPayload.ts:373 [CWE-918] outbound webhook POST to a user-registered subscriberUrl with no SSRF allow-list; signature is bypassable since createWebhookSignature returns '' when no secret is set
+
+# === Notes ===
+note: every gateBlocking:false finding carries a non-empty demotionReason; severity vocabulary
+note: is unified (critical|high|medium|low); every finding carries a non-empty <=200-char
+note: description and an integer line. Python/Go/Java sink columns are structurally inapplicable
+note: to this TypeScript codebase and are expected-empty per AAP Directive 10 (not dropped categories).
+note: no partial coverage occurred; all 19 categories were triaged within budget.

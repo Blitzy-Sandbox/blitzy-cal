@@ -1,0 +1,34 @@
+layer_1_status: OK
+layer: 1
+method: architectural-security-audit (agent, context-aware reasoning)
+tool: arch-audit
+artifact: findings-layer-1-arch.json
+coverage: full
+partial: false
+architectural_categories_total: 10
+architectural_categories_covered: 10
+architectural_categories_zero_finding: 0
+total_findings: 25
+findings_by_severity: critical=1, high=6, medium=15, low=3
+
+# Layer 1 reasons over ALL 10 mandatory architectural categories, tracing each attack chain
+# from entry point to impact and classifying by the most specific CWE. No category is silently
+# dropped or failed: every category below is explicitly recorded with its finding count. This
+# status artifact makes Layer 1 coverage explicit rather than inferred from finding descriptions.
+
+# === Architectural category coverage (10 categories) ===
+category 1 Cryptographic & Key Management: covered, 5 findings
+category 2 Authentication & Session: covered, 2 findings
+category 3 Transport & Origin: covered, 3 findings
+category 4 Request Handling: covered, 1 finding
+category 5 Container & CI/CD: covered, 5 findings
+category 6 Incoming Webhook & Integration Verification: covered, 3 findings
+category 7 Business-Domain Input Validation: covered, 1 finding
+category 8 Embed & Cross-Origin Security: covered, 2 findings
+category 9 API Version Security Parity: covered, 1 finding
+category 10 Framework-Specific Misconfigurations: covered, 2 findings
+
+# === Notes ===
+note: severity vocabulary is unified (critical|high|medium|low); every finding carries a
+note: non-empty <=200-char description and an integer line, per the audit schema.
+note: no partial coverage occurred; the run completed within budget with all 10 categories reasoned.

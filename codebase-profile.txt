@@ -1,0 +1,8 @@
+primary_language: typescript
+secondary_languages: sql, javascript
+frameworks: next.js, react, nestjs, prisma, trpc, kysely, zod, next-auth, vitest, playwright
+package_ecosystems: yarn
+lockfiles: ./yarn.lock
+source_file_count: 7433
+exclude_dirs: node_modules, .next, dist, build, .yarn, .git, coverage, .turbo
+layer_0_status: OK

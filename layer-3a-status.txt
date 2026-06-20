@@ -12,9 +12,9 @@ mitigation_categories_total: 9
 mitigation_categories_with_findings: 9
 mitigation_categories_zero_hit: 0
 sink_inventory_lines_nontest: 8599
-sink_inventory_lines_test: 3438
+sink_inventory_lines_test: 7094
 mitigation_inventory_lines_nontest: 12496
-mitigation_inventory_lines_test: 1036
+mitigation_inventory_lines_test: 2497
 
 # Layer 3a explicitly enumerates ALL 19 sink categories and ALL 9 mitigation categories
 # for the detected JS/TS pattern column. No category is silently dropped: categories
@@ -22,35 +22,35 @@ mitigation_inventory_lines_test: 1036
 # covered, zero-hit) rather than being omitted. Counts are 'non-test / test' file-hit lines.
 
 # === Sink category coverage (19 categories) ===
-sink CWE-601 Open Redirect: 270 / 14
-sink CWE-918 SSRF: 258 / 34
-sink CWE-117 Log Injection: 2839 / 406
-sink CWE-807 Auth Decision on User Input: 50 / 38
-sink CWE-338 Weak PRNG: 56 / 27
-sink CWE-843 Type Confusion: 260 / 1355
+sink CWE-601 Open Redirect: 270 / 15
+sink CWE-918 SSRF: 258 / 36
+sink CWE-117 Log Injection: 2839 / 510
+sink CWE-807 Auth Decision on User Input: 50 / 39
+sink CWE-338 Weak PRNG: 56 / 62
+sink CWE-843 Type Confusion: 260 / 1462
 sink CWE-862 Missing Authorization: 119 / 0
 sink CWE-79 XSS / DOM Manipulation: 38 / 8
 sink CWE-134 Format String Injection: 0 / 0  (zero-hit: no util.format/sprintf/vsprintf or %s/%d/%j format-string logging sinks exist in first-party JS/TS; category explicitly scanned and covered, not silently dropped)
 sink CWE-250 Property Injection: 82 / 15
 sink CWE-912 File System Write: 24 / 0
 sink CWE-1004 Cookie Attributes (CWE-1004/614/1275): 8 / 4
-sink CWE-639 IDOR / Tenant Isolation: 3389 / 1213
-sink CWE-200 Information Disclosure via Query: 61 / 11
+sink CWE-639 IDOR / Tenant Isolation: 3389 / 4127
+sink CWE-200 Information Disclosure via Query: 61 / 15
 sink CWE-367 TOCTOU Race Conditions: 17 / 0
-sink CWE-285 OAuth Scope Validation: 946 / 224
+sink CWE-285 OAuth Scope Validation: 946 / 706
 sink CWE-94 Code Injection: 33 / 4
-sink CWE-502 Insecure Deserialization: 147 / 85
+sink CWE-502 Insecure Deserialization: 147 / 91
 sink CWE-611 XML External Entity Injection: 2 / 0
 
 # === Mitigation category coverage (9 categories) ===
-mitigation schema-validation Schema / input validation (Zod schemas, .safeParse, Zod .parse, class-validator, zodResolver): 8460 / 187
-mitigation parameterized-query Parameterized / safe ORM query construction: 2823 / 121
-mitigation auth-middleware Authentication / authorization middleware and guards: 713 / 443
-mitigation rate-limiting Rate limiting / throttling: 190 / 173
-mitigation crypto-protection Cryptographic protection: 122 / 85
+mitigation schema-validation Schema / input validation (Zod schemas, .safeParse, Zod .parse, class-validator, zodResolver): 8460 / 213
+mitigation parameterized-query Parameterized / safe ORM query construction: 2823 / 755
+mitigation auth-middleware Authentication / authorization middleware and guards: 713 / 1118
+mitigation rate-limiting Rate limiting / throttling: 190 / 218
+mitigation crypto-protection Cryptographic protection: 122 / 111
 mitigation csrf-protection CSRF protection: 76 / 9
-mitigation input-sanitization Input/output sanitization and escaping: 75 / 14
-mitigation webhook-signature Webhook signature verification: 32 / 4
+mitigation input-sanitization Input/output sanitization and escaping: 75 / 53
+mitigation webhook-signature Webhook signature verification: 32 / 20
 mitigation timing-safe-comparison Timing-safe comparison: 5 / 0
 
 # === Language applicability ===

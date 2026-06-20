@@ -151,17 +151,44 @@ SINK_CWES=(
 # TypeScript codebase). For this JS/TS codebase EVERY one of the 19 sink
 # categories is JS/TS-applicable, so this set is EMPTY -- nothing is exempted.
 #
-# In particular, Format String Injection (CWE-134) is treated as JS/TS-applicable
-# (util.format / sprintf-js / printf-style and %s/%d/%j console-logger formatting
-# are real JS/TS sinks). It simply has zero first-party matches in this codebase,
-# so it is recorded as an EXPLICIT zero-hit: a documented coverage sentinel line
-# in sink-inventory.txt and a matching zero-hit finding in
-# findings-layer-3b-taint.json keep the category covered (never dropped, never
-# silently exempted). Checks 4 & 7 therefore see CWE-134 as PRESENT.
-#
 # This array is retained as the AAP language-aware hook for genuinely-inapplicable
 # non-JS/TS pattern columns; it is empty here by design.
 JSTS_INAPPLICABLE_CWES=()
+
+# Documented ZERO-HIT sink categories: JS/TS-APPLICABLE categories that have ZERO
+# first-party sink matches in THIS codebase. They are NOT silently dropped and are
+# NOT represented by any placeholder/sentinel file path. Instead they are recorded
+# as explicit zero-hit coverage METADATA *outside* the findings arrays, in
+# findings-merged.json _summary.coverage.sink_categories_zero_hit. So every entry
+# in sink-inventory.txt is a real file:::line:::pattern and every finding in
+# findings-layer-3b-taint.json references a real source file:line (check 16).
+#
+# Checks 4 and 7 treat a documented zero-hit CWE as COVERED (so the category is
+# never reported missing), and check 7 CROSS-VALIDATES this list against the merged
+# coverage metadata: the two MUST agree, making the zero-hit claim corroborated and
+# reproducible rather than an arbitrary local waiver. A category is only honored as
+# zero-hit when it additionally has no real inventory line / no real finding (which
+# is exactly the condition under which the zero-hit branch is consulted).
+#
+# CWE-134 (Format String Injection) is JS/TS-applicable -- util.format / sprintf-js
+# / printf-style and %s/%d/%j console-logger formatting are real JS/TS sinks -- but
+# has zero first-party occurrences in this codebase, so it is the sole zero-hit CWE.
+ZERO_HIT_CWES=(
+  "CWE-134"
+)
+
+# -----------------------------------------------------------------------------
+# Documented Semgrep SARIF -> normalized suppression allow-list (AAP Directive 3).
+# Check 3 asserts that EVERY raw results-semgrep.sarif result (file + startLine)
+# is present in the normalized findings-layer-2-semgrep.json, UNLESS its
+# "file:::startLine" key is explicitly listed here with an AAP-allowed basis.
+# AAP Directive 3 permits exactly two suppression categories: (1) auth guards
+# that return `true` inside *.test.*/*.spec.* test stubs, and (2) shell execution
+# with hardcoded args in build directories (build-time only). This list is empty
+# because all raw SARIF results are normalized into Layer 2 (none qualifies for a
+# suppression). Format per entry: "path/to/file:::<startLine>".
+SEMGREP_SUPPRESSIONS=(
+)
 
 # The 9 mitigation categories (inventory tag tokens).
 MITIGATION_CATS=(
@@ -213,6 +240,16 @@ is_jsts_exempt_cwe() {
   return 1
 }
 
+# Returns success (0) if the given CWE id is a DOCUMENTED zero-hit category
+# (scanned, covered, zero first-party matches; recorded in merged coverage metadata).
+is_zero_hit_cwe() {
+  local target="$1" cwe
+  for cwe in "${ZERO_HIT_CWES[@]}"; do
+    [ "$cwe" = "$target" ] && return 0
+  done
+  return 1
+}
+
 # -----------------------------------------------------------------------------
 # Export the canonical data for the embedded python3 snippets (read via os.environ).
 # SINK_MAP encodes "Name=CWE,CWE|Name=CWE|..." built from the arrays above so
@@ -225,12 +262,14 @@ for _i in "${!SINK_NAMES[@]}"; do
   if [ -z "$SINK_MAP" ]; then SINK_MAP="$_entry"; else SINK_MAP="${SINK_MAP}|${_entry}"; fi
 done
 JSTS_EXEMPT_CWES="$(IFS=,; printf '%s' "${JSTS_INAPPLICABLE_CWES[*]}")"
+ZERO_HIT_CWES_ENV="$(IFS=,; printf '%s' "${ZERO_HIT_CWES[*]}")"
+SEMGREP_SUPPRESSIONS_ENV="$(IFS='|'; printf '%s' "${SEMGREP_SUPPRESSIONS[*]}")"
 L1_CATS_ENV="$(IFS='|'; printf '%s' "${L1_CATS[*]}")"
 ALLOWED_SEVERITIES_ENV="$ALLOWED_SEVERITIES"
 
 export PROFILE L1 L2 L3B L4 MERGED SINK
 export SARIF OSV_RAW RULES_GITIGNORE
-export SINK_MAP JSTS_EXEMPT_CWES IS_JSTS L1_CATS_ENV ALLOWED_SEVERITIES_ENV
+export SINK_MAP JSTS_EXEMPT_CWES ZERO_HIT_CWES_ENV IS_JSTS L1_CATS_ENV ALLOWED_SEVERITIES_ENV SEMGREP_SUPPRESSIONS_ENV
 
 if [ "$NO_WRITE" -eq 1 ]; then _MODE="read-only (no writeback)"; else _MODE="default (records verification_status)"; fi
 printf '=== Directive 10 Verification Suite (16 checks) ===\n'
@@ -317,10 +356,54 @@ if not documented_error:
 # (c) rules/.gitignore must exist (pinned-rules dir marker) -- unconditional
 if not (os.path.isfile(rules_gi) and os.path.getsize(rules_gi) > 0):
     problems.append('rules/.gitignore missing or empty')
+# (d) SARIF completeness: every raw SARIF result (file,startLine) must be present
+#     in the normalized Layer 2 array, unless its "file:::startLine" is in the
+#     documented SEMGREP_SUPPRESSIONS allow-list (AAP Directive 3). This is the
+#     guard that catches a normalized artifact silently dropping a reproducible
+#     raw SARIF finding. Waived only when layer_2 is a documented ERROR or the L2
+#     array failed to parse (already reported by (a)).
+sar_pairs = set()
+if not documented_error and l2_ok:
+    try:
+        s2 = json.load(open(sarif, encoding='utf-8'))
+        for run in (s2.get('runs') or []):
+            for r in (run.get('results') or []):
+                for loc in (r.get('locations') or []):
+                    pl = loc.get('physicalLocation') or {}
+                    uri = (pl.get('artifactLocation') or {}).get('uri') or ''
+                    if uri.startswith('file://'):
+                        uri = uri[7:]
+                    ln = (pl.get('region') or {}).get('startLine')
+                    if uri and ln is not None:
+                        sar_pairs.add((uri, int(ln)))
+        l2_pairs = set()
+        for f in d:
+            if isinstance(f, dict) and f.get('file') is not None and f.get('line') is not None:
+                try:
+                    l2_pairs.add((f['file'], int(f['line'])))
+                except (TypeError, ValueError):
+                    pass
+        supp = set(x for x in (os.environ.get('SEMGREP_SUPPRESSIONS_ENV', '') or '').split('|') if x)
+        uncovered = []
+        for (uri, ln) in sorted(sar_pairs):
+            if (uri, ln) in l2_pairs:
+                continue
+            if ('%s:::%d' % (uri, ln)) in supp:
+                continue
+            uncovered.append('%s:%d' % (uri, ln))
+        if uncovered:
+            extra = (' (+%d more)' % (len(uncovered) - 5)) if len(uncovered) > 5 else ''
+            problems.append('raw SARIF results not normalized into Layer 2 and not allow-listed: '
+                            + ', '.join(uncovered[:5]) + extra)
+    except Exception as exc:
+        problems.append('SARIF-completeness check error: %s' % exc)
 if problems:
     print('; '.join(problems)); sys.exit(1)
-print('L2 array + raw SARIF (>=1 run) + rules/.gitignore all valid' if not documented_error
-      else 'layer_2 documented ERROR (array/SARIF waived); rules/.gitignore present')
+if documented_error:
+    print('layer_2 documented ERROR (array/SARIF waived); rules/.gitignore present')
+else:
+    print('L2 array + raw SARIF (>=1 run; all %d SARIF results normalized or allow-listed) + rules/.gitignore all valid'
+          % len(sar_pairs))
 sys.exit(0)
 PY
 )"; then
@@ -356,13 +439,17 @@ else
         if grep -qF "[$_cwe]" "$SINK"; then _found=1; break; fi
       done
       if [ "$_found" -eq 0 ]; then
-        # Category absent -- a failure unless it is JS/TS-exempt under a JS/TS codebase.
+        # Category absent from sink-inventory.txt. This is a FAILURE unless the
+        # category is either (a) JS/TS-exempt under a JS/TS codebase (a genuinely
+        # inapplicable non-JS/TS pattern column), or (b) a DOCUMENTED zero-hit CWE
+        # (scanned, zero first-party matches, recorded as merged coverage metadata
+        # -- no placeholder/sentinel line in the inventory). Either condition keeps
+        # the category covered without fabricating a sink line.
         _exempt=0
-        if [ "$IS_JSTS" -eq 1 ]; then
-          for _cwe in $_cwes; do
-            if is_jsts_exempt_cwe "$_cwe"; then _exempt=1; break; fi
-          done
-        fi
+        for _cwe in $_cwes; do
+          if [ "$IS_JSTS" -eq 1 ] && is_jsts_exempt_cwe "$_cwe"; then _exempt=1; break; fi
+          if is_zero_hit_cwe "$_cwe"; then _exempt=1; break; fi
+        done
         [ "$_exempt" -eq 0 ] && C4_MISSING+=("${_name} (${_cwes// /,})")
       fi
     done
@@ -410,18 +497,22 @@ else
 fi
 
 # =============================================================================
-# CHECK 7 -- findings-layer-3b-taint.json is a valid JSON array containing
-#            findings for all 19 sink categories. For this JS/TS codebase all 19
-#            are applicable (inapplicable set empty), so all 19 must be present --
-#            including CWE-134 Format String Injection, present via its explicit
-#            zero-hit coverage finding. The language-aware exemption hook only
-#            skips genuinely-inapplicable non-JS/TS pattern columns (none here).
+# CHECK 7 -- findings-layer-3b-taint.json is a valid JSON array covering all 19
+#            sink categories. For this JS/TS codebase all 19 are applicable. A
+#            category is covered when it has at least one real L3b finding bearing
+#            its CWE, OR it is a DOCUMENTED zero-hit CWE (e.g. CWE-134 Format String
+#            Injection). The zero-hit set is CROSS-VALIDATED against the merged
+#            coverage metadata (findings-merged.json _summary.coverage.
+#            sink_categories_zero_hit): the two MUST agree, and a zero-hit CWE must
+#            have NO real finding -- so zero-hit coverage is documented honestly
+#            outside the findings array, never via a fabricated sentinel finding.
 # =============================================================================
 if C7_OUT="$(python3 - <<'PY' 2>&1
 import json, os, sys
-fn = os.environ['L3B']
+fn = os.environ['L3B']; merged = os.environ['MERGED']
 sink_map = os.environ['SINK_MAP']
 exempt = set(filter(None, os.environ.get('JSTS_EXEMPT_CWES', '').split(',')))
+zero_hit = set(filter(None, os.environ.get('ZERO_HIT_CWES_ENV', '').split(',')))
 is_jsts = os.environ.get('IS_JSTS', '0') == '1'
 try:
     data = json.load(open(fn, encoding='utf-8'))
@@ -429,7 +520,31 @@ except Exception as exc:
     print('not valid JSON: %s' % exc); sys.exit(1)
 if not isinstance(data, list):
     print('not a JSON array'); sys.exit(1)
+# CWEs covered by a REAL finding (array elements that bear a cwe).
 present = {f['cwe'] for f in data if isinstance(f, dict) and f.get('cwe')}
+# Cross-validate the documented zero-hit set against the merged coverage metadata
+# (reproducibility anchor: the two MUST agree, so zero-hit is corroborated, not an
+# arbitrary local waiver).
+merged_zero = None
+try:
+    md = json.load(open(merged, encoding='utf-8'))
+    for el in (md if isinstance(md, list) else []):
+        if isinstance(el, dict) and '_summary' in el:
+            mz = (el['_summary'].get('coverage') or {}).get('sink_categories_zero_hit')
+            if isinstance(mz, list):
+                merged_zero = set(mz)
+            break
+except Exception as exc:
+    print('cannot read merged coverage metadata: %s' % exc); sys.exit(1)
+if merged_zero is None:
+    print('merged _summary.coverage.sink_categories_zero_hit missing'); sys.exit(1)
+if zero_hit != merged_zero:
+    print('zero-hit set mismatch: verify.sh ZERO_HIT_CWES=%s != merged sink_categories_zero_hit=%s'
+          % (sorted(zero_hit), sorted(merged_zero))); sys.exit(1)
+# A documented zero-hit CWE must have NO real L3b finding (else the label is wrong).
+contradiction = sorted(zero_hit & present)
+if contradiction:
+    print('CWE(s) declared zero-hit but present as a real L3b finding: %s' % ', '.join(contradiction)); sys.exit(1)
 missing = []
 for entry in sink_map.split('|'):
     name, cwes = entry.split('=', 1)
@@ -438,10 +553,13 @@ for entry in sink_map.split('|'):
         continue
     if is_jsts and any(c in exempt for c in cwes):
         continue
+    if any(c in zero_hit for c in cwes):
+        continue
     missing.append('%s (%s)' % (name, ','.join(cwes)))
 if missing:
     print('missing L3b sink categories: %s' % '; '.join(missing)); sys.exit(1)
-print('valid array, all applicable sink categories covered'); sys.exit(0)
+print('valid array; all applicable sink categories covered (documented zero-hit {%s} validated against merged coverage)'
+      % (','.join(sorted(zero_hit)) or 'none')); sys.exit(0)
 PY
 )"; then
   pass "Check 7: findings-layer-3b-taint.json valid array covering all applicable sink categories"
@@ -878,7 +996,13 @@ fi
 # =============================================================================
 # CHECK 16 -- every L3b finding references a file:line pair present in
 #             sink-inventory.txt (taint findings must trace back to an
-#             inventoried sink).
+#             inventoried sink) AND that file must be a REAL, existing source
+#             file on disk. Non-finding elements (no 'file' key) are skipped.
+#             The real-source existence assertion is what rejects fabricated
+#             "sentinel" paths that would otherwise satisfy a pure
+#             inventory-membership check (a sentinel can be planted in both the
+#             findings array and the inventory). Zero-hit coverage must be
+#             documented in merged _summary.coverage, never as a sink finding.
 # =============================================================================
 if C16_OUT="$(python3 - <<'PY' 2>&1
 import json, os, sys
@@ -896,21 +1020,37 @@ try:
                 pairs.add((parts[0], parts[1].strip()))
 except Exception as exc:
     print('cannot read sink-inventory.txt: %s' % exc); sys.exit(1)
-missing = 0; samples = []
+not_in_inv = 0; inv_samples = []
+not_real = 0; real_samples = []
 for f in data:
     if not isinstance(f, dict):
         continue
-    key = (f.get('file'), str(f.get('line')))
+    # Skip non-finding array elements (e.g. metadata objects with no 'file').
+    if 'file' not in f:
+        continue
+    fpath = f.get('file')
+    key = (fpath, str(f.get('line')))
     if key not in pairs:
-        missing += 1
-        if len(samples) < 5:
-            samples.append('%s:%s' % key)
-if missing:
-    print('%d L3b finding(s) not in sink-inventory.txt (e.g. %s)' % (missing, ', '.join(samples))); sys.exit(1)
-print('all L3b findings trace to an inventoried sink file:line'); sys.exit(0)
+        not_in_inv += 1
+        if len(inv_samples) < 5:
+            inv_samples.append('%s:%s' % key)
+    # Real-source existence: the referenced file must actually exist on disk.
+    # This rejects fabricated sentinel paths used to fake category coverage.
+    if not (isinstance(fpath, str) and os.path.isfile(fpath)):
+        not_real += 1
+        if len(real_samples) < 5:
+            real_samples.append('%s:%s' % key)
+if not_in_inv or not_real:
+    msgs = []
+    if not_in_inv:
+        msgs.append('%d L3b finding(s) not in sink-inventory.txt (e.g. %s)' % (not_in_inv, ', '.join(inv_samples)))
+    if not_real:
+        msgs.append('%d L3b finding(s) reference a non-existent source file (e.g. %s)' % (not_real, ', '.join(real_samples)))
+    print('; '.join(msgs)); sys.exit(1)
+print('all L3b findings trace to an inventoried sink file:line and reference a real existing source file'); sys.exit(0)
 PY
 )"; then
-  pass "Check 16: every L3b finding references a file:line present in sink-inventory.txt"
+  pass "Check 16: every L3b finding references a real file:line present in sink-inventory.txt"
 else
   fail "Check 16: ${C16_OUT}"
 fi

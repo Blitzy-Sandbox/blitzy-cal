@@ -13,6 +13,10 @@ apps/web/playwright/oauth/oauth-authorize-approval-status.e2e.ts:::117:::[CWE-60
 apps/web/playwright/oauth/oauth-authorize-approval-status.e2e.ts:::196:::[CWE-601] window.location
 packages/testing/src/lib/bookingScenario/expects.ts:::828:::[CWE-601] location.href
 packages/ui/components/card/card.test.tsx:::76:::[CWE-601] window.location
+apps/web/playwright/booking-duplicate-api-calls.e2e.ts:::20:::[CWE-918] trpcCalls.push(route.request().url());
+apps/web/playwright/booking-duplicate-api-calls.e2e.ts:::25:::[CWE-918] apiV2Calls.push(route.request().url());
+apps/web/playwright/booking-race-condition.e2e.ts:::299:::[CWE-918] (response) => response.url().includes("/api/book/event") && response.request().method() === "POST"
+apps/web/playwright/booking-race-condition.e2e.ts:::302:::[CWE-918] (response) => response.url().includes("/api/book/event") && response.request().method() === "POST"
 apps/web/playwright/oauth-provider.e2e.ts:::72:::[CWE-918] fetch(
 apps/web/playwright/oauth-provider.e2e.ts:::83:::[CWE-918] fetch(
 apps/web/playwright/oauth-provider.e2e.ts:::102:::[CWE-918] fetch(
@@ -33,6 +37,18 @@ apps/web/playwright/oauth-provider.e2e.ts:::588:::[CWE-918] fetch(
 apps/web/playwright/oauth-provider.e2e.ts:::605:::[CWE-918] fetch(
 apps/web/playwright/oauth-provider.e2e.ts:::653:::[CWE-918] fetch(
 apps/web/playwright/oauth-provider.e2e.ts:::671:::[CWE-918] fetch(
+apps/web/playwright/signup.e2e.ts:::168:::[CWE-918] (response) => response.url().includes("/api/auth/signup") && response.request().method() === "POST"
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::554:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::622:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::682:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::737:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::792:::[CWE-918] const { json, tokenStatus } = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::840:::[CWE-918] auth.request(() => {
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::1149:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::1206:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::1263:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::1323:::[CWE-918] const response = await auth.request({
+packages/app-store/_utils/oauth/OAuthManager.test.ts:::1387:::[CWE-918] const response = await auth.request({
 packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:::77:::[CWE-918] fetch(
 packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:::92:::[CWE-918] fetch(
 packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:::107:::[CWE-918] fetch(
@@ -150,6 +166,18 @@ apps/web/test/lib/next-config.test.ts:::20:::[CWE-117] console.log
 packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:::167:::[CWE-117] console.log
 packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:::171:::[CWE-117] console.log
 packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:::191:::[CWE-117] console.log
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::178:::[CWE-117] log.info(`Testing ${testCase.name}...`);
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::210:::[CWE-117] log.info(
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::301:::[CWE-117] log.info(`${testCase.name} - Generated ${newChunks.length} identical chunks`);
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::330:::[CWE-117] log.debug(`Date parsing verified: ${dateString} -> ${nativeTime}`);
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::574:::[CWE-117] log.info("createEvent test passed - input/output formats verified");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::676:::[CWE-117] log.info("createEvent recurring event test passed");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::740:::[CWE-117] log.info("createEvent with default reminders test passed");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::808:::[CWE-117] log.info("createEvent with just in time reminders test passed");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::878:::[CWE-117] log.info("createEvent with hangoutLink patch test passed");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::953:::[CWE-117] log.info("updateEvent with hangoutLink patch test passed");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::1016:::[CWE-117] log.info("updateEvent without MeetLocationType should not patch test passed");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:::1078:::[CWE-117] log.info("updateEvent without hangoutLink should not patch test passed");
 packages/app-store/googlecalendar/lib/__tests__/utils.ts:::143:::[CWE-117] console.log
 packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:::53:::[CWE-117] console.log
 packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:::86:::[CWE-117] console.log
@@ -178,7 +206,16 @@ packages/features/bookings/lib/getCalendarLinks.test.ts:::195:::[CWE-117] consol
 packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:::159:::[CWE-117] console.error
 packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:::182:::[CWE-117] console.error
 packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:::651:::[CWE-117] console.log
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:::91:::[CWE-117] log.silly("mockPaymentSuccessWebhookFromStripe:catch", JSON.stringify(e));
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::199:::[CWE-117] logger.silly({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::1708:::[CWE-117] logger.silly({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::1860:::[CWE-117] logger.silly({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::2060:::[CWE-117] logger.silly({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::2215:::[CWE-117] logger.silly({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::2385:::[CWE-117] logger.silly({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:::2670:::[CWE-117] logger.silly("Created booking", { createdBooking });
 packages/features/bookings/lib/handleNewBooking/test/spam-booking.integration-test.ts:::124:::[CWE-117] console.log
+packages/features/bookings/lib/handleNewBooking/test/webhook-producer-booking-requested.test.ts:::114:::[CWE-117] log.silly("mockPaymentSuccessWebhookFromStripe:catch", JSON.stringify(e));
 packages/features/bookings/lib/reschedule/determineReschedulePreventionRedirect.test.ts:::100:::[CWE-117] console.log
 packages/features/bookings/lib/service/RecurringBookingService.test.ts:::166:::[CWE-117] logger.debug
 packages/features/credentials/handleDeleteCredential.integration-test.ts:::104:::[CWE-117] console.log
@@ -513,6 +550,7 @@ packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integr
 packages/features/schedules/lib/slots.test.ts:::396:::[CWE-117] console.log
 packages/lib/CalEventParser.test.ts:::38:::[CWE-117] console.log
 packages/lib/CalEventParser.test.ts:::39:::[CWE-117] console.log
+packages/testing/src/lib/__mocks__/prisma.ts:::20:::[CWE-117] logger.silly("Fixed Prismock bug-2");
 packages/testing/src/lib/bookingScenario/MockPaymentService.ts:::51:::[CWE-117] logger.silly
 packages/testing/src/lib/bookingScenario/MockPaymentService.ts:::56:::[CWE-117] logger.silly
 packages/testing/src/lib/bookingScenario/bookingScenario.ts:::437:::[CWE-117] log.silly
@@ -559,6 +597,7 @@ packages/trpc/server/routers/viewer/teams/inviteMember/__mocks__/inviteMemberUti
 packages/ui/components/editor/plugins/AutoLinkPlugin.test.tsx:::20:::[CWE-117] console.error
 packages/ui/components/editor/plugins/EditablePlugin.test.tsx:::23:::[CWE-117] console.error
 packages/ui/components/editor/plugins/ToolbarPlugin.test.tsx:::40:::[CWE-117] console.error
+playwright.config.ts:::340:::[CWE-117] console.log("Ensuring that /embed/embed.js is 200 before starting tests");
 apps/web/app/api/cron/calendar-subscriptions-cleanup/__tests__/route.test.ts:::21:::[CWE-807] headers.get(
 apps/web/app/api/cron/calendar-subscriptions-cleanup/__tests__/route.test.ts:::94:::[CWE-807] request.headers
 apps/web/app/api/cron/calendar-subscriptions-cleanup/__tests__/route.test.ts:::106:::[CWE-807] request.headers
@@ -3677,6 +3716,7 @@ apps/api/v2/test/fixtures/repository/organization.repository.fixture.ts:::56:::[
 apps/api/v2/test/fixtures/repository/organization.repository.fixture.ts:::59:::[CWE-639] prisma.team.delete
 apps/api/v2/test/fixtures/repository/profiles.repository.fixture.ts:::17:::[CWE-639] .findFirst(
 apps/api/v2/test/fixtures/repository/profiles.repository.fixture.ts:::21:::[CWE-639] .findFirst(
+apps/api/v2/test/fixtures/repository/rate-limit.repository.fixture.ts:::12:::[CWE-639] return await this.dbWrite.rateLimit.create({
 apps/api/v2/test/fixtures/repository/routing-forms.repository.fixture.ts:::17:::[CWE-639] .findUnique(
 apps/api/v2/test/fixtures/repository/schedules.repository.fixture.ts:::21:::[CWE-639] .findFirst(
 apps/api/v2/test/fixtures/repository/schedules.repository.fixture.ts:::33:::[CWE-639] .findMany(
@@ -3905,6 +3945,9 @@ apps/web/playwright/i18n-routing.e2e.ts:::78:::[CWE-639] .create(
 apps/web/playwright/insights-charts.e2e.ts:::73:::[CWE-639] prisma.membership.createMany
 apps/web/playwright/insights-charts.e2e.ts:::91:::[CWE-639] prisma.booking.create
 apps/web/playwright/insights-charts.e2e.ts:::102:::[CWE-639] prisma.booking.create
+apps/web/playwright/insights-charts.e2e.ts:::114:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-charts.e2e.ts:::127:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-charts.e2e.ts:::141:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
 apps/web/playwright/insights-charts.e2e.ts:::178:::[CWE-639] prisma.booking.delete
 apps/web/playwright/insights-charts.e2e.ts:::179:::[CWE-639] prisma.booking.delete
 apps/web/playwright/insights-charts.e2e.ts:::195:::[CWE-639] prisma.team.create
@@ -3912,12 +3955,26 @@ apps/web/playwright/insights-charts.e2e.ts:::202:::[CWE-639] prisma.membership.c
 apps/web/playwright/insights-routing-filters.e2e.ts:::101:::[CWE-639] prisma.membership.createMany
 apps/web/playwright/insights-routing-filters.e2e.ts:::135:::[CWE-639] prisma.booking.create
 apps/web/playwright/insights-routing-filters.e2e.ts:::146:::[CWE-639] prisma.booking.create
+apps/web/playwright/insights-routing-filters.e2e.ts:::158:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::172:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
 apps/web/playwright/insights-routing-filters.e2e.ts:::193:::[CWE-639] prisma.booking.delete
 apps/web/playwright/insights-routing-filters.e2e.ts:::194:::[CWE-639] prisma.booking.delete
 apps/web/playwright/insights-routing-filters.e2e.ts:::230:::[CWE-639] prisma.booking.create
 apps/web/playwright/insights-routing-filters.e2e.ts:::250:::[CWE-639] prisma.booking.create
+apps/web/playwright/insights-routing-filters.e2e.ts:::270:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::279:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
 apps/web/playwright/insights-routing-filters.e2e.ts:::313:::[CWE-639] prisma.booking.delete
 apps/web/playwright/insights-routing-filters.e2e.ts:::314:::[CWE-639] prisma.booking.delete
+apps/web/playwright/insights-routing-filters.e2e.ts:::350:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::363:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::376:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::447:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::460:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::473:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::582:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::599:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::660:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
+apps/web/playwright/insights-routing-filters.e2e.ts:::674:::[CWE-639] await prisma.app_RoutingForms_FormResponse.create({
 apps/web/playwright/insights-routing.e2e.ts:::7:::[CWE-639] .create(
 apps/web/playwright/insights-routing.e2e.ts:::18:::[CWE-639] .create(
 apps/web/playwright/insights.e2e.ts:::15:::[CWE-639] prisma.team.create
@@ -4255,6 +4312,7 @@ packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponse
 packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponseRepository.integration-test.ts:::364:::[CWE-639] .findMany(
 packages/app-store/routing-forms/playwright/tests/attribute-routing.e2e.ts:::55:::[CWE-639] prisma.attribute.create
 packages/app-store/routing-forms/playwright/tests/attribute-routing.e2e.ts:::78:::[CWE-639] prisma.attributeToUser.create
+packages/app-store/routing-forms/playwright/tests/attribute-routing.e2e.ts:::107:::[CWE-639] await prisma.app_RoutingForms_Form.create({
 packages/app-store/routing-forms/playwright/tests/basic.e2e.ts:::710:::[CWE-639] prisma.attribute.create
 packages/app-store/routing-forms/playwright/tests/basic.e2e.ts:::738:::[CWE-639] prisma.attributeToUser.create
 packages/app-store/routing-forms/playwright/tests/basic.e2e.ts:::815:::[CWE-639] prisma.attribute.create
@@ -4264,6 +4322,11 @@ packages/app-store/routing-forms/playwright/tests/basic.e2e.ts:::918:::[CWE-639]
 packages/app-store/routing-forms/playwright/tests/basic.e2e.ts:::1047:::[CWE-639] prisma.membership.create
 packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::157:::[CWE-639] .findUniqueOrThrow(
 packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::168:::[CWE-639] .findUniqueOrThrow(
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::177:::[CWE-639] await prisma.app_RoutingForms_Form.update({
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::598:::[CWE-639] await prisma.app_RoutingForms_Form.update({
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::656:::[CWE-639] await prisma.app_RoutingForms_Form.update({
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::723:::[CWE-639] await prisma.app_RoutingForms_Form.update({
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:::791:::[CWE-639] await prisma.app_RoutingForms_Form.update({
 packages/app-store/routing-forms/playwright/tests/testUtils.ts:::53:::[CWE-639] .count(
 packages/app-store/stripepayment/lib/repositories/VerificationTokenRepository.test.ts:::48:::[CWE-639] VerificationTokenRepository.create
 packages/app-store/stripepayment/lib/repositories/VerificationTokenRepository.test.ts:::77:::[CWE-639] VerificationTokenRepository.create
@@ -4374,6 +4437,8 @@ packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integrati
 packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:::300:::[CWE-639] prisma.booking.findUnique
 packages/features/bookings/lib/handleNewBooking/test/booking-flags.test.ts:::293:::[CWE-639] .findFirst(
 packages/features/bookings/lib/handleNewBooking/test/booking-flags.test.ts:::389:::[CWE-639] .findFirst(
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:::242:::[CWE-639] vi.spyOn(prismock, "$queryRaw").mockResolvedValue([{ totalMinutes: yearlyDurationLimit }]);
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:::266:::[CWE-639] vi.spyOn(prismock, "$queryRaw").mockResolvedValue([{ totalMinutes: 0 }]);
 packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:::1020:::[CWE-639] .findFirst(
 packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:::1112:::[CWE-639] .findFirst(
 packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:::1289:::[CWE-639] .findFirst(
@@ -4967,6 +5032,11 @@ packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingSe
 packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::147:::[CWE-639] prisma.team.findUnique
 packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::154:::[CWE-639] prisma.seatChangeLog.create
 packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::162:::[CWE-639] prisma.seatChangeLog.create
+packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::178:::[CWE-639] vi.mocked(prisma.seatChangeLog.groupBy).mockResolvedValue([
+packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::199:::[CWE-639] vi.mocked(prisma.seatChangeLog.groupBy).mockResolvedValue([
+packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::219:::[CWE-639] vi.mocked(prisma.seatChangeLog.groupBy).mockResolvedValue([
+packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::239:::[CWE-639] vi.mocked(prisma.seatChangeLog.groupBy).mockResolvedValue([
+packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::263:::[CWE-639] vi.mocked(prisma.seatChangeLog.groupBy).mockResolvedValue([]);
 packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::288:::[CWE-639] prisma.seatChangeLog.findMany
 packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::293:::[CWE-639] prisma.seatChangeLog.findMany
 packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:::312:::[CWE-639] prisma.seatChangeLog.updateMany
@@ -5058,6 +5128,8 @@ packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabl
 packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabledOrgOnboardingService.test.ts:::1027:::[CWE-639] .findMany(
 packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabledOrgOnboardingService.test.ts:::1135:::[CWE-639] .findMany(
 packages/features/ee/round-robin/__tests__/distributionParity.test.ts:::819:::[CWE-639] .findMany(
+packages/features/ee/teams/repositories/TeamRepository.test.ts:::926:::[CWE-639] prismaMock.$queryRaw.mockResolvedValue(mockUsers);
+packages/features/ee/teams/repositories/TeamRepository.test.ts:::934:::[CWE-639] expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(1);
 packages/features/ee/teams/services/teamService.alternative.test.ts:::47:::[CWE-639] .delete(
 packages/features/ee/teams/services/teamService.alternative.test.ts:::58:::[CWE-639] .delete(
 packages/features/ee/teams/services/teamService.alternative.test.ts:::62:::[CWE-639] .delete(
@@ -5447,12 +5519,17 @@ packages/features/insights/__tests__/booking-denormalized.integration-test.ts:::
 packages/features/insights/__tests__/booking-denormalized.integration-test.ts:::257:::[CWE-639] prisma.bookingDenormalized.findUniqueOrThrow
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::20:::[CWE-639] prisma.user.create
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::30:::[CWE-639] prisma.eventType.create
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::41:::[CWE-639] const form = await prisma.app_RoutingForms_Form.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::98:::[CWE-639] prisma.booking.create
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::112:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::147:::[CWE-639] prisma.booking.deleteMany
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::152:::[CWE-639] await prisma.app_RoutingForms_FormResponse.deleteMany({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::157:::[CWE-639] await prisma.app_RoutingForms_Form.deleteMany({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::162:::[CWE-639] prisma.eventType.deleteMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::167:::[CWE-639] prisma.user.deleteMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::175:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::180:::[CWE-639] .findUniqueOrThrow(
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::210:::[CWE-639] await prisma.app_RoutingForms_FormResponse.update({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::238:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::246:::[CWE-639] .findUniqueOrThrow(
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::254:::[CWE-639] prisma.user.update
@@ -5463,46 +5540,68 @@ packages/features/insights/__tests__/routing-form-response-denormalized.integrat
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::296:::[CWE-639] prisma.eventType.update
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::304:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::313:::[CWE-639] prisma.eventType.delete
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::321:::[CWE-639] await prisma.app_RoutingForms_FormResponse.delete({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::325:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::333:::[CWE-639] prisma.booking.delete
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::337:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::349:::[CWE-639] await prisma.app_RoutingForms_Form.delete({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::353:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::361:::[CWE-639] prisma.user.delete
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::365:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::373:::[CWE-639] prisma.eventType.delete
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::377:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::389:::[CWE-639] const response2 = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::397:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::400:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::405:::[CWE-639] await prisma.app_RoutingForms_FormResponse.delete({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::419:::[CWE-639] const responseWithNulls = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::436:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::447:::[CWE-639] await prisma.app_RoutingForms_Form.update({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::454:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::464:::[CWE-639] prisma.routingFormResponseDenormalized.findUniqueOrThrow
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::482:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::496:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::506:::[CWE-639] prisma.routingFormResponseDenormalized.findMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::534:::[CWE-639] prisma.routingFormResponseField.deleteMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::537:::[CWE-639] prisma.routingFormResponseDenormalized.deleteMany
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::540:::[CWE-639] await prisma.app_RoutingForms_FormResponse.delete({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::547:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::565:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::575:::[CWE-639] prisma.routingFormResponseDenormalized.findMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::599:::[CWE-639] prisma.routingFormResponseDenormalized.findMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::625:::[CWE-639] prisma.routingFormResponseField.deleteMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::628:::[CWE-639] prisma.routingFormResponseDenormalized.deleteMany
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::631:::[CWE-639] await prisma.app_RoutingForms_FormResponse.delete({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::638:::[CWE-639] prisma.booking.create
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::668:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::683:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::692:::[CWE-639] prisma.routingFormResponseDenormalized.findMany
 packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::723:::[CWE-639] prisma.booking.delete
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:::726:::[CWE-639] await prisma.app_RoutingForms_FormResponse.delete({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::17:::[CWE-639] prisma.user.create
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::26:::[CWE-639] prisma.eventType.create
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::36:::[CWE-639] const form = await prisma.app_RoutingForms_Form.create({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::84:::[CWE-639] prisma.booking.create
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::100:::[CWE-639] prisma.routingFormResponseField.deleteMany
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::103:::[CWE-639] prisma.routingFormResponseDenormalized.deleteMany
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::106:::[CWE-639] await prisma.app_RoutingForms_FormResponse.deleteMany({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::111:::[CWE-639] prisma.booking.deleteMany
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::116:::[CWE-639] await prisma.app_RoutingForms_Form.deleteMany({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::121:::[CWE-639] prisma.eventType.deleteMany
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::126:::[CWE-639] prisma.user.deleteMany
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::134:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::161:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::200:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::227:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::250:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::273:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::285:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::308:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::322:::[CWE-639] await prisma.app_RoutingForms_FormResponse.update({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::346:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::383:::[CWE-639] const formResponse = await prisma.app_RoutingForms_FormResponse.create({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::410:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::419:::[CWE-639] await prisma.app_RoutingForms_FormResponse.update({
 packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:::435:::[CWE-639] prisma.routingFormResponseDenormalized.findUnique
 packages/features/insights/services/InsightsBookingService.integration-test.ts:::30:::[CWE-639] prisma.user.create
 packages/features/insights/services/InsightsBookingService.integration-test.ts:::39:::[CWE-639] prisma.team.create
@@ -5851,10 +5950,15 @@ packages/features/pbac/services/__tests__/role-management.factory.test.ts:::136:
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::161:::[CWE-639] prisma.membership.findUnique
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::188:::[CWE-639] prisma.membership.findUnique
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::210:::[CWE-639] prisma.membership.findUnique
+packages/features/pbac/services/__tests__/role-management.factory.test.ts:::223:::[CWE-639] vi.mocked(prisma.membership.count).mockResolvedValue(1);
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::238:::[CWE-639] prisma.membership.findUnique
+packages/features/pbac/services/__tests__/role-management.factory.test.ts:::251:::[CWE-639] vi.mocked(prisma.membership.count).mockResolvedValue(1);
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::266:::[CWE-639] prisma.membership.findUnique
+packages/features/pbac/services/__tests__/role-management.factory.test.ts:::279:::[CWE-639] vi.mocked(prisma.membership.count).mockResolvedValue(2);
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::295:::[CWE-639] prisma.membership.findUnique
+packages/features/pbac/services/__tests__/role-management.factory.test.ts:::308:::[CWE-639] vi.mocked(prisma.membership.count).mockResolvedValue(1);
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::324:::[CWE-639] prisma.membership.findUnique
+packages/features/pbac/services/__tests__/role-management.factory.test.ts:::348:::[CWE-639] expect(prisma.membership.count).not.toHaveBeenCalled();
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::353:::[CWE-639] prisma.membership.findUnique
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::368:::[CWE-639] prisma.membership.update
 packages/features/pbac/services/__tests__/role-management.factory.test.ts:::445:::[CWE-639] prisma.membership.update
@@ -5922,6 +6026,8 @@ packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.
 packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:::397:::[CWE-639] prisma.membership.create
 packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:::414:::[CWE-639] prisma.selectedCalendar.create
 packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:::546:::[CWE-639] .findFirst(
+packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:::651:::[CWE-639] expect(await prisma.selectedCalendar.count()).toBe(2);
+packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:::701:::[CWE-639] expect(await prisma.selectedCalendar.count()).toBe(2);
 packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:::202:::[CWE-639] .findUnique(
 packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:::269:::[CWE-639] .findUnique(
 packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:::87:::[CWE-639] .findUnique(
@@ -5949,6 +6055,9 @@ packages/features/webhooks/lib/test/webhooks.test.ts:::43:::[CWE-639] .findMany(
 packages/sms/test/sms-manager.test.ts:::177:::[CWE-639] prisma.team.findUnique
 packages/sms/test/sms-manager.test.ts:::228:::[CWE-639] prisma.team.findUnique
 packages/testing/src/lib/__mocks__/prisma.d.ts:::4:::[CWE-639] prisma.d.ts
+packages/testing/src/lib/__mocks__/prisma.ts:::87:::[CWE-639] if (!prismockInstance.$queryRaw) {
+packages/testing/src/lib/__mocks__/prisma.ts:::88:::[CWE-639] Object.defineProperty(prismockInstance, "$queryRaw", {
+packages/testing/src/lib/__mocks__/prisma.ts:::90:::[CWE-639] throw new Error("$queryRaw is not implemented in prismock. Use vi.spyOn to mock it in your test.");
 packages/testing/src/lib/bookingScenario/MockPaymentService.ts:::48:::[CWE-639] .create(
 packages/testing/src/lib/bookingScenario/MockPaymentService.ts:::53:::[CWE-639] .findFirst(
 packages/testing/src/lib/bookingScenario/bookingScenario.ts:::339:::[CWE-639] .createMany(
@@ -5996,30 +6105,97 @@ packages/testing/src/lib/bookingScenario/expects.ts:::416:::[CWE-639] .findUniqu
 packages/testing/src/lib/bookingScenario/expects.ts:::433:::[CWE-639] .findUnique(
 packages/testing/src/lib/bookingScenario/expects.ts:::1422:::[CWE-639] .findUnique(
 packages/testing/src/setupVitest.ts:::109:::[CWE-639] .create(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::55:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(mockForm);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::63:::[CWE-639] expect(prisma.app_RoutingForms_Form.findFirst).toHaveBeenCalledWith(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::101:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(mockForm);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::109:::[CWE-639] expect(prisma.app_RoutingForms_Form.findFirst).toHaveBeenCalledWith(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::138:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::152:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::159:::[CWE-639] expect(prisma.app_RoutingForms_Form.findFirst).toHaveBeenCalledWith(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::189:::[CWE-639] prisma.app_RoutingForms_Form.deleteMany.mockResolvedValue({ count: 1 });
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::196:::[CWE-639] expect(prisma.app_RoutingForms_Form.deleteMany).toHaveBeenCalledWith(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::222:::[CWE-639] prisma.app_RoutingForms_Form.deleteMany.mockResolvedValue({ count: 0 });
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::259:::[CWE-639] prisma.app_RoutingForms_Form.findMany.mockResolvedValue(mockForms);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::260:::[CWE-639] prisma.app_RoutingForms_Form.count.mockResolvedValue(2);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::274:::[CWE-639] prisma.app_RoutingForms_Form.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::275:::[CWE-639] prisma.app_RoutingForms_Form.count.mockResolvedValue(0);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::282:::[CWE-639] expect(prisma.app_RoutingForms_Form.count).toHaveBeenCalledWith(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::310:::[CWE-639] prisma.app_RoutingForms_Form.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::311:::[CWE-639] prisma.app_RoutingForms_Form.count.mockResolvedValue(0);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::318:::[CWE-639] expect(prisma.app_RoutingForms_Form.findMany).toHaveBeenCalledWith(
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::350:::[CWE-639] prisma.app_RoutingForms_Form.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::351:::[CWE-639] prisma.app_RoutingForms_Form.count.mockResolvedValue(0);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::359:::[CWE-639] const whereClause = (prisma.app_RoutingForms_Form.findMany as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::373:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::381:::[CWE-639] const whereClause = (prisma.app_RoutingForms_Form.findFirst as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::390:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::391:::[CWE-639] prisma.app_RoutingForms_Form.deleteMany.mockResolvedValue({ count: 0 });
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::392:::[CWE-639] prisma.app_RoutingForms_Form.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::393:::[CWE-639] prisma.app_RoutingForms_Form.count.mockResolvedValue(0);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::401:::[CWE-639] let whereClause = (prisma.app_RoutingForms_Form.findFirst as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::415:::[CWE-639] whereClause = (prisma.app_RoutingForms_Form.deleteMany as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::425:::[CWE-639] whereClause = (prisma.app_RoutingForms_Form.count as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::435:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::436:::[CWE-639] prisma.app_RoutingForms_Form.deleteMany.mockResolvedValue({ count: 0 });
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::437:::[CWE-639] prisma.app_RoutingForms_Form.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::438:::[CWE-639] prisma.app_RoutingForms_Form.count.mockResolvedValue(0);
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::445:::[CWE-639] const formQueryWhere = (prisma.app_RoutingForms_Form.findFirst as any).mock.calls[0][0].where.AND[0];
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::456:::[CWE-639] const deleteFormWhere = (prisma.app_RoutingForms_Form.deleteMany as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/entityPrismaWhereClause.integration.test.ts:::463:::[CWE-639] const formsWhere = (prisma.app_RoutingForms_Form.count as any).mock.calls[0][0].where;
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::25:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::26:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::56:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::57:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::62:::[CWE-639] prisma.credential.findFirst
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::88:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::89:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::117:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::118:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::123:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::127:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::164:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::165:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::170:::[CWE-639] prisma.credential.findFirst
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::204:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::205:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::210:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::214:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::231:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::232:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::237:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::241:::[CWE-639] prisma.credential.findMany
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::248:::[CWE-639] prisma.credential.findMany
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::263:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::299:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::300:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::305:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::309:::[CWE-639] prisma.credential.findMany
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::316:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::336:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::337:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::342:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::346:::[CWE-639] prisma.credential.findMany
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::353:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::370:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::371:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::376:::[CWE-639] prisma.credential.findFirst
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::383:::[CWE-639] prisma.credential.findFirst
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::399:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::400:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::405:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::409:::[CWE-639] prisma.credential.findMany
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::416:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::433:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::434:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::439:::[CWE-639] prisma.credential.findFirst
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::455:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::456:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::461:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::465:::[CWE-639] prisma.credential.findMany
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::480:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue([]);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::481:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue(null);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::506:::[CWE-639] prisma.app_RoutingForms_IncompleteBookingActions.findMany.mockResolvedValue(mockActions);
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::507:::[CWE-639] prisma.app_RoutingForms_Form.findFirst.mockResolvedValue({
 packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:::512:::[CWE-639] prisma.credential.findFirst
 packages/trpc/server/routers/loggedInViewer/unlinkConnectedAccount.handler.test.ts:::30:::[CWE-639] prisma.user.update
 packages/trpc/server/routers/loggedInViewer/unlinkConnectedAccount.handler.test.ts:::35:::[CWE-639] prisma.user.update
@@ -6042,6 +6218,8 @@ packages/trpc/server/routers/viewer/bookings/get.handler.integration-test.ts:::1
 packages/trpc/server/routers/viewer/bookings/get.handler.integration-test.ts:::170:::[CWE-639] prisma.eventType.deleteMany
 packages/trpc/server/routers/viewer/bookings/get.handler.integration-test.ts:::174:::[CWE-639] prisma.team.deleteMany
 packages/trpc/server/routers/viewer/bookings/get.handler.integration-test.ts:::178:::[CWE-639] prisma.user.deleteMany
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:::123:::[CWE-639] $queryRaw: vi.fn().mockResolvedValue([]),
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:::358:::[CWE-639] // PERFORMANCE: With the optimization, we no longer call $queryRaw to fetch event type IDs.
 packages/trpc/server/routers/viewer/bookings/getRoutingTrace.handler.test.ts:::4:::[CWE-639] RoutingTraceRepository.interface
 packages/trpc/server/routers/viewer/bookings/getRoutingTrace.handler.test.ts:::97:::[CWE-639] mockRepository.findByBookingUid
 packages/trpc/server/routers/viewer/bookings/getRoutingTrace.handler.test.ts:::109:::[CWE-639] mockRepository.findByBookingUid
@@ -6166,6 +6344,7 @@ packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test
 packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::77:::[CWE-639] prisma.attributeOption.findMany
 packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::81:::[CWE-639] prisma.attributeToUser.findMany
 packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::82:::[CWE-639] prisma.membership.findMany
+packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::83:::[CWE-639] prisma.membership.count.mockResolvedValue(0);
 packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::84:::[CWE-639] prisma.membership.findFirst
 packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::87:::[CWE-639] prisma.team.findUnique
 packages/trpc/server/routers/viewer/organizations/listMembers.handler.test.ts:::114:::[CWE-639] prisma.membership.findMany

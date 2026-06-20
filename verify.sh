@@ -593,7 +593,12 @@ fi
 #               * gate_blocking == # merged findings with gateBlocking==true
 #                                 (and equals the L3b gateBlocking count)
 #               * by_severity has exactly {critical,high,medium,low}, integer
-#                 values, summing to total_findings
+#                 values, summing to total_findings, AND its per-bucket
+#                 distribution equals the raw aggregate recomputed from the 4
+#                 per-layer files (the canonical by_severity population per
+#                 check 11 "match the sum of the layer files") -- not merely the
+#                 scalar sum, so a distribution that totals right but is
+#                 mis-allocated across severity buckets is caught
 #               * layer_status has all of layer_0,1,2,3a,3b,4, each OK|ERROR
 # =============================================================================
 if C11_OUT="$(python3 - <<'PY' 2>&1
@@ -616,10 +621,18 @@ if summary is None:
 
 problems = []
 
-# --- by_layer == per-layer file lengths; total_findings == sum(by_layer) ---
+# --- by_layer == per-layer file lengths; total_findings == sum(by_layer);
+#     AND accumulate the raw per-severity distribution across the 4 per-layer
+#     files. That raw aggregate is the canonical population for
+#     _summary.by_severity (it equals total_findings and aligns with by_layer),
+#     so check 11 below asserts the FULL distribution against it -- not merely
+#     its scalar sum. ---
 by_layer = summary.get('by_layer', {}) or {}
 counts = {}
+raw_sev = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0}
+raw_sev_ok = True
 for key, fn in files.items():
+    d = None
     try:
         d = json.load(open(fn, encoding='utf-8'))
         counts[key] = len(d) if isinstance(d, list) else -1
@@ -629,6 +642,16 @@ for key, fn in files.items():
         problems.append('%s unreadable' % key)
     elif by_layer.get(key) != counts[key]:
         problems.append('by_layer[%s]: summary=%r actual=%d' % (key, by_layer.get(key), counts[key]))
+    # tally this layer file's severities into the canonical by_severity population
+    if isinstance(d, list):
+        for f in d:
+            sev = f.get('severity') if isinstance(f, dict) else None
+            if sev in raw_sev:
+                raw_sev[sev] += 1
+            else:
+                raw_sev_ok = False
+    else:
+        raw_sev_ok = False
 total = summary.get('total_findings')
 calc_total = sum(v for v in counts.values() if v >= 0)
 if total != calc_total:
@@ -663,7 +686,11 @@ try:
 except Exception as exc:
     problems.append('cannot recount L3b gateBlocking: %s' % exc)
 
-# --- by_severity: exactly 4 keys, integer values, summing to total_findings ---
+# --- by_severity: exactly 4 keys, non-negative integers, summing to
+#     total_findings, AND -- crucially -- its per-bucket distribution must equal
+#     the raw aggregate recomputed above from the 4 per-layer files. Asserting
+#     the FULL distribution (not just the scalar sum) catches a by_severity that
+#     totals correctly but is mis-allocated across severity buckets. ---
 bysev = summary.get('by_severity')
 if not isinstance(bysev, dict):
     problems.append('by_severity missing or not an object')
@@ -675,6 +702,19 @@ else:
         problems.append('by_severity has non-integer/negative value(s): %r' % bysev)
     elif isinstance(total, int) and sum(bysev.values()) != total:
         problems.append('sum(by_severity)=%d != total_findings=%r' % (sum(bysev.values()), total))
+    elif not raw_sev_ok:
+        problems.append('cannot recompute by_severity distribution from the '
+                        'per-layer files (a layer is unreadable/not-a-list or '
+                        'carries an out-of-vocabulary severity)')
+    else:
+        sev_mismatch = [k for k in ('critical', 'high', 'medium', 'low')
+                        if bysev.get(k) != raw_sev[k]]
+        if sev_mismatch:
+            problems.append('by_severity distribution does not match the raw '
+                            'layer-file aggregate: '
+                            + ', '.join('%s summary=%r raw=%d'
+                                        % (k, bysev.get(k), raw_sev[k])
+                                        for k in sev_mismatch))
 
 # --- layer_status: all 6 keys present, each OK|ERROR ---
 ls = summary.get('layer_status')
@@ -692,8 +732,11 @@ else:
 
 if problems:
     print('; '.join(problems)); sys.exit(1)
-print('all _summary counts consistent (total=%d, unique=%d, corroborated=%d, gate_blocking=%d, by_severity sum=%d)'
-      % (calc_total, nobj, corr_calc, gb_calc, sum(bysev.values()))); sys.exit(0)
+print('all _summary counts consistent (total=%d, unique=%d, corroborated=%d, '
+      'gate_blocking=%d; by_severity distribution matches the raw layer-file '
+      'aggregate critical=%d/high=%d/medium=%d/low=%d)'
+      % (calc_total, nobj, corr_calc, gb_calc,
+         raw_sev['critical'], raw_sev['high'], raw_sev['medium'], raw_sev['low'])); sys.exit(0)
 PY
 )"; then
   pass "Check 11: findings-merged.json _summary fully consistent (counts, severity distribution, gate-blocking, layer_status) [${C11_OUT}]"

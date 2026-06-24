@@ -1,0 +1,110 @@
+=== CODEBASE PROFILE (Layer 0 / D0) ===
+Security-Audit Pipeline | Directive D0 (Layer 0: Discovery) | DETERMINISTIC
+Repository: calcom-monorepo (blitzy-cal / Cal.com)
+Scope: First-party source tree (read-only discovery; modifies zero application source files).
+Method: Deterministic `find` / `grep -c` from the repository root with exclude_dirs pruning.
+        Output is byte-identical on identical repository inputs: no timestamps, no random
+        IDs, no absolute machine paths, no ANSI escape sequences. Every value below is
+        measured on disk and reproducible by re-running the documented commands.
+
+--- [2] LANGUAGES ---
+Primary language   : TypeScript
+Secondary language : SQL
+Language family    : TypeScript/JavaScript only (no Python/Go/Java source present).
+
+--- [3] FIRST-PARTY SOURCE-FILE COUNTS (exclude_dirs applied; sorted by count descending) ---
+Counting idiom (per extension), run from the repository root:
+  find . \( -name node_modules -o -name .yarn -o -name .next -o -name dist -o -name build \
+       -o -name .turbo -o -name coverage -o -name .git \) -prune \
+       -o -type f -name '*.<ext>' -print | wc -l
+(The `.ts` count adds `! -name '*.tsx'` so .ts and .tsx are counted separately.)
+
+  .ts (non-tsx) : 5718
+  .tsx          : 1678
+  .sql          :  594
+  .js           :   37
+  .mjs          :    6
+  .jsx          :    0
+  .cjs          :    0
+  .py           :    0
+  .go           :    0
+  .java         :    0
+
+TypeScript/JavaScript family total (.ts + .tsx + .js + .jsx + .mjs + .cjs) : 7439
+SQL files (.sql)                                                           :  594
+
+NOTE (structural emptiness is NOT a failure):
+  The codebase is TypeScript/JavaScript-only. The .py (Python), .go (Go), and .java (Java)
+  counts are 0 by construction. Consequently, the Python/Go/Java sink & mitigation columns
+  in every downstream layer (Layer 3a inventory, Layer 3b taint analysis) are STRUCTURALLY
+  EMPTY. This emptiness MUST NOT be treated as an error or a dropped category by any later
+  layer or by the D9 gate verdict.
+
+--- [4] TEST FILES ---
+Test-file count (unique) : 720
+Detection rule           : a file is a test file if its name matches `*.test.*`, `*.spec.*`,
+                           or `*-test.*`, OR it resides under a `__tests__/` directory
+                           (exclude_dirs applied; de-duplicated union of the four patterns).
+Per-pattern breakdown    : *.test.* = 636 | *.spec.* = 20 | *-test.* = 51 | __tests__/ = 174
+                           (de-duplicated union across the four patterns = 720)
+Purpose                  : drives the `-test.txt` inventory split in Layer 3a
+                           (sink-inventory-test.txt / mitigation-inventory-test.txt).
+
+--- [5] PACKAGE ECOSYSTEM / PACKAGE MANAGER / RUNTIME ---
+Package ecosystem : npm packages (JavaScript/TypeScript)
+Package manager   : Yarn Berry 4.12.0
+  Evidence        : package.json "packageManager": "yarn@4.12.0";
+                    .yarnrc.yml nodeLinker=node-modules,
+                    yarnPath=.yarn/releases/yarn-4.12.0.cjs
+Node.js runtime   : Node.js 20.x
+  Evidence        : Dockerfile base image `node:20` (builder, builder-two, runner stages).
+                    package.json "engines" pins npm>=7.0.0 and yarn>=4.12.0 (no explicit
+                    node key); Node 20.x is the authoritative runtime per the Dockerfile.
+
+--- [6] LOCKFILE ---
+Lockfile path   : ./yarn.lock (single root lockfile; the Layer 4 OSV-Scanner scan target)
+Line count      : 40303
+Package entries : 3727
+  Entry rule    : top-level descriptor headers in yarn.lock
+                  (grep -cE '^"?[^[:space:]#].*:$' yarn.lock)
+
+--- [7] MONOREPO WORKSPACE LAYOUT ---
+Workspace globs (package.json "workspaces"):
+  apps/*, apps/api/*, packages/*, packages/embeds/*, packages/features/*,
+  packages/app-store, packages/app-store/*, packages/platform/*,
+  packages/platform/examples/base, example-apps/*
+
+apps/ :
+  apps/web      - main Next.js web application (contains proxy.ts, lib/csp.ts)
+  apps/api      - API proxy workspace (@calcom/api-proxy; entry index.js)
+  apps/api/v1   - REST API v1 (Next.js-based)
+  apps/api/v2   - REST API v2 (NestJS)
+
+packages/ (20 workspaces, sorted):
+  app-store, app-store-cli, config, coss-ui, dayjs, debugging, ee, emails, embeds,
+  features, kysely, lib, platform, prisma, sms, testing, trpc, tsconfig, types, ui
+
+--- [8] DETECTED FRAMEWORKS / LIBRARIES ---
+(Detected from workspace package.json manifests; count = number of manifests declaring each;
+ versions are as declared in the primary manifest.)
+  Next.js      : primary @ apps/web (declared "next": 16.1.7)        - 6 manifests
+  NestJS       : primary @ apps/api/v2 (declared "@nestjs/core": 10.4.20) - 1 manifest
+  tRPC         : @trpc/* (packages/trpc)                             - 1 manifest
+  Prisma ORM   : @prisma/client / prisma                             - 5 manifests
+  React        : react                                               - 18 manifests
+  Tailwind CSS : tailwindcss                                         - 5 manifests
+  Zod          : zod                                                 - 12 manifests
+
+--- [9] EXCLUDE_DIRS (applied to all counts here and in every later layer) ---
+  node_modules, .yarn, .next, dist, build, .turbo, coverage, .git
+  (.blitzyignore files present in repository: 0 - no additional scan exclusions exist.)
+
+--- [10] SECURITY-RELEVANT CONFIGURATION FILES (presence at repository root) ---
+  Dockerfile               : PRESENT
+  docker-compose.yml       : PRESENT
+  .env.example             : PRESENT (541 lines; secret-NAMING evidence only - never reproduced)
+  SECURITY.md              : PRESENT
+  .well-known/security.txt : PRESENT
+  .github/workflows/*.yml  : 58 files (+ 1 *.yaml = 59 total YAML workflow files)
+
+STATUS: OK

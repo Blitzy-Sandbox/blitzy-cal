@@ -1,0 +1,1608 @@
+=== SINK INVENTORY (Layer 3a / D4) — TEST FILES ===
+Deterministic grep/find sweep over TEST files ONLY (Layer 3a sink inventory, test split).
+This file is the TEST-file complement of sink-inventory.txt; together they partition the first-party tree.
+
+TEST-FILE SELECTION RULE: a file is included iff (a) its filename matches one of the globs
+  *.test.*  *.spec.*  *-test.*  *.e2e.*  *.test-suite.*  *.integration-test.*
+  OR (b) it lives under a path segment: __tests__/  /test/  /tests/  /e2e/
+EXTENSIONS: .ts .tsx .js .jsx .mjs .cjs
+EXCLUDE_DIRS: node_modules .yarn .next dist build .turbo coverage .git
+TEST FILES SCANNED: 900
+SNIPPET POLICY: leading whitespace trimmed; truncated to 200 chars; known real secret tokens redacted (no secret reproduction).
+OUTPUT ORDER: deterministic — sorted by file path then numeric line.
+
+--- SSRF (CWE-918) ---
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/managed-user-bookings.e2e-spec.ts:560:describe("fetch bookings by attendeeEmail", () => {
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reschedule-bookings.e2e-spec.ts:172:it("should fetch old booking and verify rescheduledToUid and rescheduledByEmail and status cancelled", async () => {
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reschedule-bookings.e2e-spec.ts:196:it("should fetch new booking and verify rescheduledFromUid, rescheduledByEmail and reschedulingReason", async () => {
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:558:`Booking with uid=${createdSeatedBooking.uid} is a seated booking which means you have to provide seatUid in the request body to specify which seat specifically you want to reschedule. First, fetch th
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:787:it("should fetch booking and not have attendees because no auth provided", async () => {
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:890:it("should fetch booking and have attendees", async () => {
+apps/api/v2/src/modules/slots/slots-2024-09-04/services/slots.service.spec.ts:21:*   `routingFormResponseId`) are correctly passed through the transform → fetch pipeline.
+apps/web/app/api/social/og/image/__tests__/route.test.ts:36:global.fetch = vi.fn();
+apps/web/app/api/social/og/image/__tests__/route.test.ts:47:vi.mocked(global.fetch).mockResolvedValue({
+apps/web/lib/handleOrgRedirect.test.ts:127:throw new Error("Expected a redirect result but got null/undefined");
+apps/web/playwright/managed-event-types.e2e.ts:130:// Proceed to unlock and check that it got unlocked
+apps/web/playwright/oauth-provider.e2e.ts:72:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:83:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:102:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:114:const validTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:181:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:192:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:211:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:223:const validTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:294:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:311:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:357:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:404:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:481:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:501:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:518:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:571:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:588:const meResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/me`, {
+apps/web/playwright/oauth-provider.e2e.ts:605:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/playwright/oauth-provider.e2e.ts:653:const tokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/token`, {
+apps/web/playwright/oauth-provider.e2e.ts:671:const refreshTokenResponse = await fetch(`${WEBAPP_URL}/api/auth/oauth/refreshToken`, {
+apps/web/test/lib/getSchedule/expects.ts:118:`number of slots don't match for ${dateString}. Expected ${expectedSlots.length} but got ${
+apps/web/test/lib/handleChildrenEventTypes.test.ts:781:// Verify findMany was called once for bulk fetch optimization
+apps/web/test/lib/handleChildrenEventTypes.test.ts:995:// Verify bulk fetch optimization: findMany should be called only ONCE
+packages/app-store/_utils/oauth/OAuthManager.test.ts:3:import "vitest-fetch-mock";
+packages/app-store/_utils/oauth/OAuthManager.test.ts:524:test("It would call fetch by adding Authorization and content header automatically", async () => {
+packages/app-store/_utils/oauth/OAuthManager.test.ts:850:test("It would call fetch by adding Authorization and content header automatically", async () => {
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1146:// For fetch triggered by the actual request
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1203:// For fetch triggered by the actual request
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1260:// For fetch triggered by the actual request
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1317:// For fetch triggered by the token sync request
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1320:// For fetch triggered by the request call fetch
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1381:// For fetch triggered by the token sync request
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1384:// For fetch triggered by the request call fetch
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1445:// For fetch triggered by the actual request
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1496:// For fetch triggered by the actual request
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:47:import "vitest-fetch-mock";
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts:17:import "vitest-fetch-mock";
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:17:import "vitest-fetch-mock";
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:128:test("should fetch primary calendar using 'primary' keyword", async () => {
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:6:import "vitest-fetch-mock";
+packages/app-store/googlecalendar/tests/testUtils.ts:13:* Creates the booking on Cal.com and makes the GCal call to fetch the event.
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2127:// Mock global fetch for Azure AD user lookup (getAzureUserId uses fetch directly)
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2128:const originalFetch = global.fetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2131:// First call: Azure AD token fetch
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2141:global.fetch = mockFetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2160:global.fetch = originalFetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2165:const originalFetch = global.fetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2173:global.fetch = mockFetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2192:// fetch should only be called once for user lookup (2 calls total: token + user)
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2195:global.fetch = originalFetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2200:const originalFetch = global.fetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2208:global.fetch = mockFetch;
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2218:global.fetch = originalFetch;
+packages/app-store/salesforce/lib/__tests__/getSalesforceTokenLifetime.test.ts:14:const originalFetch = global.fetch;
+packages/app-store/salesforce/lib/__tests__/getSalesforceTokenLifetime.test.ts:17:global.fetch = mockFetch;
+packages/app-store/salesforce/lib/__tests__/getSalesforceTokenLifetime.test.ts:22:global.fetch = originalFetch;
+packages/embeds/embed-core/src/embed.test.ts:974:it("should return connect-no-slots-fetch when backgroundSlotsFetch is true and slots are not stale", () => {
+packages/embeds/embed-core/src/embed.test.ts:984:expect(result).toBe("connect-no-slots-fetch");
+packages/embeds/embed-react/playwright/tests/basic.e2e.ts:9:test("should verify that the iframe got created with correct URL - namespaced", async ({
+packages/embeds/embed-react/playwright/tests/basic.e2e.ts:27:test("should verify that the iframe got created with correct URL - namespaced", async ({
+packages/embeds/embed-react/playwright/tests/basic.e2e.ts:49:test("should verify that the iframe got created with correct URL - namespaced", async ({
+packages/features/auth/signup/lib/fetchSignup.test.ts:17:fetchSpy = vi.spyOn(global, "fetch");
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:68:describe("fetch", () => {
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:69:it("should fetch users from repository and populate the map", async () => {
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:77:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:84:it("should fetch attendees from repository and populate the map", async () => {
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:92:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:99:it("should fetch credentials from repository and populate the map", async () => {
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:107:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:114:it("should fetch all data types in parallel", async () => {
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:127:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:136:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:149:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:170:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:186:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:205:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:215:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:234:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:244:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:260:await store.fetch();
+packages/features/booking-audit/lib/service/__tests__/EnrichmentDataStore.test.ts:284:await store.fetch();
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:5:* - webhooks fired by mocking fetch
+packages/features/bookings/lib/handleNewBooking/test/dynamic-group-booking.test.ts:5:* - webhooks fired by mocking fetch
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:5:* - webhooks fired by mocking fetch
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:197:* the calendar busy-time fetch path (getBusyCalendarTimes) is not exercised. These
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:257:* busy-time fetch path (getBusyCalendarTimes at lines 248-334 of getBusyTimes.ts)
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:281:// busy times fetch path won't be hit. The statusFilter validation is at the
+packages/features/busyTimes/services/getBusyTimes.test.ts:221:it("should fetch bookings for a single user with booking limits", async () => {
+packages/features/busyTimes/services/getBusyTimes.test.ts:247:it("should fetch bookings for multiple users with duration limits", async () => {
+packages/features/cache/decorators/__tests__/Memoize.test.ts:47:it("should fetch from source and cache on cache miss", async () => {
+packages/features/cache/decorators/__tests__/Memoize.test.ts:124:it("should fetch from source when cached data fails Zod validation", async () => {
+packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts:300:test("should fetch events with sync token", async () => {
+packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts:358:test("should fetch events without sync token (initial sync) with a 3-month range", async () => {
+packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts:727:test("should include events with status cancelled in fetch results", async () => {
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:63:vi.stubGlobal("fetch", fetchSpy);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:376:test("should fetch events using delta query for initial sync", async () => {
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:420:test("should include cancelled events in fetch results", async () => {
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:554:// Adapter should have made 2 fetch calls (one per page)
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:56:it("should fetch only from cache when all calendars have syncToken and syncSubscribedAt", async () => {
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:97:it("should fetch only from original calendar when all calendars lack syncToken or syncSubscribedAt", async () => {
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:139:it("should fetch from both cache and original calendar when calendars are mixed", async () => {
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:237:it("should fetch only from cache and apply UTC default timezone when all calendars are synced", async () => {
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:285:it("should fetch only from original calendar when all calendars are unsynced", async () => {
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:324:it("should fetch from both cache and original calendar when calendars are mixed", async () => {
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:595:it("should fetch busy times from external calendars for availability check", async () => {
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:707:it("should return success:false with error placeholder when adapter throws during busy time fetch", async () => {
+packages/features/calendars/lib/__tests__/conflictDetection.test.ts:13:*  - Phase 4: Error Handling (fetch failures, timezone-aware mode selection)
+packages/features/calendars/lib/__tests__/conflictDetection.test.ts:479:it("should return error placeholder when calendar fetch fails", async () => {
+packages/features/ee/billing/service/seatTracking/__tests__/SeatChangeTrackingService.test.ts:279:it("should fetch unprocessed changes for a team and month", async () => {
+packages/features/ee/common/server/LicenseKeyService.test.ts:15:/** All fetch call in LicenseKeyService will fail without this */
+packages/features/ee/common/server/LicenseKeyService.test.ts:84:const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+packages/features/ee/common/server/LicenseKeyService.test.ts:110:const fetchSpy = vi.spyOn(global, "fetch").mockRejectedValue(new Error("API Failure"));
+packages/features/ee/common/server/LicenseKeyService.test.ts:152:it("should fetch license validity from API if not cached", async () => {
+packages/features/ee/common/server/LicenseKeyService.test.ts:156:const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+packages/features/ee/common/server/LicenseKeyService.test.ts:186:const fetchSpy = vi.spyOn(global, "fetch").mockRejectedValue(new Error("API Failure"));
+packages/features/ee/workflows/lib/service/EmailWorkflowService.test.ts:139:test("should fetch seat attendee email for seated events", async () => {
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:200:test("should fetch event type when user owns it", async () => {
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:275:test("should fetch team event type when user is org admin and is a team member", async () => {
+packages/features/flags/repositories/__tests__/FeatureRepository.test.ts:78:it("should fetch from database and cache on cache miss", async () => {
+packages/features/flags/repositories/__tests__/FeatureRepository.test.ts:163:it("should fetch from database and cache on cache miss", async () => {
+packages/features/flags/repositories/__tests__/TeamFeatureRepository.test.ts:83:it("should fetch from database and cache on cache miss", async () => {
+packages/features/flags/repositories/__tests__/TeamFeatureRepository.test.ts:237:it("should fetch from database and cache on cache miss", async () => {
+packages/features/flags/repositories/__tests__/UserFeatureRepository.test.ts:83:it("should fetch from database and cache on cache miss", async () => {
+packages/features/flags/repositories/__tests__/UserFeatureRepository.test.ts:242:it("should fetch from database and cache on cache miss", async () => {
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:890:it("should fetch all forms in org scope when user is in same team", async () => {
+packages/features/tasker/tasks/scanWorkflowBody.test.ts:54:vi.stubGlobal("fetch", mockFetch);
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:455:vi.stubGlobal("fetch", mockFetch);
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:479:vi.stubGlobal("fetch", mockFetch);
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:490:vi.stubGlobal("fetch", mockFetch);
+packages/features/watchlist/lib/service/WatchlistService.test.ts:359:test("should fetch global and org entries in parallel", async () => {
+packages/features/webhooks/lib/__tests__/consumer/WebhookTaskConsumer.test.ts:152:it("should fetch subscribers based on task payload", async () => {
+packages/features/webhooks/lib/handleWebhookScheduledTriggers.test.ts:12:vi.stubGlobal("fetch", mockFetch);
+packages/features/webhooks/lib/handleWebhookScheduledTriggers.test.ts:120:it("should fetch webhook version from database for legacy jobs using jobName", async () => {
+packages/features/webhooks/lib/sendPayload.test.ts:10:vi.stubGlobal("fetch", mockFetch);
+packages/features/webhooks/lib/service/WebhookService.test.ts:59:vi.stubGlobal("fetch", mockFetch);
+packages/trpc/server/routers/viewer/bookings/confirm.handler.test.ts:6:// "Closing rpc while fetch was pending" errors from Salesforce GraphQL module imports)
+packages/trpc/server/routers/viewer/bookings/editLocation.handler.test.ts:6:// "Closing rpc while fetch was pending" errors from watchlist module imports)
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:250:message: "You do not have permissions to fetch bookings for specified userIds",
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:358:// PERFORMANCE: With the optimization, we no longer call $queryRaw to fetch event type IDs.
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:366:it("should only fetch user IDs when userIds filter is provided", async () => {
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:391:it("should NOT fetch user IDs when no userIds filter is provided (uses subqueries instead)", async () => {
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:408:// PERFORMANCE: Without userIds filter, we don't need to fetch user IDs for validation.
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:110:// Mock translations fetch
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:111:vi.mock("node-fetch", () => ({
+count: 155
+
+--- Open redirect (CWE-601) ---
+apps/web/lib/daily-webhook/tests/recorded-daily-video.test.ts:50:redirect: actual.NextResponse.redirect,
+apps/web/lib/pages/document/_applyThemeForDocument.test.ts:98:global.window.location.pathname = `/${username}/meeting`;
+apps/web/lib/pages/document/_applyThemeForDocument.test.ts:122:global.window.location.pathname = "/some-other-page";
+apps/web/playwright/oauth-provider.e2e.ts:57:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:166:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:275:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:338:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:385:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:434:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:462:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:551:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth-provider.e2e.ts:634:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth/oauth-authorize-approval-status.e2e.ts:117:return window.location.href.startsWith("https://example.com");
+apps/web/playwright/oauth/oauth-authorize-approval-status.e2e.ts:196:return window.location.href.startsWith("https://example.com");
+apps/web/proxy.test.ts:72:NextResponse.redirect = (url: URL | string, statusOrInit?: number | ResponseInit) => {
+packages/ui/components/card/card.test.tsx:76:expect(window.location.href).toBe("http://localhost:3000/");
+count: 16
+
+--- XSS (CWE-79) ---
+packages/app-store/BookingPageTagManager.test.tsx:55:expect(trackingScript.innerHTML).toContain(GTM_CONFIG.trackingId);
+packages/app-store/BookingPageTagManager.test.tsx:56:expect(pushEventScript.innerHTML).toContain("cal_analytics_app__gtm");
+packages/embeds/embed-core/src/EmbedElement.test.ts:153:element.innerHTML = inlineHTML({
+packages/embeds/embed-core/src/embed-iframe/__tests__/utils.test.ts:141:document.body.innerHTML = "";
+packages/embeds/embed-core/src/embed.test.ts:160:document.body.innerHTML = "";
+packages/embeds/embed-core/test/embed-parity.test.ts:116:document.body.innerHTML = "";
+packages/embeds/embed-core/test/embed-parity.test.ts:533:document.body.innerHTML = "";
+packages/embeds/embed-core/test/embed-parity.test.ts:678:document.body.innerHTML = "";
+count: 8
+
+--- IDOR (CWE-639) ---
+apps/api/v1/test/lib/booking-references.integration-test.ts:281:const refInDb = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/booking-references.integration-test.ts:400:const updatedRef = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/booking-references.integration-test.ts:438:const updatedRef = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/booking-references.integration-test.ts:480:const refInDb = await prisma.bookingReference.findUnique({
+apps/api/v1/test/lib/bookings/[id]/_patch.integration-test.ts:93:const existingAdmin = await prisma.user.findUnique({ where: { email: "test-admin@example.com" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:32:const memberEventType = await prisma.eventType.findFirst({
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:238:const team1 = await prisma.team.findFirst({ where: { slug: "team1" } });
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:239:const teamEventType = await prisma.eventType.findFirst({
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:245:const nonTeamBooking = await prisma.booking.findFirst({
+apps/api/v1/test/lib/bookings/_post.test.ts:547:const previousBooking = await prisma.booking.findUnique({
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:16:const acmeOrg = await prisma.team.findFirst({
+apps/api/v1/test/lib/utils/isAdmin.integration-test.ts:39:const dunderOrg = await prisma.team.findFirst({
+apps/api/v1/test/lib/utils/retrieveScopedAccessibleUsers.integration-test.ts:12:const acmeOrg = await prisma.team.findFirst({
+apps/api/v2/test/fixtures/repository/billing.repository.fixture.ts:27:return this.prismaWriteClient.platformBilling.findFirst({
+apps/api/v2/test/fixtures/repository/bookings.repository.fixture.ts:17:return this.prismaReadClient.booking.findFirst({ where: { id: bookingId } });
+apps/api/v2/test/fixtures/repository/bookings.repository.fixture.ts:21:return this.prismaReadClient.booking.findUnique({ where: { uid: bookingUid } });
+apps/api/v2/test/fixtures/repository/event-types.repository.fixture.ts:78:return this.prismaReadClient.eventType.findUnique({ where: { id: eventTypeId } });
+apps/api/v2/test/fixtures/repository/managed-organizations.repository.fixture.ts:15:return this.prismaReadClient.team.findUnique({
+apps/api/v2/test/fixtures/repository/managed-organizations.repository.fixture.ts:28:return this.prismaReadClient.managedOrganization.findUnique({
+apps/api/v2/test/fixtures/repository/membership.repository.fixture.ts:26:return this.prismaReadClient.membership.findFirst({ where: { id: membershipId } });
+apps/api/v2/test/fixtures/repository/membership.repository.fixture.ts:30:return this.prismaReadClient.membership.findFirst({ where: { teamId, userId } });
+apps/api/v2/test/fixtures/repository/membership.repository.fixture.ts:42:return this.prismaReadClient.membership.findUnique({ where: { id: membershipId } });
+apps/api/v2/test/fixtures/repository/oauth-client.repository.fixture.ts:17:return this.prismaReadClient.platformOAuthClient.findFirst({ where: { id: clientId } });
+apps/api/v2/test/fixtures/repository/oauth-client.repository.fixture.ts:25:const response = await this.prismaReadClient.platformOAuthClient.findFirst({
+apps/api/v2/test/fixtures/repository/organization.repository.fixture.ts:17:return this.primaReadClient.team.findFirst({ where: { id: teamId } });
+apps/api/v2/test/fixtures/repository/profiles.repository.fixture.ts:17:return this.prismaReadClient.profile.findFirst({ where: { id: profileId } });
+apps/api/v2/test/fixtures/repository/profiles.repository.fixture.ts:21:return this.prismaReadClient.profile.findFirst({ where: { userId, organizationId: orgId } });
+apps/api/v2/test/fixtures/repository/routing-forms.repository.fixture.ts:17:return this.prismaReadClient.app_RoutingForms_Form.findUnique({ where: { id: routingFormId } });
+apps/api/v2/test/fixtures/repository/schedules.repository.fixture.ts:21:return this.prismaReadClient.schedule.findFirst({ where: { id: scheduleId } });
+apps/api/v2/test/fixtures/repository/selected-slot.repository.fixture.ts:17:return this.prismaReadClient.selectedSlots.findFirst({ where: { uid } });
+apps/api/v2/test/fixtures/repository/team.repository.fixture.ts:17:return this.prismaReadClient.team.findFirst({ where: { id: teamId } });
+apps/api/v2/test/fixtures/repository/users.repository.fixture.ts:17:return this.prismaReadClient.user.findFirst({ where: { id: userId } });
+apps/api/v2/test/fixtures/repository/workflow-reminder.repository.fixture.ts:15:return this.prismaReadClient.workflowReminder.findFirst({ where: { bookingUid: uid } });
+apps/web/playwright/booking-confirm-reject.e2e.ts:108:const updatedBooking = await prisma.booking.findUnique({
+apps/web/playwright/booking-confirm-reject.e2e.ts:183:const updatedBooking = await prisma.booking.findUnique({
+apps/web/playwright/booking-race-condition.e2e.ts:124:const googleCalendarApp = await prisma.app.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:112:const updatedBooking = await prisma.booking.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:169:const oldBooking = await prisma.booking.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:261:const bookingWithEventType = await prisma.booking.findFirst({
+apps/web/playwright/booking-seats.e2e.ts:414:const updatedBooking = await prisma.booking.findFirst({
+apps/web/playwright/booking-sheet-keyboard.e2e.ts:11:const existing = await prisma.feature.findUnique({ where: { slug: "bookings-v3" } });
+apps/web/playwright/bookings-list.e2e.ts:773:const existingFlag = await prisma.feature.findUnique({ where: { slug: "bookings-v3" } });
+apps/web/playwright/login.2fa.e2e.ts:64:const userWith2FaSecret = await prisma.user.findFirst({
+apps/web/playwright/login.2fa.e2e.ts:139:const userWith2FaSecret = await prisma.user.findFirst({
+apps/web/playwright/manage-booking-questions.e2e.ts:243:const team = await prisma.team.findFirst({
+apps/web/playwright/oauth/oauth-client-admin.e2e.ts:18:const row = await prisma.oAuthClient.findUnique({
+apps/web/playwright/oauth/oauth-client-owner-crud.e2e.ts:208:const dbClientAfterDelete = await prisma.oAuthClient.findUnique({
+apps/web/playwright/organization/assign-all-members-segment-filter.e2e.ts:14:const existing = await prisma.membership.findFirst({
+apps/web/playwright/organization/organization-invitation.e2e.ts:46:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:70:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:120:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:159:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:212:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:241:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:369:const dbUser = await prisma.user.findUnique({ where: { email: invitedUserEmail } });
+apps/web/playwright/organization/organization-invitation.e2e.ts:417:const dbUser = await prisma.user.findUnique({ where: { email } });
+apps/web/playwright/organization/organization-privacy.e2e.ts:105:const memberUser = await prisma.membership.findFirst({
+apps/web/playwright/organization/organization-privacy.e2e.ts:170:const memberUser = await prisma.membership.findFirst({
+apps/web/playwright/organization/team-management.e2e.ts:66:const invitedUser = await prisma.user.findUnique({ where: { email: inviteeEmail } });
+apps/web/playwright/payment-apps.e2e.ts:22:const app = await prisma.app.findUnique({
+apps/web/playwright/payment-apps.e2e.ts:373:const paypalPrice = await prisma.eventType.findFirst({
+apps/web/playwright/payment-apps.e2e.ts:392:const stripePrice = await prisma.eventType.findFirst({
+apps/web/playwright/profile.e2e.ts:74:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:132:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:201:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:251:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:323:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:359:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/profile.e2e.ts:407:const verificationToken = await prisma.verificationToken.findFirst({
+apps/web/playwright/signup.e2e.ts:227:const dbUser = await prisma.user.findUnique({ where: { email: userToCreate.email } });
+apps/web/playwright/signup.e2e.ts:536:const createdUser = await prisma.user.findUnique({
+apps/web/playwright/team/team-invitation.e2e.ts:194:const parentEventType = await prisma.eventType.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:240:const membership = await prisma.membership.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:256:const membership = await prisma.membership.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:315:const membership = await prisma.membership.findFirst({
+apps/web/playwright/team/team-invitation.e2e.ts:323:const invitedMembership = await prisma.membership.findFirst({
+apps/web/playwright/webhook.e2e.ts:369:const newBooking = await prisma.booking.findFirst({ where: { fromReschedule: booking?.uid } })!;
+apps/web/playwright/webhook.e2e.ts:436:const newBooking = await prisma.booking.findFirst({
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:184:const existingCredential = await prismock.credential.findFirst({
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:185:const rescheduledBooking = await prisma.booking.findFirst({
+packages/app-store/googlecalendar/tests/testUtils.ts:37:prisma.bookingReference.findFirst({
+packages/app-store/googlecalendar/tests/testUtils.ts:51:prisma.booking.findFirst({
+packages/app-store/googlecalendar/tests/testUtils.ts:78:const refreshedCredential = await prisma.credential.findFirst({
+packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponseRepository.integration-test.ts:97:const response = await prisma.app_RoutingForms_QueuedFormResponse.findUnique({
+packages/app-store/routing-forms/lib/queuedFormResponse/PrismaQueuedFormResponseRepository.integration-test.ts:104:const response = await prisma.app_RoutingForms_QueuedFormResponse.findUnique({
+packages/features/attributes/lib/getAttributes.test.ts:46:const result = await prismock.attribute.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:155:const membership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:163:const profile = await prisma.profile.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:212:const teamMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:219:const orgMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:268:const profile = await prisma.profile.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:328:const teamMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:335:const orgMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:343:const profile = await prisma.profile.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:413:const teamMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:418:const orgMembership = await prisma.membership.findUnique({
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:459:const teamMembership = await prisma.membership.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:50:let testUser = await prisma.user.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:64:let credential = await prisma.credential.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:206:const googleRefAfter = await prisma.bookingReference.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:211:const zoomRefAfter = await prisma.bookingReference.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:216:const newRef = await prisma.bookingReference.findFirst({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:255:const deletedRefInDb = await prisma.bookingReference.findUnique({
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:262:const newRef = await prisma.bookingReference.findFirst({
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:300:const updatedBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/booking-flags.test.ts:293:const actualBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-flags.test.ts:389:const actualBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:1020:const booking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:1112:const booking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/booking-validations.test.ts:1289:const booking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:3101:const firstBookingInDb = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:481:const hostLocation = await prisma.hostLocation.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:63:const hashedLink = await prismaMock.hashedLink.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:193:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:1702:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:1854:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2054:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2209:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2379:const previousBooking = await prismaMock.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:2693:const newBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:1188:const firstBookingInDb = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:1226:const rescheduledBookingInDb = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:38:let eventType = await prisma.eventType.findFirst({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:146:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:222:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:320:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:383:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/create/createNewSeat.integration-test.ts:482:const finalBooking = await prisma.booking.findUnique({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:498:const newAttendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:624:const newAttendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1023:const newAttendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1245:const attendeeSeat = await prismaMock.bookingSeat.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1716:const attendee = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1842:const oldBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1854:const attendeeSeat = await prismaMock.attendee.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1983:const cancelledBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2123:const cancelledBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2518:const originalBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2976:const cancelledBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3520:const originalBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3773:const originalBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:4132:const oldBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:4293:const oldBooking = await prismaMock.booking.findFirst({
+packages/features/bookings/lib/service/InstantBookingCreateService.test.ts:114:const booking = await prismock.booking.findUnique({
+packages/features/bookings/repositories/BookingRepository.integration-test.ts:135:let eventType = await prisma.eventType.findFirst({
+packages/features/bookings/repositories/BookingRepository.integration-test.ts:157:const eventType = await prisma.eventType.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:16:const user = await prisma.user.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:193:const cancelledBooking = await prisma.booking.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:259:const deletedRef = await prisma.bookingReference.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:434:const refAfter = await prisma.bookingReference.findUnique({
+packages/features/credentials/handleDeleteCredential.integration-test.ts:441:const bookingAfter = await prisma.booking.findUnique({
+packages/features/data-table/__tests__/filterSegments/delete.test.ts:48:const deletedSegment = await prismock.filterSegment.findUnique({
+packages/features/data-table/__tests__/filterSegments/delete.test.ts:101:const deletedSegment = await prismock.filterSegment.findUnique({
+packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts:345:const result = await prismock.delegationCredential.findUnique({
+packages/features/ee/billing/active-user/seed-active-user-test.ts:149:const org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
+packages/features/ee/billing/active-user/seed-active-user-test.ts:225:let org = await prisma.team.findFirst({ where: { slug: ORG_SLUG, isOrganization: true } });
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:108:const org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:174:const user = await prisma.user.findUnique({ where: { email } });
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:373:const triggerOrg = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:394:const user = await prisma.user.findUnique({ where: { email } });
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:410:const org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:449:const user = await prisma.user.findUnique({ where: { email } });
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:469:let org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:497:let team = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:619:const orgBilling = await prisma.organizationBilling.findUnique({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:677:let org = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:711:let team = await prisma.team.findFirst({
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:886:const orgBilling = await prisma.organizationBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:249:const initialBilling = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:270:const resetBilling = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:307:const updatedBilling = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:346:const billingAfterRenewal = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:374:const billing = await prisma.teamBilling.findUnique({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:287:const team = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:300:const org = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:328:let team = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:458:const teamBilling = await prisma.teamBilling.findUnique({ where: { teamId: team.id } });
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:515:let org = await prisma.team.findFirst({
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:669:const orgBilling = await prisma.organizationBilling.findUnique({ where: { teamId: org.id } });
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:357:const updated = await prisma.monthlyProration.findUnique({
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:387:const updated = await prisma.monthlyProration.findUnique({
+packages/features/ee/dsync/lib/assignValueToUser.test.ts:101:dsync = await prismock.dSyncData.findUnique({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:243:const cancelledBooking = await prisma.booking.findUnique({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:249:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:319:const assignmentReason = await prisma.assignmentReason.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:384:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:468:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:259:const cancelledBooking = await prisma.booking.findUnique({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:265:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:327:const assignmentReason = await prisma.assignmentReason.findFirst({
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:393:const newBooking = await prisma.booking.findFirst({
+packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabledOrgOnboardingService.test.ts:435:const onboarding = await prismock.organizationOnboarding.findUnique({
+packages/features/ee/organizations/lib/service/onboarding/__tests__/BillingEnabledOrgOnboardingService.test.ts:870:const updatedUser = await prismock.user.findUnique({
+packages/features/ee/round-robin/roundRobinManualReassignment.test.ts:134:id: params.id,
+packages/features/ee/teams/services/teamService.integration-test.ts:124:const membership = await prisma.membership.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:133:const membership = await prisma.membership.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:149:const user = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:157:const user = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:428:const deletedEventType1 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:433:const deletedEventType2 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:439:const parentStillExists1 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:444:const parentStillExists2 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:450:const otherUserEventStillExists = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:470:const user = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:555:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:561:const unchangedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:582:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:610:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:702:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:711:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:745:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:754:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:778:const updatedUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:833:const finalUser = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:843:const deletedProfile = await prisma.profile.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:917:const deletedEvent1 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:922:const deletedEvent2 = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:928:const parentEvent1Still = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:933:const parentEvent2Still = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:939:const user2EventStill = await prisma.eventType.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:1052:const userAfterFailure = await prisma.user.findUnique({
+packages/features/ee/teams/services/teamService.integration-test.ts:1063:const profile = await prisma.profile.findUnique({
+packages/features/ee/workflows/lib/reminders/reminderSchedulerInApp.test.ts:32:get findFirst() {
+packages/features/ee/workflows/lib/test/workflows.test.ts:135:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:489:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:582:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:673:const workflow = await prismock.workflow.findFirst({
+packages/features/ee/workflows/lib/test/workflows.test.ts:817:const workflow = await prismock.workflow.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:488:const row = await prisma.userFeatures.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:509:const row = await prisma.userFeatures.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:531:const row = await prisma.userFeatures.findFirst({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:563:const row = await prisma.teamFeatures.findUnique({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:586:const row = await prisma.teamFeatures.findUnique({
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:610:const row = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:101:const dbFeature = await prisma.feature.findUnique({
+packages/features/flags/features.repository.integration-test.ts:129:const dbFeature = await prisma.feature.findUnique({
+packages/features/flags/features.repository.integration-test.ts:701:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:744:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:776:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:819:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:855:const beforeDelete = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:872:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:902:const teamFeature = await prisma.teamFeatures.findUnique({
+packages/features/flags/features.repository.integration-test.ts:1033:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:1063:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:1104:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/flags/features.repository.integration-test.ts:1144:const userFeature = await prisma.userFeatures.findFirst({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:140:const deletedDenormalizedBooking = await prisma.bookingDenormalized.findUnique({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:196:const userDeletedDenormalizedBooking1 = await prisma.bookingDenormalized.findUnique({
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:199:const userDeletedDenormalizedBooking2 = await prisma.bookingDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:325:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:353:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:365:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:496:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:565:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:683:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:161:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:227:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:273:const denormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:308:const initialDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:346:const updatedDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:410:const initialDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:435:const updatedDenormalizedResponse = await prisma.routingFormResponseDenormalized.findUnique({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:23:let testTeam = await prisma.team.findFirst({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:127:const team2 = await prisma.team.findFirst({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:482:const dbRecord = await prisma.membership.findUnique({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:561:const dbRecord = await prisma.membership.findUnique({
+packages/features/membership/repositories/MembershipRepository.integration-test.ts:607:const dbRecord = await prisma.membership.findUnique({
+packages/features/profile/repositories/ProfileRepository.test.ts:367:const profile = await prismock.profile.findUnique({
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:102:id: params.id,
+packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts:546:const result = await SelectedCalendarRepository.findFirst({
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:202:const updatedStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowBody.test.ts:269:const updatedStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:87:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:158:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:235:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:265:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:327:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:387:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/test/scanWorkflowUrls.test.ts:412:const workflowStep = await prismock.workflowStep.findUnique({
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:83:const booking = await prismaMock.booking.findFirst();
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:117:const booking = await prismaMock.booking.findFirst();
+packages/features/users/repositories/UserRepository.test.ts:44:const password = await prismock.userPassword.findUnique({
+packages/features/users/repositories/UserRepository.test.ts:62:const userQuery = await prismock.user.findUnique({
+packages/features/users/repositories/UserRepository.test.ts:96:const profile = await prismock.profile.findFirst({
+packages/trpc/server/routers/viewer/bookings/editLocation.handler.test.ts:186:const booking = await prisma.booking.findFirst({
+packages/trpc/server/routers/viewer/bookings/editLocation.handler.test.ts:200:const organizerUser = await prisma.user.findFirst({
+packages/trpc/server/routers/viewer/eventTypes/heavy/duplicate.handler.integration-test.ts:208:const duplicated = await prisma.eventType.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:618:const movedTeam = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:664:const movedTeam = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:726:const movedTeam1 = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:731:const movedTeam2 = await prismock.team.findUnique({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:806:const platformTeamAfter = await prismock.team.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:852:const nonExistentTeam = await prismock.team.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:898:const teamCreditBalance = await prismock.creditBalance.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:903:const orgCreditBalance = await prismock.creditBalance.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:952:const redirect = await prismock.tempOrgRedirect.findFirst({
+packages/trpc/server/routers/viewer/organizations/__tests__/createTeams.handler.test.ts:1005:const movedTeam = await prismock.team.findFirst({
+packages/trpc/server/routers/viewer/organizations/bulkDeleteUsers.test.ts:324:const teamEvent = await prismock.eventType.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:191:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:422:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:471:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/organizations/intentToCreateOrg.handler.test.ts:525:const organizationOnboarding = await prismock.organizationOnboarding.findFirst({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:12:return await prisma.profile.findUnique({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:23:return await prisma.membership.findUnique({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:497:const createdUser = await prisma.user.findUnique({
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:511:const host = await prisma.host.findFirst({
+count: 307
+
+--- SQLi (CWE-89) ---
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:242:vi.spyOn(prismock, "$queryRaw").mockResolvedValue([{ totalMinutes: yearlyDurationLimit }]);
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:266:vi.spyOn(prismock, "$queryRaw").mockResolvedValue([{ totalMinutes: 0 }]);
+packages/features/ee/teams/repositories/TeamRepository.test.ts:926:prismaMock.$queryRaw.mockResolvedValue(mockUsers);
+packages/features/ee/teams/repositories/TeamRepository.test.ts:934:expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(1);
+packages/features/insights/services/InsightsBookingService.integration-test.ts:731:const results = await prisma.$queryRaw<{ id: number }[]>(query);
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:765:const results = await prisma.$queryRaw<Array<{ id: number }>>(query);
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:870:const results = await prisma.$queryRaw<Array<{ id: number }>>(query);
+packages/features/insights/services/InsightsRoutingService.integration-test.ts:961:const results = await prisma.$queryRaw<Array<{ id: number }>>(query);
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:123:$queryRaw: vi.fn().mockResolvedValue([]),
+packages/trpc/server/routers/viewer/bookings/get.handler.test.ts:358:// PERFORMANCE: With the optimization, we no longer call $queryRaw to fetch event type IDs.
+count: 10
+
+--- Command injection (CWE-78) ---
+apps/web/playwright/embed-code-generator.e2e.ts:3:import { spawnSync } from "node:child_process";
+apps/web/playwright/embed-code-generator.e2e.ts:433:const result = spawnSync("node", [biomeBin, "format", "--stdin-file-path", "snippet.js"], {
+apps/web/playwright/embed-code-generator.e2e.ts:452:const result = spawnSync("node", [biomeBin, "format", "--stdin-file-path", "snippet.jsx"], {
+apps/web/test/lib/next-config.test.ts:32:expect(regExp.exec("acme.cal.com")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:33:expect(regExp.exec("app.cal.com")).toEqual(null);
+apps/web/test/lib/next-config.test.ts:36:expect(regExp.exec("abc.sdafasdf.com")?.groups?.orgSlug).toEqual("abc");
+apps/web/test/lib/next-config.test.ts:41:expect(regExp.exec("acme.cal.com")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:42:expect(regExp.exec("app.cal.com")).toEqual(null);
+apps/web/test/lib/next-config.test.ts:45:expect(regExp.exec("acme.app.cal.com")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:49:expect(regExp.exec("abc.sdafasdf.com")?.groups?.orgSlug).toEqual("abc");
+apps/web/test/lib/next-config.test.ts:58:expect(regExp.exec("acme.booker.dashboard.company.com")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:59:expect(regExp.exec("booker.dashboard.company.com")).toEqual(null);
+apps/web/test/lib/next-config.test.ts:66:expect(regExp.exec("acme.cal.local:3000")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:67:expect(regExp.exec("acme.app.cal.local:3000")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:68:expect(regExp.exec("app.cal.local:3000")).toEqual(null);
+apps/web/test/lib/next-config.test.ts:74:expect(regExp.exec("acme.vercel.app")).toEqual(null);
+apps/web/test/lib/next-config.test.ts:75:expect(regExp.exec("app.vercel.app")).toEqual(null);
+apps/web/test/lib/next-config.test.ts:84:expect(regExp.exec("acme.cal.local:3000")?.groups?.orgSlug).toEqual("acme");
+apps/web/test/lib/next-config.test.ts:85:expect(regExp.exec("app.cal.local:3000")).toEqual(null);
+count: 19
+
+--- Code injection (CWE-94) ---
+apps/web/lib/pages/document/_applyThemeForDocument.test.ts:15:reconstructedFn = new Function(`return ${stringifiedFunction}`)();
+count: 1
+
+--- Path traversal (CWE-22) ---
+apps/web/playwright/oauth/oauth-client-owner-crud.e2e.ts:731:return path.join(path.dirname(__filename), "..", "fixtures", fileName);
+count: 1
+
+--- Deserialization (CWE-502) ---
+apps/api/v1/lib/helpers/verifyApiKey.test.ts:259:expect(JSON.parse(res._getData())).toEqual({ error: "You are not authorized to perform this request." });
+apps/api/v1/pages/api/slots/_get.test.ts:63:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:64:const response = JSON.parse(res._getData());
+apps/api/v1/pages/api/slots/_get.test.ts:81:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:82:const response = JSON.parse(res._getData());
+apps/api/v1/test/lib/attendees/_post.test.ts:33:expect(JSON.parse(res._getData()).message).toBe("Forbidden");
+apps/api/v1/test/lib/attendees/_post.test.ts:63:expect(JSON.parse(res._getData()).attendee).toEqual(attendeeData);
+apps/api/v1/test/lib/attendees/_post.test.ts:64:expect(JSON.parse(res._getData()).message).toBe("Attendee created successfully");
+apps/api/v1/test/lib/attendees/_post.test.ts:97:expect(JSON.parse(res._getData()).attendee).toEqual(attendeeData);
+apps/api/v1/test/lib/attendees/_post.test.ts:98:expect(JSON.parse(res._getData()).message).toBe("Attendee created successfully");
+apps/api/v1/test/lib/bookings/[id]/_delete.test.ts:61:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/[id]/_patch.test.ts:63:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/[id]/_patch.test.ts:139:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/[id]/recordings/_get.test.ts:102:expect(JSON.parse(res._getData())).toEqual(mockedRecordings);
+apps/api/v1/test/lib/bookings/[id]/transcripts/[recordingId]/_get.test.ts:91:expect(JSON.parse(res._getData())).toEqual(mockedTranscripts);
+apps/api/v1/test/lib/bookings/[id]/transcripts/_get.test.ts:83:expect(JSON.parse(res._getData())).toEqual(mockedTranscripts);
+apps/api/v1/test/lib/bookings/_post.test.ts:208:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:234:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:264:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:288:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:325:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:363:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:398:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:401:expect(JSON.parse(res._getData())).toEqual(
+apps/api/v1/test/lib/bookings/_post.test.ts:466:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:467:createdBooking = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:543:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:544:const rescheduledBooking = JSON.parse(res._getData()) as Booking;
+apps/api/v1/test/lib/bookings/_post.test.ts:607:createdBooking = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:664:const data = JSON.parse(res._getData());
+apps/api/v1/test/lib/bookings/_post.test.ts:737:const data = JSON.parse(res._getData());
+apps/api/v1/test/lib/event-types/_post.test.ts:61:expect(JSON.parse(res._getData()).message).toBe("ADMIN required for `userId`");
+apps/api/v1/test/lib/event-types/_post.test.ts:81:expect(JSON.parse(res._getData()).message).toBe("ADMIN required for `teamId`");
+apps/api/v1/test/lib/event-types/_post.test.ts:97:expect(JSON.parse(res._getData()).message).toBe("`userId` or `teamId` required");
+apps/api/v1/test/lib/event-types/_post.test.ts:153:const data = JSON.parse(res._getData());
+apps/api/v1/test/lib/selected-calendars/_post.test.ts:53:expect(JSON.parse(res._getData()).message).toBe("invalid_type in 'externalId': Required");
+apps/api/v1/test/lib/selected-calendars/_post.test.ts:116:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/selected-calendars/_post.test.ts:173:const responseData = JSON.parse(res._getData());
+apps/api/v1/test/lib/users/_post.test.ts:136:const responseData = JSON.parse(res._getData());
+packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts:94:* (since the mock passes through strings), which is then JSON.parse()'d by
+packages/app-store/googlecalendar/tests/google-calendar.e2e.ts:28:const gCalKeys = JSON.parse(process.env.E2E_TEST_CALCOM_GCAL_KEYS);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:783:const batchBody = JSON.parse(batchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:830:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:856:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:903:const patchBody = JSON.parse(patchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1077:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1139:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1168:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1192:let requestBody = JSON.parse(mockRequestRaw.mock.calls[0][0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1212:requestBody = JSON.parse(mockRequestRaw.mock.calls[0][0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:1259:const requestBody = JSON.parse(postCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:532:const patchBody = JSON.parse(patchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:568:const patchBody = JSON.parse(patchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:702:const batchBody = JSON.parse(batchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:743:const batchBody = JSON.parse(batchCall![0].options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1398:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1420:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1443:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1465:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1486:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1507:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1540:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1586:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1620:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1642:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:1663:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2350:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2369:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2397:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2418:const requestBody = JSON.parse(callArgs.options.body);
+packages/app-store/routing-forms/playwright/tests/field-type-parity.e2e.ts:179:data: { fields: JSON.parse(JSON.stringify(fields)) },
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:204:const state = JSON.parse(stateStr);
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:220:const state = JSON.parse(stateStr);
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:234:const state = JSON.parse(stateStr);
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:157:hostPayload = JSON.parse(hostTask?.payload ?? "");
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:180:guestPayload = JSON.parse(guestTask?.payload ?? "");
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:106:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:152:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:176:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/calendar-subscription/adapters/__tests__/Office365CalendarSubscriptionAdapter.test.ts:224:const requestBody = JSON.parse(callArgs[1].body);
+packages/features/pbac/domain/types/permission-registry.test.ts:37:const copy = JSON.parse(JSON.stringify(cfg));
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:23:const parsedBody = JSON.parse((body as string) || "{}");
+packages/features/tasker/tasks/triggerFormSubmittedNoEvent/triggerFormSubmittedNoEventWebhook.test.ts:38:const parsedBody = JSON.parse((body as string) || "{}");
+packages/features/webhooks/lib/sendPayload.test.ts:211:const body = JSON.parse(options.body);
+packages/features/webhooks/lib/sendPayload.test.ts:241:const body = JSON.parse(options.body);
+packages/features/webhooks/lib/service/WebhookService.test.ts:183:const parsedPayload = JSON.parse(taskPayload);
+count: 86
+
+--- XXE (CWE-611) ---
+count: 0
+
+--- Template injection (CWE-1336) ---
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:80:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-guests.e2e-spec.ts:82:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/api-key-bookings.e2e-spec.ts:94:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-access-auth.e2e-spec.ts:58:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-fields.e2e-spec.ts:73:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:57:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/bookings-billing.e2e-spec.ts:206:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/calendar-links.e2e-spec.ts:51:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/confirm-bookings.e2e-spec.ts:56:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/confirm-emails.e2e-spec.ts:105:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/team-emails.e2e-spec.ts:111:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:94:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/managed-user-bookings.e2e-spec.ts:85:}).compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reassign-bookings.e2e-spec.ts:79:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:61:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:381:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:591:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reschedule-bookings.e2e-spec.ts:57:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts:75:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/team-bookings.e2e-spec.ts:89:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/update-booking-location.e2e-spec.ts:67:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/user-bookings.e2e-spec.ts:97:.compile();
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/variable-length-bookings.e2e-spec.ts:67:.compile();
+apps/api/v2/src/modules/organizations/delegation-credentials/services/organizations-delegation-credential.service.spec.ts:59:}).compile();
+apps/api/v2/src/modules/organizations/teams/memberships/e2e/organizations-teams-memberships-guard.controller.e2e-spec.ts:69:}).compile();
+apps/api/v2/src/modules/organizations/teams/memberships/e2e/organizations-teams-memberships.controller.e2e-spec.ts:68:).compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/dynamic-event-type-slots.controller.e2e-spec.ts:124:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/org-team-event-type-slots.controller.e2e-spec.ts:155:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/reschedule-uid-slots.controller.e2e-spec.ts:122:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/team-event-type-slots.controller.e2e-spec.ts:192:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/e2e/user-event-type-slots.controller.e2e-spec.ts:193:.compile();
+apps/api/v2/src/modules/slots/slots-2024-09-04/services/slots.service.spec.ts:104:}).compile();
+count: 32
+
+--- Prototype pollution (CWE-1321) ---
+count: 0
+
+--- Weak crypto (CWE-327) ---
+apps/api/v2/test/fixtures/repository/api-keys.repository.fixture.ts:4:import { randomBytes, createHash } from "node:crypto";
+apps/api/v2/test/fixtures/repository/api-keys.repository.fixture.ts:17:const hashedKey = createHash("sha256").update(keyString).digest("hex");
+apps/web/playwright/oauth-provider.e2e.ts:2:import { createHash, randomBytes } from "node:crypto";
+apps/web/playwright/oauth-provider.e2e.ts:35:const codeChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:41:function createHashedLinkTestData({
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:99:const hashedLinkData = createHashedLinkTestData({
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:195:const hashedLinkData = createHashedLinkTestData({
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:306:const hashedLinkData = createHashedLinkTestData({
+packages/features/bookings/lib/handleNewBooking/test/post-booking-handling.test.ts:391:const hashedLinkData = createHashedLinkTestData({
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:3:import { createHash } from "node:crypto";
+packages/features/routing-forms/lib/getRoutedUrl.test.ts:327:const expectedHash = createHash("sha256")
+count: 11
+
+--- Insecure randomness (CWE-338) ---
+apps/web/playwright/signup.e2e.ts:205:email: `rickjones${Math.random()}-${Date.now()}@example.com`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:202:Id: contact.Id || `003${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:225:Id: lead.Id || `00Q${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:246:Id: account.Id || `001${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:257:Id: user.Id || `005${Math.random().toString().slice(2, 10)}`,
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:319:records.events.push({ ...data, Id: `evt${Math.random().toString().slice(2, 10)}` });
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:323:result = { Id: `gen${Math.random().toString().slice(2, 10)}` };
+packages/features/auth/signup/utils/createOrUpdateMemberships.integration-test.ts:10:return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+packages/features/booking-audit/lib/actions/__tests__/contractVerification.ts:18:id: Math.floor(Math.random() * 10000),
+packages/features/booking-audit/lib/service/__tests__/integration-utils.ts:8:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/bookingReference/repositories/BookingReferenceRepository.integration-test.ts:7:const testRunId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+packages/features/bookings/Booker/utils/isFeatureEnabledForVisitor.test.ts:9:const r = (Math.random() * 16) | 0;
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:36:const timestamp = `${Date.now()}-${Math.random()}`;
+packages/features/busyTimes/services/getBusyTimes.integration-test.ts:52:const timestamp = `${Date.now()}-${Math.random()}`;
+packages/features/di/containers/FeatureRepository.integration-test.ts:7:const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:105:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:155:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/managed-event-types/reassignment/managedEventManualReassignment.integration-test.ts:93:const uniqueId = `test-idempotency-${Date.now()}-${Math.random()}`;
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:106:const idempotencyKey = `test-idempotency-${Date.now()}-${Math.random()}`;
+packages/features/ee/managed-event-types/reassignment/managedEventReassignment.integration-test.ts:109:uid: `test-booking-${Date.now()}-${Math.random()}`,
+packages/features/ee/teams/services/teamService.integration-test.ts:31:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/ee/teams/services/teamService.integration-test.ts:53:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:46:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:70:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:84:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:97:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:123:const timestamp = Date.now() + Math.random();
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:143:const timestamp = Date.now() + Math.random();
+packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts:21:const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+packages/features/flags/features.repository.integration-test.ts:9:const uniqueId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+packages/features/handleMarkNoShow.test.ts:247:id: Date.now() + Math.random(),
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:10:const randomId = Math.floor(Math.random() * 1000000);
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:151:uid: `test-booking-${Math.floor(Math.random() * 1000000)}`,
+packages/features/insights/__tests__/booking-denormalized.integration-test.ts:182:uid: `test-booking-${Math.floor(Math.random() * 1000000)}`,
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:14:const randomId = Math.floor(Math.random() * 1000000);
+packages/features/insights/__tests__/routing-form-response-denormalized.integration-test.ts:640:uid: `routing-form-response-denorm-${Math.floor(Math.random() * 1000000)}`,
+packages/features/insights/__tests__/routing-form-response-field.integration-test.ts:13:const randomId = Math.floor(Math.random() * 1000000);
+packages/features/insights/services/InsightsBookingService.integration-test.ts:27:const randomSuffix = Math.random().toString(36).substring(7);
+packages/features/insights/services/InsightsBookingService.integration-test.ts:223:email: `regular-user-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:224:username: `regularuser-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:403:slug: `standalone-team-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:475:slug: `standalone-team-2-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/insights/services/InsightsBookingService.integration-test.ts:696:uid: `user-booking-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:24:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:478:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:559:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:724:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts:850:const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:33:const timestamp = Date.now() + Math.random();
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:45:const timestamp = Date.now() + Math.random();
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:57:const timestamp = Date.now() + Math.random();
+packages/trpc/server/routers/viewer/organizations/createWithPaymentIntent.handler.test.ts:156:Array.from({ length: count }, () => createTestUser({ email: `user${Math.random()}@example.com` }))
+packages/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler.integration-test.ts:35:return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+count: 53
+
+--- Hardcoded secrets (CWE-798) ---
+apps/api/v1/test/lib/bookings/[id]/recordings/_get.test.ts:51:share_token: "TEST_TOKEN",
+apps/api/v1/test/lib/bookings/_post.test.ts:725:secret: "secret1",
+apps/api/v1/test/lib/bookings/_post.test.ts:731:secret: "secret2",
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-attendee.e2e-spec.ts:166:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/add-guests.e2e-spec.ts:180:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-access-auth.e2e-spec.ts:159:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/booking-fields.e2e-spec.ts:738:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/calendar-links.e2e-spec.ts:136:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/confirm-bookings.e2e-spec.ts:108:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/confirm-emails.e2e-spec.ts:228:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/emails/user-emails.e2e-spec.ts:218:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/managed-user-bookings.e2e-spec.ts:140:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/reassign-bookings.e2e-spec.ts:791:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:116:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:437:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/recurring-bookings.e2e-spec.ts:647:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/team-bookings.e2e-spec.ts:1111:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/update-booking-location.e2e-spec.ts:452:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/user-bookings.e2e-spec.ts:290:const secret = "secret";
+apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/variable-length-bookings.e2e-spec.ts:140:const secret = "secret";
+apps/api/v2/src/modules/organizations/teams/memberships/e2e/organizations-teams-memberships-guard.controller.e2e-spec.ts:161:const secret = "secret";
+apps/web/app/(use-page-wrapper)/settings/(settings-layout)/organizations/roles/_components/usePermissions.unit.test.ts:31:_secret: "ignore", // should be ignored
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:188:access_token: "mock_jwt_token",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:190:refresh_token: "mock_jwt_token",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:308:client_secret: "plain_secret",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:319:access_token: "mock_jwt_token",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:321:refresh_token: "mock_jwt_token",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:360:client_secret: "wrong_secret",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:396:client_secret: "plain_secret",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:408:access_token: "mock_jwt_token",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:410:refresh_token: "mock_jwt_token",
+apps/web/app/api/auth/oauth/token/__tests__/route.test.ts:441:client_secret: "plain_secret",
+apps/web/app/api/cron/credentials/__tests__/cron.test.ts:50:private_key: "pk",
+apps/web/app/api/cron/selected-calendars/__tests__/cron.test.ts:59:private_key: "pk",
+apps/web/components/apps/InstallAppButtonChild.test.tsx:31:key: { access_token: "mock_token_123" },
+apps/web/modules/signup-view.test.tsx:23:password: "",
+apps/web/pages/api/book/recurring-event.test.ts:119:password: "MOCK_PASS",
+apps/web/pages/api/book/recurring-event.test.ts:337:password: "MOCK_PASS",
+apps/web/pages/api/book/recurring-event.test.ts:469:password: "MOCK_PASS",
+apps/web/pages/api/book/recurring-event.test.ts:687:password: "MOCK_PASS",
+apps/web/pages/api/book/recurring-event.test.ts:944:password: "MOCK_PASS",
+apps/web/pages/api/book/recurring-event.test.ts:1099:password: "MOCK_PASS",
+apps/web/pages/api/book/recurring-event.test.ts:1320:password: "MOCK_PASS",
+apps/web/playwright/auth/auth-index.e2e.ts:22:password: `${proUser.username}-MEMBER`,
+apps/web/playwright/booking-race-condition.e2e.ts:142:access_token: "test_access_token",
+apps/web/playwright/booking-race-condition.e2e.ts:143:refresh_token: "test_refresh_token",
+apps/web/playwright/impersonation.e2e.ts:15:password: "ADMINadmin2022!",
+apps/web/playwright/login.2fa.e2e.ts:42:await fillOtp({ page, secret: "123456", noRetry: true });
+apps/web/playwright/login.e2e.ts:78:await login({ username: pro.username, password: "wrong" }, page);
+apps/web/playwright/payment-apps.e2e.ts:60:webhook_endpoint_secret: "whsec_randomString",
+apps/web/playwright/payment-apps.e2e.ts:106:access_token: "REDACTED_STRIPE_KEY",
+apps/web/playwright/payment-apps.e2e.ts:107:refresh_token: "rt_randomString",
+apps/web/playwright/payment-apps.e2e.ts:149:secret_key: "randomString",
+apps/web/playwright/payment-apps.e2e.ts:291:secret_key: "randomString",
+apps/web/playwright/payment-apps.e2e.ts:303:access_token: "REDACTED_STRIPE_KEY",
+apps/web/playwright/payment-apps.e2e.ts:304:refresh_token: "rt_randomString",
+apps/web/playwright/payment-apps.e2e.ts:338:secret_key: "randomString",
+apps/web/playwright/payment-apps.e2e.ts:350:access_token: "REDACTED_STRIPE_KEY",
+apps/web/playwright/payment-apps.e2e.ts:351:refresh_token: "rt_randomString",
+apps/web/playwright/saml.e2e.ts:18:await login({ username: "pro", email: "pro@example.com", password: "pro" }, page);
+apps/web/playwright/signup.e2e.ts:203:password: "Password99!",
+apps/web/playwright/signup.e2e.ts:317:password: "Password99!",
+apps/web/playwright/team/team-invitation.e2e.ts:84:password: "P4ssw0rd!",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:28:access_token: "ACCESS_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:94:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:131:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:156:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:199:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:257:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:292:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:330:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:365:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:966:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1011:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/oauth/OAuthManager.test.ts:1048:refresh_token: "REFRESH_TOKEN",
+packages/app-store/_utils/payments/handlePaymentSuccess.test.ts:178:secret: "webhook-secret",
+packages/app-store/_utils/validateAppKeys.test.ts:68:api_key: "",
+packages/app-store/_utils/validateAppKeys.test.ts:76:api_key: "valid-api-key",
+packages/app-store/_utils/validateAppKeys.test.ts:85:api_key: "valid-api-key",
+packages/app-store/_utils/validateAppKeys.test.ts:106:api_key: "test-key",
+packages/app-store/_utils/validateAppKeys.test.ts:116:api_key: "test-key",
+packages/app-store/_utils/validateAppKeys.test.ts:117:webhook_secret: "test-secret",
+packages/app-store/_utils/validateAppKeys.test.ts:126:api_key: "test-key",
+packages/app-store/_utils/validateAppKeys.test.ts:127:webhook_secret: "test-secret",
+packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts:108:password: "app-specific-password-1234",
+packages/app-store/applecalendar/lib/__tests__/CalendarService.test.ts:210:password: "app-specific-password-1234",
+packages/app-store/delegationCredential.test.ts:44:private_key: "REDACTED_PRIVATE_KEY\nMIIE....\n-----END PRIVATE KEY-----\n",
+packages/app-store/delegationCredential.test.ts:120:key: { access_token: "NOOP_UNUSED_DELEGATION_TOKEN" },
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:136:access_token: "CURRENT_ACCESS_TOKEN",
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.parity.test.ts:46:access_token: "<INVALID_TOKEN>",
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.test.ts:46:access_token: "<INVALID_TOKEN>",
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:28:access_token: "NOOP_UNUSED_DELEGATION_TOKEN",
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:112:private_key: "service-private-key",
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:191:access_token: "",
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:192:refresh_token: "",
+packages/app-store/hubspot/lib/CrmService.test.ts:100:client_secret: "mock_client_secret",
+packages/app-store/hubspot/lib/CrmService.test.ts:174:client_secret: "mock_client_secret",
+packages/app-store/hubspot/lib/CrmService.test.ts:1051:password: "",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:33:token: { access_token: "FAKE_ACCESS_TOKEN" },
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:56:access_token: "FAKE_ACCESS_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:57:refresh_token: "FAKE_REFRESH_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:74:client_secret: "FAKE_CLIENT_SECRET",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:127:access_token: "FAKE_ACCESS_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:128:refresh_token: "FAKE_REFRESH_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.parity.test.ts:335:token: { access_token: "FAKE_ACCESS_TOKEN" },
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:12:token: { access_token: "FAKE_ACCESS_TOKEN" },
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:35:access_token: "FAKE_ACCESS_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:36:refresh_token: "FAKE_REFRESH_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:53:client_secret: "FAKE_CLIENT_SECRET",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:106:access_token: "FAKE_ACCESS_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:107:refresh_token: "FAKE_REFRESH_TOKEN",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:129:private_key: "fake-delegation-secret",
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:311:token: { access_token: "FAKE_ACCESS_TOKEN" },
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2132:new Response(JSON.stringify({ access_token: "DELEGATION_TOKEN" }), { status: 200 })
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2168:new Response(JSON.stringify({ access_token: "DELEGATION_TOKEN" }), { status: 200 })
+packages/app-store/office365calendar/lib/__tests__/CalendarService.test.ts:2203:new Response(JSON.stringify({ access_token: "DELEGATION_TOKEN" }), { status: 200 })
+packages/app-store/office365video/lib/VideoApiAdapter.test.ts:30:client_secret: "FAKE_CLIENT_SECRET",
+packages/app-store/office365video/lib/VideoApiAdapter.test.ts:50:access_token: "",
+packages/app-store/office365video/lib/VideoApiAdapter.test.ts:51:refresh_token: "",
+packages/app-store/office365video/lib/VideoApiAdapter.test.ts:105:password: "",
+packages/app-store/office365video/lib/VideoApiAdapter.test.ts:238:password: "",
+packages/app-store/routing-forms/lib/formSubmissionUtils.test.ts:109:secret: "secret",
+packages/app-store/routing-forms/lib/formSubmissionUtils.test.ts:151:secret: "secret",
+packages/app-store/salesforce/lib/CrmService.test.ts:111:access_token: "mock_token",
+packages/app-store/salesforce/lib/CrmService.test.ts:112:refresh_token: "mock_refresh",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:54:consumer_secret: "test_consumer_secret",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:74:access_token: "test_access_token",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:75:refresh_token: "test_refresh_token",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:120:access_token: "123",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:413:access_token: "new_access_token",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:445:access_token: "test_access_token",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:446:refresh_token: "test_refresh_token",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:469:access_token: "new_access_token",
+packages/app-store/salesforce/lib/__tests__/CrmService.integration.test.ts:511:access_token: "new_access_token",
+packages/app-store/salesforce/lib/__tests__/getSalesforceTokenLifetime.test.ts:8:consumer_secret: "test_consumer_secret",
+packages/app-store/stripepayment/lib/VerificationTokenService.test.ts:23:token: "hashed-token",
+packages/app-store/stripepayment/lib/repositories/VerificationTokenRepository.test.ts:37:const token = "hashed-token-value";
+packages/app-store/stripepayment/lib/repositories/VerificationTokenRepository.test.ts:66:const token = "sha256-hashed-token";
+packages/app-store/stripepayment/lib/repositories/VerificationTokenRepository.test.ts:101:token: "existing-token",
+packages/app-store/stripepayment/lib/repositories/VerificationTokenRepository.test.ts:144:token: "token-123",
+packages/app-store/stripepayment/pages/setup/__tests__/_getServerSideProps.test.ts:58:webhook_secret: "whsec_test",
+packages/app-store/tests/__mocks__/OAuthManager.ts:36:access_token: "FAKE_ACCESS_TOKEN",
+packages/app-store/utils.test.ts:14:key: { api_key: "secret-api-key" },
+packages/app-store/utils.test.ts:42:key: { api_key: "secret-global-api-key" },
+packages/app-store/utils.test.ts:85:key: { api_key: "secret-key" },
+packages/app-store/utils.test.ts:117:key: { api_key: "REDACTED_STRIPE_KEY" },
+packages/features/CalendarEventBuilder.test.ts:447:password: "password123",
+packages/features/CalendarEventBuilder.test.ts:787:password: "password123",
+packages/features/auth/lib/next-auth-options.test.ts:160:password: "password123",
+packages/features/auth/lib/next-auth-options.test.ts:175:password: "password123",
+packages/features/auth/lib/next-auth-options.test.ts:190:password: "password123",
+packages/features/auth/lib/next-auth-options.test.ts:205:password: "password123",
+packages/features/auth/lib/next-auth-options.test.ts:221:password: "password123",
+packages/features/auth/lib/next-auth-options.test.ts:237:password: "password123",
+packages/features/auth/signup/handlers/__tests__/mocks/signup.factories.ts:55:password: "ValidPassword123!",
+packages/features/auth/signup/handlers/__tests__/p2002.test-suite.ts:106:const response = await callHandler(createSignupBody({ token: "valid-token" }));
+packages/features/auth/signup/handlers/__tests__/p2002.test-suite.ts:118:const response = await callHandler(createSignupBody({ token: "valid-token" }));
+packages/features/auth/signup/handlers/__tests__/p2002.test-suite.ts:131:const response = await callHandler(createSignupBody({ token: "valid-token" }));
+packages/features/auth/signup/lib/fetchSignup.test.ts:29:password: "password123",
+packages/features/auth/signup/lib/fetchSignup.test.ts:41:password: "password123",
+packages/features/bookings/lib/EventManager.test.ts:147:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:194:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:211:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:229:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:247:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:341:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:365:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:443:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:467:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:491:password: "pass",
+packages/features/bookings/lib/EventManager.test.ts:515:password: "pass",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:119:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:250:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:398:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:551:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:810:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:937:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:1054:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:1164:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:1286:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:1407:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:1529:password: "MOCK_PASS",
+packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts:1644:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/booking-limits.test.ts:849:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/complex-schedules.test.ts:136:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/date-overrides.test.ts:121:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/date-overrides.test.ts:298:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:71:password: "MOCK_PASSWORD",
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:118:password: "MOCK_PASSWORD",
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:605:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:803:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:1112:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:203:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:370:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:534:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:821:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:980:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:1406:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:1684:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/fresh-booking.test.ts:2927:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:86:password: "MOCK_ZOOM_PASS",
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:178:password: "MOCK_DAILY_PASS",
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:445:password: "MOCK_ZOOM_PASS",
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:551:password: "MOCK_DAILY_PASS",
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:646:password: "MOCK_DAILY_PASS",
+packages/features/bookings/lib/handleNewBooking/test/per-host-locations.test.ts:739:password: "MOCK_DAILY_PASS",
+packages/features/bookings/lib/handleNewBooking/test/reschedule.test.ts:1139:password: "MOCK_PASSWORD",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-reschedule-destination-calendar.test.ts:174:password: "MOCK_PASS_1",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:154:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:336:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:459:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:682:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:916:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1102:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1213:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1283:apikey: "MOCK_DAILY_API_KEY",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1413:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1482:access_token: "ACCESS_TOKEN",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1483:refresh_token: "REFRESH_TOKEN",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1618:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1811:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/collective-scheduling.test.ts:1934:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:134:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:326:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:435:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:584:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:717:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:880:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/team-bookings/round-robin.test.ts:1032:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/webhook-producer-booking-requested.test.ts:911:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/workflow-notifications.test.ts:124:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/workflow-notifications.test.ts:361:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/workflow-notifications.test.ts:503:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/workflow-notifications.test.ts:628:password: "MOCK_PASS",
+packages/features/bookings/lib/handleNewBooking/test/workflow-notifications.test.ts:740:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:79:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:172:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:318:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:474:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:601:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:726:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:848:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:999:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1192:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1395:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1529:password: "NEW_MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1669:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1815:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:1962:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2102:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2272:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2468:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2675:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2819:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:2947:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3109:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3270:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3475:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3740:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:3950:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:4100:password: "MOCK_PASS",
+packages/features/bookings/lib/handleSeats/test/handleSeats.test.ts:4261:password: "MOCK_PASS",
+packages/features/bookings/lib/service/InstantBookingCreateService.test.ts:29:password: "MOCK_INSTANT_PASS",
+packages/features/bookings/lib/service/InstantBookingCreateService.test.ts:79:password: "MOCK_PASS",
+packages/features/bookings/lib/service/RecurringBookingService.test.ts:113:password: "MOCK_PASS",
+packages/features/calAIPhone/providers/retellAI/RetellAIPhoneServiceProvider.test.ts:149:cal_api_key: "test-key",
+packages/features/calAIPhone/providers/retellAI/RetellAIPhoneServiceProvider.test.ts:498:sip_trunk_auth_password: "password",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:357:sip_trunk_auth_password: "pass",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:368:sip_trunk_auth_password: "pass",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:392:sip_trunk_auth_password: "pass",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:454:sip_trunk_auth_password: "pass",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:492:sip_trunk_auth_password: "pass",
+packages/features/calAIPhone/providers/retellAI/RetellAIService.test.ts:907:cal_api_key: "test-key",
+packages/features/calAIPhone/providers/retellAI/RetellSDKClient.test.ts:315:sip_trunk_auth_password: "password",
+packages/features/calAIPhone/providers/retellAI/services/__tests__/PhoneNumberService.test.ts:40:sip_trunk_auth_password: "pass",
+packages/features/calAIPhone/providers/retellAI/services/__tests__/PhoneNumberService.test.ts:61:sip_trunk_auth_password: "pass",
+packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts:65:key: { access_token: "test-token" },
+packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts:211:token: "test-webhook-token",
+packages/features/calendar-subscription/adapters/__tests__/GoogleCalendarSubscriptionAdapter.test.ts:547:token: "test-webhook-token",
+packages/features/calendar-subscription/lib/__tests__/CalendarSubscriptionService.test.ts:59:key: { access_token: "test-token" },
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:458:password: "",
+packages/features/calendar-subscription/lib/cache/__tests__/CalendarCacheWrapper.test.ts:481:password: "",
+packages/features/calendars/lib/CalendarManager.test.ts:53:key: { access_token: "DONT_MATTER" },
+packages/features/calendars/lib/CalendarManager.test.ts:60:private_key: "DONT_MATTER",
+packages/features/calendars/lib/CalendarManager.test.ts:246:access_token: "google_calendar_key",
+packages/features/calendars/lib/CalendarManager.test.ts:260:access_token: "office365_video_key",
+packages/features/calendars/lib/CalendarManager.test.ts:589:key: { access_token: "test_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:988:key: { access_token: "test_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:1024:key: { access_token: "delegated_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:1060:key: { access_token: "test_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:1093:key: { access_token: "test_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:1127:key: { access_token: "test_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:1164:key: { access_token: "test_token" },
+packages/features/calendars/lib/CalendarManager.test.ts:1193:key: { access_token: "test_token" },
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:139:key: { access_token: "mock-access-token" },
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:147:private_key: "mock-key",
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:227:password: "",
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:236:password: "",
+packages/features/calendars/lib/__tests__/bidirectionalSync.integration.test.ts:352:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:104:key: { access_token: "mock-token" },
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:111:private_key: "mock-key",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:186:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:733:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:854:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:980:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:1049:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:1093:password: "",
+packages/features/calendars/lib/__tests__/bufferTimeVisualization.test.ts:1168:password: "",
+packages/features/calendars/lib/__tests__/conflictDetection.test.ts:113:key: { access_token: "DONT_MATTER" },
+packages/features/calendars/lib/__tests__/conflictDetection.test.ts:120:private_key: "DONT_MATTER",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:65:private_key: "private_key",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:131:access_token: "access token",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:132:refresh_token: "refresh token",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:298:access_token: "access",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:299:refresh_token: "refresh",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:387:access_token: "access token",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:388:refresh_token: "refresh token",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:775:password: "pass_a",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:782:password: "pass_b",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:844:password: "pass_a",
+packages/features/calendars/lib/getCalendarsEvents.test.ts:896:password: "pass",
+packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts:40:private_key: "private-key",
+packages/features/ee/billing/active-user/seed-active-user-test.ts:312:const pm = await stripe.paymentMethods.create({ type: "card", card: { token: "tok_visa" } });
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:241:token: "tok_visa", // Test token for successful payments
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:346:card: { token: "tok_visa" },
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:126:card: { token: "tok_visa" },
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:246:card: { token: "tok_visa" },
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.integration-test.ts:54:createPaymentIntent: vi.fn().mockResolvedValue({ id: "pi_test_123", client_secret: "secret_123" }),
+packages/features/ee/billing/service/proration/__tests__/MonthlyProrationService.test.ts:92:createPaymentIntent: vi.fn().mockResolvedValue({ id: "pi_test_123", client_secret: "secret_123" }),
+packages/features/ee/deployment/lib/getDeploymentKey.test.ts:94:const token = "invalid-token";
+packages/features/ee/teams/services/teamService.test.ts:101:token: "valid-token",
+packages/features/ee/workflows/lib/service/EmailWorkflowService.test.ts:627:password: "test-password",
+packages/features/ee/workflows/lib/service/EmailWorkflowService.test.ts:680:password: "test-password",
+packages/features/tasker/tasks/crm/__tests__/createCRMEvent.test.ts:124:access_token: "mock_token",
+packages/features/tasker/tasks/crm/__tests__/createCRMEvent.test.ts:125:refresh_token: "mock_refresh",
+packages/features/webhooks/lib/WebhookService.test.ts:37:secret: "WhSecret",
+packages/features/webhooks/lib/WebhookService.test.ts:49:secret: "secret",
+packages/features/webhooks/lib/WebhookService.test.ts:73://       secret: "secret",
+packages/features/webhooks/lib/WebhookService.test.ts:80://       secret: "secret2",
+packages/features/webhooks/lib/WebhookService.test.ts:120://       secret: "secret",
+packages/features/webhooks/lib/__tests__/consumer/WebhookTaskConsumer.test.ts:170:secret: "secret",
+packages/features/webhooks/lib/__tests__/consumer/triggers/booking-requested.test.ts:176:secret: "webhook-secret",
+packages/features/webhooks/lib/__tests__/consumer/triggers/booking-requested.test.ts:281:secret: "secret",
+packages/features/webhooks/lib/handleWebhookScheduledTriggers.test.ts:37:secret: "test-secret",
+packages/features/webhooks/lib/handleWebhookScheduledTriggers.test.ts:71:secret: "test-secret",
+packages/features/webhooks/lib/handleWebhookScheduledTriggers.test.ts:139:secret: "fetched-secret",
+packages/features/webhooks/lib/service/WebhookNotificationHandler.test.ts:23:secret: "secret123",
+packages/features/webhooks/lib/service/WebhookNotificationHandler.test.ts:34:secret: "secret456",
+packages/features/webhooks/lib/service/WebhookService.test.ts:86:secret: "test-secret",
+packages/features/webhooks/lib/service/WebhookService.test.ts:119:secret: "secret-1",
+packages/features/webhooks/lib/service/WebhookService.test.ts:129:secret: "secret-2",
+packages/features/webhooks/lib/service/WebhookService.test.ts:167:secret: "test-secret",
+packages/features/webhooks/lib/service/__tests__/fixtures.ts:80:secret: "test-secret-key",
+packages/lib/CalendarService.test.ts:77:password: "test",
+packages/lib/CalendarService.test.ts:124:password: "app-password",
+packages/lib/redactSensitiveData.test.ts:17:password: "secret123",
+packages/lib/redactSensitiveData.test.ts:19:token: "token123",
+packages/lib/redactSensitiveData.test.ts:37:password: "secret123",
+packages/lib/redactSensitiveData.test.ts:40:token: "token123",
+packages/lib/redactSensitiveData.test.ts:46:secret: "secret123",
+packages/lib/redactSensitiveData.test.ts:71:{ name: "John", password: "pass1", token: "token1" },
+packages/lib/redactSensitiveData.test.ts:72:{ name: "Jane", password: "pass2", token: "token2" },
+packages/lib/redactSensitiveData.test.ts:77:{ id: 1, secret: "secret1" },
+packages/lib/redactSensitiveData.test.ts:78:{ id: 2, secret: "secret2" },
+packages/lib/redactSensitiveData.test.ts:116:api_key: "key1",
+packages/lib/redactSensitiveData.test.ts:121:client_secret: "secret1",
+packages/lib/redactSensitiveData.test.ts:125:password: "pass1",
+packages/lib/redactSensitiveData.test.ts:127:secret: "secret2",
+packages/lib/redactSensitiveData.test.ts:128:token: "token3",
+packages/lib/redactSensitiveData.test.ts:184:private_key: "REDACTED_PRIVATE_KEY\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...",
+packages/lib/redactSensitiveData.test.ts:204:private_key: "sensitive_key",
+packages/lib/redactSensitiveData.test.ts:211:private_key: "another_private_key",
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:158:access_token: "secret_access_token",
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:159:refresh_token: "secret_refresh_token",
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:198:access_token: "secret_team_access_token",
+packages/trpc/server/routers/apps/routing-forms/getIncompleteBookingSettings.handler.test.ts:199:refresh_token: "secret_team_refresh_token",
+packages/trpc/server/routers/viewer/apps/appById.handler.test.ts:157:key: { api_key: "secret-zoom-key" },
+packages/trpc/server/routers/viewer/apps/appById.handler.test.ts:190:key: { access_token: "token" },
+packages/trpc/server/routers/viewer/apps/appById.handler.test.ts:217:key: { api_key: "secret-key" },
+packages/trpc/server/routers/viewer/bookings/reportWrongAssignment.handler.test.ts:255:{ id: "webhook-1", subscriberUrl: "https://example.com/webhook", secret: "secret123" },
+packages/trpc/server/routers/viewer/bookings/reportWrongAssignment.handler.test.ts:307:{ id: "webhook-1", subscriberUrl: "https://example.com/webhook", secret: "secret123" },
+packages/trpc/server/routers/viewer/bookings/reportWrongAssignment.handler.test.ts:442:{ id: "webhook-1", subscriberUrl: "https://example.com/webhook", secret: "secret123" },
+packages/trpc/server/routers/viewer/bookings/reportWrongAssignment.handler.test.ts:489:{ id: "webhook-1", subscriberUrl: "https://example.com/webhook", secret: "secret123" },
+packages/trpc/server/routers/viewer/bookings/reportWrongAssignment.handler.test.ts:521:{ id: "webhook-1", subscriberUrl: "https://example.com/webhook", secret: "secret123" },
+packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.test.ts:37:refresh_token: "mock_refresh_token",
+packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.test.ts:38:access_token: "mock_access_token",
+packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.test.ts:102:client_secret: "mock_client_secret",
+packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.test.ts:129:client_secret: "mock_client_secret",
+count: 388
+
+--- CSRF (CWE-352) ---
+apps/web/playwright/booking-pages.e2e.ts:644:const csrfTokenResponse = await page.request.get("/api/csrf");
+apps/web/playwright/booking-pages.e2e.ts:645:const { csrfToken } = await csrfTokenResponse.json();
+apps/web/playwright/booking-pages.e2e.ts:649:csrfToken,
+apps/web/playwright/login.api.e2e.ts:17:expect(cookiesMap.has("next-auth.csrf-token")).toBeTruthy();
+count: 4
+
+--- Log injection (CWE-117) ---
+apps/api/v1/pages/api/slots/_get.test.ts:63:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/pages/api/slots/_get.test.ts:81:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_auth-middleware.integration-test.ts:184:console.log("Cleaning up org", orgRef.id);
+apps/api/v1/test/lib/bookings/_auth-middleware.integration-test.ts:190:console.log("Cleaning up users", [
+apps/api/v1/test/lib/bookings/_auth-middleware.integration-test.ts:206:console.log(createEventResult1.bookings[0].id);
+apps/api/v1/test/lib/bookings/_get.integration-test.ts:418:console.log(`Found duplicate booking IDs: ${duplicates.join(", ")}`);
+apps/api/v1/test/lib/bookings/_post.test.ts:398:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:466:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v1/test/lib/bookings/_post.test.ts:543:console.log({ statusCode: res._getStatusCode(), data: JSON.parse(res._getData()) });
+apps/api/v2/test/fixtures/repository/billing.repository.fixture.ts:56:console.error(err);
+apps/api/v2/test/mocks/api-auth-mock.strategy.ts:30:console.error(error);
+apps/api/v2/test/mocks/next-auth-mock.strategy.ts:20:console.error(error);
+apps/web/lib/daily-webhook/tests/recorded-daily-video.test.ts:279:console.error("Handler error:", error);
+apps/web/lib/pages/document/_applyThemeForDocument.test.ts:57:// Mock console.error
+apps/web/lib/pages/document/_applyThemeForDocument.test.ts:58:global.console.error = vi.fn();
+apps/web/modules/bookings/components/Booker.test.tsx:58:console.log("BookEventForm Called", { isTimeslotUnavailable, onCancel });
+apps/web/modules/ee/organizations/lib/onboardingStore.test.ts:136:console.log("mockRouterPush called", args[0]);
+apps/web/modules/event-types/components/__tests__/AddMembersWithSwitch.test.tsx:84:console.log(methods.getValues());
+apps/web/pages/api/book/recurring-event.test.ts:164:logger.debug("Assertion for Booking with index:", index, { createdBooking });
+apps/web/pages/api/book/recurring-event.test.ts:513:logger.debug("Assertion for Booking with index:", index, { createdBooking });
+apps/web/pages/api/book/recurring-event.test.ts:731:logger.debug("Assertion for Booking with index:", index, { createdBooking });
+apps/web/playwright/auth/auth-index.e2e.ts:85:console.log("createdUser", createdUser);
+apps/web/playwright/booking-phone-autofill.e2e.ts:116:console.error("Failed to create user with phone fields:", error);
+apps/web/playwright/booking-race-condition.e2e.ts:81:console.log("Race condition prevention test results:", {
+apps/web/playwright/embed-code-generator.e2e.ts:439:console.log(
+apps/web/playwright/embed-code-generator.e2e.ts:458:console.log(
+apps/web/playwright/insights-charts.e2e.ts:163:console.log(`[Routing] Found ${chartIds.length} charts: ${chartIds.join(", ")}`);
+apps/web/playwright/insights-charts.e2e.ts:260:console.log(`[Bookings] Found ${chartIds.length} charts: ${chartIds.join(", ")}`);
+apps/web/playwright/login.2fa.e2e.ts:173:console.log("Token expired, Renerating.");
+apps/web/test/lib/getSchedule/futureLimit.timezone.test.ts:501:console.log({ scheduleForEvent });
+apps/web/test/lib/getSchedule/utils.ts:14:console.log({ yesterdayDateString, hours, minutes });
+apps/web/test/lib/handleChildrenEventTypes.test.ts:787:vi.mocked(logger.info).mockClear();
+apps/web/test/lib/handleChildrenEventTypes.test.ts:788:vi.mocked(logger.error).mockClear();
+apps/web/test/lib/handleChildrenEventTypes.test.ts:856:expect(logger.info).toHaveBeenCalledWith("Retrying 1 failed updates...");
+apps/web/test/lib/handleChildrenEventTypes.test.ts:861:vi.mocked(logger.info).mockClear();
+apps/web/test/lib/handleChildrenEventTypes.test.ts:862:vi.mocked(logger.error).mockClear();
+apps/web/test/lib/handleChildrenEventTypes.test.ts:925:expect(logger.error).toHaveBeenCalledWith(
+apps/web/test/lib/next-config.test.ts:20:console.log({
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:167:console.log("TESTS: credentialWithDelegation", credentialWithDelegation);
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:171:console.log("TESTS: First instance of CalendarService");
+packages/app-store/googlecalendar/lib/__tests__/CalendarService.auth.test.ts:191:console.log("TESTS: Second instance of CalendarService");
+packages/app-store/googlecalendar/lib/__tests__/utils.ts:143:console.log("createMockJWTInstance", { email, authorizeError });
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:53:console.log({ query });
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:86:console.log({ whereClause });
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:218:logger.debug("[SalesforceMock]Adding contact", safeStringify(newContact));
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:239:logger.debug("[SalesforceMock] Adding lead", safeStringify(newLead));
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:251:logger.debug("[SalesforceMock] Adding account", safeStringify(newAccount));
+packages/app-store/salesforce/lib/__tests__/salesforceMock.ts:262:logger.debug("[SalesforceMock] Adding user", safeStringify(newUser));
+packages/app-store/tests/__mocks__/OAuthManager.ts:42:console.log("OAuthManager.request full mock being used");
+packages/app-store/tests/__mocks__/OAuthManager.ts:45:console.log("OAuthManager.request default mock being used");
+packages/embeds/embed-core/playwright/tests/inline.e2e.ts:40:console.log("Request failed: ", request.url(), error);
+packages/embeds/embed-core/playwright/tests/preview.e2e.ts:38:console.log("request failed");
+packages/embeds/embed-core/src/__tests__/embed-iframe-methods.test.ts:41:console.log("Fake ensureQueryParamsInUrl called");
+packages/embeds/embed-core/src/__tests__/embed-iframe-methods.test.ts:53:console.log('After each of first describe');
+packages/embeds/embed-core/src/__tests__/embed-iframe.test.ts:268:console.log('Importing embed-iframe');
+packages/embeds/embed-core/src/embed.test.ts:30:console.log("Test:", ...args);
+packages/embeds/embed-core/src/embed.test.ts:76:console.log({
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:17:console.log("addEventListener called", event, listener);
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:24:console.log("removeEventListener called, Remaining listeners", eventListeners.change.length);
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:30:console.log("listener called", listener);
+packages/embeds/embed-core/test/__mocks__/windowMatchMedia.ts:62:console.log("__mock__:fakeDeviceMatchesMediaQuery updated", { query, __matchMediaFakeQuery });
+packages/features/bookings/lib/getAllCredentialsForUsersOnEvent/getAllCredentials.test.ts:306:console.log(testEventType);
+packages/features/bookings/lib/getAllCredentialsForUsersOnEvent/getAllCredentials.test.ts:632:console.log(testEventType);
+packages/features/bookings/lib/getCalendarLinks.test.ts:195:// Mock console.error to avoid test output noise
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:159:console.error("Failed to parse host task payload.");
+packages/features/bookings/lib/handleNewBooking/scheduleNoShowTriggers.integration-test.ts:182:console.error("Failed to parse guest task payload.");
+packages/features/bookings/lib/handleNewBooking/test/delegation-credential.test.ts:651:console.log("createdBooking", createdBooking);
+packages/features/bookings/lib/handleNewBooking/test/spam-booking.integration-test.ts:124:console.log("watchlists", await prisma.watchlist.findMany());
+packages/features/bookings/lib/reschedule/determineReschedulePreventionRedirect.test.ts:100:console.log("expectRedirectToEventBookingPageWithParams", { result, eventUrl, params });
+packages/features/bookings/lib/service/RecurringBookingService.test.ts:166:logger.debug("Assertion for Booking with index:", index, { createdBooking });
+packages/features/credentials/handleDeleteCredential.integration-test.ts:104:console.log("Credential deletion error:", error);
+packages/features/crmManager/crmManager.test.ts:110:console.log(mockedCrmApp);
+packages/features/delegation-credentials/repositories/DelegationCredentialRepository.test.ts:29:console.log({ mockEncrypted: serviceAccountKey });
+packages/features/ee/billing/active-user/seed-active-user-test.ts:107:console.log("Skipping Stripe API calls (--skip-stripe flag)");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:111:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:118:console.log("Cleaning up Stripe resources...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:124:console.log(`  Deleted test clock: ${clock.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:139:console.log(`  Deleted customer: ${customer.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:147:console.log("Cleaning up database resources...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:167:console.log(`  Deleted ${bookingIds.length} bookings`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:175:console.log(`  Deleted org (ID: ${org.id})`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:179:if (deleteResult.count > 0) console.log(`  Deleted ${deleteResult.count} users`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:181:console.log("  Database cleanup complete");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:216:console.log("Enabled active-user-billing feature flag");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:224:console.log("\nCreating organization...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:231:console.log(`  Organization: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:245:console.log(`Creating ${TOTAL_MEMBERS + 1} users...`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:256:if ((i + 1) % 25 === 0) console.log(`  ... created ${i + 1}/${TOTAL_MEMBERS} members`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:258:console.log(`  Created admin + ${members.length} members = ${members.length + 1} total`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:261:console.log("Adding memberships...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:291:console.log("\nCreating Stripe resources...");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:303:console.log(`  Test clock: ${testClock.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:333:console.log(`  Customer: ${customer.id}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:334:console.log(`  Subscription: ${subscription.id} (${totalMembers} seats)`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:335:console.log(`  Product: ${product.id} (${product.name})`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:336:console.log(`  Stripe period: ${periodStart.toISOString()} - ${periodEnd.toISOString()}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:337:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:353:console.log(`Creating bookings in period ${periodStart.toISOString()} - ${periodEnd.toISOString()}...`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:414:console.log(`  Created ${bookingIds.length} bookings`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:469:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:486:console.log("=== Active User Billing (AUB) Seed Script ===\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:487:console.log("Options:");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:488:console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:489:console.log(`  --cleanup: ${CLEANUP_FIRST}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:490:console.log("");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:496:console.log("\n--- Running ActiveUserBillingService ---\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:510:console.log("=== Summary ===\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:511:console.log(`  Organization ID:    ${result.orgId}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:512:console.log(`  Subscription ID:    ${result.subscriptionId}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:513:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:516:console.log(`  Total members:      ${result.totalMembers}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:517:console.log("");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:519:console.log(`  Active hosts (${result.expectedActiveHosts.length}):`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:521:console.log(`    - ${email}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:524:console.log(`  Active attendees only (${result.expectedActiveAttendees.length}):`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:526:console.log(`    - ${email}`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:529:console.log(`  Inactive (${result.expectedInactive.length}):`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:530:console.log(`    (${result.expectedInactive.length} members with no in-period bookings)`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:532:console.log("");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:533:console.log("  +--------------------------+---------+");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:534:console.log("  | Category                 | Count   |");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:535:console.log("  +--------------------------+---------+");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:536:console.log(`  | Total org members        | ${String(result.totalMembers).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:537:console.log(`  | Active hosts (created)   | ${String(result.expectedActiveHosts.length).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:538:console.log(`  | Active attendees (created)| ${String(result.expectedActiveAttendees.length).padStart(6)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:539:console.log(`  | Total active (created)   | ${String(expectedTotal).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:540:console.log(`  | Inactive (created)       | ${String(result.expectedInactive.length).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:541:console.log(`  | Service counted          | ${String(serviceCount).padStart(7)} |`);
+packages/features/ee/billing/active-user/seed-active-user-test.ts:542:console.log("  +--------------------------+---------+");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:545:console.log("\n  [PASS] Service count matches expected count.");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:547:console.log(
+packages/features/ee/billing/active-user/seed-active-user-test.ts:552:console.log("\n=== Done ===\n");
+packages/features/ee/billing/active-user/seed-active-user-test.ts:555:console.error("Seed failed:", error);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:26:console.log("Skipping Stripe cleanup (--skip-stripe flag)");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:31:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe cleanup");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:41:console.log("\nCleaning up Stripe resources...");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:60:console.log(`  Cancelled subscription: ${sub.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:73:console.log(`  Voided invoice: ${invoice.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:75:console.log(`  Could not void invoice ${invoice.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:81:console.log(`  Deleted customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:83:console.log(`  Error cleaning up customer ${customer.id}:`, error);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:94:console.log(`  Archived product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:96:console.log(`  Could not archive product ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:101:console.log("Stripe cleanup complete");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:105:console.log("\nCleaning up database resources...");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:113:console.log("  No test organization found");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:117:console.log(`  Found test organization: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:123:console.log(`  Deleted ${deletedProrations.count} proration records`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:129:console.log(`  Deleted ${deletedLogs.count} seat change logs`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:134:.catch(() => console.log("  No organization billing to delete"));
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:139:.catch(() => console.log("  No organization settings to delete"));
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:143:console.log("  Deleted profiles");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:153:console.log(`  Deleted team: ${team.name}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:160:console.log(`  Deleted ${deletedMemberships.count} memberships`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:164:console.log(`  Deleted organization: ${org.name}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:179:console.log(`  Deleted user: ${email}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:186:console.log("Database cleanup complete");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:190:console.log("=== Proration Test Cleanup Script ===");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:191:console.log("\nOptions:");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:192:console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:203:console.log("\n=== Cleanup Complete ===");
+packages/features/ee/billing/service/dueInvoice/cleanup-proration-test.ts:205:console.error("\nCleanup failed:", error);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:91:console.log("Skipping Stripe API calls (--skip-stripe flag)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:96:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:148:console.log("Cleaning up existing Stripe test resources...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:168:console.log(`  Cancelled subscription: ${sub.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:173:console.log(`  Deleted customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:175:console.log(`  Could not delete customer ${customer.id}:`, error);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:191:console.log(`  Archived product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:197:console.log("Creating Stripe resources...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:208:console.log(`  Created product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:223:console.log(`  Created price: ${price.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:235:console.log(`  Created customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:254:console.log(`  Attached payment method: ${paymentMethod.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:270:console.log(`  Created subscription: ${subscription.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:281:console.log(`Creating invoice for $${(amount / 100).toFixed(2)}...`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:302:console.log(`  Created invoice: ${finalizedInvoice.id} (status: ${finalizedInvoice.status})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:308:console.log("Creating Stripe resources for trigger org (annual)...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:318:console.log(`  Created product: ${product.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:331:console.log(`  Created price: ${price.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:342:console.log(`  Created customer: ${customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:353:console.log(`  Attached payment method: ${paymentMethod.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:364:console.log(`  Created subscription: ${subscription.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:370:console.log("Cleaning up database test resources...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:406:console.log("  Trigger org cleanup complete");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:415:console.log("  No test organization found");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:461:console.log("  Database cleanup complete");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:466:console.log(`\nCreating trigger-ready organization (monthKey: ${monthKey})...`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:482:console.log(`  Organization created: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:510:console.log(`  Team created: ${team.name} (ID: ${team.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:554:console.log("  Users and memberships created (5 org members, 3 team members)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:605:console.log("  OrganizationBilling created (ANNUALLY, $150/seat, 3 paid seats, no trial)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:652:console.log(`  Created 2 unprocessed SeatChangeLog entries (monthKey: ${monthKey})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:653:console.log("  NO MonthlyProration records created (trigger-ready state)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:674:console.log("\nCreating test organization...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:694:console.log(`Organization created: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:708:console.log("Organization settings created");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:728:console.log(`Team created: ${team.name} (ID: ${team.id})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:731:console.log("Creating test users...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:823:console.log("Users added to organization and team (8 org members, 4 team members)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:868:console.log("Organization billing created");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:883:console.log("Organization team metadata updated with subscriptionId");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:891:console.log("Creating test proration and seat change records...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:954:console.log("Creating seat change logs...");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1013:console.log("Proration and seat change records created");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1035:console.log("=== Proration Test Seed Script ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1036:console.log("Options:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1037:console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1038:console.log(`  --cleanup: ${CLEANUP_FIRST}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1039:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1044:console.log("\n=== Seed Complete ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1045:console.log("Organization:", result.organization);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1046:console.log("Team:", result.team);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1048:console.log("\nTest Users:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1050:console.log(`  - ${u.name} (${u.email}) - Role: ${u.role}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1052:console.log(`  Password for all users: ${TEST_PASSWORD}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1054:console.log("\nProration Records:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1056:console.log(`  - ${p.id}: ${p.status} (blocking: ${p.isBlocking})`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1060:console.log("\nStripe Resources:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1061:console.log(`  Customer: ${result.stripe.customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1062:console.log(`  Subscription: ${result.stripe.subscription?.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1063:console.log(`  Product: ${result.stripe.product?.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1064:console.log(`  Price: ${result.stripe.price?.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1067:console.log("\n=== Testing Instructions ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1068:console.log("1. Login as proration-admin@example.com");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1069:console.log("   - Should see the due invoice banner (error variant - blocking)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1070:console.log("   - Should be blocked from inviting new members");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1071:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1072:console.log("2. Login as proration-member@example.com");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1073:console.log("   - Should NOT see the due invoice banner (not a billing admin)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1074:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1075:console.log("3. To test sub-team exception:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1076:console.log("   - Try inviting proration-member@example.com to the sub-team");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1077:console.log("   - This should succeed (existing org member)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1078:console.log("   - Try inviting a new email - this should be blocked");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1079:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1082:console.log("=== Stripe Dashboard (Proration Org) ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1083:console.log(`Customer: https://dashboard.stripe.com/test/customers/${result.stripe.customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1084:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1087:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1093:console.log("=== Trigger-Ready Organization ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1094:console.log("Organization:", t.organization);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1095:console.log("Team:", t.team);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1096:console.log(`MonthKey: ${t.monthKey}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1097:console.log(`Unprocessed SeatChangeLogs: ${t.unprocessedSeatChanges}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1098:console.log("MonthlyProration records: 0 (intentionally absent)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1101:console.log(`\nStripe (Trigger Org):`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1102:console.log(`  Customer: https://dashboard.stripe.com/test/customers/${t.stripe.customer.id}`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1103:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1108:console.log("\n=== Trigger Testing Instructions ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1109:console.log("When scheduleMonthlyProration runs, it will:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1110:console.log(`  1. Query for annual orgs with unprocessed seat changes for monthKey "${t.monthKey}"`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1111:console.log(`  2. Find trigger-test-org with ${t.unprocessedSeatChanges} additions, 0 removals`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1112:console.log("  3. Calculate prorated amount based on remaining annual subscription days");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1113:console.log("  4. Create a MonthlyProration record");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1114:console.log("  5. Mark SeatChangeLog entries as processed");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1115:console.log("  6. Create a Stripe invoice (if amount > 0)");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1116:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1117:console.log("To verify after trigger runs:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1118:console.log(`  SELECT * FROM "MonthlyProration" WHERE "teamId" = ${t.organization.id};`);
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1119:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1122:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1125:console.log("=== Cleanup ===\n");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1126:console.log("To clean up all test data, run:");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1127:console.log(
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1130:console.log("");
+packages/features/ee/billing/service/dueInvoice/seed-proration-test.ts:1132:console.error("Error seeding data:", error);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:167:console.log("\n=== E2E Test Setup Complete ===");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:168:console.log(`Team ID: ${testTeam.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:169:console.log(`Current Members: ${currentMemberCount}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:170:console.log(`HWM (Peak): ${peakMemberCount}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:171:console.log(`Subscription: ${subscription.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:172:console.log(`Test Clock: ${testClock.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:173:console.log(`Period End: ${new Date(subscription.current_period_end * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:181:console.log(`Deleted test clock: ${testClock.id}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:184:console.log("Could not delete test clock:", error);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:199:console.log("E2E Test cleanup complete");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:210:console.log(`Test clock ready at: ${new Date(clock.frozen_time * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:215:console.log(`Clock still advancing... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:236:console.log(`${description} - confirmed`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:240:console.log(`Waiting for ${description}... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:254:console.log("\n=== Step 1: Advance clock to trigger invoice.upcoming ===");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:255:console.log(
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:274:console.log(`Reset state: paidSeats=${resetBilling?.paidSeats}, HWM=${resetBilling?.highWaterMark}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:281:console.log(`Advancing clock to: ${new Date(invoiceUpcomingTime * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:292:console.log("\\nManually triggering scale-up (webhook fails during clock advancement)...");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:313:console.log("Scale UP verified: subscription quantity = 6 (HWM)");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:317:console.log("\n=== Step 2: Advance clock past renewal to trigger scale down ===");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:325:console.log(`Current period end: ${new Date(periodEnd * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:326:console.log(`Advancing clock to: ${new Date(renewalTime * 1000).toISOString()}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:337:console.log("Stripe subscription after renewal:");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:338:console.log(`  - Status: ${subAfterRenewal.status}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:339:console.log(`  - Quantity: ${subAfterRenewal.items.data[0].quantity}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:340:console.log(
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:350:console.log("Database after clock advancement:");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:351:console.log(`  - paidSeats: ${billingAfterRenewal?.paidSeats}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:352:console.log(`  - HWM: ${billingAfterRenewal?.highWaterMark}`);
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:357:console.log("\\nManually triggering reset (webhook fails during clock advancement)...");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:371:console.log("Reset completed, verifying results...");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:386:console.log("Scale DOWN verified: subscription quantity = 4 (current members)");
+packages/features/ee/billing/service/highWaterMark/__tests__/HighWaterMarkStripe.integration-test.ts:387:console.log(`Final state: paidSeats=${billing?.paidSeats}, HWM=${billing?.highWaterMark}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:95:console.log("Skipping Stripe API calls (--skip-stripe flag)");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:100:console.log("STRIPE_PRIVATE_KEY not set, skipping Stripe API calls");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:152:console.log("Cleaning up existing Stripe test resources...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:160:console.log(`  Deleted test clock: ${clock.id} (${clock.name})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:162:console.log(`  Could not delete test clock ${clock.id}:`, error);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:185:console.log(`  Cancelled subscription: ${sub.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:190:console.log(`  Deleted customer: ${customer.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:192:console.log(`  Could not delete customer ${customer.id}:`, error);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:206:console.log(`Creating Stripe resources for ${name}...`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:214:console.log(`  Using existing price: ${price.id} ($${pricePerSeatCents / 100}/seat)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:221:console.log(`  Using existing product: ${product.id} (${product.name})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:228:console.log(`  Created test clock: ${testClock.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:241:console.log(`  Created customer: ${customer.id} (attached to test clock)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:253:console.log(`  Attached payment method: ${paymentMethod.id}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:264:console.log(`  Created subscription: ${subscription.id} (${seatCount} seats)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:270:console.log("Cleaning up database test resources...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:283:console.log(`  Deleted ${deleteResult.count} test users`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:296:console.log(`  Deleted HWM test team (ID: ${team.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:318:console.log(`  Deleted HWM test org (ID: ${org.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:321:console.log("  Database cleanup complete");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:325:console.log("\nCreating HWM test team (standalone)...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:341:console.log(`  Team created: ${team.name} (ID: ${team.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:378:console.log(`  Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:453:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:500:console.log(`  SeatChangeLog entries created (5 additions, 1 removal)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:512:console.log("\nCreating HWM test organization...");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:528:console.log(`  Organization created: ${org.name} (ID: ${org.id})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:578:console.log(`  Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:664:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:713:console.log(`  SeatChangeLog entries created (8 additions, 2 removals)`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:739:console.log("Enabled hwm-seating feature flag");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:774:console.log("=== High Water Mark (HWM) Test Seed Script ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:775:console.log("Options:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:776:console.log(`  --skip-stripe: ${SKIP_STRIPE}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:777:console.log(`  --cleanup: ${CLEANUP_FIRST}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:778:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:783:console.log("\n=== Seed Complete ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:823:console.log("=== Summary Table ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:824:console.log("| Entity | Qty | Members | HWM | invoice.upcoming | After Renewal | Price |");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:825:console.log("|--------|-----|---------|-----|------------------|---------------|-------|");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:826:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:829:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:833:console.log("\n=== Test Clock Dates ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:834:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:837:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:841:console.log("\n=== Stripe Resources ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:842:console.log("Team:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:843:console.log(`  Subscription: ${teamSubUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:844:console.log(`  Customer:     ${teamCustUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:845:console.log(`  Test Clock:   ${teamClockUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:846:console.log("\nOrg:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:847:console.log(`  Subscription: ${orgSubUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:848:console.log(`  Customer:     ${orgCustUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:849:console.log(`  Test Clock:   ${orgClockUrl}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:852:console.log("\n=== Test Users ===");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:853:console.log(`Total test users created: ${result.testUsers.length}`);
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:854:console.log("User credentials are defined in the seed script constants.");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:856:console.log("\n=== Testing Instructions ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:857:console.log("1. ADVANCE TEST CLOCK to trigger invoice.upcoming:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:858:console.log("   Go to the Test Clock URL above and click 'Advance time'");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:859:console.log("   Advance to ~3 days before the billing period ends (e.g., +27 days)");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:860:console.log("   This will trigger the invoice.upcoming webhook");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:861:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:862:console.log("   Or use Stripe CLI:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:865:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:869:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:870:console.log("2. invoice.upcoming webhook flow:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:871:console.log("   - Stripe sends invoice.upcoming ~3 days before renewal");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:872:console.log("   - The webhook calls HighWaterMarkService.applyHighWaterMarkToSubscription()");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:873:console.log("   - This updates the subscription quantity to the HWM value");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:874:console.log("   - Team: subscription quantity updated from 4 to 5");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:875:console.log("   - Org: subscription quantity updated from 6 to 8");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:876:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:877:console.log("3. ADVANCE TEST CLOCK again to trigger renewal:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:878:console.log("   Advance to after the billing period ends (e.g., +31 days from start)");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:879:console.log("   This will trigger customer.subscription.updated webhook");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:880:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:881:console.log("4. customer.subscription.updated webhook flow:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:882:console.log("   - After renewal completes, this webhook fires");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:883:console.log("   - For MONTHLY billing, it calls resetSubscriptionAfterRenewal()");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:884:console.log("   - This resets subscription quantity AND HWM to current member count");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:885:console.log("   - Team: subscription quantity reset from 5 to 4, HWM reset to 4");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:886:console.log("   - Org: subscription quantity reset from 8 to 6, HWM reset to 6");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:887:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:888:console.log("5. To verify HWM in database:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:889:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:892:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:895:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:897:console.log("=== Cleanup ===\n");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:898:console.log("To clean up all test data, run:");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:899:console.log(
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:902:console.log("");
+packages/features/ee/billing/service/highWaterMark/seed-hwm-test.ts:904:console.error("Error seeding data:", error);
+packages/features/ee/workflows/lib/reminders/reminderSchedulerInApp.test.ts:12:// Track logger.error calls for assertion
+packages/features/ee/workflows/lib/reminders/reminderSchedulerInApp.test.ts:216:// Error was logged via logger.error with the expected message
+packages/features/eventtypes/lib/getEventTypeById.integration-test.ts:12:console.log("Mocking i18n.getTranslation to return identity function");
+packages/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic.integration-test.ts:1249:console.log("Total time taken", totalTimeTaken, {
+packages/features/schedules/lib/slots.test.ts:396:console.log(
+packages/lib/CalEventParser.test.ts:38:console.log("Description:", description);
+packages/lib/CalEventParser.test.ts:39:console.log(
+packages/trpc/server/routers/viewer/bookings/get.handler.integration-test.ts:181:console.warn("Test cleanup failed:", error);
+packages/trpc/server/routers/viewer/eventTypes/heavy/duplicate.handler.integration-test.ts:124:console.warn("Test cleanup failed:", error);
+packages/trpc/server/routers/viewer/eventTypes/listWithTeam.handler.integration-test.ts:178:console.warn("Test cleanup failed:", error);
+packages/ui/components/editor/plugins/AutoLinkPlugin.test.tsx:20:onError: (error: Error) => console.error(error),
+packages/ui/components/editor/plugins/EditablePlugin.test.tsx:23:onError: (error: Error) => console.error(error),
+packages/ui/components/editor/plugins/ToolbarPlugin.test.tsx:40:onError: (error: Error) => console.error(error),
+count: 407
+
+--- ReDoS (CWE-1333) ---
+apps/web/playwright/booking-pages.e2e.ts:184:await expect(page).toHaveURL(new RegExp(`${pro.username}/${eventType.slug}`));
+apps/web/playwright/bookings-list.e2e.ts:804:await expect(page).toHaveURL(new RegExp(`[?&]uid=${bookingFixture.uid}(&|$)`));
+apps/web/playwright/insights.e2e.ts:276:.filter({ hasText: new RegExp(`^${title}$`) });
+apps/web/playwright/settings/upload-avatar.e2e.ts:51:await expect(avatarImage).toHaveAttribute("src", new RegExp(`^\/api\/avatar\/${objectKey}\.png$`));
+apps/web/playwright/settings/upload-avatar.e2e.ts:65:new RegExp(`\/api\/avatar\/${objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:72:await expect(ogImageLocator).toHaveAttribute("content", new RegExp(encodeURIComponent(searchParam)));
+apps/web/playwright/settings/upload-avatar.e2e.ts:120:new RegExp(`^\/api\/avatar\/${response.objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:181:new RegExp(`^\/api\/avatar\/${response.objectKey}\.png$`)
+apps/web/playwright/settings/upload-avatar.e2e.ts:203:new RegExp(`^\/api\/avatar\/${objectKey}\.png$`)
+apps/web/test/lib/next-config.test.ts:31:const regExp = new RegExp(getRegExpThatMatchesAllOrgDomains({ webAppUrl: "app.cal.com" }));
+apps/web/test/lib/next-config.test.ts:40:const regExp = new RegExp(getRegExpThatMatchesAllOrgDomains({ webAppUrl: "https://app.cal.com" }));
+apps/web/test/lib/next-config.test.ts:53:const regExp = new RegExp(
+apps/web/test/lib/next-config.test.ts:63:const regExp = new RegExp(
+apps/web/test/lib/next-config.test.ts:72:const regExp = new RegExp(getRegExpThatMatchesAllOrgDomains({ webAppUrl: "http://app.vercel.app" }));
+apps/web/test/lib/next-config.test.ts:81:const regExp = new RegExp(
+count: 15
+
+--- TOCTOU (CWE-367) ---
+count: 0
+
+=== COVERAGE SUMMARY (per category) ===
+SSRF (CWE-918): 155  [coverage: full]
+Open redirect (CWE-601): 16  [coverage: full]
+XSS (CWE-79): 8  [coverage: full]
+IDOR (CWE-639): 307  [coverage: full]
+SQLi (CWE-89): 10  [coverage: full]
+Command injection (CWE-78): 19  [coverage: full]
+Code injection (CWE-94): 1  [coverage: full]
+Path traversal (CWE-22): 1  [coverage: full]
+Deserialization (CWE-502): 86  [coverage: full]
+XXE (CWE-611): 0  [coverage: full]
+Template injection (CWE-1336): 32  [coverage: full]
+Prototype pollution (CWE-1321): 0  [coverage: full]
+Weak crypto (CWE-327): 11  [coverage: full]
+Insecure randomness (CWE-338): 53  [coverage: full]
+Hardcoded secrets (CWE-798): 388  [coverage: full]
+CSRF (CWE-352): 4  [coverage: full]
+Log injection (CWE-117): 407  [coverage: full]
+ReDoS (CWE-1333): 15  [coverage: full]
+TOCTOU (CWE-367): 0  [coverage: full]
+TOTAL SINK MATCHES (test files): 1513
+CATEGORIES PRESENT: 19/19
+TEST FILES SCANNED: 900
+
+STATUS: OK

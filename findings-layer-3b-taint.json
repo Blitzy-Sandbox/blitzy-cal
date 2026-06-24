@@ -29,14 +29,14 @@
       "line": 373,
       "severity": "high",
       "cwe": "CWE-918",
-      "description": "User-set webhook subscriberUrl is fetched server-side with no allowlist/private-IP/DNS-rebind filter, enabling direct SSRF to internal services and cloud metadata (169.254.169.254).",
+      "description": "User-set webhook subscriberUrl is fetched server-side; API v1 create/edit apply no SSRF check and the sync validator skips DNS resolution, so SSRF via v1 URLs or DNS-rebinding reaches the sink.",
       "layer": "3b",
       "tool": "taint-analysis",
       "category": "SSRF",
       "source": "Webhook subscriber config (webhook.subscriberUrl) set by any authenticated user",
       "sink": "fetch(subscriberUrl, { method: 'POST', redirect: 'manual', body })",
       "gateBlocking": true,
-      "demotionReason": "redirect:'manual' only blocks redirect-based SSRF; no allowlist/private-IP/DNS-rebinding guard exists, so direct SSRF to internal/cloud-metadata endpoints remains. Corroborated by Layer 4 axios NO_PROXY/SSRF advisory (CVE-2025-62718)."
+      "demotionReason": "trpc & API v2 webhook create/edit validate subscriberUrl via validateUrlForSSRFSync (blocks cloud-metadata + literal private IPs on SaaS); API v1 create/edit apply no SSRF check and the sync validator does no DNS resolution (DNS-rebinding gap), so v1-registered or rebinding hosts reach the fetch sink. Corroborated by Layer 4 axios SSRF advisory (CVE-2025-62718)."
     },
     {
       "file": "packages/lib/crypto.ts",

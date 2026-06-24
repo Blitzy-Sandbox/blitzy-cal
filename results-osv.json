@@ -2,7 +2,7 @@
   "results": [
     {
       "source": {
-        "path": "/tmp/blitzy/blitzy-cal/blitzy-c99aa60b-6e21-4d0e-9f30-118856dc206c-w-006_532a10/yarn.lock",
+        "path": "yarn.lock",
         "type": "lockfile"
       },
       "packages": [

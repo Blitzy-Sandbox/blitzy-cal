@@ -1,8 +1,15 @@
 {
   "layer": "2",
   "tool": "semgrep",
-  "coverage": "full",
+  "coverage": "partial",
   "status": "OK",
+  "parseWarnings": {
+    "count": 35,
+    "descriptorId": "Syntax error",
+    "level": "warning",
+    "coverageImpact": "partial",
+    "note": "Source SARIF (results-semgrep.sarif) recorded 35 parser 'Syntax error' notifications in invocations[0].toolExecutionNotifications, summarized in invocations[0].properties.parseWarnings. Those files were not fully parsed, so SAST coverage is partial; downstream D7/D8/D9 must treat Layer 2 as partial rather than full."
+  },
   "findings": [
     {
       "file": ".github/actions/docker-build-and-test/action.yml",

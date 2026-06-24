@@ -112,7 +112,7 @@
       "layer": "1",
       "tool": "architectural-audit",
       "category": "CSP & security-headers posture",
-      "owasp": "A05:2025"
+      "owasp": "A02:2025"
     },
     {
       "file": "apps/web/lib/csp.ts",
@@ -123,7 +123,7 @@
       "layer": "1",
       "tool": "architectural-audit",
       "category": "CSP & security-headers posture",
-      "owasp": "A05:2025"
+      "owasp": "A02:2025"
     },
     {
       "file": "apps/web/lib/csp.ts",
@@ -134,7 +134,7 @@
       "layer": "1",
       "tool": "architectural-audit",
       "category": "CSP & security-headers posture",
-      "owasp": "A05:2025"
+      "owasp": "A02:2025"
     },
     {
       "file": "apps/web/proxy.ts",
@@ -145,7 +145,7 @@
       "layer": "1",
       "tool": "architectural-audit",
       "category": "CSP & security-headers posture",
-      "owasp": "A05:2025"
+      "owasp": "A02:2025"
     },
     {
       "file": "packages/features/webhooks/lib/sendPayload.ts",
@@ -200,7 +200,7 @@
       "layer": "1",
       "tool": "architectural-audit",
       "category": "CORS posture",
-      "owasp": "A05:2025"
+      "owasp": "A02:2025"
     },
     {
       "file": "apps/api/v2/src/lib/is-origin-allowed/is-origin-allowed.ts",
@@ -211,7 +211,7 @@
       "layer": "1",
       "tool": "architectural-audit",
       "category": "CORS posture",
-      "owasp": "A05:2025"
+      "owasp": "A02:2025"
     },
     {
       "file": "packages/lib/rateLimit.ts",

@@ -1,0 +1,239 @@
+{
+  "layer": "1",
+  "tool": "architectural-audit",
+  "status": "OK",
+  "coverage": {
+    "Secrets & key management": "full",
+    "Container hardening": "full",
+    "CI/CD supply-chain integrity": "full",
+    "CSP & security-headers posture": "full",
+    "Webhook / signature verification": "full",
+    "API version security parity": "full",
+    "Authentication architecture": "full",
+    "Authorization / access-control architecture": "full",
+    "CORS posture": "full",
+    "Exceptional-conditions / fail-open & rate-limit logic": "full"
+  },
+  "findings": [
+    {
+      "file": "Dockerfile",
+      "line": 11,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Default build-arg NEXTAUTH_SECRET=secret is baked into image ENV (L29); a predictable session/JWT secret enables auth token forgery if not overridden at build time.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Secrets & key management",
+      "owasp": "A02:2025"
+    },
+    {
+      "file": "Dockerfile",
+      "line": 12,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Default build-arg CALENDSO_ENCRYPTION_KEY=secret is baked into image ENV (L30); a predictable app-data key allows decryption of stored credentials if left unchanged.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Secrets & key management",
+      "owasp": "A02:2025"
+    },
+    {
+      "file": "docker-compose.yml",
+      "line": 21,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Hardcoded default Postgres credentials in the compose template (POSTGRES_USER L20, POSTGRES_PASSWORD L21); reused deployments expose the database to trivial credential guessing.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Secrets & key management",
+      "owasp": "A02:2025"
+    },
+    {
+      "file": "packages/lib/crypto.ts",
+      "line": 3,
+      "severity": "medium",
+      "cwe": "CWE-327",
+      "description": "symmetricEncrypt uses AES-256-CBC (ALGORITHM=aes256) with no MAC/auth tag and a latin1 key buffer (L16); unauthenticated ciphertext is malleable and padding-oracle-prone. GCM keyring exists.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Secrets & key management",
+      "owasp": "A04:2025"
+    },
+    {
+      "file": "Dockerfile",
+      "line": 1,
+      "severity": "medium",
+      "cwe": "CWE-1357",
+      "description": "Base image pinned to mutable tag node:20 in all three stages (L1 builder, L53 builder-two, L77 runner); builds are non-reproducible and subject to silent base-image drift.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Container hardening",
+      "owasp": "A02:2025"
+    },
+    {
+      "file": "Dockerfile",
+      "line": 77,
+      "severity": "medium",
+      "cwe": "CWE-250",
+      "description": "No USER directive in any build or runner stage; the production runner (L77) executes as root, so any app-level RCE runs with full in-container root privileges.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Container hardening",
+      "owasp": "A02:2025"
+    },
+    {
+      "file": ".github/workflows/i18n.yml",
+      "line": 32,
+      "severity": "high",
+      "cwe": "CWE-1357",
+      "description": "Third-party action lingodotdev/lingo.dev@main is pinned to a mutable branch; a compromised or force-pushed branch executes arbitrary code in CI with repo and secret access.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CI/CD supply-chain integrity",
+      "owasp": "A03:2025"
+    },
+    {
+      "file": ".github/workflows/security-audit.yml",
+      "line": 11,
+      "severity": "medium",
+      "cwe": "CWE-1357",
+      "description": "GitHub Actions are pinned to mutable major tags (e.g. actions/checkout@v4) across ~59 workflows; only 6 uses are SHA-pinned, exposing CI to tag-repoint supply-chain tampering.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CI/CD supply-chain integrity",
+      "owasp": "A03:2025"
+    },
+    {
+      "file": "apps/web/lib/csp.ts",
+      "line": 22,
+      "severity": "low",
+      "cwe": "CWE-1021",
+      "description": "Production script-src keeps 'unsafe-inline' and https: alongside nonce and strict-dynamic; browsers ignoring strict-dynamic can execute injected inline scripts.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CSP & security-headers posture",
+      "owasp": "A05:2025"
+    },
+    {
+      "file": "apps/web/lib/csp.ts",
+      "line": 24,
+      "severity": "low",
+      "cwe": "CWE-1021",
+      "description": "Development CSP script-src allows 'unsafe-inline' and 'unsafe-eval'; weak posture in non-production and a real risk if a dev or preview build is publicly exposed.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CSP & security-headers posture",
+      "owasp": "A05:2025"
+    },
+    {
+      "file": "apps/web/lib/csp.ts",
+      "line": 30,
+      "severity": "low",
+      "cwe": "CWE-1021",
+      "description": "style-src retains 'unsafe-inline' (no style nonces); permits injected inline styles enabling CSS-based UI-redress and data-exfiltration vectors.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CSP & security-headers posture",
+      "owasp": "A05:2025"
+    },
+    {
+      "file": "apps/web/proxy.ts",
+      "line": 64,
+      "severity": "medium",
+      "cwe": "CWE-1021",
+      "description": "shouldEnforceCsp emits CSP only for /auth/login and /login; report-only mode is disabled (csp.ts L46-47), so all other routes ship with no Content-Security-Policy header.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CSP & security-headers posture",
+      "owasp": "A05:2025"
+    },
+    {
+      "file": "packages/features/webhooks/lib/sendPayload.ts",
+      "line": 370,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "X-Cal-Signature-256 HMAC header is set only when a subscriber secret exists (createWebhookSignature returns empty otherwise, L347-350); webhooks without a secret are sent unsigned.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Webhook / signature verification",
+      "owasp": "A08:2025"
+    },
+    {
+      "file": "apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts",
+      "line": 7,
+      "severity": "medium",
+      "cwe": "CWE-862",
+      "description": "API v2 enforces auth via NestJS ApiAuthGuard while v1 (pages/api) uses opt-in next-api-middleware; a guard or validation present in one version may be absent in the other.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "API version security parity",
+      "owasp": "A01:2025"
+    },
+    {
+      "file": "apps/api/v1/lib/helpers/verifyApiKey.ts",
+      "line": 25,
+      "severity": "medium",
+      "cwe": "CWE-598",
+      "description": "API v1 reads the API key from the query string (req.query.apiKey), exposing the credential in URLs, server and proxy logs, and Referer headers; v2 passes it via headers.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Authentication architecture",
+      "owasp": "A07:2025"
+    },
+    {
+      "file": "apps/api/v1/lib/helpers/withMiddleware.ts",
+      "line": 48,
+      "severity": "medium",
+      "cwe": "CWE-862",
+      "description": "v1 authorization is per-route opt-in via next-api-middleware label(); a handler omitting verifyApiKey/rateLimitApiKey ships with no auth or rate limit, with no global guard.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Authorization / access-control architecture",
+      "owasp": "A01:2025"
+    },
+    {
+      "file": "apps/api/v2/src/bootstrap.ts",
+      "line": 54,
+      "severity": "low",
+      "cwe": "CWE-942",
+      "description": "CORS origin falls back to wildcard '*' outside production when ALLOWED_ORIGINS is unset, while Authorization and secret headers are allowed; production defaults to false.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CORS posture",
+      "owasp": "A05:2025"
+    },
+    {
+      "file": "apps/api/v2/src/lib/is-origin-allowed/is-origin-allowed.ts",
+      "line": 12,
+      "severity": "low",
+      "cwe": "CWE-942",
+      "description": "Origin allowlist converts wildcard '*' to a '.*' regex without restricting separators; overly broad patterns can match unintended attacker-controlled hosts or subdomains.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "CORS posture",
+      "owasp": "A05:2025"
+    },
+    {
+      "file": "packages/lib/rateLimit.ts",
+      "line": 55,
+      "severity": "medium",
+      "cwe": "CWE-703",
+      "description": "Rate limiter fails open: onError returns success:true on any error (L55); the 5s timeout fallback (L44) and missing UNKEY_ROOT_KEY (L41) also return success, silently bypassing limits.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Exceptional-conditions / fail-open & rate-limit logic",
+      "owasp": "A10:2025"
+    },
+    {
+      "file": "apps/web/proxy.ts",
+      "line": 10,
+      "severity": "low",
+      "cwe": "CWE-703",
+      "description": "safeGet swallows all edge-config errors in an empty catch and returns undefined; feature flags such as isSignupDisabled fail open when Edge Config is unavailable.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "category": "Exceptional-conditions / fail-open & rate-limit logic",
+      "owasp": "A10:2025"
+    }
+  ]
+}

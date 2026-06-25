@@ -1,0 +1,3789 @@
+{
+  "metadata": {
+    "generatedBy": "blitzy security audit (L0-L4)",
+    "owaspEdition": "OWASP Top 10:2025",
+    "sources": [
+      "https://owasp.org/Top10/2025/",
+      "https://osv.dev",
+      "GHSA",
+      "NVD/CVE",
+      "https://semgrep.dev",
+      "MITRE CWE"
+    ],
+    "layers": {
+      "1": "architectural",
+      "2": "semgrep",
+      "3b": "taint",
+      "4": "osv-scanner"
+    },
+    "exclude_dirs": [
+      "node_modules",
+      ".yarn",
+      ".next",
+      "dist",
+      "build",
+      ".turbo",
+      "coverage",
+      ".git"
+    ]
+  },
+  "summary": {
+    "totalFindings": 306,
+    "bySeverity": {
+      "critical": 4,
+      "high": 116,
+      "medium": 134,
+      "low": 52
+    },
+    "byLayer": {
+      "1": 20,
+      "2": 32,
+      "3b": 27,
+      "4": 227
+    },
+    "gateBlockingCount": 4,
+    "corroboratedCount": 0
+  },
+  "findings": [
+    {
+      "file": "yarn.lock",
+      "line": 22749,
+      "severity": "critical",
+      "cwe": "CWE-185",
+      "description": "fast-xml-parser@4.4.1 → 4.5.4: CVE-2026-25896 (fast-xml-parser has an entity encoding bypass via regex injection in DOCTYPE entity names)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33066,
+      "severity": "critical",
+      "cwe": "CWE-94",
+      "description": "protobufjs@7.4.0 → 7.5.5: CVE-2026-41242 (Arbitrary code execution in protobufjs)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 35414,
+      "severity": "critical",
+      "cwe": "CWE-78",
+      "description": "shell-quote@1.8.2 → 1.8.4: CVE-2026-9277 (command injection via quote() newline escape)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39085,
+      "severity": "critical",
+      "cwe": "CWE-862",
+      "description": "vitest@4.0.16 → 4.1.0: CVE-2026-47429 (When Vitest UI server is listening, arbitrary file can be read and executed)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": ".github/actions/docker-build-and-test/action.yml",
+      "line": 121,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code. `",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": ".github/workflows/cubic-devin-review-trigger.yml",
+      "line": 18,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code. `",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": ".github/workflows/i18n.yml",
+      "line": 32,
+      "severity": "high",
+      "cwe": "CWE-1357",
+      "description": "Third-party action lingodotdev/lingo.dev@main is pinned to a mutable branch; a compromised or force-pushed branch executes arbitrary code in CI with repo and secret access.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": ".github/workflows/release-docker.yaml",
+      "line": 53,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code. `",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "Dockerfile",
+      "line": 11,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Default build-arg NEXTAUTH_SECRET defines a default value baked into image ENV (L29); a predictable session/JWT secret enables auth token forgery if not overridden at build time.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "Dockerfile",
+      "line": 12,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Default build-arg CALENDSO_ENCRYPTION_KEY defines a default value baked into image ENV (L30); a predictable app-data key allows decryption of stored credentials if left unchanged.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "Dockerfile",
+      "line": 94,
+      "severity": "high",
+      "cwe": "CWE-250",
+      "description": "By not specifying a USER, a program in the container may run as 'root'. This is a security hazard. If an attacker can control a process running as root, they may have control over the container. Ensur",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/api/v1/pages/api/attendees/[id]/_get.ts",
+      "line": 41,
+      "severity": "high",
+      "cwe": "CWE-639",
+      "description": "Attendee is fetched by integer id with no owner/tenant scoping, so any authenticated API-key holder can enumerate other users' attendee PII (name, email, booking). No object-level authz.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": true,
+      "demotionReason": "API-key authentication is enforced but object-level authorization is absent: the handler scopes only by id, not by owner/tenant. Authentication is present yet insufficient as the authz control (bypassable for cross-user access) at high severity.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/api/v2/Dockerfile",
+      "line": 26,
+      "severity": "high",
+      "cwe": "CWE-250",
+      "description": "By not specifying a USER, a program in the container may run as 'root'. This is a security hazard. If an attacker can control a process running as root, they may have control over the container. Ensur",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.e2e-spec.ts",
+      "line": 107,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Google (GCM) Service account detected",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/modules/organizations/delegation-credentials/organizations-delegation-credential.controller.e2e-spec.ts",
+      "line": 124,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Google (GCM) Service account detected",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/calendso.yaml",
+      "line": 349,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Google OAuth Access Token detected",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "docker-compose.yml",
+      "line": 21,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Hardcoded default Postgres credentials in the compose template (POSTGRES_USER L20, POSTGRES_PASSWORD L21); reused deployments expose the database to trivial credential guessing.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "packages/app-store-cli/src/utils/execSync.ts",
+      "line": 10,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "Detected calls to child_process from a function argument `cmd`. This could lead to a command injection if the input is user controllable. Try to avoid calls to child_process, and if it is needed ensur",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/features/ee/managed-event-types/lib/handleChildrenEventTypes.ts",
+      "line": 265,
+      "severity": "high",
+      "cwe": "CWE-89",
+      "description": "$executeRawUnsafe is invoked with a server-generated query template plus a separate bound-parameter array (...parameters), so user values are parameterized rather than concatenated.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Values are passed as bound parameters (...parameters) and the SQL template is server-built, so Prisma parameterization (mitigation-inventory cat 2, 884 files) is on the path and suppresses injection. Impact-rated high but not exploitable as written.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/features/webhooks/lib/sendPayload.ts",
+      "line": 373,
+      "severity": "high",
+      "cwe": "CWE-918",
+      "description": "User-set webhook subscriberUrl is fetched server-side; API v1 create/edit apply no SSRF check and the sync validator skips DNS resolution, so SSRF via v1 URLs or DNS-rebinding reaches the sink.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": true,
+      "demotionReason": "trpc & API v2 webhook create/edit validate subscriberUrl via validateUrlForSSRFSync (blocks cloud-metadata + literal private IPs on SaaS); API v1 create/edit apply no SSRF check and the sync validator does no DNS resolution (DNS-rebinding gap), so v1-registered or rebinding hosts reach the fetch sink. Corroborated by Layer 4 axios SSRF advisory (CVE-2025-62718).",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/lib/crypto.ts",
+      "line": 18,
+      "severity": "high",
+      "cwe": "CWE-327",
+      "description": "Legacy AES-256-CBC encrypt gives confidentiality without integrity (no MAC); latin1 key encoding mis-buffers non-ASCII key bytes. Protects stored OAuth/app credentials.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": true,
+      "demotionReason": "Authenticated AES-256-GCM keyring (packages/lib/crypto/keyring.ts) is the correct available replacement, but the no-MAC legacy CBC primitive is still used in production (known-weak control at high severity).",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/lib/crypto.ts",
+      "line": 36,
+      "severity": "high",
+      "cwe": "CWE-327",
+      "description": "Legacy AES-256-CBC decrypt has no authentication tag: ciphertext is malleable and exposed to padding-oracle/bit-flipping. Used for stored credential secrets; key is latin1-buffered.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": true,
+      "demotionReason": "An authenticated AES-256-GCM keyring (packages/lib/crypto/keyring.ts, setAAD+getAuthTag) exists as the correct replacement, but the unauthenticated legacy CBC path remains in production use (known-weak control at high severity).",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/lib/crypto/keyring.ts",
+      "line": 120,
+      "severity": "high",
+      "cwe": "CWE-310",
+      "description": "The call to 'createDecipheriv' with the Galois Counter Mode (GCM) mode of operation is missing an expected authentication tag length. If the expected authentication tag length is not specified or othe",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/testing/src/lib/bookingScenario/bookingScenario.ts",
+      "line": 2458,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Google (GCM) Service account detected",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/testing/src/lib/bookingScenario/bookingScenario.ts",
+      "line": 2482,
+      "severity": "high",
+      "cwe": "CWE-798",
+      "description": "Google (GCM) Service account detected",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 5740,
+      "severity": "high",
+      "cwe": "CWE-248",
+      "description": "@grpc/grpc-js@1.12.6 → 1.12.7: CVE-2026-48069 (@grpc/grpc-js: An incoming malformed compressed message can cause a client or server crash)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 5740,
+      "severity": "high",
+      "cwe": "CWE-400",
+      "description": "@grpc/grpc-js@1.12.6 → 1.12.7: CVE-2026-48068 (DoS / server crash)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 5764,
+      "severity": "high",
+      "cwe": "CWE-863",
+      "description": "@hono/node-server@1.19.9 → 1.19.10: CVE-2026-29087 (@hono/node-server has authorization bypass for protected static paths via encoded slashes in Serve Static Middleware)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17156,
+      "severity": "high",
+      "cwe": "CWE-674",
+      "description": "@xmldom/xmldom@0.9.8 → 0.9.10: CVE-2026-41673 (xmldom: Uncontrolled recursion in XML serialization leads to DoS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17156,
+      "severity": "high",
+      "cwe": "CWE-91",
+      "description": "@xmldom/xmldom@0.9.8 → 0.9.9: CVE-2026-34601 (xmldom: XML injection via unsafe CDATA serialization allows attacker-controlled markup insertion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17163,
+      "severity": "high",
+      "cwe": "CWE-674",
+      "description": "@xmldom/xmldom@0.8.11 → 0.8.13: CVE-2026-41673 (xmldom: Uncontrolled recursion in XML serialization leads to DoS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17163,
+      "severity": "high",
+      "cwe": "CWE-91",
+      "description": "@xmldom/xmldom@0.8.11 → 0.8.12: CVE-2026-34601 (xmldom: XML injection via unsafe CDATA serialization allows attacker-controlled markup insertion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "axios@1.13.5 → 1.15.1: CVE-2026-42033 (Axios: Prototype Pollution Gadgets - Response Tampering, Data Exfiltration, and Request Hijacking)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "axios@1.13.5 → 1.16.0: CVE-2026-44496 (Axios: Regular Expression Denial of Service (ReDoS) via Cookie Name Injection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-183",
+      "description": "axios@1.13.5 → 1.15.1: CVE-2026-42043 (Axios: Incomplete Fix for CVE-2025-62718 — NO_PROXY Protection Bypassed via RFC 1122 Loopback Subnet (127.0.0.0/8) in Axios 1.15.0)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-200",
+      "description": "axios@1.13.5 → 1.16.0: CVE-2026-44486 (Axios: Proxy-Authorization header leaks to redirect target when proxy is re-evaluated to direct connection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-201",
+      "description": "axios@1.13.5 → 1.16.0: CVE-2026-44487 (Axios: Proxy-Authorization Credential Leak to Origin Server Across HTTP-to-HTTPS Redirect in Axios Node.js HTTP Adapter)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-770",
+      "description": "axios@1.13.5 → 1.16.0: CVE-2026-44488 (Allocation of Resources Without Limits or Throttling in Axios)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-918",
+      "description": "axios@1.13.5 → 1.16.0: CVE-2026-44492 (axios's shouldBypassProxy does not recognize IPv4-mapped IPv6 addresses, allowing NO_PROXY bypass (incomplete fix for CVE-2025-62718))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "high",
+      "cwe": "CWE-93",
+      "description": "axios@1.13.5 → 1.15.1: CVE-2026-42035 (header injection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 20904,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "defu@6.1.4 → 6.1.5: CVE-2026-35209 (defu: Prototype pollution via `__proto__` key in defaults argument)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21450,
+      "severity": "high",
+      "cwe": "CWE-362",
+      "description": "effect@3.16.12 → 3.20.0: CVE-2026-32887 (Effect `AsyncLocalStorage` context lost/contaminated inside Effect fibers under concurrent load with RPC)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21460,
+      "severity": "high",
+      "cwe": "CWE-362",
+      "description": "effect@3.18.4 → 3.20.0: CVE-2026-32887 (Effect `AsyncLocalStorage` context lost/contaminated inside Effect fibers under concurrent load with RPC)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21470,
+      "severity": "high",
+      "cwe": "CWE-362",
+      "description": "effect@3.19.4 → 3.20.0: CVE-2026-32887 (Effect `AsyncLocalStorage` context lost/contaminated inside Effect fibers under concurrent load with RPC)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22486,
+      "severity": "high",
+      "cwe": "CWE-693",
+      "description": "express-rate-limit@8.2.1 → 8.2.2: CVE-2026-30827 (IPv4-mapped IPv6 rate-limit bypass)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22742,
+      "severity": "high",
+      "cwe": "CWE-22",
+      "description": "fast-uri@3.1.0 → 3.1.1: CVE-2026-6321 (fast-uri vulnerable to path traversal via percent-encoded dot segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22742,
+      "severity": "high",
+      "cwe": "CWE-436",
+      "description": "fast-uri@3.1.0 → 3.1.2: CVE-2026-6322 (fast-uri vulnerable to host confusion via percent-encoded authority delimiters)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22749,
+      "severity": "high",
+      "cwe": "CWE-776",
+      "description": "fast-xml-parser@4.4.1 → 4.5.4: CVE-2026-26278 (fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22760,
+      "severity": "high",
+      "cwe": "CWE-776",
+      "description": "fast-xml-parser@5.3.5 → 5.3.6: CVE-2026-26278 (fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23115,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "flatted@3.3.3 → 3.4.2: CVE-2026-33228 (Prototype Pollution via parse() in NodeJS flatted)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23115,
+      "severity": "high",
+      "cwe": "CWE-674",
+      "description": "flatted@3.3.3 → 3.4.0: CVE-2026-32141 (flatted vulnerable to unbounded recursion DoS in parse() revive phase)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23205,
+      "severity": "high",
+      "cwe": "CWE-93",
+      "description": "form-data@4.0.4 → 4.0.6: CVE-2026-12143 (form-data: CRLF injection in form-data via unescaped multipart field names and filenames)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23798,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "glob@10.3.1 → 10.5.0: CVE-2025-64756 (glob CLI: Command injection via -c/--cmd executes matches with shell:true)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23813,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "glob@10.3.10 → 10.5.0: CVE-2025-64756 (glob CLI: Command injection via -c/--cmd executes matches with shell:true)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23828,
+      "severity": "high",
+      "cwe": "CWE-78",
+      "description": "glob@10.4.5 → 10.5.0: CVE-2025-64756 (glob CLI: Command injection via -c/--cmd executes matches with shell:true)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "high",
+      "cwe": "CWE-177",
+      "description": "hono@4.11.7 → 4.12.4: CVE-2026-29045 (Hono vulnerable to arbitrary file access via serveStatic vulnerability)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "high",
+      "cwe": "CWE-942",
+      "description": "hono@4.11.7 → 4.12.25: CVE-2026-54290 (hono: CORS Middleware reflects any Origin with credentials when `origin` defaults to the wildcard)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24669,
+      "severity": "high",
+      "cwe": "CWE-noinfo",
+      "description": "http@0.0.1-security → none: MAL-2025-22760 (Malicious code in http (npm))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24795,
+      "severity": "high",
+      "cwe": "CWE-22",
+      "description": "i18next-fs-backend@2.6.0 → 2.6.4: CVE-2026-41693 (i18next-fs-backend: Path traversal via unsanitised lng/ns allows arbitrary file read/overwrite)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24901,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "immutable@3.8.2 → 3.8.3: CVE-2026-29063 (Immutable is vulnerable to Prototype Pollution)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24908,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "immutable@3.7.6 → 3.8.3: CVE-2026-29063 (Immutable is vulnerable to Prototype Pollution)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 26802,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "js-cookie@3.0.5 → 3.0.7: CVE-2026-46625 (prototype hijack in assign())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 26809,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "js-cookie@2.2.1 → 3.0.7: CVE-2026-46625 (prototype hijack in assign())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 27206,
+      "severity": "high",
+      "cwe": "CWE-1284",
+      "description": "kysely@0.28.2 → 0.28.17: CVE-2026-44635 (Kysely: JSON-path traversal injection via unsanitized path-leg metacharacters in `JSONPathBuilder.key()` / `.at()`)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 27206,
+      "severity": "high",
+      "cwe": "CWE-89",
+      "description": "kysely@0.28.2 → 0.28.12: CVE-2026-32763 (SQL Injection via unsanitized JSON path keys when ignoring/silencing compilation errors or using `Kysely<any>`.)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 27696,
+      "severity": "high",
+      "cwe": "CWE-94",
+      "description": "lodash-es@4.17.23 → 4.18.0: CVE-2026-4800 (lodash vulnerable to Code Injection via `_.template` imports key names)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 27836,
+      "severity": "high",
+      "cwe": "CWE-94",
+      "description": "lodash@4.17.23 → 4.18.0: CVE-2026-4800 (code injection via _.template)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29323,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "minimatch@10.0.3 → 10.2.1: CVE-2026-26996 (minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29323,
+      "severity": "high",
+      "cwe": "CWE-407",
+      "description": "minimatch@10.0.3 → 10.2.3: CVE-2026-27903 (minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29332,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "minimatch@10.1.1 → 10.2.1: CVE-2026-26996 (minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29332,
+      "severity": "high",
+      "cwe": "CWE-407",
+      "description": "minimatch@10.1.1 → 10.2.3: CVE-2026-27903 (minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29341,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "minimatch@3.1.2 → 3.1.3: CVE-2026-26996 (minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29341,
+      "severity": "high",
+      "cwe": "CWE-407",
+      "description": "minimatch@3.1.2 → 3.1.3: CVE-2026-27903 (minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29350,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "minimatch@5.1.6 → 5.1.7: CVE-2026-26996 (minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29350,
+      "severity": "high",
+      "cwe": "CWE-407",
+      "description": "minimatch@5.1.6 → 5.1.8: CVE-2026-27903 (minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29359,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "minimatch@8.0.4 → 8.0.5: CVE-2026-26996 (minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29359,
+      "severity": "high",
+      "cwe": "CWE-407",
+      "description": "minimatch@8.0.4 → 8.0.6: CVE-2026-27903 (minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29368,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "minimatch@9.0.5 → 9.0.6: CVE-2026-26996 (minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29368,
+      "severity": "high",
+      "cwe": "CWE-407",
+      "description": "minimatch@9.0.5 → 9.0.7: CVE-2026-27903 (minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29846,
+      "severity": "high",
+      "cwe": "CWE-400",
+      "description": "multer@2.0.2 → 2.2.0: CVE-2026-5079 (Multer vulnerable to Denial of Service via deeply nested field names)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29846,
+      "severity": "high",
+      "cwe": "CWE-459",
+      "description": "multer@2.0.2 → 2.1.0: CVE-2026-3304 (Multer vulnerable to Denial of Service via incomplete cleanup)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29846,
+      "severity": "high",
+      "cwe": "CWE-674",
+      "description": "multer@2.0.2 → 2.1.1: CVE-2026-3520 (Multer Vulnerable to Denial of Service via Uncontrolled Recursion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29846,
+      "severity": "high",
+      "cwe": "CWE-772",
+      "description": "multer@2.0.2 → 2.1.0: CVE-2026-2359 (Multer vulnerable to Denial of Service via resource exhaustion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "high",
+      "cwe": "CWE-285",
+      "description": "next@14.2.35 → 15.5.16: CVE-2026-44573 (middleware/proxy authorization bypass)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "high",
+      "cwe": "CWE-400",
+      "description": "next@14.2.35 → 15.0.8: GHSA-h25m-26qc-wcjf (Next.js HTTP request deserialization can lead to DoS when using insecure React Server Components)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "high",
+      "cwe": "CWE-770",
+      "description": "next@14.2.35 → 15.5.16: GHSA-8h8q-6873-q5fj (Next.js Vulnerable to Denial of Service with Server Components)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "high",
+      "cwe": "CWE-918",
+      "description": "next@14.2.35 → 15.5.16: CVE-2026-44578 (SSRF)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "high",
+      "cwe": "CWE-285",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44573 (middleware/proxy authorization bypass)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "high",
+      "cwe": "CWE-288",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44574 (Next.js has a Middleware / Proxy bypass through dynamic route parameter injection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "high",
+      "cwe": "CWE-770",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44579 (Next.js vulnerable to Denial of Service via connection exhaustion in applications using Cache Components)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "high",
+      "cwe": "CWE-918",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44578 (SSRF)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "high",
+      "cwe": "CWE-285",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44573 (middleware/proxy authorization bypass)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "high",
+      "cwe": "CWE-288",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44574 (Next.js has a Middleware / Proxy bypass through dynamic route parameter injection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "high",
+      "cwe": "CWE-770",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44579 (Next.js vulnerable to Denial of Service via connection exhaustion in applications using Cache Components)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "high",
+      "cwe": "CWE-918",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44578 (SSRF)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30465,
+      "severity": "high",
+      "cwe": "CWE-20",
+      "description": "node-forge@1.3.2 → 1.4.0: CVE-2026-33894 (Forge has signature forgery in RSA-PKCS due to ASN.1 extra field)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30465,
+      "severity": "high",
+      "cwe": "CWE-295",
+      "description": "node-forge@1.3.2 → 1.4.0: CVE-2026-33896 (Forge has a basicConstraints bypass in its certificate chain verification (RFC 5280 violation))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30465,
+      "severity": "high",
+      "cwe": "CWE-347",
+      "description": "node-forge@1.3.2 → 1.4.0: CVE-2026-33895 (Forge has signature forgery in Ed25519 due to missing S > L check)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30465,
+      "severity": "high",
+      "cwe": "CWE-835",
+      "description": "node-forge@1.3.2 → 1.4.0: CVE-2026-33891 (Forge has Denial of Service via Infinite Loop in BigInteger.modInverse() with Zero Input)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30636,
+      "severity": "high",
+      "cwe": "CWE-73",
+      "description": "nodemailer@7.0.12 → 9.0.1: GHSA-p6gq-j5cr-w38f (Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31777,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "path-to-regexp@0.1.12 → 0.1.13: CVE-2026-4867 (ReDoS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31798,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "path-to-regexp@8.2.0 → 8.4.0: CVE-2026-4926 (path-to-regexp vulnerable to Denial of Service via sequential optional groups)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31989,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "picomatch@3.0.1 → 3.0.2: CVE-2026-33671 (ReDoS via extglob)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31996,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "picomatch@2.3.1 → 2.3.2: CVE-2026-33671 (ReDoS via extglob)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 32003,
+      "severity": "high",
+      "cwe": "CWE-1333",
+      "description": "picomatch@4.0.3 → 4.0.4: CVE-2026-33671 (ReDoS via extglob)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33066,
+      "severity": "high",
+      "cwe": "CWE-1321",
+      "description": "protobufjs@7.4.0 → 7.5.6: CVE-2026-44290 (protobuf.js: Process-wide denial of service through unsafe option paths)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33066,
+      "severity": "high",
+      "cwe": "CWE-674",
+      "description": "protobufjs@7.4.0 → 7.5.6: CVE-2026-44289 (protobuf.js: Denial of service through unbounded protobuf recursion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 34597,
+      "severity": "high",
+      "cwe": "CWE-22",
+      "description": "rollup@4.22.4 → 4.59.0: CVE-2026-27606 (Rollup 4 has Arbitrary File Write via Path Traversal)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 35104,
+      "severity": "high",
+      "cwe": "CWE-96",
+      "description": "serialize-javascript@6.0.2 → 7.0.3: GHSA-5c6j-r48x-rmvq (Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 35711,
+      "severity": "high",
+      "cwe": "CWE-754",
+      "description": "socket.io-parser@4.2.4 → 4.2.6: CVE-2026-33151 (socket.io allows an unbounded number of binary attachments)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 36651,
+      "severity": "high",
+      "cwe": "CWE-776",
+      "description": "svgo@4.0.0 → 4.0.1: CVE-2026-29074 (SVGO DoS through entity expansion in DOCTYPE (Billion Laughs))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 36919,
+      "severity": "high",
+      "cwe": "CWE-22",
+      "description": "tar@7.5.7 → 7.5.8: CVE-2026-26960 (Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37244,
+      "severity": "high",
+      "cwe": "CWE-22",
+      "description": "tmp@0.0.33 → 0.2.6: CVE-2026-44705 (path traversal)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37253,
+      "severity": "high",
+      "cwe": "CWE-22",
+      "description": "tmp@0.2.5 → 0.2.6: CVE-2026-44705 (path traversal)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38954,
+      "severity": "high",
+      "cwe": "CWE-200",
+      "description": "vite@6.4.1 → 6.4.2: CVE-2026-39363 (Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39009,
+      "severity": "high",
+      "cwe": "CWE-180",
+      "description": "vite@7.3.0 → 7.3.2: CVE-2026-39364 (Vite: `server.fs.deny` bypassed with queries)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39009,
+      "severity": "high",
+      "cwe": "CWE-200",
+      "description": "vite@7.3.0 → 7.3.2: CVE-2026-39363 (Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39707,
+      "severity": "high",
+      "cwe": "CWE-400",
+      "description": "ws@7.5.10 → 7.5.11: CVE-2026-48779 (memory-exhaustion DoS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39722,
+      "severity": "high",
+      "cwe": "CWE-400",
+      "description": "ws@8.18.3 → 8.21.0: CVE-2026-48779 (memory-exhaustion DoS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39737,
+      "severity": "high",
+      "cwe": "CWE-400",
+      "description": "ws@8.17.1 → 8.21.0: CVE-2026-48779 (memory-exhaustion DoS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": ".github/workflows/security-audit.yml",
+      "line": 11,
+      "severity": "medium",
+      "cwe": "CWE-1357",
+      "description": "GitHub Actions are pinned to mutable major tags (e.g. actions/checkout@v4) across ~59 workflows; only 6 uses are SHA-pinned, exposing CI to tag-repoint supply-chain tampering.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "Dockerfile",
+      "line": 1,
+      "severity": "medium",
+      "cwe": "CWE-1357",
+      "description": "Base image pinned to mutable tag node:20 in all three stages (L1 builder, L53 builder-two, L77 runner); builds are non-reproducible and subject to silent base-image drift.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "Dockerfile",
+      "line": 77,
+      "severity": "medium",
+      "cwe": "CWE-250",
+      "description": "No USER directive in any build or runner stage; the production runner (L77) executes as root, so any app-level RCE runs with full in-container root privileges.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/api/v1/lib/helpers/verifyApiKey.ts",
+      "line": 25,
+      "severity": "medium",
+      "cwe": "CWE-598",
+      "description": "API v1 reads the API key from the query string (req.query.apiKey), exposing the credential in URLs, server and proxy logs, and Referer headers; v2 passes it via headers.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/api/v1/lib/helpers/withMiddleware.ts",
+      "line": 48,
+      "severity": "medium",
+      "cwe": "CWE-862",
+      "description": "v1 authorization is per-route opt-in via next-api-middleware label(); a handler omitting verifyApiKey/rateLimitApiKey ships with no auth or rate limit, with no global guard.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/api/v1/pages/api/event-types/[id]/_delete.ts",
+      "line": 46,
+      "severity": "medium",
+      "cwe": "CWE-639",
+      "description": "Event-type delete is keyed by id, but checkPermissions() enforces owner/team-owner/system-admin authorization before the delete, so cross-user deletion is blocked.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Object-level authorization is enforced by checkPermissions() (owner/team-owner/system-admin) before the delete - a validated authz mitigation is on the path. Contrasts with the unguarded attendees/[id] read, documenting the v1 authz-parity baseline. Mitigated.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts",
+      "line": 7,
+      "severity": "medium",
+      "cwe": "CWE-862",
+      "description": "API v2 enforces auth via NestJS ApiAuthGuard while v1 (pages/api) uses opt-in next-api-middleware; a guard or validation present in one version may be absent in the other.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts",
+      "line": 80,
+      "severity": "medium",
+      "cwe": "CWE-601",
+      "description": "OAuth authorization-code redirect target comes from body.redirectUri; without validation this would leak the code, but the value is allowlist-checked before use.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "redirectUri is validated against the OAuth client's registered redirectUris via isOriginAllowed() before res.redirect, and the endpoint is guarded by NextAuthGuard - a functionally sound allowlist mitigation is on the path.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/components/apps/installation/EventTypesStepCard.tsx",
+      "line": 72,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/components/dialog/__tests__/RerouteDialog.test.tsx",
+      "line": 254,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/apps/[slug]/slug-view.tsx",
+      "line": 71,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/ee/teams/views/team-profile-view.tsx",
+      "line": 173,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "User bio rendered via dangerouslySetInnerHTML, but the value passes through the centralized markdownToSafeHTML (sanitize-html) wrapper before injection, neutralizing active markup.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "The centralized markdownToSafeHTML/sanitize-html sanitizer (mitigation-inventory cat 8 Output Sanitization) is on the dataflow path, and a per-request CSP nonce + strict-dynamic (apps/web/lib/csp.ts) adds defense-in-depth. Functionally sound, medium.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/modules/embed/components/Embed.tsx",
+      "line": 852,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/embed/components/Embed.tsx",
+      "line": 863,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/event-types/components/EventTypeDescription.tsx",
+      "line": 63,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/form-builder/components/FormBuilderField.tsx",
+      "line": 28,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/team/team-view.tsx",
+      "line": 161,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/users/views/users-public-view.tsx",
+      "line": 108,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/modules/videos/views/videos-single-view.tsx",
+      "line": 588,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/pages/router/index.tsx",
+      "line": 25,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "apps/web/proxy.ts",
+      "line": 64,
+      "severity": "medium",
+      "cwe": "CWE-1021",
+      "description": "shouldEnforceCsp emits CSP only for /auth/login and /login; report-only mode is disabled (csp.ts L46-47), so all other routes ship with no Content-Security-Policy header.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/web/proxy.ts",
+      "line": 86,
+      "severity": "medium",
+      "cwe": "CWE-601",
+      "description": "Redirect destination is built from the 'return-to' cookie; new URL(value, base) lets an absolute URL override the base, so a controlled cookie yields an off-site redirect (phishing).",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Target derives from an app-managed 'return-to' cookie, not a direct request parameter, and exploitation requires controlling that cookie (scope-limited, phishing-only/medium). No same-origin allowlist on new URL() - recommend an allowlist.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/app-store-cli/src/core.ts",
+      "line": 78,
+      "severity": "medium",
+      "cwe": "CWE-78",
+      "description": "child_process calls interpolate paths/commands, but every call-site is a build/CLI/dev script (app-store-cli, sentry, prisma migrate, seed) not reachable from the production request path.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "All command-injection sinks are confined to build/CLI/dev tooling with developer- or CI-controlled arguments, not end-user input, and are absent from the production runtime request flow (deployment/scope-limited). Medium impact if a script were exposed.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/app-store/BookingPageTagManager.tsx",
+      "line": 81,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/app-store/hitpay/components/HitPayDropIn.ts",
+      "line": 112,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/emails/templates/confirm-email.html",
+      "line": 420,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detected a template variable used in an anchor tag with the 'href' attribute. This allows a malicious actor to input the 'javascript:' URI and is subject to cross- site scripting (XSS) attacks. If usi",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/emails/templates/confirm-email.html",
+      "line": 474,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detected a template variable used in an anchor tag with the 'href' attribute. This allows a malicious actor to input the 'javascript:' URI and is subject to cross- site scripting (XSS) attacks. If usi",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/emails/templates/confirm-email.html",
+      "line": 538,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detected a template variable used in an anchor tag with the 'href' attribute. This allows a malicious actor to input the 'javascript:' URI and is subject to cross- site scripting (XSS) attacks. If usi",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/emails/templates/confirm-email.html",
+      "line": 606,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detected a template variable used in an anchor tag with the 'href' attribute. This allows a malicious actor to input the 'javascript:' URI and is subject to cross- site scripting (XSS) attacks. If usi",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/embeds/embed-core/src/embed-iframe.ts",
+      "line": 551,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/embeds/embed-core/src/embed-iframe.ts",
+      "line": 603,
+      "severity": "medium",
+      "cwe": "CWE-346",
+      "description": "The iframe message handler authorizes on a spoofable data.originator field instead of e.origin, so any frame can invoke interfaceWithParent methods. Methods only reconfigure embed UI.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "The dispatched interfaceWithParent methods only reconfigure the embed UI for the hosting page (the embedder is the intended message sender by design), limiting impact; recommend a strict e.origin allowlist. Scope-limited at medium severity.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/embeds/embed-core/src/embed.ts",
+      "line": 409,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "packages/embeds/embed-core/src/embed.ts",
+      "line": 1597,
+      "severity": "medium",
+      "cwe": "CWE-346",
+      "description": "Parent SDK message listener parses e.data.fullType and fires action-manager callbacks without checking e.origin, so any frame can trigger embed UI action callbacks.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Actions fired are client-side UI callbacks (link-ready, dimension changes, navigation within the embed) with no privileged or server-side effect; recommend an e.origin allowlist. Scope-limited at medium severity.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/features/auth/lib/verifyEmail.ts",
+      "line": 100,
+      "severity": "medium",
+      "cwe": "CWE-327",
+      "description": "MD5 derives an email verification-code secret keyed with a server secret and short TTL; the relevant property (preimage resistance) holds, so MD5 collision weakness does not apply here.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "MD5 here derives a keyed verification secret (server secret + email + short expiry) where collision resistance is not required and preimage resistance holds; recommend migrating to SHA-256/HMAC. Limited impact at medium severity.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/features/webhooks/lib/sendPayload.ts",
+      "line": 370,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "X-Cal-Signature-256 HMAC header is set only when a subscriber secret exists (createWebhookSignature returns empty otherwise, L347-350); webhooks without a secret are sent unsigned.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "packages/lib/crypto.ts",
+      "line": 3,
+      "severity": "medium",
+      "cwe": "CWE-327",
+      "description": "symmetricEncrypt uses AES-256-CBC (ALGORITHM=aes256) with no MAC/auth tag and a latin1 key buffer (L16); unauthenticated ciphertext is malleable and padding-oracle-prone. GCM keyring exists.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "packages/lib/rateLimit.ts",
+      "line": 55,
+      "severity": "medium",
+      "cwe": "CWE-703",
+      "description": "Rate limiter fails open: onError returns success:true on any error (L55); the 5s timeout fallback (L44) and missing UNKEY_ROOT_KEY (L41) also return success, silently bypassing limits.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "packages/ui/components/form/checkbox/Checkbox.tsx",
+      "line": 101,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "Detection of dangerouslySetInnerHTML from non-constant definition. This can inadvertently expose users to cross-site scripting (XSS) attacks if this comes from user-provided input. If you have to use ",
+      "layer": "2",
+      "tool": "semgrep",
+      "corroborated_by": [
+        "2"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 5764,
+      "severity": "medium",
+      "cwe": "CWE-22",
+      "description": "@hono/node-server@1.19.9 → 1.19.13: CVE-2026-39406 (@hono/node-server: Middleware bypass via repeated slashes in serveStatic)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 8126,
+      "severity": "medium",
+      "cwe": "CWE-74",
+      "description": "@nestjs/core@10.4.20 → 11.1.18: CVE-2026-35515 (@nestjs/core Improperly Neutralizes Special Elements in Output Used by a Downstream Component ('Injection'))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 9260,
+      "severity": "medium",
+      "cwe": "CWE-770",
+      "description": "@opentelemetry/core@1.30.1 → 2.8.0: CVE-2026-54285 (OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 9271,
+      "severity": "medium",
+      "cwe": "CWE-770",
+      "description": "@opentelemetry/core@2.0.1 → 2.8.0: CVE-2026-54285 (OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 9282,
+      "severity": "medium",
+      "cwe": "CWE-770",
+      "description": "@opentelemetry/core@2.2.0 → 2.8.0: CVE-2026-54285 (OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 9293,
+      "severity": "medium",
+      "cwe": "CWE-770",
+      "description": "@opentelemetry/core@2.3.0 → 2.8.0: CVE-2026-54285 (OpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 11135,
+      "severity": "medium",
+      "cwe": "CWE-176",
+      "description": "@protobufjs/utf8@1.1.0 → 1.1.1: CVE-2026-44288 (protobufjs has overlong UTF-8 decoding)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17441,
+      "severity": "medium",
+      "cwe": "CWE-1333",
+      "description": "ajv@8.12.0 → 8.18.0: CVE-2025-69873 (ajv has ReDoS when using `$data` option)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17453,
+      "severity": "medium",
+      "cwe": "CWE-1333",
+      "description": "ajv@6.12.6 → 6.14.0: CVE-2025-69873 (ajv has ReDoS when using `$data` option)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17465,
+      "severity": "medium",
+      "cwe": "CWE-1333",
+      "description": "ajv@8.17.1 → 8.18.0: CVE-2025-69873 (ajv has ReDoS when using `$data` option)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17477,
+      "severity": "medium",
+      "cwe": "CWE-1333",
+      "description": "ajv@8.13.0 → 8.18.0: CVE-2025-69873 (ajv has ReDoS when using `$data` option)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "medium",
+      "cwe": "CWE-113",
+      "description": "axios@1.13.5 → 1.15.0: CVE-2026-40175 (Axios has Unrestricted Cloud Metadata Exfiltration via Header Injection Chain)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "medium",
+      "cwe": "CWE-674",
+      "description": "axios@1.13.5 → 1.15.1: CVE-2026-42039 (Axios: unbounded recursion in toFormData causes DoS via deeply nested request data)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 18244,
+      "severity": "medium",
+      "cwe": "CWE-835",
+      "description": "bn.js@4.12.0 → 4.12.3: CVE-2026-2739 (bn.js affected by an infinite loop)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 18324,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "brace-expansion@1.1.11 → 1.1.13: CVE-2026-33750 (brace-expansion: Zero-step sequence causes process hang and memory exhaustion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 18334,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "brace-expansion@2.0.1 → 2.0.3: CVE-2026-33750 (brace-expansion: Zero-step sequence causes process hang and memory exhaustion)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-1289",
+      "description": "dompurify@3.3.2 → 3.4.0: CVE-2026-41239 (DOMPurify has a SAFE_FOR_TEMPLATES bypass in RETURN_DOM mode)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "dompurify@3.3.2 → 3.4.0: CVE-2026-41238 (DOMPurify: Prototype Pollution to XSS Bypass via CUSTOM_ELEMENT_HANDLING Fallback)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-183",
+      "description": "dompurify@3.3.2 → 3.4.0: CVE-2026-41240 (DOMPurify: FORBID_TAGS bypassed by function-based ADD_TAGS predicate (asymmetry with FORBID_ATTR fix))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-471",
+      "description": "dompurify@3.3.2 → 3.4.11: GHSA-cmwh-pvxp-8882 (DOMPurify: Permanent `ALLOWED_ATTR` pollution via `setConfig()` bypassing the hook clone-guard (incomplete fix of the 3.4.7 hook-pollution patch))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-501",
+      "description": "dompurify@3.3.2 → 3.4.7: GHSA-76mc-f452-cxcm (DOMPurify: Hook mutation of `data.allowedTags` / `data.allowedAttributes` permanently pollutes `DEFAULT_ALLOWED_TAGS` / `DEFAULT_ALLOWED_ATTR`)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-783",
+      "description": "dompurify@3.3.2 → 3.4.0: GHSA-39q2-94rc-95cp (DOMPurify's ADD_TAGS function form bypasses FORBID_TAGS due to short-circuit evaluation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "dompurify@3.3.2 → 3.4.6: CVE-2026-49458 (DOMPurify: Cross-realm IN_PLACE sanitization leaves executable markup intact via realm-bound `instanceof` checks)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21876,
+      "severity": "medium",
+      "cwe": "CWE-346",
+      "description": "esbuild@0.23.1 → 0.25.0: GHSA-67mh-4wv8-2f99 (esbuild enables any website to send any requests to the development server and read the response)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22749,
+      "severity": "medium",
+      "cwe": "CWE-1284",
+      "description": "fast-xml-parser@4.4.1 → 4.5.5: CVE-2026-33349 (Entity Expansion Limits Bypassed When Set to Zero Due to JavaScript Falsy Evaluation in fast-xml-parser)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22749,
+      "severity": "medium",
+      "cwe": "CWE-91",
+      "description": "fast-xml-parser@4.4.1 → 5.7.0: CVE-2026-41650 (fast-xml-parser XMLBuilder: XML Comment and CDATA Injection via Unescaped Delimiters)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22760,
+      "severity": "medium",
+      "cwe": "CWE-1284",
+      "description": "fast-xml-parser@5.3.5 → 5.5.7: CVE-2026-33349 (Entity Expansion Limits Bypassed When Set to Zero Due to JavaScript Falsy Evaluation in fast-xml-parser)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22760,
+      "severity": "medium",
+      "cwe": "CWE-91",
+      "description": "fast-xml-parser@5.3.5 → 5.7.0: CVE-2026-41650 (fast-xml-parser XMLBuilder: XML Comment and CDATA Injection via Unescaped Delimiters)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22982,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "file-type@20.4.1 → 21.3.2: CVE-2026-32630 (file-type: ZIP Decompression Bomb DoS via [Content_Types].xml entry)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22982,
+      "severity": "medium",
+      "cwe": "CWE-835",
+      "description": "file-type@20.4.1 → 21.3.1: CVE-2026-31808 (file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 23136,
+      "severity": "medium",
+      "cwe": "CWE-200",
+      "description": "follow-redirects@1.15.11 → 1.16.0: GHSA-r4q5-vmmm-2653 (follow-redirects leaks Custom Authentication Headers to Cross-Domain Redirect Targets)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-1113",
+      "description": "hono@4.11.7 → 4.12.4: CVE-2026-29086 (Hono Vulnerable to Cookie Attribute Injection via Unsanitized domain and path in setCookie())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-113",
+      "description": "hono@4.11.7 → 4.12.21: CVE-2026-47675 (Hono: Cookie helper does not sanitize sameSite and priority, allowing Set-Cookie injection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-116",
+      "description": "hono@4.11.7 → 4.12.18: CVE-2026-44458 (Hono has CSS Declaration Injection via Style Object Values in JSX SSR)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-1289",
+      "description": "hono@4.11.7 → 4.12.21: CVE-2026-47674 (Hono: IP Restriction bypasses static deny rules for non-canonical IPv6)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "hono@4.11.7 → 4.12.7: GHSA-v8w9-8mx6-g223 (Hono vulnerable to Prototype Pollution possible through __proto__ key allowed in parseBody({ dot: true }))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-180",
+      "description": "hono@4.11.7 → 4.12.12: CVE-2026-39409 (Hono has incorrect IP matching in ipRestriction() for IPv4-mapped IPv6 addresses)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-20",
+      "description": "hono@4.11.7 → 4.12.12: CVE-2026-39410 (Hono: Non-breaking space prefix bypass in cookie name handling in getCookie())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-22",
+      "description": "hono@4.11.7 → 4.12.12: CVE-2026-39407 (Hono: Middleware bypass via repeated slashes in serveStatic)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-285",
+      "description": "hono@4.11.7 → 4.12.21: CVE-2026-47673 (Hono: JWT middleware accepts any Authorization scheme, not only Bearer)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-345",
+      "description": "hono@4.11.7 → 4.12.25: CVE-2026-54288 (hono: Body Limit Middleware can be bypassed on AWS Lambda by understating `Content-Length`)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-348",
+      "description": "hono@4.11.7 → 4.12.25: CVE-2026-54289 (hono: Lambda@Edge adapter keeps only the last value of a repeated request header, dropping the rest)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "hono@4.11.7 → 4.12.16: CVE-2026-44456 (Hono: bodyLimit() can be bypassed for chunked / unknown-length requests)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-444",
+      "description": "hono@4.11.7 → 4.12.21: CVE-2026-47676 (Hono: app.mount() strips mount prefix using undecoded path, causing incorrect routing for percent-encoded paths)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-524",
+      "description": "hono@4.11.7 → 4.12.18: CVE-2026-44457 (Hono's Cache Middleware ignores Vary: Authorization / Vary: Cookie leading to cross-user cache leakage)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-74",
+      "description": "hono@4.11.7 → 4.12.4: CVE-2026-29085 (Hono Vulnerable to SSE Control Field Injection via CR/LF in writeSSE())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "hono@4.11.7 → 4.12.14: CVE-2026-56761 (hono Improperly Handles JSX Attribute Names Allows HTML Injection in hono/jsx SSR)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24640,
+      "severity": "medium",
+      "cwe": "CWE-20",
+      "description": "http-proxy-middleware@2.0.9 → 2.0.10: CVE-2026-55602 (http-proxy-middleware `router` host+path substring matching allows Host-header-driven backend routing bypass)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 25332,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "ip-address@10.0.1 → 10.1.1: CVE-2026-42338 (ip-address has XSS in Address6 HTML-emitting methods)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 25339,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "ip-address@9.0.5 → 10.1.1: CVE-2026-42338 (ip-address has XSS in Address6 HTML-emitting methods)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 26837,
+      "severity": "medium",
+      "cwe": "CWE-407",
+      "description": "js-yaml@4.1.1 → 4.2.0: CVE-2026-53550 (JS-YAML: Quadratic-complexity DoS in merge key handling via repeated aliases)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 27696,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "lodash-es@4.17.23 → 4.18.0: CVE-2026-2950 (lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 27836,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "lodash@4.17.23 → 4.18.0: CVE-2026-2950 (prototype pollution)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 28274,
+      "severity": "medium",
+      "cwe": "CWE-1333",
+      "description": "markdown-it@13.0.1 → 14.1.1: CVE-2026-2327 (markdown-it is has a Regular Expression Denial of Service (ReDoS))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 28274,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "markdown-it@13.0.1 → 14.2.0: CVE-2026-48988 (markdown-it: Quadratic complexity DoS in smartquotes rule via replaceAt string operations)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 29973,
+      "severity": "medium",
+      "cwe": "CWE-835",
+      "description": "nanoid@4.0.2 → 5.0.9: CVE-2024-55565 (Predictable results in nanoid generation when given non-integer values)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "medium",
+      "cwe": "CWE-436",
+      "description": "next@14.2.35 → 15.5.16: CVE-2026-44576 (Next.js vulnerable to cache poisoning in React Server Component responses)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "medium",
+      "cwe": "CWE-444",
+      "description": "next@14.2.35 → 15.5.13: CVE-2026-29057 (Next.js: HTTP request smuggling in rewrites)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "next@14.2.35 → 15.5.16: CVE-2026-44580 (Next.js has cross-site scripting in beforeInteractive scripts with untrusted input)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "medium",
+      "cwe": "CWE-352",
+      "description": "next@16.1.5 → 16.1.7: CVE-2026-27978 (Server Actions CSRF bypass)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "next@16.1.5 → 16.1.7: CVE-2026-27980 (Next.js: Unbounded next/image disk cache growth can exhaust storage)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "medium",
+      "cwe": "CWE-436",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44576 (Next.js vulnerable to cache poisoning in React Server Component responses)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "medium",
+      "cwe": "CWE-444",
+      "description": "next@16.1.5 → 16.1.7: CVE-2026-29057 (Next.js: HTTP request smuggling in rewrites)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44580 (Next.js has cross-site scripting in beforeInteractive scripts with untrusted input)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "medium",
+      "cwe": "CWE-436",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44576 (Next.js vulnerable to cache poisoning in React Server Component responses)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44580 (Next.js has cross-site scripting in beforeInteractive scripts with untrusted input)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30636,
+      "severity": "medium",
+      "cwe": "CWE-295",
+      "description": "nodemailer@7.0.12 → 8.0.8: GHSA-r7g4-qg5f-qqm2 (Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30636,
+      "severity": "medium",
+      "cwe": "CWE-862",
+      "description": "nodemailer@7.0.12 → 8.0.9: GHSA-wqvq-jvpq-h66f (Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30636,
+      "severity": "medium",
+      "cwe": "CWE-93",
+      "description": "nodemailer@7.0.12 → 8.0.9: GHSA-268h-hp4c-crq3 (Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31952,
+      "severity": "medium",
+      "cwe": "CWE-200",
+      "description": "phin@2.9.3 → 3.7.1: GHSA-x565-32qp-m3vf (phin may include sensitive headers in subsequent requests after redirect)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31989,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "picomatch@3.0.1 → 3.0.2: CVE-2026-33672 (Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 31996,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "picomatch@2.3.1 → 2.3.2: CVE-2026-33672 (Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 32003,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "picomatch@4.0.3 → 4.0.4: CVE-2026-33672 (Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 32670,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "postcss@8.4.31 → 8.5.10: CVE-2026-41305 (PostCSS has XSS via Unescaped </style> in its CSS Stringify Output)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 32681,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "postcss@8.5.6 → 8.5.10: CVE-2026-41305 (PostCSS has XSS via Unescaped </style> in its CSS Stringify Output)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33066,
+      "severity": "medium",
+      "cwe": "CWE-176",
+      "description": "protobufjs@7.4.0 → 7.5.6: CVE-2026-44288 (protobufjs has overlong UTF-8 decoding)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33066,
+      "severity": "medium",
+      "cwe": "CWE-20",
+      "description": "protobufjs@7.4.0 → 7.5.6: CVE-2026-44294 (protobuf.js: Denial of service from crafted field names in generated code)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33182,
+      "severity": "medium",
+      "cwe": "CWE-476",
+      "description": "qs@6.14.1 → 6.15.2: CVE-2026-8723 (qs has a remotely triggerable DoS: qs.stringify crashes with TypeError on null/undefined entries in comma-format arrays when encodeValuesOnly is set)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 35104,
+      "severity": "medium",
+      "cwe": "CWE-400",
+      "description": "serialize-javascript@6.0.2 → 7.0.5: CVE-2026-34043 (Serialize JavaScript has CPU Exhaustion Denial of Service via crafted array-like objects)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 36919,
+      "severity": "medium",
+      "cwe": "CWE-436",
+      "description": "tar@7.5.7 → 7.5.16: CVE-2026-53655 (node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37865,
+      "severity": "medium",
+      "cwe": "CWE-352",
+      "description": "turbo@2.5.5 → 2.9.14: CVE-2026-45773 (Trubo: Login callback CSRF/session fixation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37894,
+      "severity": "medium",
+      "cwe": "CWE-352",
+      "description": "turbo@2.7.1 → 2.9.14: CVE-2026-45773 (Trubo: Login callback CSRF/session fixation)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38128,
+      "severity": "medium",
+      "cwe": "CWE-89",
+      "description": "typeorm@0.3.27 → 0.3.29: GHSA-9ggv-8w38-r7pm (TypeORM: SQL Injection in UpdateQueryBuilder/SoftDeleteQueryBuilder orderBy (MySQL/MariaDB))",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38780,
+      "severity": "medium",
+      "cwe": "CWE-1285",
+      "description": "uuid@11.1.0 → 11.1.1: CVE-2026-41907 (uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38789,
+      "severity": "medium",
+      "cwe": "CWE-1285",
+      "description": "uuid@8.3.2 → 11.1.1: CVE-2026-41907 (uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38798,
+      "severity": "medium",
+      "cwe": "CWE-1285",
+      "description": "uuid@9.0.0 → 11.1.1: CVE-2026-41907 (uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38807,
+      "severity": "medium",
+      "cwe": "CWE-1285",
+      "description": "uuid@9.0.1 → 11.1.1: CVE-2026-41907 (uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 38954,
+      "severity": "medium",
+      "cwe": "CWE-522",
+      "description": "vite@6.4.1 → 6.4.3: CVE-2026-53632 (launch-editor: NTLMv2 hash disclosure via UNC path handling on Windows)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39009,
+      "severity": "medium",
+      "cwe": "CWE-522",
+      "description": "vite@7.3.0 → 7.3.5: CVE-2026-53632 (launch-editor: NTLMv2 hash disclosure via UNC path handling on Windows)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39312,
+      "severity": "medium",
+      "cwe": "CWE-79",
+      "description": "webpack@5.90.1 → 5.94.0: CVE-2024-43788 (Webpack's AutoPublicPathRuntimeModule has a DOM Clobbering Gadget that leads to XSS)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39722,
+      "severity": "medium",
+      "cwe": "CWE-908",
+      "description": "ws@8.18.3 → 8.20.1: CVE-2026-45736 (ws: Uninitialized memory disclosure)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39737,
+      "severity": "medium",
+      "cwe": "CWE-908",
+      "description": "ws@8.17.1 → 8.20.1: CVE-2026-45736 (ws: Uninitialized memory disclosure)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39879,
+      "severity": "medium",
+      "cwe": "CWE-1321",
+      "description": "xml2js@0.4.23 → 0.5.0: CVE-2023-0842 (xml2js is vulnerable to prototype pollution)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 40015,
+      "severity": "medium",
+      "cwe": "CWE-674",
+      "description": "yaml@2.8.1 → 2.8.3: CVE-2026-33532 (stack overflow)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 40024,
+      "severity": "medium",
+      "cwe": "CWE-674",
+      "description": "yaml@1.10.2 → 1.10.3: CVE-2026-33532 (stack overflow)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 40031,
+      "severity": "medium",
+      "cwe": "CWE-674",
+      "description": "yaml@2.8.2 → 2.8.3: CVE-2026-33532 (stack overflow)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "apps/api/v1/lib/helpers/captureErrors.ts",
+      "line": 10,
+      "severity": "low",
+      "cwe": "CWE-117",
+      "description": "User-derived data reaching console/logger calls could embed newlines to forge log lines (CWE-117), but impact is limited to log integrity with no RCE or secret exposure.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Impact is limited to log-forging/integrity (no RCE or secret disclosure); most logging is server-side diagnostics through a structured logger that reduces injection impact; recommend newline-sanitizing user-derived log fields. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/api/v1/lib/validations/booking.ts",
+      "line": 28,
+      "severity": "low",
+      "cwe": "CWE-1321",
+      "description": "Every 'merge(' match is a Zod schema .merge() (compile/type-level schema composition), not a recursive object merge; no __proto__/deepmerge/_.merge sink consumes user-controlled keys.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "The matched 'merge(' call-sites are Zod schema .merge() type-level composition, not recursive object merges, and no __proto__ / deepmerge / lodash.merge sink accepts attacker keys - not exploitable for prototype pollution. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/bootstrap.ts",
+      "line": 54,
+      "severity": "low",
+      "cwe": "CWE-942",
+      "description": "CORS origin falls back to wildcard '*' outside production when ALLOWED_ORIGINS is unset, while Authorization and secret headers are allowed; production defaults to false.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/lib/is-origin-allowed/is-origin-allowed.ts",
+      "line": 12,
+      "severity": "low",
+      "cwe": "CWE-942",
+      "description": "Origin allowlist converts wildcard '*' to a '.*' regex without restricting separators; overly broad patterns can match unintended attacker-controlled hosts or subdomains.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/lib/is-origin-allowed/is-origin-allowed.ts",
+      "line": 13,
+      "severity": "low",
+      "cwe": "CWE-1333",
+      "description": "Dynamic RegExp is built from admin/app-configured origin allowlists (escaped, wildcard -> linear .*); the pattern is not attacker-controlled, so catastrophic backtracking is not reachable.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "RegExp patterns derive from developer/admin-configured values (OAuth client origins, app urlRegExp metadata) or escaped variable names; wildcardToRegex escapes input then uses linear '.*'. No attacker-controlled catastrophic pattern is on the path. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/api/v2/src/vercel-webhook.guard.ts",
+      "line": 44,
+      "severity": "low",
+      "cwe": "CWE-327",
+      "description": "HMAC-SHA1 is used to verify inbound Vercel webhook signatures; HMAC-SHA1 remains cryptographically sound (SHA-1 collision weakness does not affect HMAC) and the algorithm is mandated by the provider.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "HMAC-SHA1 is still cryptographically sound (SHA-1 collisions do not affect HMAC) and the algorithm is dictated by the external Vercel webhook signature spec, so it is not attacker-selectable. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/app/api/auth/reset-password/route.ts",
+      "line": 17,
+      "severity": "low",
+      "cwe": "CWE-798",
+      "description": "Hardcoded-secret matches are dominated by object/property names, Zod schema fields, and process.env reads rather than literal embedded credentials; no real secret value is bound to a source/sink path.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Matches are predominantly property names, Zod schema fields, and process.env reads, not literal credentials; authoritative secret detection is delegated to Layer 2 Semgrep p/secrets and the Layer 1 config audit. No taint dataflow applies. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/app/api/teams/create/route.ts",
+      "line": 31,
+      "severity": "low",
+      "cwe": "CWE-338",
+      "description": "Math.random()-derived strings are used only as fallback team name/slug when Stripe metadata is missing (not as tokens/secrets), so predictability has no security impact here.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Verified the value backs only non-security fallback team name/slug (route.ts L71-72), not an auth secret/token; the shared packages/lib/random.ts helper must still use a CSPRNG (crypto.randomBytes) for any security context. Non-security usage/low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/components/PageWrapper.tsx",
+      "line": 88,
+      "severity": "low",
+      "cwe": "CWE-79",
+      "description": "An inline script interpolates pageStatus into the DOM, but pageStatus is a fixed server-side status enum, not user-controlled data, so no untrusted value reaches the sink.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "The interpolated value (pageStatus) is a server-side enum constant, not attacker-controlled input; no untrusted data is on the path. Scope-limited/low; recommend a nonce'd JSON script element for hardening.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/lib/apps/[slug]/getStaticProps.ts",
+      "line": 99,
+      "severity": "low",
+      "cwe": "CWE-22",
+      "description": "A DESCRIPTION.md path is built from the app dirName and read with readFileSync; dirName originates from the controlled app-store metadata enum, not raw user input, and runs at static generation.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "The path segment (dirName) comes from the curated app-store metadata enum in the DB, not free-text user input, and the read executes at build/static-generation time - no user-supplied '../' reaches the path. Scope-limited/low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/lib/csp.ts",
+      "line": 22,
+      "severity": "low",
+      "cwe": "CWE-1021",
+      "description": "Production script-src keeps 'unsafe-inline' and https: alongside nonce and strict-dynamic; browsers ignoring strict-dynamic can execute injected inline scripts.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/web/lib/csp.ts",
+      "line": 24,
+      "severity": "low",
+      "cwe": "CWE-1021",
+      "description": "Development CSP script-src allows 'unsafe-inline' and 'unsafe-eval'; weak posture in non-production and a real risk if a dev or preview build is publicly exposed.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/web/lib/csp.ts",
+      "line": 30,
+      "severity": "low",
+      "cwe": "CWE-1021",
+      "description": "style-src retains 'unsafe-inline' (no style nonces); permits injected inline styles enabling CSS-based UI-redress and data-exfiltration vectors.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "apps/web/lib/validateCsrfToken.ts",
+      "line": 8,
+      "severity": "low",
+      "cwe": "CWE-352",
+      "description": "Double-submit CSRF token is validated, but the cookie-vs-submitted comparison uses non-constant-time !==; token timing leakage is not practically exploitable since the attacker supplies the value.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "The double-submit CSRF token IS validated on state-changing routes (reset-password, cancel, guest-session); the comparison is non-constant-time but CSRF-token timing leakage is not practically exploitable (the attacker already supplies the value). Functionally sound control/low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "apps/web/proxy.ts",
+      "line": 10,
+      "severity": "low",
+      "cwe": "CWE-703",
+      "description": "safeGet swallows all edge-config errors in an empty catch and returns undefined; feature flags such as isSignupDisabled fail open when Edge Config is unavailable.",
+      "layer": "1",
+      "tool": "architectural-audit",
+      "corroborated_by": [
+        "1"
+      ]
+    },
+    {
+      "file": "packages/app-store-cli/src/build.ts",
+      "line": 87,
+      "severity": "low",
+      "cwe": "CWE-367",
+      "description": "All existsSync/stat sinks are in build-time/CLI/dev tooling (app-store-cli, swagger generation, devin scripts); there is no production request-path check-then-use file race.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "existsSync/stat call-sites are confined to build/CLI/dev tooling and operate on developer/CI filesystem state, not a production request path; the check-then-use is not user-triggerable. Scope-limited/low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/app-store/_utils/oauth/decodeOAuthState.ts",
+      "line": 12,
+      "severity": "low",
+      "cwe": "CWE-502",
+      "description": "User-controlled OAuth state is JSON.parse'd, but JSON.parse in JS/TS only produces plain data (no constructor/gadget execution), so this is not a deserialization-RCE sink.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "JSON.parse in JS/TS has no code-execution deserialization gadget (unlike Java/Python); parsed state is consumed as data and the only downstream risk (returnTo redirect) is tracked under Open redirect. Most webhook JSON.parse paths are Zod safeParse-guarded. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/embeds/embed-core/src/embed.ts",
+      "line": 409,
+      "severity": "low",
+      "cwe": "CWE-346",
+      "description": "postMessage uses wildcard targetOrigin '*', so UI control messages are delivered to whatever origin occupies the iframe. Payload carries only non-sensitive embed UI control data.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "targetOrigin '*' sends only non-sensitive UI control/dimension messages to the embedder (which already controls the host page); no credentials/PII in the payload. A code TODO already acknowledges pinning targetOrigin. Defense-in-depth/low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/features/webhooks/lib/sendPayload.ts",
+      "line": 216,
+      "severity": "low",
+      "cwe": "CWE-1336",
+      "description": "The user-set webhook payloadTemplate is compiled with Handlebars; logic-less Handlebars is sandboxed by default (no code execution / prototype access) and renders only the owner's own event payload.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Handlebars compile() is logic-less and sandboxed by default (no eval/constructor/__proto__ access), no unsafe-eval helper is registered, and the render context is the webhook owner's own event data - no cross-tenant or RCE path. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "packages/ui/components/editor/plugins/ToolbarPlugin.tsx",
+      "line": 371,
+      "severity": "low",
+      "cwe": "CWE-611",
+      "description": "The only XML-parser sink is the browser DOMParser used client-side for rich-text/clipboard HTML; the browser DOMParser does not resolve external entities, so XXE is not reachable.",
+      "layer": "3b",
+      "tool": "taint-analysis",
+      "gateBlocking": false,
+      "demotionReason": "Browser DOMParser does not process external entities (no XXE by spec), the parsing is client-side on the user's own paste, and there is no server-side XML parser with entity expansion on any path. Low.",
+      "corroborated_by": [
+        "3b"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 89,
+      "severity": "low",
+      "cwe": "CWE-400",
+      "description": "@ai-sdk/provider-utils@2.2.3 → none: CVE-2026-8769 (@ai-sdk/provider-utils has an Uncontrolled Resource Consumption issue)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 102,
+      "severity": "low",
+      "cwe": "CWE-400",
+      "description": "@ai-sdk/provider-utils@2.2.8 → none: CVE-2026-8769 (@ai-sdk/provider-utils has an Uncontrolled Resource Consumption issue)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 1187,
+      "severity": "low",
+      "cwe": "CWE-200",
+      "description": "@babel/core@7.26.10 → 7.29.6: CVE-2026-49356 (@babel/core: Arbitrary File Read via sourceMappingURL Comment)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 1210,
+      "severity": "low",
+      "cwe": "CWE-200",
+      "description": "@babel/core@7.28.5 → 7.29.6: CVE-2026-49356 (@babel/core: Arbitrary File Read via sourceMappingURL Comment)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 13890,
+      "severity": "low",
+      "cwe": "CWE-20",
+      "description": "@smithy/config-resolver@4.1.5 → 4.4.0: GHSA-6475-r3vj-m8vf (AWS SDK for JavaScript v3 adopted defense in depth enhancement for region parameter value)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 15193,
+      "severity": "low",
+      "cwe": "CWE-705",
+      "description": "@tootallnate/once@1.1.2 → 2.0.1: CVE-2026-3449 (@tootallnate/once vulnerable to Incorrect Control Flow Scoping)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 15200,
+      "severity": "low",
+      "cwe": "CWE-705",
+      "description": "@tootallnate/once@2.0.0 → 2.0.1: CVE-2026-3449 (@tootallnate/once vulnerable to Incorrect Control Flow Scoping)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17352,
+      "severity": "low",
+      "cwe": "CWE-20",
+      "description": "ai@4.2.10 → 5.0.52: CVE-2025-48985 (Vercel’s AI SDK's filetype whitelists can be bypassed when uploading files)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17372,
+      "severity": "low",
+      "cwe": "CWE-20",
+      "description": "ai@4.3.15 → 5.0.52: CVE-2025-48985 (Vercel’s AI SDK's filetype whitelists can be bypassed when uploading files)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 17926,
+      "severity": "low",
+      "cwe": "CWE-116",
+      "description": "axios@1.13.5 → 1.15.1: CVE-2026-42040 (Axios: Null Byte Injection via Reverse-Encoding in AxiosURLSearchParams)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 19956,
+      "severity": "low",
+      "cwe": "CWE-74",
+      "description": "cookie@0.4.1 → 0.7.0: CVE-2024-47764 (accepts out-of-bounds chars in name/path/domain)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 19977,
+      "severity": "low",
+      "cwe": "CWE-74",
+      "description": "cookie@0.4.2 → 0.7.0: CVE-2024-47764 (accepts out-of-bounds chars in name/path/domain)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21088,
+      "severity": "low",
+      "cwe": "CWE-1333",
+      "description": "diff@7.0.0 → 8.0.3: CVE-2026-24001 (jsdiff has a Denial of Service vulnerability in parsePatch and applyPatch)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21095,
+      "severity": "low",
+      "cwe": "CWE-1333",
+      "description": "diff@4.0.2 → 4.0.4: CVE-2026-24001 (jsdiff has a Denial of Service vulnerability in parsePatch and applyPatch)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21102,
+      "severity": "low",
+      "cwe": "CWE-1333",
+      "description": "diff@8.0.2 → 8.0.3: CVE-2026-24001 (jsdiff has a Denial of Service vulnerability in parsePatch and applyPatch)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 21201,
+      "severity": "low",
+      "cwe": "CWE-693",
+      "description": "dompurify@3.3.2 → 3.4.9: GHSA-vxr8-fq34-vvx9 (DOMPurify: Trusted Types policy survives `clearConfig()` and can poison later `RETURN_TRUSTED_TYPE` output)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22749,
+      "severity": "low",
+      "cwe": "CWE-120",
+      "description": "fast-xml-parser@4.4.1 → 4.5.4: CVE-2026-27942 (fast-xml-parser has stack overflow in XMLBuilder with preserveOrder)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 22760,
+      "severity": "low",
+      "cwe": "CWE-120",
+      "description": "fast-xml-parser@5.3.5 → 5.3.8: CVE-2026-27942 (fast-xml-parser has stack overflow in XMLBuilder with preserveOrder)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "low",
+      "cwe": "CWE-1284",
+      "description": "hono@4.11.7 → 4.12.18: CVE-2026-44459 (Hono has improper validation of NumericDate claims (exp, nbf, iat) in JWT verify())",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 24435,
+      "severity": "low",
+      "cwe": "CWE-208",
+      "description": "hono@4.11.7 → 4.11.10: GHSA-gq3j-xvxp-8hrf (Hono added timing comparison hardening in basicAuth and bearerAuth)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "low",
+      "cwe": "CWE-328",
+      "description": "next@14.2.35 → 15.5.16: CVE-2026-44582 (Next.js vulnerable to cache poisoning via collisions in React Server Component cache-busting)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30174,
+      "severity": "low",
+      "cwe": "CWE-349",
+      "description": "next@14.2.35 → 15.5.16: CVE-2026-44572 (Next.js's Middleware / Proxy redirects can be cache-poisoned)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "low",
+      "cwe": "CWE-1385",
+      "description": "next@16.1.5 → 16.1.7: CVE-2026-27977 (Next.js: null origin can bypass dev HMR websocket CSRF checks)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "low",
+      "cwe": "CWE-328",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44582 (Next.js vulnerable to cache poisoning via collisions in React Server Component cache-busting)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30232,
+      "severity": "low",
+      "cwe": "CWE-349",
+      "description": "next@16.1.5 → 16.2.5: CVE-2026-44572 (Next.js's Middleware / Proxy redirects can be cache-poisoned)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "low",
+      "cwe": "CWE-328",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44582 (Next.js vulnerable to cache poisoning via collisions in React Server Component cache-busting)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 30292,
+      "severity": "low",
+      "cwe": "CWE-349",
+      "description": "next@16.1.7 → 16.2.5: CVE-2026-44572 (Next.js's Middleware / Proxy redirects can be cache-poisoned)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 33182,
+      "severity": "low",
+      "cwe": "CWE-20",
+      "description": "qs@6.14.1 → 6.14.2: CVE-2026-2391 (qs's arrayLimit bypass in comma parsing allows denial of service)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37244,
+      "severity": "low",
+      "cwe": "CWE-59",
+      "description": "tmp@0.0.33 → 0.2.4: CVE-2025-54798 (tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37865,
+      "severity": "low",
+      "cwe": "CWE-426",
+      "description": "turbo@2.5.5 → 2.9.14: CVE-2026-45772 (Turbo: Unexpected local code execution during Yarn Berry detection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 37894,
+      "severity": "low",
+      "cwe": "CWE-426",
+      "description": "turbo@2.7.1 → 2.9.14: CVE-2026-45772 (Turbo: Unexpected local code execution during Yarn Berry detection)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    },
+    {
+      "file": "yarn.lock",
+      "line": 39312,
+      "severity": "low",
+      "cwe": "CWE-918",
+      "description": "webpack@5.90.1 → 5.104.0: CVE-2025-68157 (webpack buildHttp HttpUriPlugin allowedUris bypass via HTTP redirects → SSRF + cache persistence)",
+      "layer": "4",
+      "tool": "osv-scanner",
+      "corroborated_by": [
+        "4"
+      ]
+    }
+  ],
+  "gate": {
+    "verdict": "BLOCK",
+    "reason": "Gate BLOCK: 4 Layer-3b finding(s) classified gateBlocking:true (user-controlled source reaches a production-reachable sink with no validated mitigation, exploitable without admin). All layer statuses OK; no higher-precedence ERROR condition. Advisory findings inform but do not block.",
+    "layerStatuses": {
+      "0": "OK",
+      "1": "OK",
+      "2": "OK",
+      "3a": "OK",
+      "3b": "OK",
+      "4": "OK"
+    },
+    "baselineFindingCount": 306,
+    "thresholdExceeded": false
+  }
+}

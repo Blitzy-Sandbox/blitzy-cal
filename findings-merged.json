@@ -25,7 +25,38 @@
       ".turbo",
       "coverage",
       ".git"
-    ]
+    ],
+    "tooling": {
+      "semgrep": "1.167.0",
+      "osvScanner": "2.4.0"
+    },
+    "semgrepRulePacks": [
+      "p/security-audit",
+      "p/secrets",
+      "p/owasp-top-ten"
+    ],
+    "scanScope": {
+      "primaryLanguage": "TypeScript",
+      "secondaryLanguage": "SQL",
+      "include": [
+        "apps/**",
+        "packages/**"
+      ],
+      "firstPartyTsJsFiles": 7439,
+      "sqlFiles": 594,
+      "testFiles": 720,
+      "lockfile": "yarn.lock",
+      "lockfileLines": 40303,
+      "lockfilePackageEntries": 3727,
+      "workflowFiles": 59,
+      "configEvidence": [
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env.example",
+        ".github/workflows/*.yml"
+      ]
+    },
+    "baselineFindingCount": 306
   },
   "summary": {
     "totalFindings": 306,
@@ -286,7 +317,7 @@
       "layer": "3b",
       "tool": "taint-analysis",
       "gateBlocking": true,
-      "demotionReason": "trpc & API v2 webhook create/edit validate subscriberUrl via validateUrlForSSRFSync (blocks cloud-metadata + literal private IPs on SaaS); API v1 create/edit apply no SSRF check and the sync validator does no DNS resolution (DNS-rebinding gap), so v1-registered or rebinding hosts reach the fetch sink. Corroborated by Layer 4 axios SSRF advisory (CVE-2025-62718).",
+      "demotionReason": "trpc & API v2 webhook create/edit validate subscriberUrl via validateUrlForSSRFSync (blocks cloud-metadata + literal private IPs on SaaS); API v1 create/edit apply no SSRF check and the sync validator does no DNS resolution (DNS-rebinding gap), so v1-registered or rebinding hosts reach the fetch sink.",
       "corroborated_by": [
         "3b"
       ]
@@ -3354,7 +3385,7 @@
       "layer": "3b",
       "tool": "taint-analysis",
       "gateBlocking": false,
-      "demotionReason": "targetOrigin '*' sends only non-sensitive UI control/dimension messages to the embedder (which already controls the host page); no credentials/PII in the payload. A code TODO already acknowledges pinning targetOrigin. Defense-in-depth/low.",
+      "demotionReason": "targetOrigin '*' sends only non-sensitive UI control/dimension messages to the embedder (which already controls the host page); no credentials/PII in the payload. A source comment already acknowledges future targetOrigin pinning. Defense-in-depth/low.",
       "corroborated_by": [
         "3b"
       ]
@@ -3774,14 +3805,14 @@
   ],
   "gate": {
     "verdict": "BLOCK",
-    "reason": "Gate BLOCK: 4 Layer-3b finding(s) classified gateBlocking:true (user-controlled source reaches a production-reachable sink with no validated mitigation, exploitable without admin). All layer statuses OK; no higher-precedence ERROR condition. Advisory findings inform but do not block.",
+    "reason": "Gate BLOCK: 4 Layer-3b finding(s) classified gateBlocking:true (user-controlled source reaches a production-reachable sink with no validated mitigation, exploitable without admin). Layer 2 (Semgrep SAST) coverage is partial: 35 parser 'Syntax error' warnings left some files not fully parsed. Per the gate contract only agent-layer partial coverage escalates to ERROR; agent layers 1 and 3b are both full, so this deterministic-layer partial coverage is surfaced but does not change the verdict. No higher-precedence ERROR condition. Advisory findings inform but do not block.",
     "layerStatuses": {
-      "0": "OK",
-      "1": "OK",
-      "2": "OK",
-      "3a": "OK",
-      "3b": "OK",
-      "4": "OK"
+      "0": { "status": "OK", "coverage": "full" },
+      "1": { "status": "OK", "coverage": "full" },
+      "2": { "status": "OK", "coverage": "partial", "parseWarnings": 35 },
+      "3a": { "status": "OK", "coverage": "full" },
+      "3b": { "status": "OK", "coverage": "full" },
+      "4": { "status": "OK", "coverage": "full" }
     },
     "baselineFindingCount": 306,
     "thresholdExceeded": false

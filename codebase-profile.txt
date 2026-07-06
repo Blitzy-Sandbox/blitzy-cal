@@ -11,7 +11,16 @@ node_linker: node-modules
 primary_language: TypeScript
 typescript_version: 5.9.3
 
-[source_file_counts]   # excludes: node_modules,.next,dist,build,.turbo,.git,coverage
+[source_file_counts]   # exclude_dirs (gitignored): node_modules,.next,dist,build,.turbo,.git,coverage
+# Method (byte-reproducible, environment-independent — depends only on the committed tree):
+#   Counts are git-tracked source files enumerated at repo root with:
+#     git ls-files '*.ts'  | wc -l   (repeat for *.tsx, *.js, *.jsx)
+#   git ls-files honors .gitignore, so it deterministically excludes the exclude_dirs above
+#   AND setup-generated files that are gitignored but present in a warmed working tree — e.g.
+#   packages/prisma/generated/** and packages/kysely/types.ts (produced by `yarn install` /
+#   `prisma generate`). A raw `find -prune` over the working tree would count those generated
+#   files (yielding ts_files=6163 here) and therefore vary with build state; the git-tracked
+#   method below reproduces identically in a clean clone or a warmed environment.
 ts_files: 5718
 tsx_files: 1678
 js_files: 37
@@ -26,7 +35,7 @@ other: tRPC, Prisma, React
 
 [sca_input]
 lockfile: yarn.lock
-lockfile_location: <repo-root>
+lockfile_location: .
 lockfile_count: 1
 
 [ci_cd]

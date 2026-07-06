@@ -1,0 +1,18 @@
+# mitigation-inventory-test.txt — L3a TEST-Code Mitigation Inventory (9 categories)
+# Scope: TEST files only within apps/** + packages/** (*.test.*, *.spec.*, __tests__/, test/, tests/, e2e/, playwright/).
+# exclude_dirs: node_modules,.next,dist,build,.turbo,.git,coverage
+# NON-GATE-BLOCKING context.
+# Count = number of distinct TEST files containing >=1 pattern match.
+
+input-validation: 7
+authorization-guards: 3
+webhook-signature-hmac: 2
+csrf-tokens: 2
+output-sanitization: 0
+password-hashing: 2
+constant-time-compare: 0
+security-headers: 0
+rate-limiting: 19
+
+total_categories: 9
+status: OK

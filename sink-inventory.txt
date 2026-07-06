@@ -1,0 +1,27 @@
+# sink-inventory.txt — L3a Application-Code Sink Inventory (19 CWE sink categories)
+# Scope: apps/** + packages/** application code; test files EXCLUDED (see sink-inventory-test.txt).
+# exclude_dirs: node_modules,.next,dist,build,.turbo,.git,coverage
+# Count = number of distinct application (non-test) files containing >=1 pattern match.
+
+open-redirect (CWE-601): 170
+ssrf (CWE-918): 194
+cross-site-scripting (CWE-79): 39
+weak-prng (CWE-338): 48
+sql-injection (CWE-89): 28
+path-traversal (CWE-22): 23
+redos (CWE-1333): 23
+prototype-pollution (CWE-1321): 40
+command-injection (CWE-78): 11
+weak-hash (CWE-327): 6
+insecure-cookie (CWE-614): 5
+jwt (CWE-347): 4
+template-ssti (CWE-1336): 3
+code-evaluation (CWE-95): 1
+insecure-deserialization (CWE-502): 0
+xxe (CWE-611): 1
+ldap-injection (CWE-90): 0
+nosql-injection (CWE-943): 0
+csrf-sink (CWE-352): 0
+
+total_categories: 19
+status: OK

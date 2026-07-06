@@ -1,0 +1,18 @@
+# mitigation-inventory.txt — L3a Application-Code Mitigation Inventory (9 categories)
+# Scope: apps/** + packages/** application code; test files EXCLUDED (see mitigation-inventory-test.txt).
+# exclude_dirs: node_modules,.next,dist,build,.turbo,.git,coverage
+# Count = number of distinct application (non-test) files containing >=1 pattern match.
+# Role: triage denominator for L3b taint prioritization.
+
+input-validation: 649
+authorization-guards: 136
+webhook-signature-hmac: 21
+csrf-tokens: 18
+output-sanitization: 4
+password-hashing: 4
+constant-time-compare: 3
+security-headers: 1
+rate-limiting: 42
+
+total_categories: 9
+status: OK

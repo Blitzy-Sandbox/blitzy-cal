@@ -1,0 +1,28 @@
+# sink-inventory-test.txt — L3a TEST-Code Sink Inventory (19 CWE sink categories)
+# Scope: TEST files only within apps/** + packages/** (*.test.*, *.spec.*, __tests__/, test/, tests/, e2e/, playwright/).
+# exclude_dirs: node_modules,.next,dist,build,.turbo,.git,coverage
+# NON-GATE-BLOCKING: test-code matches are lower-priority and MUST NOT drive the D9 gate verdict.
+# Count = number of distinct TEST files containing >=1 pattern match.
+
+open-redirect (CWE-601): 6
+ssrf (CWE-918): 2
+cross-site-scripting (CWE-79): 5
+weak-prng (CWE-338): 15
+sql-injection (CWE-89): 4
+path-traversal (CWE-22): 3
+redos (CWE-1333): 7
+prototype-pollution (CWE-1321): 4
+command-injection (CWE-78): 2
+weak-hash (CWE-327): 1
+insecure-cookie (CWE-614): 1
+jwt (CWE-347): 1
+template-ssti (CWE-1336): 0
+code-evaluation (CWE-95): 1
+insecure-deserialization (CWE-502): 0
+xxe (CWE-611): 0
+ldap-injection (CWE-90): 0
+nosql-injection (CWE-943): 0
+csrf-sink (CWE-352): 1
+
+total_categories: 19
+status: OK

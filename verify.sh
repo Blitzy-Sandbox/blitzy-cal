@@ -50,9 +50,15 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # JSON engine selection. VERIFY_NO_JQ=1 forces the python3 fallback for testing.
+# jq is detected by a FUNCTIONAL PROBE (not mere presence on PATH): a jq that is
+# broken, non-functional, wrong-architecture, or a stub that exits non-zero will
+# fail the probe, so we transparently fall back to python3. This honors the AAP
+# dependency policy (§0.4.1/§0.8.1: jq is OPTIONAL and the suite must produce
+# identical results with or without it) even in a corrupted-environment case
+# where a non-functional jq is present on PATH.
 if [ "${VERIFY_NO_JQ:-0}" = "1" ]; then
   HAVE_JQ=0
-elif command -v jq >/dev/null 2>&1; then
+elif printf '{}' | jq -e . >/dev/null 2>&1; then
   HAVE_JQ=1
 else
   HAVE_JQ=0

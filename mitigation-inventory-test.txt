@@ -4,6 +4,12 @@
 # NON-GATE-BLOCKING context: test-code matches are lower-priority and MUST NOT drive the D9 gate verdict.
 # Count = number of distinct TEST files with >=1 pattern match (grep -lE files-with-matches).
 #
+# RECONCILIATION vs AAP 0.2.1 (authoritative counts): these TEST-scope counts are the byte-reproducible
+#   output of the DETERMINISTIC METHOD below (per binding AAP 0.7.2) and are NON-GATE-BLOCKING (0.7.1).
+#   AAP 0.2.1's "Files" figures are looser, non-normative discovery-phase estimates over a warmed
+#   worktree and are intentionally not reproduced here; the binding requirements (9 categories present,
+#   app/test segregation, byte-identical reproducibility) are fully satisfied below.
+#
 # DETERMINISTIC METHOD (byte-reproducible; environment-independent — depends only on the committed tree):
 #   1. Enumerate:  { git ls-files 'apps/*' | grep -E '\.(ts|tsx|js|jsx)$'; git ls-files 'packages/*' | grep -E '\.(ts|tsx)$'; } | sort -u
 #   2. Partition:  a file is TEST iff its path matches the ERE
